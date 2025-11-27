@@ -45,6 +45,35 @@ class SecuritySettings(BaseSettings):
     access_token_expire_minutes: int = Field(
         default=30, ge=1, description="Access token expiration in minutes"
     )
+    # Security headers configuration
+    csp: str = Field(
+        default="default-src 'self'",
+        description="Content-Security-Policy header value",
+    )
+    permissions_policy: str = Field(
+        default="geolocation=(), microphone=(), camera=()",
+        description="Permissions-Policy header value",
+    )
+
+
+class RedisSettings(BaseSettings):
+    """Redis configuration settings for token storage."""
+
+    model_config = SettingsConfigDict(env_prefix="REDIS__")
+
+    url: str = Field(
+        default="redis://localhost:6379/0",
+        description="Redis connection URL",
+    )
+    enabled: bool = Field(
+        default=False,
+        description="Enable Redis for token storage (uses in-memory if disabled)",
+    )
+    token_ttl: int = Field(
+        default=604800,
+        ge=60,
+        description="Default token TTL in seconds (7 days)",
+    )
 
 
 class ObservabilitySettings(BaseSettings):
@@ -94,6 +123,7 @@ class Settings(BaseSettings):
     # Nested settings
     database: Annotated[DatabaseSettings, Field(default_factory=DatabaseSettings)]
     security: Annotated[SecuritySettings, Field(default_factory=SecuritySettings)]
+    redis: Annotated[RedisSettings, Field(default_factory=RedisSettings)]
     observability: Annotated[
         ObservabilitySettings, Field(default_factory=ObservabilitySettings)
     ]

@@ -1,7 +1,9 @@
 """Input sanitization utilities to prevent injection attacks."""
 
 import html
+import logging
 import re
+from enum import Enum
 from typing import Any
 
 
@@ -137,3 +139,198 @@ def strip_dangerous_chars(value: str) -> str:
         result = result.replace(char, "")
 
     return result
+
+
+# --- Extended Sanitization (api-base-improvements) ---
+
+
+class SanitizationType(str, Enum):
+    """Types of sanitization to apply.
+
+    **Feature: api-base-improvements**
+    **Validates: Requirements 7.1, 7.2**
+    """
+
+    HTML = "html"
+    SQL = "sql"
+    SHELL = "shell"
+    PATH = "path"
+    ALL = "all"
+
+
+class InputSanitizer:
+    """Comprehensive input sanitizer with logging.
+
+    **Feature: api-base-improvements**
+    **Validates: Requirements 7.1, 7.2, 7.4**
+    """
+
+    # HTML dangerous patterns
+    HTML_PATTERNS = [
+        "<script", "</script>", "javascript:", "onerror=", "onload=",
+        "onclick=", "onmouseover=", "<iframe", "<object", "<embed",
+    ]
+
+    # SQL injection patterns
+    SQL_PATTERNS = [
+        "' OR ", "' AND ", "'; DROP", "'; DELETE", "'; UPDATE",
+        "'; INSERT", "UNION SELECT", "/*", "*/", "--", "@@",
+        "EXEC ", "EXECUTE ", "xp_", "sp_",
+    ]
+
+    # Shell injection patterns
+    SHELL_PATTERNS = [
+        ";", "|", "&", "`", "$(",  "$(", "&&", "||",
+        ">", "<", ">>", "<<", "\n", "\r",
+    ]
+
+    def __init__(self, log_modifications: bool = True) -> None:
+        """Initialize sanitizer.
+
+        Args:
+            log_modifications: Whether to log when input is modified.
+        """
+        self._log_modifications = log_modifications
+        self._logger = logging.getLogger(__name__)
+
+    def sanitize(
+        self,
+        value: str,
+        types: list[SanitizationType] | None = None,
+    ) -> str:
+        """Sanitize input with specified sanitization types.
+
+        Args:
+            value: Input string to sanitize.
+            types: List of sanitization types to apply.
+
+        Returns:
+            Sanitized string.
+        """
+        if not value:
+            return value
+
+        types = types or [SanitizationType.ALL]
+        original = value
+        result = value
+
+        if SanitizationType.ALL in types or SanitizationType.HTML in types:
+            result = self.sanitize_html(result)
+
+        if SanitizationType.ALL in types or SanitizationType.SQL in types:
+            result = self.sanitize_sql(result)
+
+        if SanitizationType.ALL in types or SanitizationType.SHELL in types:
+            result = self.sanitize_shell(result)
+
+        if SanitizationType.ALL in types or SanitizationType.PATH in types:
+            result = sanitize_path(result)
+
+        if self._log_modifications and result != original:
+            self._logger.warning(
+                "Input sanitized",
+                extra={
+                    "original_length": len(original),
+                    "sanitized_length": len(result),
+                    "types": [t.value for t in types],
+                },
+            )
+
+        return result
+
+    def sanitize_html(self, value: str) -> str:
+        """Sanitize HTML/XSS patterns.
+
+        Args:
+            value: Input string.
+
+        Returns:
+            Sanitized string with HTML entities escaped.
+        """
+        if not value:
+            return value
+
+        # Escape HTML entities
+        result = html.escape(value)
+
+        # Remove dangerous patterns (case-insensitive)
+        lower_result = result.lower()
+        for pattern in self.HTML_PATTERNS:
+            if pattern.lower() in lower_result:
+                result = re.sub(
+                    re.escape(pattern),
+                    "",
+                    result,
+                    flags=re.IGNORECASE,
+                )
+                lower_result = result.lower()
+
+        return result
+
+    def sanitize_sql(self, value: str) -> str:
+        """Sanitize SQL injection patterns.
+
+        Args:
+            value: Input string.
+
+        Returns:
+            Sanitized string with SQL patterns removed.
+        """
+        if not value:
+            return value
+
+        result = value
+
+        # Remove SQL injection patterns (case-insensitive)
+        for pattern in self.SQL_PATTERNS:
+            result = re.sub(
+                re.escape(pattern),
+                "",
+                result,
+                flags=re.IGNORECASE,
+            )
+
+        return result
+
+    def sanitize_shell(self, value: str) -> str:
+        """Sanitize shell injection patterns.
+
+        Args:
+            value: Input string.
+
+        Returns:
+            Sanitized string with shell metacharacters removed.
+        """
+        if not value:
+            return value
+
+        result = value
+
+        for pattern in self.SHELL_PATTERNS:
+            result = result.replace(pattern, "")
+
+        return result
+
+    def is_safe(self, value: str, types: list[SanitizationType] | None = None) -> bool:
+        """Check if input is safe (no sanitization needed).
+
+        Args:
+            value: Input to check.
+            types: Sanitization types to check against.
+
+        Returns:
+            True if input is already safe.
+        """
+        return self.sanitize(value, types) == value
+
+
+# Module-level sanitizer instance
+_default_sanitizer: InputSanitizer | None = None
+
+
+def get_sanitizer() -> InputSanitizer:
+    """Get the default sanitizer instance."""
+    global _default_sanitizer
+    if _default_sanitizer is None:
+        _default_sanitizer = InputSanitizer()
+    return _default_sanitizer

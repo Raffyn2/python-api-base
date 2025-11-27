@@ -11,7 +11,8 @@ from my_api.adapters.api.middleware.error_handler import register_exception_hand
 from my_api.adapters.api.middleware.rate_limiter import limiter, rate_limit_exceeded_handler
 from my_api.adapters.api.middleware.request_id import RequestIDMiddleware
 from my_api.adapters.api.middleware.security_headers import SecurityHeadersMiddleware
-from my_api.adapters.api.routes import health, items
+from my_api.adapters.api.routes import auth, health, items
+from my_api.adapters.api.versioning import APIVersion, VersionConfig, VersionedRouter
 from my_api.core.config import get_settings
 from my_api.core.container import Container, lifecycle
 from my_api.infrastructure.database.session import init_database, close_database
@@ -130,6 +131,10 @@ All endpoints are prefixed with `/api/v1`.
                 "description": "Health check endpoints for liveness and readiness probes",
             },
             {
+                "name": "Authentication",
+                "description": "Authentication endpoints for login, logout, and token management",
+            },
+            {
                 "name": "Items",
                 "description": "CRUD operations for Item entities",
             },
@@ -154,8 +159,12 @@ All endpoints are prefixed with `/api/v1`.
         allow_headers=["*"],
     )
 
-    # Add security headers middleware
-    app.add_middleware(SecurityHeadersMiddleware)
+    # Add security headers middleware with CSP and Permissions-Policy
+    app.add_middleware(
+        SecurityHeadersMiddleware,
+        content_security_policy=settings.security.csp,
+        permissions_policy=settings.security.permissions_policy,
+    )
 
     # Add tracing middleware for OpenTelemetry
     app.add_middleware(
@@ -179,12 +188,19 @@ All endpoints are prefixed with `/api/v1`.
     container.wire(modules=[
         "my_api.adapters.api.routes.items",
         "my_api.adapters.api.routes.health",
+        "my_api.adapters.api.routes.auth",
     ])
     app.state.container = container
 
+    # Create versioned router for v1
+    v1_config = VersionConfig(version=APIVersion.V1, deprecated=False)
+    v1_router = VersionedRouter(version=APIVersion.V1, config=v1_config)
+    v1_router.include_router(items.router)
+    v1_router.include_router(auth.router)
+
     # Include routers
     app.include_router(health.router)
-    app.include_router(items.router, prefix="/api/v1")
+    app.include_router(v1_router.router)
 
     return app
 
