@@ -1,0 +1,151 @@
+"""Async SQLAlchemy session factory with connection pooling."""
+
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlmodel import SQLModel
+
+
+class DatabaseSession:
+    """Database session manager with async support.
+
+    Manages database connections and sessions using SQLAlchemy 2.0
+    async features with connection pooling.
+    """
+
+    def __init__(
+        self,
+        database_url: str,
+        pool_size: int = 5,
+        max_overflow: int = 10,
+        echo: bool = False,
+    ) -> None:
+        """Initialize database session manager.
+
+        Args:
+            database_url: Database connection URL.
+            pool_size: Connection pool size.
+            max_overflow: Max overflow connections.
+            echo: Echo SQL statements.
+        """
+        self._engine: AsyncEngine = create_async_engine(
+            database_url,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            echo=echo,
+            pool_pre_ping=True,
+        )
+        self._session_factory = async_sessionmaker(
+            bind=self._engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autocommit=False,
+            autoflush=False,
+        )
+
+    @property
+    def engine(self) -> AsyncEngine:
+        """Get the async engine."""
+        return self._engine
+
+    async def create_tables(self) -> None:
+        """Create all tables defined in SQLModel metadata."""
+        async with self._engine.begin() as conn:
+            await conn.run_sync(SQLModel.metadata.create_all)
+
+    async def drop_tables(self) -> None:
+        """Drop all tables defined in SQLModel metadata."""
+        async with self._engine.begin() as conn:
+            await conn.run_sync(SQLModel.metadata.drop_all)
+
+    async def close(self) -> None:
+        """Close the database engine and all connections."""
+        await self._engine.dispose()
+
+    @asynccontextmanager
+    async def session(self) -> AsyncGenerator[AsyncSession, None]:
+        """Get a database session with automatic transaction management.
+
+        Yields:
+            AsyncSession: Database session.
+
+        Raises:
+            Exception: Re-raises any exception after rollback.
+        """
+        session = self._session_factory()
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+    async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
+        """Get a database session for FastAPI dependency injection.
+
+        Yields:
+            AsyncSession: Database session.
+        """
+        async with self.session() as session:
+            yield session
+
+
+# Global database session instance (initialized in app startup)
+_db_session: DatabaseSession | None = None
+
+
+def get_database_session() -> DatabaseSession:
+    """Get the global database session manager.
+
+    Returns:
+        DatabaseSession: Database session manager.
+
+    Raises:
+        RuntimeError: If database not initialized.
+    """
+    if _db_session is None:
+        raise RuntimeError("Database not initialized. Call init_database first.")
+    return _db_session
+
+
+def init_database(
+    database_url: str,
+    pool_size: int = 5,
+    max_overflow: int = 10,
+    echo: bool = False,
+) -> DatabaseSession:
+    """Initialize the global database session manager.
+
+    Args:
+        database_url: Database connection URL.
+        pool_size: Connection pool size.
+        max_overflow: Max overflow connections.
+        echo: Echo SQL statements.
+
+    Returns:
+        DatabaseSession: Initialized database session manager.
+    """
+    global _db_session
+    _db_session = DatabaseSession(
+        database_url=database_url,
+        pool_size=pool_size,
+        max_overflow=max_overflow,
+        echo=echo,
+    )
+    return _db_session
+
+
+async def close_database() -> None:
+    """Close the global database connection."""
+    global _db_session
+    if _db_session is not None:
+        await _db_session.close()
+        _db_session = None

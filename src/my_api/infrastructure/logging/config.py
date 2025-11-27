@@ -1,0 +1,185 @@
+"""Structured logging configuration with structlog."""
+
+import logging
+import sys
+from contextvars import ContextVar
+from typing import Any
+
+import structlog
+from structlog.types import EventDict, Processor
+
+# Context variable for request ID
+request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
+
+
+def get_request_id() -> str | None:
+    """Get current request ID from context.
+    
+    Returns:
+        Request ID or None if not set.
+    """
+    return request_id_ctx.get()
+
+
+def set_request_id(request_id: str) -> None:
+    """Set request ID in context.
+    
+    Args:
+        request_id: Request ID to set.
+    """
+    request_id_ctx.set(request_id)
+
+
+def clear_request_id() -> None:
+    """Clear request ID from context."""
+    request_id_ctx.set(None)
+
+
+def add_request_id(
+    logger: logging.Logger, method_name: str, event_dict: EventDict
+) -> EventDict:
+    """Add request ID to log event.
+    
+    Args:
+        logger: Logger instance.
+        method_name: Logging method name.
+        event_dict: Event dictionary.
+        
+    Returns:
+        Updated event dictionary.
+    """
+    request_id = get_request_id()
+    if request_id:
+        event_dict["request_id"] = request_id
+    return event_dict
+
+
+# PII patterns to redact
+PII_PATTERNS = {
+    "password",
+    "secret",
+    "token",
+    "api_key",
+    "apikey",
+    "authorization",
+    "auth",
+    "credential",
+    "credit_card",
+    "ssn",
+    "social_security",
+}
+
+
+def redact_pii(
+    logger: logging.Logger, method_name: str, event_dict: EventDict
+) -> EventDict:
+    """Redact PII from log events.
+    
+    Args:
+        logger: Logger instance.
+        method_name: Logging method name.
+        event_dict: Event dictionary.
+        
+    Returns:
+        Event dictionary with PII redacted.
+    """
+    def _redact_value(key: str, value: Any) -> Any:
+        """Redact value if key matches PII pattern."""
+        key_lower = key.lower()
+        for pattern in PII_PATTERNS:
+            if pattern in key_lower:
+                return "[REDACTED]"
+        
+        if isinstance(value, dict):
+            return {k: _redact_value(k, v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [_redact_value(str(i), v) for i, v in enumerate(value)]
+        
+        return value
+    
+    return {k: _redact_value(k, v) for k, v in event_dict.items()}
+
+
+def configure_logging(
+    log_level: str = "INFO",
+    log_format: str = "json",
+    development: bool = False,
+) -> None:
+    """Configure structured logging.
+    
+    Args:
+        log_level: Logging level (DEBUG, INFO, WARNING, ERROR).
+        log_format: Output format ("json" or "console").
+        development: Enable development mode with pretty printing.
+    """
+    # Shared processors
+    shared_processors: list[Processor] = [
+        structlog.contextvars.merge_contextvars,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.add_logger_name,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        add_request_id,
+        redact_pii,
+    ]
+    
+    if development or log_format == "console":
+        # Pretty console output for development
+        processors: list[Processor] = [
+            *shared_processors,
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ]
+        formatter = structlog.stdlib.ProcessorFormatter(
+            foreign_pre_chain=shared_processors,
+            processors=[
+                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                structlog.dev.ConsoleRenderer(colors=True),
+            ],
+        )
+    else:
+        # JSON output for production
+        processors = [
+            *shared_processors,
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ]
+        formatter = structlog.stdlib.ProcessorFormatter(
+            foreign_pre_chain=shared_processors,
+            processors=[
+                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                structlog.processors.JSONRenderer(),
+            ],
+        )
+    
+    # Configure structlog
+    structlog.configure(
+        processors=processors,
+        wrapper_class=structlog.stdlib.BoundLogger,
+        context_class=dict,
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        cache_logger_on_first_use=True,
+    )
+    
+    # Configure standard logging
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+    
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
+    root_logger.addHandler(handler)
+    root_logger.setLevel(getattr(logging, log_level.upper()))
+    
+    # Reduce noise from third-party libraries
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+
+
+def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
+    """Get a structured logger.
+    
+    Args:
+        name: Logger name (defaults to caller's module).
+        
+    Returns:
+        Structured logger instance.
+    """
+    return structlog.get_logger(name)
