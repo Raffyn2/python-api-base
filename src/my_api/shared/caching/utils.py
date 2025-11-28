@@ -1,7 +1,7 @@
 """Cache utility functions.
 
-**Feature: advanced-reusability**
-**Validates: Requirements 3.5**
+**Feature: code-review-refactoring, Task 17.2: Refactor caching.py**
+**Validates: Requirements 5.5**
 """
 
 import hashlib

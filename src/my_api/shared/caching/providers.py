@@ -1,7 +1,7 @@
 """Cache provider implementations.
 
-**Feature: advanced-reusability**
-**Validates: Requirements 3.1, 3.4, 3.6, 3.7**
+**Feature: code-review-refactoring, Task 17.2: Refactor caching.py**
+**Validates: Requirements 5.5**
 """
 
 import asyncio
@@ -21,17 +21,10 @@ class InMemoryCacheProvider:
 
     Thread-safe implementation using asyncio locks.
     Uses OrderedDict for O(1) LRU operations.
-
-    **Feature: advanced-reusability**
-    **Validates: Requirements 3.1, 3.4**
     """
 
     def __init__(self, config: CacheConfig | None = None) -> None:
-        """Initialize in-memory cache.
-
-        Args:
-            config: Cache configuration. Uses defaults if not provided.
-        """
+        """Initialize in-memory cache."""
         self._config = config or CacheConfig()
         self._cache: OrderedDict[str, CacheEntry] = OrderedDict()
         self._lock = asyncio.Lock()
@@ -101,14 +94,7 @@ class InMemoryCacheProvider:
 
 
 class RedisCacheProvider:
-    """Redis-based cache with JSON serialization.
-
-    Handles connection errors gracefully by logging warnings
-    and continuing without cache (graceful degradation).
-
-    **Feature: advanced-reusability**
-    **Validates: Requirements 3.1, 3.6, 3.7**
-    """
+    """Redis-based cache with JSON serialization."""
 
     def __init__(
         self,

@@ -1,7 +1,7 @@
 """Cache configuration and entry models.
 
-**Feature: advanced-reusability**
-**Validates: Requirements 3.1, 3.2**
+**Feature: code-review-refactoring, Task 17.2: Refactor caching.py**
+**Validates: Requirements 5.5**
 """
 
 import time
@@ -40,22 +40,14 @@ class CacheEntry:
 
     @property
     def is_expired(self) -> bool:
-        """Check if this entry has expired.
-
-        Returns:
-            True if entry has expired, False otherwise.
-        """
+        """Check if this entry has expired."""
         if self.ttl is None:
             return False
         return time.time() - self.created_at > self.ttl
 
     @property
     def remaining_ttl(self) -> int | None:
-        """Get remaining TTL in seconds.
-
-        Returns:
-            Remaining seconds, 0 if expired, None if no TTL.
-        """
+        """Get remaining TTL in seconds."""
         if self.ttl is None:
             return None
         remaining = self.ttl - (time.time() - self.created_at)
