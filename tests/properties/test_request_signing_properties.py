@@ -28,8 +28,8 @@ from my_api.shared.request_signing import (
 
 @st.composite
 def secret_key_strategy(draw: st.DrawFn) -> str:
-    """Generate valid secret keys."""
-    return draw(st.text(min_size=16, max_size=64, alphabet=st.characters(
+    """Generate valid secret keys (minimum 32 bytes)."""
+    return draw(st.text(min_size=32, max_size=64, alphabet=st.characters(
         whitelist_categories=("Lu", "Ll", "Nd"),
     )))
 
@@ -607,7 +607,7 @@ class TestSignatureConfigProperties:
         **Validates: Requirements 5.5**
         """
         config = SignatureConfig(timestamp_tolerance=tolerance)
-        signer, verifier = create_signer_verifier_pair("secret_key", config)
+        signer, verifier = create_signer_verifier_pair("a" * 32, config)
 
         # Request at edge of tolerance
         edge_timestamp = int(time.time()) - (tolerance - 1)

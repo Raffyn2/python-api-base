@@ -10,10 +10,10 @@ from datetime import datetime, timezone
 import pytest
 from hypothesis import given, settings, strategies as st
 
-from my_api.shared.connection_pool.enums import ConnectionState
-from my_api.shared.connection_pool.service import (
+from my_api.shared.connection_pool import (
     BaseConnectionFactory,
     ConnectionPool,
+    ConnectionState,
     PoolConfig,
     PoolStats,
 )

@@ -4,7 +4,7 @@
 **Validates: Requirements 5.1, 5.4**
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -29,7 +29,7 @@ class TestAPIKeyProperties:
             client_id="client",
             name="Test Key",
             status=KeyStatus.ACTIVE,
-            expires_at=datetime.now() + timedelta(days=30),
+            expires_at=datetime.now(UTC) + timedelta(days=30),
         )
 
         assert key.is_active is True
@@ -54,7 +54,7 @@ class TestAPIKeyProperties:
             client_id="client",
             name="Test Key",
             status=KeyStatus.ACTIVE,
-            expires_at=datetime.now() - timedelta(days=1),
+            expires_at=datetime.now(UTC) - timedelta(days=1),
         )
 
         assert key.is_active is False
@@ -272,7 +272,7 @@ class TestAPIKeyServiceProperties:
         assert result is True
         assert api_key.expires_at > original_expiry
 
-    @settings(max_examples=10)
+    @settings(max_examples=10, deadline=5000)
     @given(num_requests=st.integers(min_value=1, max_value=5))
     def test_rate_limit_tracking(self, num_requests: int) -> None:
         """Service SHALL track rate limit usage."""

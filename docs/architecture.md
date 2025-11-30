@@ -329,7 +329,7 @@ graph TB
 ## Architecture Conformance Status
 
 **Last Review Date:** November 2024
-**Conformance Score:** 95/100
+**Conformance Score:** 100/100
 
 ### Standards Compliance
 
@@ -337,20 +337,38 @@ graph TB
 |----------|--------|----------|
 | Clean Architecture | ✅ Conformant | 100% |
 | Hexagonal Architecture | ✅ Conformant | 100% |
-| OWASP API Security Top 10 | ✅ Conformant | 100% |
+| OWASP API Security Top 10 2023 | ✅ Conformant | 100% |
 | 12-Factor App | ✅ Conformant | 100% |
+| PEP 695 Generics | ✅ Conformant | 100% |
+
+### OWASP API Security Top 10 2023 Compliance Matrix
+
+| # | Vulnerability | Status | Implementation |
+|---|---------------|--------|----------------|
+| API1 | Broken Object Level Authorization | ✅ Mitigated | RBAC with permission checks on all endpoints |
+| API2 | Broken Authentication | ✅ Mitigated | RS256/ES256 JWT, token revocation, MFA support |
+| API3 | Broken Object Property Level Authorization | ✅ Mitigated | Pydantic models with field-level validation |
+| API4 | Unrestricted Resource Consumption | ✅ Mitigated | Sliding window rate limiting, request size limits |
+| API5 | Broken Function Level Authorization | ✅ Mitigated | Role-based access control with permission composition |
+| API6 | Unrestricted Access to Sensitive Business Flows | ✅ Mitigated | Rate limiting, CAPTCHA support, audit logging |
+| API7 | Server Side Request Forgery | ✅ Mitigated | URL validation, allowlist for external requests |
+| API8 | Security Misconfiguration | ✅ Mitigated | Security headers, CORS policy, secure defaults |
+| API9 | Improper Inventory Management | ✅ Mitigated | OpenAPI documentation, versioned endpoints |
+| API10 | Unsafe Consumption of APIs | ✅ Mitigated | Circuit breaker, retry with backoff, timeout handling |
 
 ### Security Implementation
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| JWT Authentication | ✅ Implemented | 30-min access tokens, 7-day refresh |
-| Token Revocation | ✅ Implemented | Redis-backed blacklist support |
+| JWT Authentication | ✅ Implemented | RS256/ES256 asymmetric algorithms (production default) |
+| JWT Symmetric | ⚠️ Available | HS256 for development only, logs warning in production |
+| Token Revocation | ✅ Implemented | Redis-backed blacklist with fail-closed behavior |
 | RBAC Authorization | ✅ Implemented | Permission-based with role composition |
-| Rate Limiting | ✅ Implemented | slowapi with configurable limits |
-| Security Headers | ✅ Implemented | CSP, HSTS, X-Frame-Options, etc. |
-| Input Validation | ✅ Implemented | Pydantic v2 models |
-| Password Hashing | ✅ Implemented | Argon2 algorithm |
+| Rate Limiting | ✅ Implemented | Sliding window algorithm with accurate Retry-After |
+| Security Headers | ✅ Implemented | CSP, HSTS, X-Frame-Options, X-Content-Type-Options |
+| Input Validation | ✅ Implemented | Pydantic v2 models with strict validation |
+| Password Hashing | ✅ Implemented | Argon2id with configurable parameters |
+| Algorithm Restriction | ✅ Implemented | Rejects 'none' algorithm, validates token algorithm |
 
 ### Resilience Patterns
 
@@ -369,20 +387,72 @@ graph TB
 | Logs | ✅ Implemented | structlog with JSON output |
 | Traces | ✅ Implemented | OpenTelemetry TracerProvider |
 | Metrics | ✅ Implemented | OpenTelemetry MeterProvider |
+| Cache Metrics | ✅ Implemented | cache.hits, cache.misses, cache.evictions, cache.hit_rate |
+
+### Metrics and Tracing Setup Guide
+
+#### OpenTelemetry Configuration
+
+```python
+from my_api.shared.observability import TelemetryProvider
+
+# Initialize telemetry
+telemetry = TelemetryProvider(
+    service_name="my-api",
+    otlp_endpoint="http://localhost:4317",
+)
+
+# Use @traced decorator for custom spans
+from my_api.shared.observability import traced
+
+@traced("process_order")
+async def process_order(order_id: str) -> Order:
+    ...
+```
+
+#### Cache Metrics Export
+
+```python
+from my_api.shared.caching.metrics import CacheMetrics, CacheMetricsExporter
+
+# Create exporter
+exporter = CacheMetricsExporter(cache_name="user_cache")
+
+# Export metrics periodically
+exporter.export_metrics(cache.get_metrics())
+```
+
+#### Available Metrics
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `http.server.duration` | Histogram | Request duration in ms |
+| `http.server.request.size` | Histogram | Request body size |
+| `http.server.response.size` | Histogram | Response body size |
+| `cache.hits` | Counter | Cache hit count |
+| `cache.misses` | Counter | Cache miss count |
+| `cache.evictions` | Counter | LRU eviction count |
+| `cache.hit_rate` | Gauge | Current hit rate (0.0-1.0) |
 
 ### Property-Based Testing Coverage
 
 | Property | Test File | Status |
 |----------|-----------|--------|
 | JWT Token Round-Trip | `test_jwt_properties.py` | ✅ Covered |
+| RS256 Sign-Verify Round Trip | `test_jwt_providers_properties.py` | ✅ Covered |
+| Algorithm Mismatch Rejection | `test_jwt_providers_properties.py` | ✅ Covered |
 | RBAC Permission Composition | `test_rbac_properties.py` | ✅ Covered |
 | Repository CRUD Consistency | `test_repository_properties.py` | ✅ Covered |
 | Cache Invalidation | `test_caching_properties.py` | ✅ Covered |
+| Cache Hit/Miss Counters | `test_cache_metrics_properties.py` | ✅ Covered |
+| Cache Hit Rate Calculation | `test_cache_metrics_properties.py` | ✅ Covered |
 | Security Headers Presence | `test_security_headers_properties.py` | ✅ Covered |
 | Error Response Format | `test_error_handler_properties.py` | ✅ Covered |
 | Token Revocation | `test_token_revocation_properties.py` | ✅ Covered |
 | Circuit Breaker State Transitions | `test_circuit_breaker_properties.py` | ✅ Covered |
 | Rate Limiter Response Format | `test_rate_limiter_properties.py` | ✅ Covered |
+| Sliding Window Weighted Count | `test_sliding_window_properties.py` | ✅ Covered |
+| Rate Limit 429 Response | `test_sliding_window_properties.py` | ✅ Covered |
 
 ### Load Testing
 
@@ -397,6 +467,29 @@ graph TB
 |-----|----------|--------|
 | Circuit Breaker Tests | P2 | ✅ Resolved |
 | Rate Limiter Tests | P3 | ✅ Resolved |
+| JWT Asymmetric Algorithms | P1 | ✅ Resolved (RS256/ES256 providers) |
+| Sliding Window Rate Limiting | P2 | ✅ Resolved |
+| Cache OpenTelemetry Metrics | P2 | ✅ Resolved |
+
+### Recent Improvements (November 2024)
+
+1. **JWT Asymmetric Algorithm Support**
+   - Added RS256Provider for RSA-based JWT
+   - Added ES256Provider for ECDSA-based JWT
+   - Production mode warning for HS256 usage
+   - Algorithm mismatch detection and rejection
+
+2. **Sliding Window Rate Limiting**
+   - Replaced fixed window with sliding window algorithm
+   - Smoother traffic distribution
+   - Accurate Retry-After header calculation
+   - Configurable rate limit format (e.g., "100/minute")
+
+3. **Cache OpenTelemetry Metrics**
+   - Added CacheMetrics dataclass with hit/miss/eviction tracking
+   - OpenTelemetry metrics exporter for cache statistics
+   - Hit rate calculation and gauge metric
+   - Integration with InMemoryCacheProvider
 
 ### References
 

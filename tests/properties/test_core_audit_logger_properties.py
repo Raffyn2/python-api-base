@@ -263,23 +263,26 @@ class TestSecurityEventSerialization:
         event = SecurityEvent(
             event_type=SecurityEventType.AUTH_SUCCESS,
             timestamp=datetime.now(timezone.utc),
+            correlation_id="test-correlation-id",
             client_ip="192.168.1.1",
             user_id="user123",
         )
-        
+
         result = event.to_dict()
-        
+
         assert result["event_type"] == "AUTH_SUCCESS"
         assert "timestamp" in result
         assert result["client_ip"] == "192.168.1.1"
         assert result["user_id"] == "user123"
+        assert result["correlation_id"] == "test-correlation-id"
 
     def test_security_event_immutable(self):
         """SecurityEvent SHALL be immutable."""
         event = SecurityEvent(
             event_type=SecurityEventType.AUTH_SUCCESS,
             timestamp=datetime.now(timezone.utc),
+            correlation_id="test-correlation-id",
         )
-        
+
         with pytest.raises(Exception):  # FrozenInstanceError
             event.event_type = SecurityEventType.AUTH_FAILURE
