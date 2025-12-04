@@ -224,7 +224,7 @@ O Python API Base é um framework REST API enterprise-grade que acelera o desenv
 ```
 ┌─────────────────────────────────────┐
 │           Interface Layer           │
-│  (REST, GraphQL, WebSocket, CLI)    │
+│      (REST, GraphQL, CLI)           │
 ├─────────────────────────────────────┤
 │          Application Layer          │
 │    (Use Cases, Commands, Queries)   │

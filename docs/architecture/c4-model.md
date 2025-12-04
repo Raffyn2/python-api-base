@@ -11,7 +11,7 @@ graph TB
     end
     
     subgraph "Python API Base"
-        API[Python API Base<br/>REST/GraphQL/WebSocket API]
+        API[Python API Base<br/>REST/GraphQL API]
     end
     
     subgraph "Data Stores"
@@ -45,7 +45,6 @@ graph TB
         subgraph "Interface Layer"
             REST[REST API<br/>FastAPI Routers]
             GQL[GraphQL<br/>Strawberry]
-            WS[WebSocket<br/>Handlers]
             MW[Middleware Stack]
         end
         
@@ -225,9 +224,7 @@ graph TB
             DATALOADERS[DataLoaders]
         end
         
-        subgraph "WebSocket"
-            WS_HANDLERS[Handlers]
-            WS_CHAT[Chat]
+
         end
         
         subgraph "Middleware"

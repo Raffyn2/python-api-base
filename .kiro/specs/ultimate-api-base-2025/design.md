@@ -24,7 +24,6 @@ graph TB
     subgraph "Adapters Layer"
         API[FastAPI Routes]
         CLI[Typer CLI]
-        WS[WebSocket]
         GQL[GraphQL]
     end
     

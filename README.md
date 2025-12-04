@@ -92,7 +92,8 @@ Python API Base é um framework REST API reutilizável e pronto para produção,
 
 ### Infraestrutura
 
-- **PostgreSQL** - SQLAlchemy 2.0 + Alembic migrations
+- **PostgreSQL** - SQLAlchemy 2.0 + Alembic migrations (banco relacional)
+- **ScyllaDB/Cassandra** - Banco NoSQL de alta performance para dados distribuídos
 - **Redis** - Cache + Token storage
 - **Elasticsearch** - Full-text search
 - **Kafka** - Event streaming
@@ -108,7 +109,7 @@ O projeto implementa Clean Architecture com 5 camadas principais:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        INTERFACE LAYER                          │
-│  (FastAPI Routers, Middleware, GraphQL, WebSocket, Versioning)  │
+│      (FastAPI Routers, Middleware, GraphQL, Versioning)         │
 ├─────────────────────────────────────────────────────────────────┤
 │                       APPLICATION LAYER                         │
 │    (Use Cases, Commands, Queries, DTOs, Mappers, Services)      │
@@ -1241,11 +1242,31 @@ uv run api-cli --help
 
 | Categoria | Tecnologia | Uso |
 |-----------|------------|-----|
-| Database | PostgreSQL | Banco principal |
+| Database Relacional | PostgreSQL | Banco principal (ACID, transações) |
+| Database NoSQL | ScyllaDB/Cassandra | Alta performance, dados distribuídos, time-series |
 | ORM Async | asyncpg | Driver async PostgreSQL |
 | Cache | Redis | Cache, tokens, rate limit |
 | Search | Elasticsearch | Full-text search |
-| NoSQL | ScyllaDB | Alta performance (opcional) |
+
+#### Banco Não Relacional (ScyllaDB)
+
+ScyllaDB é utilizado para cenários que exigem:
+- Alta taxa de escrita (logs, eventos, métricas)
+- Dados distribuídos geograficamente
+- Time-series data
+- Escalabilidade horizontal
+
+```python
+from infrastructure.scylladb import ScyllaDBRepository
+
+# Configuração via variáveis de ambiente
+# SCYLLADB__HOSTS=["localhost:9042"]
+# SCYLLADB__KEYSPACE=my_keyspace
+
+repo = ScyllaDBRepository(entity_class=EventLog)
+await repo.insert(event)
+events = await repo.find_by_partition("user_123")
+```
 
 ### Messaging & Events
 

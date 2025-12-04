@@ -11,7 +11,6 @@ graph TB
     subgraph "Interface Layer"
         API[FastAPI Routers]
         GQL[GraphQL]
-        WS[WebSocket]
         MW[Middleware Stack]
     end
     
@@ -295,7 +294,7 @@ class Bulkhead:
 
 ### 5. Interface Layer
 
-Exposição da API via HTTP, GraphQL e WebSocket.
+Exposição da API via HTTP e GraphQL.
 
 ```
 src/interface/
@@ -315,8 +314,6 @@ src/interface/
 ├── v2/                 # API v2
 ├── versioning/         # Version management
 │   └── strategies.py
-├── websocket/          # WebSocket
-│   └── handlers.py
 ├── dependencies.py     # FastAPI dependencies
 ├── openapi.py          # OpenAPI customization
 ├── router.py           # Main router

@@ -417,47 +417,6 @@ http_request_duration_seconds_bucket{le="1.0"} 1200
 
 ---
 
-## WebSocket
-
-### Conexão
-
-```javascript
-const ws = new WebSocket('ws://localhost:8000/ws');
-
-ws.onopen = () => {
-    ws.send(JSON.stringify({
-        type: 'subscribe',
-        channel: 'notifications'
-    }));
-};
-
-ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log(data);
-};
-```
-
-### Mensagens
-
-```json
-// Subscribe
-{
-    "type": "subscribe",
-    "channel": "notifications"
-}
-
-// Notification
-{
-    "type": "notification",
-    "data": {
-        "id": "123",
-        "message": "New item created"
-    }
-}
-```
-
----
-
 ## GraphQL
 
 ### Endpoint

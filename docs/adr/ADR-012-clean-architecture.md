@@ -20,7 +20,7 @@ We implement Clean Architecture with 5 layers:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        INTERFACE LAYER                          │
-│  (FastAPI Routers, Middleware, GraphQL, WebSocket, Versioning)  │
+│      (FastAPI Routers, Middleware, GraphQL, Versioning)         │
 ├─────────────────────────────────────────────────────────────────┤
 │                       APPLICATION LAYER                         │
 │    (Use Cases, Commands, Queries, DTOs, Mappers, Services)      │
@@ -54,7 +54,7 @@ Interface → Application → Domain ← Infrastructure
 | Domain | Business logic | Entities, Specifications |
 | Application | Use case orchestration | Commands, Queries, DTOs |
 | Infrastructure | External integrations | Database, Cache, APIs |
-| Interface | API exposure | REST, GraphQL, WebSocket |
+| Interface | API exposure | REST, GraphQL |
 
 ### Import Rules
 

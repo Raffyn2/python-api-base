@@ -19,7 +19,7 @@ Bem-vindo à documentação completa do Python API Base Framework - um framework
 📁 docs/
 ├── 📖 Core Docs          → overview.md, architecture.md, getting-started.md
 ├── 🏛️ Layers             → layers/ (core, domain, application, infrastructure, interface)
-├── 🔌 API                → api/ (REST, GraphQL, WebSocket)
+├── 🔌 API                → api/ (REST, GraphQL)
 ├── 📋 ADRs               → adr/ (Architecture Decision Records)
 ├── 🛠️ Guides             → guides/ (contributing, integration, testing)
 ├── ⚙️ Operations         → operations/ (deployment, monitoring, runbooks)
@@ -62,7 +62,7 @@ Bem-vindo à documentação completa do Python API Base Framework - um framework
 | **Domain** | Entidades, Value Objects, Specifications | [docs/layers/domain/](layers/domain/index.md) |
 | **Application** | Use Cases, CQRS, DTOs | [docs/layers/application/](layers/application/index.md) |
 | **Infrastructure** | Database, Cache, Messaging | [docs/layers/infrastructure/](layers/infrastructure/index.md) |
-| **Interface** | REST API, GraphQL, WebSocket | [docs/layers/interface/](layers/interface/index.md) |
+| **Interface** | REST API, GraphQL | [docs/layers/interface/](layers/interface/index.md) |
 
 ## Key Patterns
 

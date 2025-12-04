@@ -242,7 +242,6 @@ GraphQL is **not included** in the base architecture. To add GraphQL:
 To add other interfaces:
 
 - **gRPC**: Use `grpcio` + Protocol Buffers
-- **WebSocket**: FastAPI native support
 - **GraphQL**: Strawberry or Graphene
 - **SOAP**: Not recommended (use REST instead)
 

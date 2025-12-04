@@ -483,7 +483,6 @@ class CircuitBreaker[TConfig]:
 
 - Rotas HTTP (REST API)
 - GraphQL schema
-- WebSocket handlers
 - Middleware HTTP
 - Validação de entrada
 - Serialização de resposta
@@ -529,9 +528,6 @@ src/interface/
 ├── versioning/              # Version strategies
 │   ├── __init__.py
 │   └── strategies.py
-└── websocket/               # WebSocket
-    ├── __init__.py
-    └── handlers.py
 ```
 
 ### Componentes Principais

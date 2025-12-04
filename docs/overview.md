@@ -20,7 +20,7 @@ O **Python API Base** é um framework REST API enterprise-grade construído com 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        INTERFACE LAYER                          │
-│  (FastAPI Routers, Middleware, GraphQL, WebSocket, Versioning)  │
+│      (FastAPI Routers, Middleware, GraphQL, Versioning)         │
 ├─────────────────────────────────────────────────────────────────┤
 │                       APPLICATION LAYER                         │
 │    (Use Cases, Commands, Queries, DTOs, Mappers, Services)      │
@@ -92,8 +92,7 @@ src/
 │   ├── routes/     # Route definitions
 │   ├── v1/         # API v1 endpoints
 │   ├── v2/         # API v2 endpoints
-│   ├── versioning/ # API versioning
-│   └── websocket/  # WebSocket handlers
+│   └── versioning/ # API versioning
 │
 └── main.py         # Application entry point
 ```

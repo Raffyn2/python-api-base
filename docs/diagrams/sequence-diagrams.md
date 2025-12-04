@@ -216,37 +216,6 @@ sequenceDiagram
     BATCH-->>API: BatchResult
 ```
 
-## WebSocket Connection
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant WS as WebSocket Handler
-    participant AUTH as Auth Service
-    participant MGR as Connection Manager
-    participant PUB as Event Publisher
-    
-    C->>WS: Connect (with token)
-    WS->>AUTH: Validate token
-    AUTH-->>WS: User info
-    WS->>MGR: Register connection
-    MGR-->>WS: Connection ID
-    WS-->>C: Connected
-    
-    loop Message Loop
-        C->>WS: Send message
-        WS->>WS: Process message
-        WS->>PUB: Broadcast event
-        PUB->>MGR: Get subscribers
-        MGR-->>PUB: Connections[]
-        PUB->>C: Push to clients
-    end
-    
-    C->>WS: Disconnect
-    WS->>MGR: Unregister
-    WS-->>C: Closed
-```
-
 ## References
 
 - [Architecture Documentation](../architecture.md)

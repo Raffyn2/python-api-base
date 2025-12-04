@@ -2,7 +2,7 @@
 
 ## Overview
 
-A **Interface Layer** expõe a API via HTTP (REST), GraphQL e WebSocket, incluindo middleware, validação e serialização.
+A **Interface Layer** expõe a API via HTTP (REST) e GraphQL, incluindo middleware, validação e serialização.
 
 ## Directory Structure
 
@@ -17,8 +17,7 @@ src/interface/
 ├── middleware/              # HTTP middleware
 ├── v1/                      # API v1 endpoints
 ├── v2/                      # API v2 endpoints
-├── versioning/              # Version strategies
-└── websocket/               # WebSocket handlers
+└── versioning/              # Version strategies
 ```
 
 ## Key Components
@@ -27,7 +26,6 @@ src/interface/
 |-----------|---------------|
 | REST API | [rest-api.md](rest-api.md) |
 | GraphQL | [graphql.md](graphql.md) |
-| WebSocket | [websocket.md](websocket.md) |
 | Middleware | [middleware.md](middleware.md) |
 
 ## Dependency Rules

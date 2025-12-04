@@ -10,7 +10,6 @@ Python API Base exposes multiple API interfaces for different use cases.
 |------|-------------|---------------|
 | REST API | HTTP/JSON endpoints following RESTful principles | [REST API](rest/index.md) |
 | GraphQL | Query language for flexible data fetching | [GraphQL](graphql/index.md) |
-| WebSocket | Real-time bidirectional communication | [WebSocket](websocket/index.md) |
 | Internal | Service-to-service communication contracts | [Internal APIs](internal/index.md) |
 
 ## API Versioning

@@ -35,7 +35,7 @@ graph TD
 | **Domain** | Entities, Value Objects, Specifications | [domain/](domain/index.md) |
 | **Application** | Use Cases, CQRS, DTOs | [application/](application/index.md) |
 | **Infrastructure** | Database, Cache, Messaging | [infrastructure/](infrastructure/index.md) |
-| **Interface** | REST API, GraphQL, WebSocket | [interface/](interface/index.md) |
+| **Interface** | REST API, GraphQL | [interface/](interface/index.md) |
 
 ## Import Rules
 

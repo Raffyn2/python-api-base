@@ -90,7 +90,6 @@ src/interface/
 ├── v1/            → application/, infrastructure/auth
 ├── v2/            → application/, infrastructure/auth
 ├── graphql/       → application/
-├── websocket/     → application/
 ├── middleware/    → infrastructure/
 └── errors/        → core/errors
 ```

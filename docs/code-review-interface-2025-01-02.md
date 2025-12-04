@@ -673,8 +673,7 @@ Routes (auth):    209 LOC (2%)
 ### Longo Prazo (3-6 meses)
 
 7. Migrar GraphQL para DataLoader pattern completo
-8. Implementar subscription support (WebSocket)
-9. Adicionar API Gateway pattern (se microservices)
+8. Adicionar API Gateway pattern (se microservices)
 
 ---
 

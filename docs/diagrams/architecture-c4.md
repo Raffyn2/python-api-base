@@ -47,7 +47,6 @@ graph TB
         subgraph "Interface Layer"
             REST[REST API<br/>FastAPI Routers]
             GQL[GraphQL<br/>Strawberry]
-            WS[WebSocket<br/>Handlers]
             MW[Middleware Stack]
         end
         

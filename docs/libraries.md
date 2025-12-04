@@ -31,7 +31,6 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 
 **Configurações:**
 - HTTP/1.1 e HTTP/2
-- WebSocket support
 - Hot reload em desenvolvimento
 
 ---

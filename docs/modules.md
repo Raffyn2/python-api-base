@@ -594,14 +594,7 @@ interface/versioning/
 └── strategies.py    # URL, Header, Query versioning
 ```
 
-### 5.7 `interface.websocket`
 
-**Propósito:** WebSocket handlers.
-
-```
-interface/websocket/
-├── __init__.py
-└── handlers.py
 ```
 
 ---
@@ -614,7 +607,6 @@ graph TD
         I_MW[middleware]
         I_V1[v1]
         I_GQL[graphql]
-        I_WS[websocket]
     end
     
     subgraph "Application"
