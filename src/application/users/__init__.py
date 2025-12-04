@@ -12,21 +12,21 @@ Provides CQRS handlers for User aggregate:
 
 from .commands import CreateUserCommand, CreateUserHandler
 from .commands.dtos import (
-    UserDTO,
+    ChangeEmailDTO,
+    ChangePasswordDTO,
     CreateUserDTO,
     UpdateUserDTO,
-    ChangePasswordDTO,
-    ChangeEmailDTO,
+    UserDTO,
     UserListDTO,
 )
+from .commands.mapper import UserMapper
 from .queries import (
-    GetUserByIdQuery,
+    GetUserByEmailHandler,
     GetUserByEmailQuery,
     GetUserByIdHandler,
-    GetUserByEmailHandler,
+    GetUserByIdQuery,
 )
-from .commands.mapper import UserMapper
-from .read_model import UserReadDTO, UserListReadDTO, UserSearchResultDTO
+from .read_model import UserListReadDTO, UserReadDTO, UserSearchResultDTO
 from .read_model.projections import UserProjectionHandler, UserReadModelProjector
 
 __all__ = [

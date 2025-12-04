@@ -73,7 +73,7 @@ class JWTService:
             iat=now,
             jti=generate_ulid(),
             scopes=tuple(scopes or []),
-            token_type="access",
+            token_type="access",  # noqa: S106 - Token type, not password
         )
         token = jwt.encode(
             payload.to_dict(), self._secret_key, algorithm=self._algorithm
@@ -89,7 +89,7 @@ class JWTService:
             iat=now,
             jti=generate_ulid(),
             scopes=(),
-            token_type="refresh",
+            token_type="refresh",  # noqa: S106 - Token type, not password
         )
         token = jwt.encode(
             payload.to_dict(), self._secret_key, algorithm=self._algorithm
@@ -127,13 +127,13 @@ class JWTService:
         except JWTError as e:
             error_msg = str(e).lower()
             if "expired" in error_msg:
-                raise TokenExpiredError() from e
+                raise TokenExpiredError from e
             raise TokenInvalidError(f"Token verification failed: {e}") from e
 
         payload = TokenPayload.from_dict(data)
         now = self._time_source.now()
         if payload.exp < (now - self._clock_skew):
-            raise TokenExpiredError()
+            raise TokenExpiredError
         if expected_type and payload.token_type != expected_type:
             raise TokenInvalidError(
                 f"Expected {expected_type} token, got {payload.token_type}"

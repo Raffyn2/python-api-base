@@ -10,12 +10,12 @@ from typing import Self
 from pydantic import Field
 
 from core.base.domain.aggregate_root import AggregateRoot
-from domain.users.value_objects import Email
 from domain.users.events import (
-    UserRegisteredEvent,
     UserDeactivatedEvent,
     UserEmailChangedEvent,
+    UserRegisteredEvent,
 )
+from domain.users.value_objects import Email
 
 
 class UserAggregate(AggregateRoot[str]):

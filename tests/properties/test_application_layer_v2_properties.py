@@ -5,23 +5,20 @@
 **Validates: Requirements 1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 3.3, 5.1, 5.2, 5.3, 6.2, 7.3**
 """
 
-import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-pytest.skip('Module application.mappers not implemented', allow_module_level=True)
+pytest.skip("Module application.mappers not implemented", allow_module_level=True)
 
-from hypothesis import given, settings, HealthCheck
-from hypothesis import strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 from application.mappers.item_mapper import ItemMapper
 from application.use_cases.item_use_case import ItemUseCase
 from core.exceptions import ValidationError
 from domain.entities.item import Item, ItemCreate, ItemResponse, ItemUpdate
-
 
 # Strategies for valid item data
 valid_names = st.text(min_size=1, max_size=255).filter(lambda x: x.strip())
@@ -168,9 +165,7 @@ class TestProperty3StructuredLoggingContext:
         item = Item(name=name, price=price)
         mapper = ItemMapper()
 
-        with patch(
-            "my_app.application.mappers.item_mapper.logger"
-        ) as mock_logger:
+        with patch("my_app.application.mappers.item_mapper.logger") as mock_logger:
             mapper.to_dto(item)
 
             assert mock_logger.debug.called
@@ -199,9 +194,7 @@ class TestProperty3StructuredLoggingContext:
         mapper = ItemMapper()
         dto = mapper.to_dto(item)
 
-        with patch(
-            "my_app.application.mappers.item_mapper.logger"
-        ) as mock_logger:
+        with patch("my_app.application.mappers.item_mapper.logger") as mock_logger:
             mapper.to_entity(dto)
 
             assert mock_logger.debug.called
@@ -425,7 +418,7 @@ class TestProperty7TimestampTimezonePreservation:
         price: float,
     ) -> None:
         """Timezone-aware timestamps preserved through mapper conversion."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         item = Item(
             name=name,
             price=price,
@@ -476,6 +469,9 @@ class TestProperty8ComputedFieldExclusion:
         # Should not raise even though DTO has computed field
         back = mapper.to_entity(dto)
 
-        assert not hasattr(back, "price_with_tax") or "price_with_tax" not in back.model_fields
+        assert (
+            not hasattr(back, "price_with_tax")
+            or "price_with_tax" not in back.model_fields
+        )
         assert back.price == price
         assert back.tax == tax

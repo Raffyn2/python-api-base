@@ -8,10 +8,10 @@ For read/query operations, use read_model.users_read.dto instead.
 **Validates: Requirements 3.6**
 """
 
+import re
 from datetime import datetime
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
-import re
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class UserDTO(BaseModel):

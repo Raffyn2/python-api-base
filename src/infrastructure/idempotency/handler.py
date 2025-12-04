@@ -14,7 +14,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 from .errors import IdempotencyKeyConflictError
@@ -127,14 +127,12 @@ class IdempotencyHandler:
 
     Example:
         >>> handler = IdempotencyHandler(redis_client)
-        >>> 
         >>> # Check if request is duplicate
         >>> record = await handler.get_record(idempotency_key)
         >>> if record:
         ...     if record.request_hash != current_hash:
         ...         raise IdempotencyKeyConflictError(idempotency_key)
         ...     return record.response_body, record.status_code, True
-        >>> 
         >>> # Execute operation and store result
         >>> response = await execute_operation()
         >>> await handler.store_record(
@@ -161,7 +159,7 @@ class IdempotencyHandler:
 
     async def connect(self) -> bool:
         """Connect to Redis.
-        
+
         Returns:
             True if connected successfully.
         """
@@ -173,7 +171,7 @@ class IdempotencyHandler:
         if self._redis is not None:
             try:
                 await self._redis.close()
-            except Exception:
+            except Exception:  # noqa: S110 - Best effort cleanup
                 pass
             self._redis = None
             self._connected = False

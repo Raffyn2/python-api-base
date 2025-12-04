@@ -11,6 +11,7 @@ from typing import Any, Self
 
 from pydantic import BaseModel
 
+from domain.common.specification.specification import Specification
 from infrastructure.db.query_builder.conditions import (
     ConditionGroup,
     LogicalOperator,
@@ -18,7 +19,6 @@ from infrastructure.db.query_builder.conditions import (
     SortClause,
     SortDirection,
 )
-from domain.common.specification.specification import Specification
 
 
 @dataclass(slots=True)

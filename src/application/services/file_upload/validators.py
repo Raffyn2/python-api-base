@@ -31,7 +31,6 @@ from core.base.patterns.result import Err, Ok, Result
 
 from .models import FileValidationConfig, UploadError
 
-
 # =============================================================================
 # Magic Bytes Signatures for Content-Type Validation
 # =============================================================================

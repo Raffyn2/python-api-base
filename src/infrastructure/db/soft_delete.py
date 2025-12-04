@@ -1,9 +1,9 @@
 """Enhanced Soft Delete with cascade and restore support."""
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Protocol
-from collections.abc import Callable, Awaitable
 
 
 @dataclass

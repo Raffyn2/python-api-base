@@ -1,74 +1,180 @@
 """Unit tests for ScyllaDB repository.
 
-**Feature: enterprise-infrastructure-2025**
-**Requirement: S-004 - ScyllaDB Repository**
+**Feature: observability-infrastructure**
+**Validates: R4 - Generic ScyllaDB Repository security and functionality**
 """
 
-import pytest
+from __future__ import annotations
+
+from datetime import UTC, datetime
 from typing import ClassVar
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
+import pytest
+
 from infrastructure.scylladb.entity import ScyllaDBEntity
-from infrastructure.scylladb.repository import ScyllaDBRepository
+from infrastructure.scylladb.repository import (
+    ScyllaDBRepository,
+    _validate_identifier,
+)
 
 
-class User(ScyllaDBEntity):
-    """Test user entity."""
+class UserEntity(ScyllaDBEntity):
+    """Entity for repository tests."""
 
-    table_name: ClassVar[str] = "users"
-    partition_keys: ClassVar[list[str]] = ["id"]
-    clustering_keys: ClassVar[list[str]] = []
+    __table_name__: ClassVar[str] = "users"
+    __primary_key__: ClassVar[list[str]] = ["id"]
 
-    id: str
-    email: str
     name: str
+    email: str
+
+
+class TestValidateIdentifier:
+    """Tests for CQL identifier validation - security critical."""
+
+    def test_valid_identifier(self) -> None:
+        """Valid identifiers should pass."""
+        assert _validate_identifier("users", "table") == "users"
+        assert _validate_identifier("user_name", "column") == "user_name"
+        assert _validate_identifier("_private", "column") == "_private"
+        assert _validate_identifier("Table123", "table") == "Table123"
+
+    def test_invalid_identifier_empty(self) -> None:
+        """Empty identifier should raise ValueError."""
+        with pytest.raises(ValueError, match="Invalid CQL"):
+            _validate_identifier("", "table")
+
+    def test_invalid_identifier_starts_with_number(self) -> None:
+        """Identifier starting with number should raise ValueError."""
+        with pytest.raises(ValueError, match="Invalid CQL"):
+            _validate_identifier("123table", "table")
+
+    def test_invalid_identifier_special_chars(self) -> None:
+        """Identifier with special chars should raise ValueError."""
+        with pytest.raises(ValueError, match="Invalid CQL"):
+            _validate_identifier("user-name", "column")
+
+    def test_sql_injection_attempt_semicolon(self) -> None:
+        """SQL injection with semicolon should be rejected."""
+        with pytest.raises(ValueError, match="Invalid CQL"):
+            _validate_identifier("users; DROP TABLE users;--", "table")
+
+    def test_sql_injection_attempt_quote(self) -> None:
+        """SQL injection with quote should be rejected."""
+        with pytest.raises(ValueError, match="Invalid CQL"):
+            _validate_identifier("users' OR '1'='1", "table")
 
 
 class TestScyllaDBRepository:
     """Tests for ScyllaDBRepository."""
 
-    def test_repository_initialization(self) -> None:
-        """Test repository can be initialized."""
-        from unittest.mock import AsyncMock
+    @pytest.fixture
+    def mock_client(self) -> MagicMock:
+        """Create mock ScyllaDB client."""
+        client = MagicMock()
+        client.execute = AsyncMock(return_value=[])
+        client.prepare = AsyncMock(return_value=MagicMock())
+        return client
 
-        mock_client = AsyncMock()
-        repo = ScyllaDBRepository(User, mock_client)
+    @pytest.fixture
+    def repository(self, mock_client: MagicMock) -> ScyllaDBRepository[UserEntity]:
+        """Create repository with mock client."""
+        return ScyllaDBRepository[UserEntity](mock_client, UserEntity)
 
-        assert repo is not None
+    def test_table_name_validation(self, repository: ScyllaDBRepository) -> None:
+        """Table name should be validated."""
+        assert repository.table_name == "users"
 
-    def test_entity_table_name(self) -> None:
-        """Test entity table name."""
-        assert User.table_name == "users"
+    def test_validate_columns(self, repository: ScyllaDBRepository) -> None:
+        """Column names should be validated."""
+        valid = repository._validate_columns(["id", "name", "email"])
+        assert valid == ["id", "name", "email"]
 
-    def test_entity_primary_key(self) -> None:
-        """Test entity primary key."""
-        pk = User.primary_key()
-        assert "id" in pk
+    def test_validate_columns_rejects_invalid(
+        self, repository: ScyllaDBRepository
+    ) -> None:
+        """Invalid column names should raise ValueError."""
+        with pytest.raises(ValueError, match="Invalid CQL"):
+            repository._validate_columns(["id", "name; DROP TABLE", "email"])
 
-    def test_entity_creation(self) -> None:
-        """Test entity can be created."""
-        user_id = str(uuid4())
-        user = User(
-            id=user_id,
-            email="john@example.com",
-            name="John Doe",
-        )
+    @pytest.mark.asyncio
+    async def test_create_entity(
+        self, repository: ScyllaDBRepository, mock_client: MagicMock
+    ) -> None:
+        """Create should insert entity with prepared statement."""
+        user = UserEntity(name="John", email="john@example.com")
 
-        assert user.id == user_id
-        assert user.email == "john@example.com"
-        assert user.name == "John Doe"
+        result = await repository.create(user)
 
-    def test_entity_serialization(self) -> None:
-        """Test entity serialization."""
-        user_id = str(uuid4())
-        user = User(
-            id=user_id,
-            email="john@example.com",
-            name="John Doe",
-        )
+        assert result.name == "John"
+        mock_client.prepare.assert_called()
+        mock_client.execute.assert_called()
 
-        data = user.model_dump()
+    @pytest.mark.asyncio
+    async def test_get_entity_found(
+        self, repository: ScyllaDBRepository, mock_client: MagicMock
+    ) -> None:
+        """Get should return entity when found."""
+        user_id = uuid4()
+        mock_row = MagicMock()
+        mock_row._asdict.return_value = {
+            "id": user_id,
+            "name": "John",
+            "email": "john@example.com",
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
+        }
+        mock_client.execute = AsyncMock(return_value=[mock_row])
 
-        assert data["id"] == user_id
-        assert data["email"] == "john@example.com"
-        assert data["name"] == "John Doe"
+        result = await repository.get(user_id)
+
+        assert result is not None
+        assert result.name == "John"
+
+    @pytest.mark.asyncio
+    async def test_get_entity_not_found(
+        self, repository: ScyllaDBRepository, mock_client: MagicMock
+    ) -> None:
+        """Get should return None when not found."""
+        mock_client.execute = AsyncMock(return_value=[])
+
+        result = await repository.get(uuid4())
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_delete_entity(
+        self, repository: ScyllaDBRepository, mock_client: MagicMock
+    ) -> None:
+        """Delete should execute delete statement."""
+        await repository.delete(uuid4())
+
+        mock_client.prepare.assert_called()
+        mock_client.execute.assert_called()
+
+    @pytest.mark.asyncio
+    async def test_find_all_with_limit(
+        self, repository: ScyllaDBRepository, mock_client: MagicMock
+    ) -> None:
+        """Find all should respect limit parameter."""
+        mock_client.execute = AsyncMock(return_value=[])
+
+        await repository.find_all(limit=50)
+
+        mock_client.prepare.assert_called()
+        call_args = mock_client.execute.call_args
+        assert 50 in call_args[0][1]
+
+    @pytest.mark.asyncio
+    async def test_count_entities(
+        self, repository: ScyllaDBRepository, mock_client: MagicMock
+    ) -> None:
+        """Count should return entity count."""
+        mock_row = MagicMock()
+        mock_row.count = 42
+        mock_client.execute = AsyncMock(return_value=[mock_row])
+
+        result = await repository.count()
+
+        assert result == 42

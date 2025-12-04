@@ -82,7 +82,7 @@ class DataLoader[TKey, TValue]:
 
         values = await self._batch_fn(keys)
 
-        for key, value in zip(keys, values):
+        for key, value in zip(keys, values, strict=False):
             if value is not None and self._config.cache:
                 self._cache[key] = value
 

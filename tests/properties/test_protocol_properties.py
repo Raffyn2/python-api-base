@@ -4,12 +4,11 @@
 **Validates: Requirements 1.2, 1.3**
 """
 
-from dataclasses import dataclass
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Any, Sequence
+from typing import Any
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from pydantic import BaseModel
 
 from core.protocols import (
@@ -104,9 +103,7 @@ class ValidAsyncRepository:
     async def delete(self, entity_id: Any) -> bool:
         return True
 
-    async def list_all(
-        self, skip: int = 0, limit: int = 100
-    ) -> Sequence[SampleEntity]:
+    async def list_all(self, skip: int = 0, limit: int = 100) -> Sequence[SampleEntity]:
         return []
 
 
@@ -299,9 +296,7 @@ class TestProtocolRuntimeCheckable:
         id_val=st.text(min_size=1, max_size=50),
         is_deleted=st.booleans(),
     )
-    def test_entity_protocol_composition(
-        self, id_val: str, is_deleted: bool
-    ) -> None:
+    def test_entity_protocol_composition(self, id_val: str, is_deleted: bool) -> None:
         """
         **Feature: advanced-reusability, Property 1: Protocol Runtime Checkable**
 

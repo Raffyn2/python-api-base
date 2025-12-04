@@ -1,0 +1,393 @@
+---
+# Prometheus Alerting Rules for HTTP API and Infrastructure
+#
+# **Feature: monitoring-2025**
+# **Validates: Action Items - HTTP and Infrastructure Alerts**
+#
+# Usage:
+#   Add to prometheus.yml:
+#     rule_files:
+#       - 'prometheus-alerts-http-infrastructure.yml'
+#
+# Reference:
+#   - Dashboards: grafana-dashboard-http-metrics.json, grafana-dashboard-infrastructure.json
+#   - Action Items: docs/ACTION-ITEMS-2025.md
+
+groups:
+  # =============================================================================
+  # HTTP API ALERTS
+  # =============================================================================
+  - name: http_api_performance
+    interval: 30s
+    rules:
+      # HTTP 5xx Error Rate
+      - alert: HTTP5xxErrorRateCritical
+        expr: |
+          (
+            sum(rate(http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) * 100 > 1
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+          category: availability
+          pager: "true"
+        annotations:
+          summary: "CRITICAL: High HTTP 5xx error rate"
+          description: |
+            HTTP 5xx error rate is {{ $value | humanize }}% (threshold: 1%).
+
+            **Impact:** Service degradation, user-facing errors
+            **Action:** Check application logs, database health, external services
+            **Runbook:** RB-003 (High Error Rate)
+          dashboard: "https://grafana.example.com/d/http-api-metrics"
+
+      # HTTP 4xx Error Rate
+      - alert: HTTP4xxErrorRateWarning
+        expr: |
+          (
+            sum(rate(http_requests_total{status_code=~"4.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) * 100 > 5
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+          category: errors
+        annotations:
+          summary: "High HTTP 4xx error rate"
+          description: |
+            HTTP 4xx error rate is {{ $value | humanize }}% (threshold: 5%).
+
+            **Impact:** Client errors, potential API misuse or bugs
+            **Action:** Review logs for common error patterns
+            **Runbook:** RB-003 (High Error Rate)
+
+      # HTTP Latency p99
+      - alert: HTTPLatencyP99Critical
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) * 1000 > 1000
+        for: 10m
+        labels:
+          severity: critical
+          component: api
+          category: performance
+        annotations:
+          summary: "CRITICAL: Very high HTTP latency p99"
+          description: |
+            HTTP latency p99 is {{ $value | humanize }}ms (threshold: 1000ms).
+
+            **Impact:** Degraded user experience, potential timeouts
+            **Action:** Check database queries, external service calls
+            **Runbook:** RB-005 (Slow Queries)
+
+      - alert: HTTPLatencyP99Warning
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) * 1000 > 500
+        for: 15m
+        labels:
+          severity: warning
+          component: api
+          category: performance
+        annotations:
+          summary: "High HTTP latency p99"
+          description: |
+            HTTP latency p99 is {{ $value | humanize }}ms (threshold: 500ms).
+
+            **Impact:** Slower user experience
+            **Action:** Investigate performance bottlenecks
+            **Runbook:** RB-005 (Slow Queries)
+
+      # High Traffic Spike
+      - alert: HTTPTrafficSpike
+        expr: |
+          (
+            rate(http_requests_total[5m])
+            /
+            rate(http_requests_total[1h] offset 1h)
+          ) > 3
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+          category: traffic
+        annotations:
+          summary: "Sudden HTTP traffic spike"
+          description: |
+            HTTP traffic is {{ $value | humanize }}x higher than 1 hour ago.
+
+            **Impact:** Potential service overload
+            **Action:** Check for DDoS, bot activity, or legitimate traffic increase
+
+      # Endpoint Specific Errors
+      - alert: EndpointHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status_code=~"5..",endpoint!=""}[5m])) by (endpoint)
+            /
+            sum(rate(http_requests_total{endpoint!=""}[5m])) by (endpoint)
+          ) * 100 > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+          category: errors
+        annotations:
+          summary: "High error rate on endpoint {{$labels.endpoint}}"
+          description: |
+            Endpoint {{$labels.endpoint}} has {{ $value | humanize }}% error rate.
+
+            **Impact:** Specific endpoint degradation
+            **Action:** Check endpoint logs and dependencies
+
+  # =============================================================================
+  # INFRASTRUCTURE ALERTS
+  # =============================================================================
+  - name: infrastructure_health
+    interval: 30s
+    rules:
+      # Database Connection Pool
+      - alert: DatabaseConnectionPoolCritical
+        expr: |
+          (db_pool_connections_active / db_pool_connections_max) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+          category: availability
+          pager: "true"
+        annotations:
+          summary: "CRITICAL: Database connection pool exhausted"
+          description: |
+            Database connection pool is {{ $value | humanize }}% utilized.
+
+            **Impact:** New connections failing, service degradation
+            **Action:** Kill long-running queries, increase pool size temporarily
+            **Runbook:** RB-006 (Database Pool Exhausted)
+
+      - alert: DatabaseConnectionPoolWarning
+        expr: |
+          (db_pool_connections_active / db_pool_connections_max) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+          category: capacity
+        annotations:
+          summary: "Database connection pool high utilization"
+          description: |
+            Database connection pool is {{ $value | humanize }}% utilized.
+
+            **Impact:** Risk of connection exhaustion
+            **Action:** Monitor for growth, review connection lifecycle
+
+      # Redis Connection Pool
+      - alert: RedisConnectionPoolWarning
+        expr: |
+          (redis_pool_connections_active / redis_pool_connections_max) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: cache
+          category: capacity
+        annotations:
+          summary: "Redis connection pool high utilization"
+          description: |
+            Redis connection pool is {{ $value | humanize }}% utilized.
+
+            **Impact:** Risk of cache connection failures
+            **Action:** Monitor for growth, review connection usage
+
+      # Cache Hit Rate
+      - alert: CacheHitRateLow
+        expr: |
+          (
+            sum(rate(cache_hits_total[5m]))
+            /
+            (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m])))
+          ) * 100 < 60
+        for: 15m
+        labels:
+          severity: warning
+          component: cache
+          category: performance
+        annotations:
+          summary: "Low cache hit rate"
+          description: |
+            Cache hit rate is {{ $value | humanize }}% (threshold: 60%).
+
+            **Impact:** Increased database load, slower responses
+            **Action:** Review cache strategy, check cache expiration
+
+      # Circuit Breaker Open
+      - alert: CircuitBreakerOpen
+        expr: |
+          sum(circuit_breaker_state{state="open"}) by (service) > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: resilience
+          category: availability
+          pager: "true"
+        annotations:
+          summary: "CRITICAL: Circuit breaker open for {{$labels.service}}"
+          description: |
+            Circuit breaker for {{$labels.service}} has been OPEN for 5+ minutes.
+
+            **Impact:** Service unavailable, requests failing
+            **Action:** Check service health, logs, external dependencies
+            **Runbook:** RB-004 (Circuit Breaker Open)
+
+      # Circuit Breaker Half-Open
+      - alert: CircuitBreakerHalfOpen
+        expr: |
+          sum(circuit_breaker_state{state="half_open"}) by (service) > 0
+        for: 1m
+        labels:
+          severity: info
+          component: resilience
+          category: availability
+        annotations:
+          summary: "Circuit breaker half-open for {{$labels.service}}"
+          description: |
+            Circuit breaker for {{$labels.service}} is in HALF_OPEN state.
+
+            **Impact:** Testing service recovery
+            **Action:** Monitor for successful recovery or re-opening
+
+      # Memory Usage
+      - alert: MemoryUsageCritical
+        expr: |
+          (process_resident_memory_bytes / node_memory_MemTotal_bytes) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+          category: resource
+          pager: "true"
+        annotations:
+          summary: "CRITICAL: High memory usage"
+          description: |
+            Memory usage is {{ $value | humanize }}% (threshold: 90%).
+
+            **Impact:** Risk of OOM killer, service crash
+            **Action:** Restart service, investigate memory leak
+
+      - alert: MemoryUsageWarning
+        expr: |
+          (process_resident_memory_bytes / node_memory_MemTotal_bytes) * 100 > 70
+        for: 30m
+        labels:
+          severity: info
+          component: system
+          category: resource
+        annotations:
+          summary: "High memory usage"
+          description: |
+            Memory usage is {{ $value | humanize }}% (threshold: 70%).
+
+            **Impact:** Elevated memory pressure
+            **Action:** Monitor for growth trend
+
+      # CPU Usage
+      - alert: CPUUsageHigh
+        expr: |
+          rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 15m
+        labels:
+          severity: warning
+          component: system
+          category: resource
+        annotations:
+          summary: "High CPU usage"
+          description: |
+            CPU usage is {{ $value | humanize }}% (threshold: 80%).
+
+            **Impact:** Degraded performance
+            **Action:** Check for CPU-intensive operations, consider scaling
+
+      # Database Connection Wait Time
+      - alert: DatabaseConnectionWaitTimeHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(db_pool_wait_time_seconds_bucket[5m])) by (le)
+          ) * 1000 > 100
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+          category: performance
+        annotations:
+          summary: "High database connection wait time"
+          description: |
+            Database connection wait time p95 is {{ $value | humanize }}ms.
+
+            **Impact:** Delays in acquiring database connections
+            **Action:** Increase pool size or optimize connection usage
+
+  # =============================================================================
+  # HEALTH CHECK ALERTS
+  # =============================================================================
+  - name: health_checks
+    interval: 30s
+    rules:
+      - alert: HealthCheckFailing
+        expr: |
+          up{job="api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: health
+          category: availability
+          pager: "true"
+        annotations:
+          summary: "CRITICAL: Health check failing"
+          description: |
+            Health check endpoint /ready is failing.
+
+            **Impact:** Service unavailable
+            **Action:** Check service logs, database, dependencies
+            **Runbook:** RB-002 (Service Down)
+
+      - alert: ReadinessCheckFailing
+        expr: |
+          probe_success{job="blackbox",target="/ready"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: health
+          category: availability
+          pager: "true"
+        annotations:
+          summary: "CRITICAL: Readiness check failing"
+          description: |
+            Readiness check /ready is failing.
+
+            **Impact:** Service not ready to serve traffic
+            **Action:** Check database connectivity, dependencies
+
+---
+# Testing Instructions:
+#
+# 1. Validate syntax:
+#    promtool check rules prometheus-alerts-http-infrastructure.yml
+#
+# 2. Test specific alert:
+#    # Simulate high error rate
+#    curl -X POST http://localhost:8000/api/v1/test/error-500
+#
+# 3. Check alert state:
+#    curl http://prometheus:9090/api/v1/alerts | jq '.data.alerts'
+#
+# 4. Integration with AlertManager:
+#    # Verify routing
+#    amtool config routes test \
+#      --config.file=alertmanager-config.yml \
+#      severity=critical component=api

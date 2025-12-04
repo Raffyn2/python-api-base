@@ -11,10 +11,10 @@ Provides:
 """
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
-from collections.abc import Callable
 
 
 class CORSCredentials(str, Enum):

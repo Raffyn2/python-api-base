@@ -1,0 +1,356 @@
+---
+# Prometheus Alerting Rules for Database Query Performance
+#
+# **Feature: performance-monitoring-2025**
+# **Validates: Action Items - Prometheus Alerting Configuration**
+#
+# Usage:
+#   Add to prometheus.yml:
+#     rule_files:
+#       - 'prometheus-alerts-database.yml'
+#
+# Reference:
+#   - Runbook: docs/runbooks/RUNBOOK-001-incident-response.md
+#   - Dashboard: deployments/monitoring/grafana-dashboard-database-queries.json
+#   - Metrics: src/infrastructure/db/middleware/query_timing_prometheus.py
+
+groups:
+  - name: database_query_performance
+    interval: 30s
+    rules:
+      # =============================================================================
+      # SLOW QUERY RATE ALERTS
+      # =============================================================================
+
+      - alert: SlowQueryRateWarning
+        expr: |
+          (
+            sum(rate(db_slow_queries_total[5m]))
+            /
+            sum(rate(db_queries_total[5m]))
+          ) * 100 > 5
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+          category: performance
+        annotations:
+          summary: "High slow query rate detected"
+          description: |
+            Slow query rate is {{ $value | humanize }}% (threshold: 5%).
+            This indicates queries are taking longer than {{ $labels.threshold }}ms.
+
+            **Impact:** Degraded application performance
+            **Action:** Investigate slow queries in logs
+            **Runbook:** RB-005 (Slow Queries)
+          dashboard: "https://grafana.example.com/d/database-query-performance"
+          runbook: "docs/runbooks/RUNBOOK-001-incident-response.md#rb-005-slow-queries"
+
+      - alert: SlowQueryRateCritical
+        expr: |
+          (
+            sum(rate(db_slow_queries_total[5m]))
+            /
+            sum(rate(db_queries_total[5m]))
+          ) * 100 > 10
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+          category: performance
+          pager: "true"
+        annotations:
+          summary: "CRITICAL: Very high slow query rate"
+          description: |
+            Slow query rate is {{ $value | humanize }}% (threshold: 10%).
+            Immediate action required - application severely degraded.
+
+            **Impact:** Major performance degradation
+            **Action:** Identify and kill long-running queries, add indexes
+            **Runbook:** RB-005 (Slow Queries)
+          dashboard: "https://grafana.example.com/d/database-query-performance"
+          runbook: "docs/runbooks/RUNBOOK-001-incident-response.md#rb-005-slow-queries"
+
+      # =============================================================================
+      # QUERY LATENCY ALERTS (p99)
+      # =============================================================================
+
+      - alert: QueryLatencyP99Warning
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(db_query_duration_seconds_bucket[5m])) by (le)
+          ) * 1000 > 500
+        for: 15m
+        labels:
+          severity: warning
+          component: database
+          category: performance
+        annotations:
+          summary: "High query latency p99 detected"
+          description: |
+            Query latency p99 is {{ $value | humanize }}ms (threshold: 500ms).
+            99% of queries are slower than expected.
+
+            **Impact:** Slower user experience
+            **Action:** Review query execution plans, check for missing indexes
+            **Runbook:** RB-005 (Slow Queries)
+          dashboard: "https://grafana.example.com/d/database-query-performance"
+          runbook: "docs/runbooks/RUNBOOK-001-incident-response.md#rb-005-slow-queries"
+
+      - alert: QueryLatencyP99Critical
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(db_query_duration_seconds_bucket[5m])) by (le)
+          ) * 1000 > 1000
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+          category: performance
+          pager: "true"
+        annotations:
+          summary: "CRITICAL: Very high query latency p99"
+          description: |
+            Query latency p99 is {{ $value | humanize }}ms (threshold: 1000ms).
+            Immediate optimization required.
+
+            **Impact:** Severe performance degradation, timeouts likely
+            **Action:** Kill slow queries, emergency optimization
+            **Runbook:** RB-005 (Slow Queries)
+          dashboard: "https://grafana.example.com/d/database-query-performance"
+          runbook: "docs/runbooks/RUNBOOK-001-incident-response.md#rb-005-slow-queries"
+
+      # =============================================================================
+      # QUERY LATENCY BY TYPE (p95)
+      # =============================================================================
+
+      - alert: SelectQueryLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(db_query_duration_seconds_bucket{query_type="SELECT"}[5m])) by (le)
+          ) * 1000 > 300
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+          category: performance
+          query_type: SELECT
+        annotations:
+          summary: "High SELECT query latency detected"
+          description: |
+            SELECT query latency p95 is {{ $value | humanize }}ms (threshold: 300ms).
+
+            **Impact:** Slow read operations
+            **Action:** Optimize SELECT queries, add read replicas
+            **Runbook:** RB-005 (Slow Queries)
+
+      - alert: InsertUpdateQueryLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(db_query_duration_seconds_bucket{query_type=~"INSERT|UPDATE"}[5m])) by (le, query_type)
+          ) * 1000 > 500
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+          category: performance
+        annotations:
+          summary: "High {{ $labels.query_type }} query latency detected"
+          description: |
+            {{ $labels.query_type }} query latency p95 is {{ $value | humanize }}ms (threshold: 500ms).
+
+            **Impact:** Slow write operations
+            **Action:** Check for lock contention, optimize indexes
+            **Runbook:** RB-005 (Slow Queries)
+
+      # =============================================================================
+      # QUERY RATE ANOMALIES
+      # =============================================================================
+
+      - alert: QueryRateSpike
+        expr: |
+          (
+            rate(db_queries_total[5m])
+            /
+            rate(db_queries_total[1h] offset 1h)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+          category: traffic
+        annotations:
+          summary: "Sudden spike in query rate"
+          description: |
+            Query rate is {{ $value | humanize }}x higher than 1 hour ago.
+            Current: {{ with query "sum(rate(db_queries_total[5m]))" }}{{ . | first | value | humanize }}{{ end }} qps
+
+            **Impact:** Potential database overload
+            **Action:** Check for traffic spike, runaway queries, or bot activity
+            **Runbook:** RB-003 (High Error Rate)
+
+      - alert: QueryRateDrop
+        expr: |
+          (
+            rate(db_queries_total[5m])
+            /
+            rate(db_queries_total[1h] offset 1h)
+          ) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+          category: traffic
+        annotations:
+          summary: "Sudden drop in query rate"
+          description: |
+            Query rate is {{ $value | humanize }}x lower than 1 hour ago.
+            Current: {{ with query "sum(rate(db_queries_total[5m]))" }}{{ . | first | value | humanize }}{{ end }} qps
+
+            **Impact:** Possible service degradation or circuit breaker open
+            **Action:** Check service health, circuit breaker state
+            **Runbook:** RB-002 (Service Down), RB-004 (Circuit Breaker)
+
+      # =============================================================================
+      # SLOW QUERY VOLUME ALERTS
+      # =============================================================================
+
+      - alert: HighSlowQueryVolume
+        expr: |
+          sum(rate(db_slow_queries_total[5m])) > 1
+        for: 15m
+        labels:
+          severity: warning
+          component: database
+          category: performance
+        annotations:
+          summary: "High volume of slow queries"
+          description: |
+            {{ $value | humanize }} slow queries per second detected.
+
+            **Impact:** Consistent performance degradation
+            **Action:** Identify common slow query patterns and optimize
+            **Runbook:** RB-005 (Slow Queries)
+
+      - alert: SlowQueryVolumeByType
+        expr: |
+          sum by (query_type) (rate(db_slow_queries_total[5m])) > 0.5
+        for: 10m
+        labels:
+          severity: info
+          component: database
+          category: performance
+        annotations:
+          summary: "Slow {{ $labels.query_type }} queries detected"
+          description: |
+            {{ $value | humanize }} slow {{ $labels.query_type }} queries per second.
+
+            **Impact:** Degraded {{ $labels.query_type }} operations
+            **Action:** Review {{ $labels.query_type }} query patterns
+            **Runbook:** RB-005 (Slow Queries)
+
+      # =============================================================================
+      # QUERY DISTRIBUTION ANOMALIES
+      # =============================================================================
+
+      - alert: UnusualQueryDistribution
+        expr: |
+          (
+            sum by (query_type) (rate(db_queries_total[5m]))
+            /
+            sum(rate(db_queries_total[5m]))
+          ) * 100 > 80
+        for: 20m
+        labels:
+          severity: info
+          component: database
+          category: pattern
+        annotations:
+          summary: "Unusual query distribution - {{ $labels.query_type }} dominant"
+          description: |
+            {{ $labels.query_type }} queries represent {{ $value | humanize }}% of all queries.
+
+            **Impact:** Possible inefficient data access pattern
+            **Action:** Review application logic for potential N+1 queries or batch operations
+            **Runbook:** RB-005 (Slow Queries)
+
+      # =============================================================================
+      # DATABASE QUERY ERRORS (if db_query_errors_total metric exists)
+      # =============================================================================
+
+      - alert: DatabaseQueryErrors
+        expr: |
+          rate(db_query_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+          category: errors
+        annotations:
+          summary: "Database query errors detected"
+          description: |
+            {{ $value | humanize }} query errors per second.
+
+            **Impact:** Failed operations
+            **Action:** Check error logs for connection issues, constraint violations
+            **Runbook:** RB-003 (High Error Rate)
+
+      # =============================================================================
+      # QUERY TIMEOUT ALERTS (if timeout metrics exist)
+      # =============================================================================
+
+      - alert: QueryTimeouts
+        expr: |
+          rate(db_query_timeouts_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+          category: availability
+        annotations:
+          summary: "Query timeouts detected"
+          description: |
+            {{ $value | humanize }} query timeouts per second.
+
+            **Impact:** Failed requests, user-facing errors
+            **Action:** Kill long-running queries, increase timeout threshold
+            **Runbook:** RB-005 (Slow Queries)
+
+      # =============================================================================
+      # METRICS AVAILABILITY
+      # =============================================================================
+
+      - alert: DatabaseMetricsNotReporting
+        expr: |
+          absent(db_queries_total) == 1
+        for: 5m
+        labels:
+          severity: warning
+          component: monitoring
+          category: observability
+        annotations:
+          summary: "Database query metrics not reporting"
+          description: |
+            Database query metrics (db_queries_total) have not been received for 5 minutes.
+
+            **Impact:** Loss of database observability
+            **Action:** Check application health, query timing middleware installation
+            **Runbook:** RB-002 (Service Down)
+
+---
+# Example Prometheus Configuration
+#
+# Add this to your prometheus.yml:
+#
+# rule_files:
+#   - 'prometheus-alerts-database.yml'
+#
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#             - 'alertmanager:9093'
+#
+# For testing alerts:
+#   promtool check rules prometheus-alerts-database.yml
+#   promtool test rules prometheus-alerts-database-tests.yml

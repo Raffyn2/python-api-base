@@ -20,10 +20,10 @@ Usage:
     mock_service = create_typed_mock(IUserService)
 """
 
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Generic, ParamSpec, Protocol, TypeVar, cast, overload
-from unittest.mock import AsyncMock, MagicMock, Mock
+from typing import Any, Generic, ParamSpec, TypeVar, cast
+from unittest.mock import AsyncMock, MagicMock
 
 from pydantic import BaseModel
 
@@ -38,7 +38,7 @@ R = TypeVar("R")
 
 class MockRepository(IRepository[T, CreateT, UpdateT], Generic[T, CreateT, UpdateT]):
     """Configurable mock repository for testing.
-    
+
     Allows configuring return values and behaviors for each method.
     """
 
@@ -58,7 +58,7 @@ class MockRepository(IRepository[T, CreateT, UpdateT], Generic[T, CreateT, Updat
         raise_on_delete: Exception | None = None,
     ) -> None:
         """Initialize mock repository with configurable behavior.
-        
+
         Args:
             entity_type: Type of entity this repository handles.
             get_by_id_return: Value to return from get_by_id.
@@ -83,7 +83,7 @@ class MockRepository(IRepository[T, CreateT, UpdateT], Generic[T, CreateT, Updat
         self._raise_on_create = raise_on_create
         self._raise_on_update = raise_on_update
         self._raise_on_delete = raise_on_delete
-        
+
         # Track calls
         self.get_by_id_calls: list[str] = []
         self.get_all_calls: list[dict[str, Any]] = []
@@ -270,7 +270,9 @@ class MethodCallTracker(Generic[P, R]):
     def assert_called_once(self) -> None:
         """Assert that the method was called exactly once."""
         if self.call_count != 1:
-            raise AssertionError(f"Method was called {self.call_count} times, expected 1")
+            raise AssertionError(
+                f"Method was called {self.call_count} times, expected 1"
+            )
 
     def assert_called_with(self, *args: Any, **kwargs: Any) -> None:
         """Assert that the last call had the specified arguments."""
@@ -334,7 +336,7 @@ class TypedMock(Generic[T]):
         Returns:
             The mock cast to the interface type for type-safe usage.
         """
-        return cast(T, self._mock)
+        return cast("T", self._mock)
 
     @property
     def mock(self) -> MagicMock | AsyncMock:

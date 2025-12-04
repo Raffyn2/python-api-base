@@ -10,14 +10,13 @@ Tests correctness properties of tiered rate limiting including:
 **Validates: Requirements 5.4**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import asyncio
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.security.tiered_rate_limiter import (
     DEFAULT_TIER_LIMITS,
@@ -29,11 +28,9 @@ from infrastructure.security.tiered_rate_limiter import (
     UserTier,
 )
 
-
 # Strategies
 user_id_strategy = st.text(
-    min_size=1, max_size=50,
-    alphabet=st.characters(whitelist_categories=("L", "N"))
+    min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))
 )
 
 tier_strategy = st.sampled_from(list(UserTier))
@@ -262,9 +259,21 @@ class TestRateLimitConfig:
         scaled = config.scale(multiplier)
 
         # Allow for integer rounding
-        assert abs(scaled.requests_per_minute - int(config.requests_per_minute * multiplier)) <= 1
-        assert abs(scaled.requests_per_hour - int(config.requests_per_hour * multiplier)) <= 1
-        assert abs(scaled.requests_per_day - int(config.requests_per_day * multiplier)) <= 1
+        assert (
+            abs(
+                scaled.requests_per_minute
+                - int(config.requests_per_minute * multiplier)
+            )
+            <= 1
+        )
+        assert (
+            abs(scaled.requests_per_hour - int(config.requests_per_hour * multiplier))
+            <= 1
+        )
+        assert (
+            abs(scaled.requests_per_day - int(config.requests_per_day * multiplier))
+            <= 1
+        )
 
 
 class TestInMemoryStore:
@@ -288,7 +297,9 @@ class TestInMemoryStore:
     @given(
         key=st.text(min_size=1, max_size=50),
         window=st.integers(min_value=1, max_value=3600),
-        increments=st.lists(st.integers(min_value=1, max_value=10), min_size=1, max_size=10),
+        increments=st.lists(
+            st.integers(min_value=1, max_value=10), min_size=1, max_size=10
+        ),
     )
     @settings(max_examples=50)
     def test_increment_accumulates(
@@ -349,11 +360,7 @@ class TestTieredRateLimiterBuilder:
         *For any* limits, builder sets them correctly.
         **Validates: Requirements 5.4**
         """
-        limiter = (
-            TieredRateLimiterBuilder()
-            .with_free_tier(minute, hour, day)
-            .build()
-        )
+        limiter = TieredRateLimiterBuilder().with_free_tier(minute, hour, day).build()
 
         config = limiter.get_config(UserTier.FREE)
 
@@ -375,9 +382,7 @@ class TestTieredRateLimiterBuilder:
         **Validates: Requirements 5.4**
         """
         limiter = (
-            TieredRateLimiterBuilder()
-            .with_endpoint_cost(endpoint, multiplier)
-            .build()
+            TieredRateLimiterBuilder().with_endpoint_cost(endpoint, multiplier).build()
         )
 
         assert endpoint in limiter.endpoint_multipliers
@@ -399,9 +404,7 @@ class TestEndpointCosts:
         **Validates: Requirements 5.4**
         """
         limiter = (
-            TieredRateLimiterBuilder()
-            .with_endpoint_cost("/api/expensive", 5.0)
-            .build()
+            TieredRateLimiterBuilder().with_endpoint_cost("/api/expensive", 5.0).build()
         )
 
         # Record normal request
@@ -409,7 +412,9 @@ class TestEndpointCosts:
 
         # Record expensive request
         info2 = asyncio.run(
-            limiter.record_request(f"{user_id}_expensive", tier, endpoint="/api/expensive")
+            limiter.record_request(
+                f"{user_id}_expensive", tier, endpoint="/api/expensive"
+            )
         )
 
         # Expensive endpoint should have consumed more

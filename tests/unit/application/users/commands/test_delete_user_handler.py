@@ -4,13 +4,13 @@
 **Validates: Requirements DeleteUserHandler correctness**
 """
 
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 
 from application.users.commands.delete_user import DeleteUserCommand, DeleteUserHandler
 from domain.users.aggregates import UserAggregate
 from domain.users.repositories import IUserRepository
-from core.base.patterns.result import Ok, Err
 
 
 class TestDeleteUserHandler:
@@ -104,8 +104,7 @@ class TestDeleteUserHandler:
 
         # Assert
         assert result.is_err()
-        error = result.unwrap_err()
-        assert "not found" in str(error).lower()
+        assert "not found" in str(result.error).lower()
 
         # Should not attempt to save
         mock_repository.save.assert_not_called()
@@ -208,5 +207,4 @@ class TestDeleteUserHandler:
 
         # Assert
         assert result.is_err()
-        error = result.unwrap_err()
-        assert "Database write failed" in str(error)
+        assert "Database write failed" in str(result.error)

@@ -5,6 +5,7 @@
 """
 
 import pytest
+
 pytest.skip("Module application.examples.dtos not implemented", allow_module_level=True)
 from fastapi.testclient import TestClient
 
@@ -58,9 +59,7 @@ class TestTokenRevocationFlow:
         data = response.json()
         assert data["id"] == "user"
 
-    def test_logout_revokes_refresh_token(
-        self, client: TestClient, auth_tokens: dict
-    ):
+    def test_logout_revokes_refresh_token(self, client: TestClient, auth_tokens: dict):
         """Logout should revoke the refresh token."""
         # Logout
         response = client.post(
@@ -77,9 +76,7 @@ class TestTokenRevocationFlow:
         assert response.status_code == 401
         assert "revoked" in response.json()["detail"].lower()
 
-    def test_revoke_endpoint_revokes_token(
-        self, client: TestClient, auth_tokens: dict
-    ):
+    def test_revoke_endpoint_revokes_token(self, client: TestClient, auth_tokens: dict):
         """Revoke endpoint should invalidate the token."""
         # Revoke the refresh token
         response = client.post(
@@ -177,4 +174,7 @@ class TestTokenRevocationFlow:
             json={"token": auth_tokens["refresh_token"]},
         )
         assert response.status_code == 200
-        assert "not found" in response.json()["message"].lower() or "revoked" in response.json()["message"].lower()
+        assert (
+            "not found" in response.json()["message"].lower()
+            or "revoked" in response.json()["message"].lower()
+        )

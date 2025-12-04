@@ -8,7 +8,6 @@ import re
 from pathlib import Path
 
 import pytest
-from hypothesis import given, strategies as st, settings
 
 # Get docs path
 DOCS_PATH = Path(__file__).parent.parent.parent / "docs"
@@ -44,7 +43,9 @@ class TestLayerDocumentationCompleteness:
         content = index_path.read_text(encoding="utf-8")
 
         for section in self.REQUIRED_SECTIONS:
-            assert section in content, f"Missing section '{section}' in {layer} layer docs"
+            assert section in content, (
+                f"Missing section '{section}' in {layer} layer docs"
+            )
 
 
 class TestADRStructureCompliance:
@@ -69,7 +70,12 @@ class TestADRStructureCompliance:
 
     @pytest.mark.parametrize(
         "adr_file",
-        [f for f in (Path(__file__).parent.parent.parent / "docs" / "adr").glob("ADR-*.md")]
+        [
+            f
+            for f in (Path(__file__).parent.parent.parent / "docs" / "adr").glob(
+                "ADR-*.md"
+            )
+        ]
         if (Path(__file__).parent.parent.parent / "docs" / "adr").exists()
         else [],
         ids=lambda f: f.name,
@@ -115,10 +121,14 @@ class TestRunbookCompleteness:
         "runbook_file",
         [
             f
-            for f in (Path(__file__).parent.parent.parent / "docs" / "operations" / "runbooks").glob("*.md")
+            for f in (
+                Path(__file__).parent.parent.parent / "docs" / "operations" / "runbooks"
+            ).glob("*.md")
             if f.name != "README.md"
         ]
-        if (Path(__file__).parent.parent.parent / "docs" / "operations" / "runbooks").exists()
+        if (
+            Path(__file__).parent.parent.parent / "docs" / "operations" / "runbooks"
+        ).exists()
         else [],
         ids=lambda f: f.name,
     )
@@ -127,16 +137,22 @@ class TestRunbookCompleteness:
         content = runbook_file.read_text(encoding="utf-8")
 
         for metadata in self.REQUIRED_METADATA:
-            assert metadata in content, f"Missing metadata '{metadata}' in {runbook_file.name}"
+            assert metadata in content, (
+                f"Missing metadata '{metadata}' in {runbook_file.name}"
+            )
 
     @pytest.mark.parametrize(
         "runbook_file",
         [
             f
-            for f in (Path(__file__).parent.parent.parent / "docs" / "operations" / "runbooks").glob("*.md")
+            for f in (
+                Path(__file__).parent.parent.parent / "docs" / "operations" / "runbooks"
+            ).glob("*.md")
             if f.name != "README.md"
         ]
-        if (Path(__file__).parent.parent.parent / "docs" / "operations" / "runbooks").exists()
+        if (
+            Path(__file__).parent.parent.parent / "docs" / "operations" / "runbooks"
+        ).exists()
         else [],
         ids=lambda f: f.name,
     )
@@ -145,7 +161,9 @@ class TestRunbookCompleteness:
         content = runbook_file.read_text(encoding="utf-8")
 
         for section in self.REQUIRED_SECTIONS:
-            assert section in content, f"Missing section '{section}' in {runbook_file.name}"
+            assert section in content, (
+                f"Missing section '{section}' in {runbook_file.name}"
+            )
 
 
 class TestDocumentationLinks:
@@ -170,4 +188,6 @@ class TestDocumentationLinks:
 
         # Allow some broken links during development
         if broken_links:
-            pytest.skip(f"Found {len(broken_links)} broken links (expected during development)")
+            pytest.skip(
+                f"Found {len(broken_links)} broken links (expected during development)"
+            )

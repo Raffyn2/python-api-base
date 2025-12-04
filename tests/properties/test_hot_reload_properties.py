@@ -4,16 +4,14 @@
 **Validates: Requirements 17.2, 17.3, 18.1, 18.2**
 """
 
-
 import pytest
-pytest.skip('Module core.shared.hot_reload not implemented', allow_module_level=True)
 
-import os
+pytest.skip("Module core.shared.hot_reload not implemented", allow_module_level=True)
+
 import tempfile
 from pathlib import Path
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.shared.hot_reload import (
     FileChange,
@@ -46,17 +44,27 @@ class TestFileHasherProperties:
         path.unlink()
 
     @settings(max_examples=20)
-    @given(content=st.text(min_size=1, max_size=100, alphabet=st.characters(whitelist_categories=("L", "N", "P"))))
+    @given(
+        content=st.text(
+            min_size=1,
+            max_size=100,
+            alphabet=st.characters(whitelist_categories=("L", "N", "P")),
+        )
+    )
     def test_different_content_produces_different_hash(self, content: str) -> None:
         """Different content SHALL produce different hashes."""
         hasher = FileHasher()
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f1:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False, encoding="utf-8"
+        ) as f1:
             f1.write(content)
             f1.flush()
             path1 = Path(f1.name)
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f2:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False, encoding="utf-8"
+        ) as f2:
             f2.write(content + "_modified")
             f2.flush()
             path2 = Path(f2.name)

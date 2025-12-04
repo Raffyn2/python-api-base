@@ -11,7 +11,6 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -79,7 +78,7 @@ class RetryMiddleware:
         delay = min(delay, self._config.max_delay)
 
         if self._config.jitter:
-            delay *= 0.5 + random.random()
+            delay *= 0.5 + random.random()  # noqa: S311 - Jitter for load distribution
 
         return delay
 

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-pytest.skip('Module core.shared.fuzzing not implemented', allow_module_level=True)
+pytest.skip("Module core.shared.fuzzing not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -20,7 +20,6 @@ from core.shared.fuzzing import (
     CrashType,
     FuzzingConfig,
     FuzzInput,
-    Fuzzer,
 )
 
 

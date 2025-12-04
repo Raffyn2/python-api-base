@@ -15,20 +15,14 @@ from datetime import timedelta
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from hypothesis import given, settings, assume, HealthCheck
-from hypothesis import strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 from jose import jwt
 
 from infrastructure.auth.jwt import (
-    RS256Provider,
     JWKSService,
+    RS256Provider,
     generate_kid_from_public_key,
 )
-from infrastructure.auth.jwt.jwks import (
-    create_jwk_from_rsa_public_key,
-    extract_public_key_from_private,
-)
-
 
 # === Test Fixtures ===
 
@@ -39,19 +33,19 @@ def generate_rsa_key_pair() -> tuple[str, str]:
         public_exponent=65537,
         key_size=2048,
     )
-    
+
     private_pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.NoEncryption(),
     ).decode()
-    
+
     public_key = private_key.public_key()
     public_pem = public_key.public_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     ).decode()
-    
+
     return private_pem, public_pem
 
 
@@ -119,10 +113,10 @@ class TestJWTRS256AlgorithmEnforcement:
         """
         # Sign a token
         token = rs256_provider.sign({"sub": user_id, "roles": roles})
-        
+
         # Get unverified header
         header = jwt.get_unverified_header(token)
-        
+
         # Verify algorithm is RS256
         assert header["alg"] == "RS256", f"Expected RS256, got {header['alg']}"
 
@@ -142,11 +136,11 @@ class TestJWTRS256AlgorithmEnforcement:
         """
         token = rs256_provider.sign({"sub": user_id})
         header = jwt.get_unverified_header(token)
-        
+
         # Verify kid is present
         assert "kid" in header, "Token header must contain kid"
         assert len(header["kid"]) > 0, "kid must be non-empty"
-        
+
         # Verify kid matches provider's kid
         assert header["kid"] == rs256_provider.kid, "kid must match provider's kid"
 
@@ -176,17 +170,17 @@ class TestJWTRoundTripConsistency:
         **Validates: Requirements 7.2**
         """
         payload = {"sub": user_id, "roles": roles}
-        
+
         # Sign token
         token = rs256_provider.sign(payload)
-        
+
         # Verify token
         claims = rs256_provider.verify(token)
-        
+
         # Check original claims are preserved
         assert claims["sub"] == user_id
         assert claims["roles"] == roles
-        
+
         # Verify standard claims are present
         assert "iat" in claims
         assert "exp" in claims
@@ -209,10 +203,10 @@ class TestJWTRoundTripConsistency:
             "custom_field": "test_value",
             "numeric_field": 42,
         }
-        
+
         token = rs256_provider.sign(custom_claims)
         claims = rs256_provider.verify(token)
-        
+
         assert claims["custom_field"] == "test_value"
         assert claims["numeric_field"] == 42
 
@@ -238,13 +232,13 @@ class TestJWTKeyRotation:
         # Generate two key pairs
         old_private, old_public = generate_rsa_key_pair()
         new_private, new_public = generate_rsa_key_pair()
-        
+
         # Create JWKS service with grace period
         jwks = JWKSService(grace_period=timedelta(hours=24))
-        
+
         # Add old key as current
         old_kid = jwks.add_key(old_public, "RS256")
-        
+
         # Sign token with old key
         old_provider = RS256Provider(
             private_key=old_private,
@@ -252,13 +246,13 @@ class TestJWTKeyRotation:
             kid=old_kid,
         )
         token = old_provider.sign({"sub": user_id})
-        
+
         # Rotate to new key
         new_kid = jwks.rotate_current_key(new_public, "RS256")
-        
+
         # Old key should still be valid in JWKS
         assert jwks.validate_kid(old_kid), "Old kid should be valid during grace period"
-        
+
         # Both keys should be in JWKS
         jwks_response = jwks.get_jwks()
         kids_in_jwks = [key.kid for key in jwks_response.keys]
@@ -285,11 +279,11 @@ class TestJWTKidValidation:
         **Validates: Requirements 20.4**
         """
         private_pem, public_pem = generate_rsa_key_pair()
-        
+
         # Create JWKS service
         jwks = JWKSService()
         jwks.add_key(public_pem, "RS256")
-        
+
         # Unknown kid should fail validation
         assert not jwks.validate_kid("unknown-kid-12345")
 
@@ -302,17 +296,17 @@ class TestJWTKidValidation:
         **Validates: Requirements 20.4, 20.6**
         """
         private_pem, public_pem = generate_rsa_key_pair()
-        
+
         # Create JWKS and add key
         jwks = JWKSService()
         kid = jwks.add_key(public_pem, "RS256")
-        
+
         # Key should be valid initially
         assert jwks.validate_kid(kid)
-        
+
         # Revoke the key
         jwks.revoke_key(kid)
-        
+
         # Key should be invalid after revocation
         assert not jwks.validate_kid(kid)
 
@@ -331,23 +325,23 @@ class TestJWKSStructure:
         **Validates: Requirements 20.2**
         """
         private_pem, public_pem = generate_rsa_key_pair()
-        
+
         jwks = JWKSService()
         kid = jwks.add_key(public_pem, "RS256")
-        
+
         response = jwks.get_jwks()
-        
+
         # Should have one key
         assert len(response.keys) == 1
-        
+
         key = response.keys[0]
-        
+
         # Verify required fields
         assert key.kty == "RSA"
         assert key.alg == "RS256"
         assert key.use == "sig"
         assert key.kid == kid
-        
+
         # Verify RSA parameters present
         assert key.n is not None
         assert key.e is not None
@@ -359,17 +353,17 @@ class TestJWKSStructure:
         **Validates: Requirements 20.2**
         """
         private_pem, public_pem = generate_rsa_key_pair()
-        
+
         jwks = JWKSService()
         jwks.add_key(public_pem, "RS256")
-        
+
         response = jwks.get_jwks()
         data = response.to_dict()
-        
+
         # Should have keys array
         assert "keys" in data
         assert isinstance(data["keys"], list)
-        
+
         # Each key should have required fields
         for key_dict in data["keys"]:
             assert "kty" in key_dict
@@ -392,10 +386,10 @@ class TestKidGeneration:
         **Validates: Requirements 20.1**
         """
         _, public_pem = generate_rsa_key_pair()
-        
+
         kid1 = generate_kid_from_public_key(public_pem)
         kid2 = generate_kid_from_public_key(public_pem)
-        
+
         assert kid1 == kid2, "kid generation must be deterministic"
 
     def test_different_keys_different_kids(self) -> None:
@@ -406,10 +400,10 @@ class TestKidGeneration:
         """
         _, public_pem1 = generate_rsa_key_pair()
         _, public_pem2 = generate_rsa_key_pair()
-        
+
         kid1 = generate_kid_from_public_key(public_pem1)
         kid2 = generate_kid_from_public_key(public_pem2)
-        
+
         assert kid1 != kid2, "Different keys must have different kids"
 
     def test_provider_kid_matches_generated(self) -> None:
@@ -419,8 +413,8 @@ class TestKidGeneration:
         **Validates: Requirements 20.1**
         """
         private_pem, public_pem = generate_rsa_key_pair()
-        
+
         provider = RS256Provider(private_key=private_pem, public_key=public_pem)
         expected_kid = generate_kid_from_public_key(public_pem)
-        
+
         assert provider.kid == expected_kid

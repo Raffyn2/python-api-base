@@ -4,7 +4,6 @@
 **Validates: Requirements 7.1, 7.2, 8.1**
 """
 
-import pytest
 from hypothesis import given, settings, strategies as st
 
 from application.services.feature_flags import (

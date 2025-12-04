@@ -33,7 +33,7 @@ class MinIOConfig:
 
     endpoint: str = "localhost:9000"
     access_key: str = "minioadmin"
-    secret_key: str = "minioadmin"
+    secret_key: str = "minioadmin"  # noqa: S105 - Default for local dev only
     bucket: str = "uploads"
     secure: bool = False
     region: str | None = None

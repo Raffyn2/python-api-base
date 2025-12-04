@@ -4,11 +4,13 @@
 **Validates: Requirements 5.4**
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
-pytest.skip('Module infrastructure.security.auto_ban not implemented', allow_module_level=True)
+pytest.skip(
+    "Module infrastructure.security.auto_ban not implemented", allow_module_level=True
+)
 
 from hypothesis import given, settings, strategies as st
 
@@ -19,15 +21,12 @@ from infrastructure.security.auto_ban import (
     BanCheckResult,
     BanRecord,
     BanStatus,
-    BanThreshold,
     InMemoryBanStore,
     Violation,
     ViolationType,
-    create_auto_ban_service,
     create_lenient_config,
     create_strict_config,
 )
-
 
 # Strategies
 violation_type_strategy = st.sampled_from(list(ViolationType))
@@ -70,7 +69,7 @@ class TestBanRecordProperties:
     @settings(max_examples=100)
     def test_active_ban_with_future_expiry(self, identifier: str) -> None:
         """Property: Ban with future expiry is active."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         ban = BanRecord(
             identifier=identifier,
             reason=ViolationType.RATE_LIMIT,
@@ -86,7 +85,7 @@ class TestBanRecordProperties:
     @settings(max_examples=100)
     def test_expired_ban_is_not_active(self, identifier: str) -> None:
         """Property: Ban with past expiry is not active."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         ban = BanRecord(
             identifier=identifier,
             reason=ViolationType.RATE_LIMIT,
@@ -101,7 +100,7 @@ class TestBanRecordProperties:
     @settings(max_examples=100)
     def test_permanent_ban_has_no_expiry(self, identifier: str) -> None:
         """Property: Permanent ban has no expiry date."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         ban = BanRecord(
             identifier=identifier,
             reason=ViolationType.ABUSE,
@@ -117,7 +116,7 @@ class TestBanRecordProperties:
     @settings(max_examples=100)
     def test_lifted_ban_is_not_active(self, identifier: str) -> None:
         """Property: Lifted ban is not active regardless of expiry."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         ban = BanRecord(
             identifier=identifier,
             reason=ViolationType.RATE_LIMIT,
@@ -162,7 +161,7 @@ class TestInMemoryBanStoreProperties:
     async def test_ban_round_trip(self, identifier: str) -> None:
         """Property: Set ban can be retrieved."""
         store = InMemoryBanStore()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         ban = BanRecord(
             identifier=identifier,
             reason=ViolationType.RATE_LIMIT,
@@ -253,7 +252,9 @@ class TestAutoBanServiceProperties:
 
         # Record violations up to threshold
         for i in range(3):
-            result = await service.record_violation(identifier, ViolationType.AUTH_FAILURE)
+            result = await service.record_violation(
+                identifier, ViolationType.AUTH_FAILURE
+            )
             if i < 2:
                 assert result.is_banned is False
             else:
@@ -396,7 +397,10 @@ class TestConfigBuilderProperties:
 
         for vtype in strict_map:
             if vtype in default_map:
-                assert strict_map[vtype].max_violations <= default_map[vtype].max_violations
+                assert (
+                    strict_map[vtype].max_violations
+                    <= default_map[vtype].max_violations
+                )
 
     def test_lenient_config_has_higher_thresholds(self) -> None:
         """Property: Lenient config has higher thresholds than default."""
@@ -408,7 +412,10 @@ class TestConfigBuilderProperties:
 
         for vtype in lenient_map:
             if vtype in default_map:
-                assert lenient_map[vtype].max_violations >= default_map[vtype].max_violations
+                assert (
+                    lenient_map[vtype].max_violations
+                    >= default_map[vtype].max_violations
+                )
 
 
 class TestBanCheckResultProperties:
@@ -424,7 +431,7 @@ class TestBanCheckResultProperties:
     @settings(max_examples=100)
     def test_banned_result_has_record(self, identifier: str) -> None:
         """Property: Banned result has ban record."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         record = BanRecord(
             identifier=identifier,
             reason=ViolationType.ABUSE,
@@ -460,6 +467,7 @@ class TestLockManagerProperties:
         the final violation count SHALL equal the sum of all individual violations.
         """
         import asyncio
+
         from infrastructure.security.auto_ban.lock_manager import InMemoryLockManager
 
         lock_manager = InMemoryLockManager()
@@ -513,9 +521,8 @@ class TestLockManagerProperties:
         When a lock acquisition times out after the specified timeout,
         the LockManager SHALL raise LockAcquisitionTimeout.
         """
-        import asyncio
-        from infrastructure.security.auto_ban.lock_manager import InMemoryLockManager
         from core.errors.exceptions import LockAcquisitionTimeout
+        from infrastructure.security.auto_ban.lock_manager import InMemoryLockManager
 
         lock_manager = InMemoryLockManager()
         identifier = "test-lock"
@@ -554,7 +561,6 @@ class TestLockManagerProperties:
         # If we get here, both acquisitions succeeded
         assert True
 
-
     @pytest.mark.anyio
     async def test_atomic_ban_check_and_update(self) -> None:
         """**Feature: shared-modules-refactoring, Property 6: Atomic Ban Check-and-Update**
@@ -582,7 +588,9 @@ class TestLockManagerProperties:
         results = []
 
         async def record_and_check() -> None:
-            result = await service.record_violation(identifier, ViolationType.RATE_LIMIT)
+            result = await service.record_violation(
+                identifier, ViolationType.RATE_LIMIT
+            )
             results.append(result)
 
         # Run concurrent violations
@@ -596,4 +604,6 @@ class TestLockManagerProperties:
         # With atomic operations, exactly one transition to banned should occur
         # after threshold (5) is reached
         assert banned_count >= 1  # At least one should see banned
-        assert not_banned_count >= 4  # At least 4 should see not banned (before threshold)
+        assert (
+            not_banned_count >= 4
+        )  # At least 4 should see not banned (before threshold)

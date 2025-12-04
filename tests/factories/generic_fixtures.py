@@ -24,7 +24,7 @@ Usage:
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Generic, TypeVar
 
@@ -33,8 +33,8 @@ from pydantic import BaseModel
 
 from application.common.base.dto import PaginatedResponse
 from application.common.base.mapper import IMapper
-from core.base.repository import IRepository, InMemoryRepository
 from application.common.base.use_case import BaseUseCase
+from core.base.repository import InMemoryRepository, IRepository
 
 # Type variables
 T = TypeVar("T", bound=BaseModel)
@@ -522,4 +522,3 @@ def create_test_context(
         update_data=update_factory(),
         entities=[entity_factory() for _ in range(count)],
     )
-

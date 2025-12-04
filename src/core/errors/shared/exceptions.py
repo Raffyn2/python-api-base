@@ -17,8 +17,6 @@ class SharedModuleError(Exception):
     to enable consistent error handling and filtering.
     """
 
-    pass
-
 
 class TaskExecutionError(SharedModuleError):
     """Error during background task execution.
@@ -51,8 +49,6 @@ class BanOperationError(SharedModuleError):
 
     Raised when ban check, record, or lift operations fail.
     """
-
-    pass
 
 
 class LockAcquisitionTimeout(SharedModuleError):
@@ -148,8 +144,6 @@ class Phase2ModuleError(SharedModuleError):
 
     All phase 2 custom exceptions should inherit from this class.
     """
-
-    pass
 
 
 class PoolInvariantViolation(Phase2ModuleError):
@@ -314,8 +308,6 @@ class EntityResolutionError(Phase2ModuleError):
 class SecurityModuleError(SharedModuleError):
     """Base exception for security module errors."""
 
-    pass
-
 
 class EncryptionError(SecurityModuleError):
     """Base encryption error with context.
@@ -348,8 +340,6 @@ class DecryptionError(EncryptionError):
     or authentication failure.
     """
 
-    pass
-
 
 class AuthenticationError(DecryptionError):
     """Authentication tag verification failed.
@@ -357,8 +347,6 @@ class AuthenticationError(DecryptionError):
     Raised when the GCM authentication tag doesn't match,
     indicating potential data tampering.
     """
-
-    pass
 
 
 class PatternValidationError(SecurityModuleError):

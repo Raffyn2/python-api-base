@@ -14,14 +14,14 @@ import httpx
 from pydantic import BaseModel
 
 from infrastructure.auth.oauth.provider import (
-    OAuthProvider,
-    OAuthConfig,
     AuthResult,
-    TokenPair,
     Credentials,
-    PasswordCredentials,
-    OAuth2Credentials,
     InvalidTokenError,
+    OAuth2Credentials,
+    OAuthConfig,
+    OAuthProvider,
+    PasswordCredentials,
+    TokenPair,
 )
 
 logger = logging.getLogger(__name__)
@@ -107,8 +107,8 @@ class Auth0Provider[TUser: BaseModel, TClaims: BaseModel](
         provider = Auth0Provider[User, Claims](
             config=Auth0Config(
                 domain="your-tenant.auth0.com",
-                client_id="client-id",
-                client_secret="secret",
+                client_id=os.environ["AUTH0_CLIENT_ID"],
+                client_secret=os.environ["AUTH0_CLIENT_SECRET"],  # noqa: S105
                 audience="https://api.example.com",
             ),
             user_type=User,
@@ -153,13 +153,12 @@ class Auth0Provider[TUser: BaseModel, TClaims: BaseModel](
         try:
             if isinstance(credentials, PasswordCredentials):
                 return await self._password_flow(credentials)
-            elif isinstance(credentials, OAuth2Credentials):
+            if isinstance(credentials, OAuth2Credentials):
                 return await self._auth_code_flow(credentials)
-            else:
-                return AuthResult.fail(
-                    "unsupported_grant_type",
-                    "Credentials type not supported",
-                )
+            return AuthResult.fail(
+                "unsupported_grant_type",
+                "Credentials type not supported",
+            )
         except httpx.HTTPError as e:
             logger.error(f"Auth0 auth error: {e}")
             return AuthResult.fail("server_error", str(e))
@@ -273,7 +272,7 @@ class Auth0Provider[TUser: BaseModel, TClaims: BaseModel](
 
             return self._parse_claims(decoded)
         except jwt.PyJWTError as e:
-            raise InvalidTokenError(f"Failed to decode token: {e}")
+            raise InvalidTokenError(f"Failed to decode token: {e}") from e
 
     async def revoke(self, token: str) -> bool:
         """Revoke refresh token."""

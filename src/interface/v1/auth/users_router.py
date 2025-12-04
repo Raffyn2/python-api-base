@@ -9,6 +9,14 @@ This file is kept for reference only and will be removed in a future version.
 """
 
 import warnings
+from datetime import UTC, datetime
+from uuid import uuid4
+
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
+
+from application.common.base.dto import ApiResponse, PaginatedResponse
+from interface.v1.auth.router import _user_roles, _users
 
 warnings.warn(
     "interface.v1.auth.users_router is deprecated. "
@@ -16,14 +24,6 @@ warnings.warn(
     DeprecationWarning,
     stacklevel=2,
 )
-
-from datetime import datetime, UTC
-from uuid import uuid4
-
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
-
-from application.common.base.dto import ApiResponse, PaginatedResponse
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -68,8 +68,7 @@ class RoleResponse(BaseModel):
 
 
 # === Mock Storage (shared with auth router) ===
-
-from interface.v1.auth.router import _users, _user_roles
+# _users and _user_roles imported at top of file from interface.v1.auth.router
 
 # Predefined roles
 _roles = {

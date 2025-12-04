@@ -4,7 +4,6 @@
 **Requirement: R5 - Prometheus Metrics**
 """
 
-import pytest
 from prometheus_client import CollectorRegistry
 
 from infrastructure.prometheus.config import PrometheusConfig

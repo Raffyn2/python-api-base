@@ -21,10 +21,10 @@ class ErrorMessages:
     # =========================================================================
     # Authentication Errors (AUTH_*)
     # =========================================================================
-    AUTH_TOKEN_EXPIRED: Final[str] = "Token has expired"
-    AUTH_TOKEN_INVALID: Final[str] = "Invalid token"
-    AUTH_TOKEN_REVOKED: Final[str] = "Token has been revoked"
-    AUTH_TOKEN_MALFORMED: Final[str] = "Token is malformed"
+    AUTH_TOKEN_EXPIRED: Final[str] = "Token has expired"  # noqa: S105
+    AUTH_TOKEN_INVALID: Final[str] = "Invalid token"  # noqa: S105
+    AUTH_TOKEN_REVOKED: Final[str] = "Token has been revoked"  # noqa: S105
+    AUTH_TOKEN_MALFORMED: Final[str] = "Token is malformed"  # noqa: S105
     AUTH_ALGORITHM_MISMATCH: Final[str] = (
         "Algorithm mismatch: expected {expected}, got {received}"
     )

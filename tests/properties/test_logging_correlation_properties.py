@@ -4,23 +4,17 @@
 **Validates: Requirements 1.2**
 """
 
-import json
-import uuid
-from io import StringIO
-from unittest.mock import patch
-
 import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import assume, given, settings, strategies as st
 
 try:
     from core.config.logging import (
+        clear_request_id,
         configure_logging,
         get_logger,
-        set_request_id,
         get_request_id,
-        clear_request_id,
         redact_pii,
+        set_request_id,
     )
 except ImportError:
     pytest.skip("my_app.core.config.logging not available", allow_module_level=True)
@@ -34,14 +28,14 @@ class TestLoggingCorrelationProperties:
     def test_correlation_id_propagates_to_logs(self, request_id: str) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 2: Structured JSON Logging with Correlation ID**
-        
+
         For any valid correlation ID set in context, the structured log output
         SHALL contain the request_id field with the exact value provided.
         **Validates: Requirements 1.2**
         """
         # Set the request ID
         set_request_id(request_id)
-        
+
         try:
             # Verify it's retrievable
             retrieved_id = get_request_id()
@@ -57,7 +51,7 @@ class TestLoggingCorrelationProperties:
         retrieve the exact value.
         """
         set_request_id(request_id)
-        
+
         try:
             retrieved = get_request_id()
             assert retrieved == request_id
@@ -72,10 +66,15 @@ class TestLoggingCorrelationProperties:
         clear_request_id()
         assert get_request_id() is None
 
-
     @settings(max_examples=20)
     @given(
-        key=st.sampled_from(["password", "secret", "token", "api_key", "authorization"]),
+        key=st.sampled_from([
+            "password",
+            "secret",
+            "token",
+            "api_key",
+            "authorization",
+        ]),
         value=st.text(min_size=1, max_size=50),
     )
     def test_pii_redaction_removes_sensitive_data(self, key: str, value: str) -> None:
@@ -84,19 +83,32 @@ class TestLoggingCorrelationProperties:
         the value with [REDACTED].
         """
         import logging
-        
+
         event_dict = {key: value, "message": "test"}
         result = redact_pii(logging.getLogger(), "info", event_dict)
-        
+
         assert result[key] == "[REDACTED]"
         assert result["message"] == "test"
 
     @settings(max_examples=20)
     @given(
-        key=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))).filter(
-            lambda x: x.lower() not in ["password", "secret", "token", "api_key", "apikey", 
-                                         "authorization", "auth", "credential", "credit_card",
-                                         "ssn", "social_security"]
+        key=st.text(
+            min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))
+        ).filter(
+            lambda x: x.lower()
+            not in [
+                "password",
+                "secret",
+                "token",
+                "api_key",
+                "apikey",
+                "authorization",
+                "auth",
+                "credential",
+                "credit_card",
+                "ssn",
+                "social_security",
+            ]
         ),
         value=st.text(min_size=1, max_size=50),
     )
@@ -106,12 +118,17 @@ class TestLoggingCorrelationProperties:
         the original value.
         """
         import logging
-        
-        assume(not any(p in key.lower() for p in ["password", "secret", "token", "api", "auth", "cred"]))
-        
+
+        assume(
+            not any(
+                p in key.lower()
+                for p in ["password", "secret", "token", "api", "auth", "cred"]
+            )
+        )
+
         event_dict = {key: value}
         result = redact_pii(logging.getLogger(), "info", event_dict)
-        
+
         assert result[key] == value
 
 

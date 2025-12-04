@@ -16,9 +16,9 @@ from .jwks_models import (
     JWK,
     JWKSResponse,
     KeyEntry,
-    generate_kid_from_public_key,
-    create_jwk_from_rsa_public_key,
     create_jwk_from_ec_public_key,
+    create_jwk_from_rsa_public_key,
+    generate_kid_from_public_key,
 )
 from .models import TokenPair, TokenPayload
 from .protocols import KidNotFoundError

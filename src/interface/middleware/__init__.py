@@ -14,20 +14,6 @@ Import individual modules directly to avoid circular imports:
 """
 
 # Security middleware
-from interface.middleware.security import (
-    CORSManager,
-    CORSPolicy,
-    SecurityHeadersMiddleware,
-)
-
-# Request processing middleware
-from interface.middleware.request import (
-    RequestIDMiddleware,
-    RequestSizeLimitMiddleware,
-    TimeoutConfig,
-    TimeoutMiddleware,
-)
-
 # Logging middleware
 from interface.middleware.logging import (
     RequestLoggerMiddleware,
@@ -47,6 +33,19 @@ from interface.middleware.production import (
     ResilienceMiddleware,
     is_feature_enabled,
     setup_production_middleware,
+)
+
+# Request processing middleware
+from interface.middleware.request import (
+    RequestIDMiddleware,
+    RequestSizeLimitMiddleware,
+    TimeoutConfig,
+    TimeoutMiddleware,
+)
+from interface.middleware.security import (
+    CORSManager,
+    CORSPolicy,
+    SecurityHeadersMiddleware,
 )
 
 __all__ = [

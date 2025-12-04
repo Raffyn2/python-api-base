@@ -6,28 +6,27 @@
 
 import pytest
 
-pytest.skip('Module core.shared.http2_config not implemented', allow_module_level=True)
+pytest.skip("Module core.shared.http2_config not implemented", allow_module_level=True)
 
-from hypothesis import given, strategies as st, assume, settings
+from hypothesis import assume, given, settings, strategies as st
 
 from core.shared.http2_config import (
+    ConnectionStats,
+    FlowController,
+    HTTP2Config,
+    HTTP2Connection,
+    HTTP3Config,
     HTTPProtocol,
+    MultiplexConfig,
+    ProtocolConfig,
     PushPriority,
     PushResource,
-    MultiplexConfig,
-    HTTP3Config,
-    HTTP2Config,
-    ProtocolConfig,
     ServerPushManager,
     StreamPrioritizer,
-    FlowController,
-    ConnectionStats,
-    HTTP2Connection,
     create_default_config,
-    get_uvicorn_http2_settings,
     get_hypercorn_http2_settings,
+    get_uvicorn_http2_settings,
 )
-
 
 # Strategies
 content_types = st.sampled_from([
@@ -42,7 +41,9 @@ content_types = st.sampled_from([
 ])
 
 paths = st.text(
-    alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="/-_."),
+    alphabet=st.characters(
+        whitelist_categories=("L", "N"), whitelist_characters="/-_."
+    ),
     min_size=1,
     max_size=100,
 ).map(lambda s: "/" + s.lstrip("/"))

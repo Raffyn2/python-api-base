@@ -4,19 +4,17 @@
 **Validates: Requirements 16.1**
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.shared.utils.datetime import ensure_utc, from_iso8601, to_iso8601, utc_now
-
 
 # Strategy for generating timezone-aware datetimes
 aware_datetimes = st.datetimes(
     min_value=datetime(1970, 1, 1),
     max_value=datetime(2100, 12, 31),
-    timezones=st.just(timezone.utc),
+    timezones=st.just(UTC),
 )
 
 
@@ -103,7 +101,7 @@ class TestDateTimeISO8601:
         """
         For any specific datetime components, round-trip SHALL preserve values.
         """
-        dt = datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc)
+        dt = datetime(year, month, day, hour, minute, second, tzinfo=UTC)
         iso_string = to_iso8601(dt)
         parsed = from_iso8601(iso_string)
 
@@ -139,7 +137,7 @@ class TestEnsureUTC:
         assert result.tzinfo is not None
 
         # Result must be in UTC
-        assert result.tzinfo == timezone.utc or result.utcoffset().total_seconds() == 0
+        assert result.tzinfo == UTC or result.utcoffset().total_seconds() == 0
 
         # Timestamp must be preserved
         assert abs(result.timestamp() - dt.timestamp()) < 0.001
@@ -176,7 +174,7 @@ class TestEnsureUTC:
         assert result.tzinfo is not None
 
         # Result must be in UTC
-        assert result.tzinfo == timezone.utc
+        assert result.tzinfo == UTC
 
         # Date/time components must be preserved (naive treated as UTC)
         assert result.year == year
@@ -212,7 +210,7 @@ class TestEnsureUTC:
         with the same components SHALL produce equivalent results from ensure_utc.
         """
         naive_dt = datetime(year, month, day, hour, minute, second)
-        explicit_utc_dt = datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc)
+        explicit_utc_dt = datetime(year, month, day, hour, minute, second, tzinfo=UTC)
 
         naive_result = ensure_utc(naive_dt)
         explicit_result = ensure_utc(explicit_utc_dt)
@@ -221,8 +219,11 @@ class TestEnsureUTC:
         assert abs(naive_result.timestamp() - explicit_result.timestamp()) < 0.001
 
         # Both should have UTC timezone
-        assert naive_result.tzinfo == timezone.utc
-        assert explicit_result.tzinfo == timezone.utc or explicit_result.utcoffset().total_seconds() == 0
+        assert naive_result.tzinfo == UTC
+        assert (
+            explicit_result.tzinfo == UTC
+            or explicit_result.utcoffset().total_seconds() == 0
+        )
 
     def test_utc_now_returns_utc_aware_datetime(self) -> None:
         """

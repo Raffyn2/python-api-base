@@ -6,31 +6,29 @@
 
 import pytest
 
-pytest.skip('Module domain.common.currency not implemented', allow_module_level=True)
+pytest.skip("Module domain.common.currency not implemented", allow_module_level=True)
 
-from hypothesis import given, strategies as st, settings
 from decimal import Decimal
 
+from hypothesis import given, settings, strategies as st
+
 from domain.common.currency import (
-    Money,
-    Currency,
-    CurrencyFormatter,
-    CurrencyConverter,
-    InMemoryExchangeRateProvider,
-    USD,
-    EUR,
     BRL,
+    EUR,
+    USD,
+    CurrencyConverter,
+    CurrencyFormatter,
+    InMemoryExchangeRateProvider,
+    Money,
 )
 
 
 @st.composite
 def money_strategy(draw: st.DrawFn) -> Money:
     """Generate valid money values."""
-    amount = draw(st.decimals(
-        min_value=Decimal("0.01"),
-        max_value=Decimal("1000000"),
-        places=2
-    ))
+    amount = draw(
+        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("1000000"), places=2)
+    )
     currency = draw(st.sampled_from([USD, EUR, BRL]))
     return Money(amount=amount, currency=currency)
 
@@ -40,7 +38,7 @@ class TestMoneyProperties:
 
     @given(
         st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
-        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2)
+        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
     )
     @settings(max_examples=100)
     def test_addition_commutative(self, a: Decimal, b: Decimal) -> None:
@@ -56,7 +54,7 @@ class TestMoneyProperties:
     @given(
         st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
         st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
-        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2)
+        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
     )
     @settings(max_examples=100)
     def test_addition_associative(self, a: Decimal, b: Decimal, c: Decimal) -> None:
@@ -82,7 +80,7 @@ class TestMoneyProperties:
 
     @given(
         st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
-        st.integers(min_value=1, max_value=100)
+        st.integers(min_value=1, max_value=100),
     )
     @settings(max_examples=100)
     def test_multiplication_by_one(self, a: Decimal, factor: int) -> None:
@@ -105,7 +103,9 @@ class TestMoneyProperties:
 class TestCurrencyFormatterProperties:
     """Property tests for currency formatter."""
 
-    @given(st.decimals(min_value=Decimal("0.01"), max_value=Decimal("1000000"), places=2))
+    @given(
+        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("1000000"), places=2)
+    )
     @settings(max_examples=100)
     def test_format_contains_symbol(self, amount: Decimal) -> None:
         """Formatted output contains currency symbol."""
@@ -115,7 +115,9 @@ class TestCurrencyFormatterProperties:
         formatted = formatter.format(m)
         assert USD.symbol in formatted
 
-    @given(st.decimals(min_value=Decimal("0.01"), max_value=Decimal("1000000"), places=2))
+    @given(
+        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("1000000"), places=2)
+    )
     @settings(max_examples=100)
     def test_format_different_locales(self, amount: Decimal) -> None:
         """Different locales produce different formats."""

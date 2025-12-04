@@ -13,7 +13,7 @@ from core.base.cqrs.command import BaseCommand
 @dataclass(frozen=True, kw_only=True)
 class CreatePedidoCommand(BaseCommand):
     """Command to create a new PedidoExample."""
-    
+
     customer_id: str
     customer_name: str
     customer_email: str
@@ -27,7 +27,7 @@ class CreatePedidoCommand(BaseCommand):
 @dataclass(frozen=True, kw_only=True)
 class AddItemToPedidoCommand(BaseCommand):
     """Command to add an item to an existing PedidoExample."""
-    
+
     pedido_id: str
     item_id: str
     quantity: int = 1
@@ -37,7 +37,7 @@ class AddItemToPedidoCommand(BaseCommand):
 @dataclass(frozen=True, kw_only=True)
 class ConfirmPedidoCommand(BaseCommand):
     """Command to confirm a PedidoExample."""
-    
+
     pedido_id: str
     confirmed_by: str = "system"
 
@@ -45,7 +45,7 @@ class ConfirmPedidoCommand(BaseCommand):
 @dataclass(frozen=True, kw_only=True)
 class CancelPedidoCommand(BaseCommand):
     """Command to cancel a PedidoExample."""
-    
+
     pedido_id: str
     reason: str
     cancelled_by: str = "system"

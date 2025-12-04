@@ -12,10 +12,10 @@ Demonstrates:
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator, computed_field
+from pydantic import BaseModel, Field, computed_field, field_validator
 
-from domain.examples.item.entity import ItemExampleStatus
 from application.examples.shared.dtos import MoneyDTO
+from domain.examples.item.entity import ItemExampleStatus
 
 
 class ItemExampleCreate(BaseModel):

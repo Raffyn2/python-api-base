@@ -4,6 +4,8 @@
 **Validates: Requirements 7.3**
 """
 
+from datetime import datetime
+
 import pytest
 from hypothesis import given, settings, strategies as st
 
@@ -13,16 +15,17 @@ from infrastructure.observability.anomaly import (
     AnomalyDetector,
     AnomalySeverity,
     AnomalyType,
-    DataPoint,
     StatisticalAnalyzer,
     create_anomaly_detector,
 )
-from datetime import datetime
-
 
 # Strategies
-value_strategy = st.floats(min_value=-1000.0, max_value=1000.0, allow_nan=False, allow_infinity=False)
-positive_value_strategy = st.floats(min_value=0.1, max_value=1000.0, allow_nan=False, allow_infinity=False)
+value_strategy = st.floats(
+    min_value=-1000.0, max_value=1000.0, allow_nan=False, allow_infinity=False
+)
+positive_value_strategy = st.floats(
+    min_value=0.1, max_value=1000.0, allow_nan=False, allow_infinity=False
+)
 values_list_strategy = st.lists(
     st.floats(min_value=-100.0, max_value=100.0, allow_nan=False, allow_infinity=False),
     min_size=2,
@@ -220,9 +223,7 @@ class TestAnomalyConfigProperties:
         min_points=st.integers(min_value=5, max_value=50),
     )
     @settings(max_examples=100)
-    def test_config_values_preserved(
-        self, z_threshold: float, min_points: int
-    ) -> None:
+    def test_config_values_preserved(self, z_threshold: float, min_points: int) -> None:
         """Property: Config values are preserved."""
         config = AnomalyConfig(
             z_score_threshold=z_threshold,

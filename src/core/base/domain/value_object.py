@@ -22,7 +22,6 @@ Examples:
         ...     def __post_init__(self):
         ...         if "@" not in self.value:
         ...             raise ValueError("Invalid email format")
-        ...
         >>> email1 = Email("user@example.com")
         >>> email2 = Email("user@example.com")
         >>> assert email1 == email2  # Value equality
@@ -44,7 +43,6 @@ Examples:
         ...         if self.currency != other.currency:
         ...             raise ValueError("Cannot add different currencies")
         ...         return Money(self.amount + other.amount, self.currency)
-        ...
         >>> price1 = Money(10.50, "USD")
         >>> price2 = Money(5.25, "USD")
         >>> total = price1.add(price2)
@@ -60,7 +58,6 @@ Examples:
         ...
         ...     def is_international(self, home_country: str) -> bool:
         ...         return self.country != home_country
-        ...
         >>> addr = Address("123 Main St", "New York", "USA", "10001")
         >>> assert not addr.is_international("USA")
 """
@@ -70,7 +67,7 @@ from __future__ import annotations
 import re
 from abc import ABC
 from dataclasses import dataclass
-from typing import Self, Any
+from typing import Any, Self
 
 # ULID: 26 characters, Crockford Base32 alphabet (excludes I, L, O, U)
 ULID_PATTERN = re.compile(r"^[0-9A-HJKMNP-TV-Z]{26}$", re.IGNORECASE)
@@ -102,8 +99,7 @@ class BaseValueObject(ABC):
         ...             raise ValueError("Temperature below absolute zero")
         ...
         ...     def to_fahrenheit(self) -> float:
-        ...         return (self.celsius * 9/5) + 32
-        ...
+        ...         return (self.celsius * 9 / 5) + 32
         >>> temp1 = Temperature(25.0)
         >>> temp2 = Temperature(25.0)
         >>> assert temp1 == temp2  # Value equality
@@ -169,25 +165,17 @@ class EntityId:
 class ItemId(EntityId):
     """Typed ID for Item entities."""
 
-    pass
-
 
 @dataclass(frozen=True, slots=True)
 class RoleId(EntityId):
     """Typed ID for Role entities."""
-
-    pass
 
 
 @dataclass(frozen=True, slots=True)
 class UserId(EntityId):
     """Typed ID for User entities."""
 
-    pass
-
 
 @dataclass(frozen=True, slots=True)
 class AuditLogId(EntityId):
     """Typed ID for AuditLog entities."""
-
-    pass

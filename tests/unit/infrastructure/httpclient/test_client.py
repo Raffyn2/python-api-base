@@ -4,24 +4,22 @@
 **Requirement: R9 - Generic HTTP Client**
 """
 
-import pytest
 from datetime import timedelta
-from unittest.mock import AsyncMock, patch, MagicMock
 
+import pytest
 from pydantic import BaseModel
 
 from infrastructure.httpclient import (
-    HttpClient,
-    HttpClientConfig,
-    HttpError,
-    TimeoutError,
-    ValidationError,
-    RetryPolicy,
     CircuitBreaker,
     CircuitBreakerConfig,
     CircuitState,
+    HttpClient,
+    HttpClientConfig,
+    HttpError,
+    RetryPolicy,
+    TimeoutError,
+    ValidationError,
 )
-
 
 # =============================================================================
 # Test Models

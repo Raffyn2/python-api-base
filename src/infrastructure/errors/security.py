@@ -13,8 +13,6 @@ class TokenStoreError(InfrastructureError):
     Raised when token storage operations fail.
     """
 
-    pass
-
 
 class TokenValidationError(TokenStoreError):
     """Token validation error.
@@ -23,13 +21,9 @@ class TokenValidationError(TokenStoreError):
     expiration, or signature verification failure.
     """
 
-    pass
-
 
 class AuditLogError(InfrastructureError):
     """Audit logging error.
 
     Raised when audit log operations fail.
     """
-
-    pass

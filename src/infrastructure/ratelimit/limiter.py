@@ -10,12 +10,12 @@ import asyncio
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Hashable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, UTC
-from typing import Any, Hashable, Protocol, runtime_checkable
+from datetime import UTC, datetime, timedelta
+from typing import Any, Protocol, runtime_checkable
 
 from infrastructure.ratelimit.config import RateLimit, RateLimitConfig
-
 
 # =============================================================================
 # Type Parameters (PEP 695)
@@ -234,18 +234,15 @@ class InMemoryRateLimiter[TClient: Hashable](RateLimiter[TClient]):
                     limit=limit.requests,
                     reset_at=reset_at,
                 )
-            else:
-                retry_after = timedelta(
-                    seconds=state.window_start + window_seconds - now
-                )
-                return RateLimitResult(
-                    client=client,
-                    is_allowed=False,
-                    remaining=0,
-                    limit=limit.requests,
-                    reset_at=reset_at,
-                    retry_after=retry_after,
-                )
+            retry_after = timedelta(seconds=state.window_start + window_seconds - now)
+            return RateLimitResult(
+                client=client,
+                is_allowed=False,
+                remaining=0,
+                limit=limit.requests,
+                reset_at=reset_at,
+                retry_after=retry_after,
+            )
 
     async def reset(self, client: TClient, endpoint: str = "default") -> bool:
         """Reset rate limit for client."""
@@ -344,23 +341,22 @@ class SlidingWindowLimiter[TClient: Hashable](RateLimiter[TClient]):
                 limit=limit.requests,
                 reset_at=reset_at,
             )
+        # Find oldest entry to calculate retry_after
+        oldest = await self._redis.zrange(key, 0, 0, withscores=True)
+        if oldest:
+            oldest_time = oldest[0][1]
+            retry_seconds = oldest_time + limit.window_seconds - now
         else:
-            # Find oldest entry to calculate retry_after
-            oldest = await self._redis.zrange(key, 0, 0, withscores=True)
-            if oldest:
-                oldest_time = oldest[0][1]
-                retry_seconds = oldest_time + limit.window_seconds - now
-            else:
-                retry_seconds = limit.window_seconds
+            retry_seconds = limit.window_seconds
 
-            return RateLimitResult(
-                client=client,
-                is_allowed=False,
-                remaining=0,
-                limit=limit.requests,
-                reset_at=reset_at,
-                retry_after=timedelta(seconds=max(0, retry_seconds)),
-            )
+        return RateLimitResult(
+            client=client,
+            is_allowed=False,
+            remaining=0,
+            limit=limit.requests,
+            reset_at=reset_at,
+            retry_after=timedelta(seconds=max(0, retry_seconds)),
+        )
 
     async def reset(self, client: TClient, endpoint: str = "default") -> bool:
         """Reset rate limit in Redis."""

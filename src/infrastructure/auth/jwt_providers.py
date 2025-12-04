@@ -48,11 +48,11 @@ Example Usage:
 """
 
 # Re-export all components from refactored modules
-from .jwt.exceptions import AlgorithmMismatchError, InvalidKeyError
 from .jwt.config import JWTKeyConfig
+from .jwt.exceptions import AlgorithmMismatchError, InvalidKeyError
+from .jwt.factory import create_jwt_provider
 from .jwt.protocols import BaseJWTProvider, JWTAlgorithmProvider
 from .jwt.providers import ES256Provider, HS256Provider, RS256Provider
-from .jwt.factory import create_jwt_provider
 
 # Re-export all for public API
 __all__ = [

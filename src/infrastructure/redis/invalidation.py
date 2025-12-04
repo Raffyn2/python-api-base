@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING
 from collections.abc import Callable, Coroutine
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from infrastructure.redis.client import RedisClient
@@ -41,7 +41,7 @@ class InvalidationStrategy(ABC):
     @abstractmethod
     async def invalidate(
         self,
-        client: "RedisClient[Any]",
+        client: RedisClient[Any],
         event: InvalidationEvent,
     ) -> int:
         """Invalidate cache entries.
@@ -82,7 +82,7 @@ class PatternInvalidation(InvalidationStrategy):
 
     async def invalidate(
         self,
-        client: "RedisClient[Any]",
+        client: RedisClient[Any],
         event: InvalidationEvent,
     ) -> int:
         """Invalidate cache using patterns.
@@ -129,7 +129,7 @@ class CacheInvalidator:
 
     def __init__(
         self,
-        client: "RedisClient[Any]",
+        client: RedisClient[Any],
         strategy: InvalidationStrategy | None = None,
     ) -> None:
         """Initialize cache invalidator.

@@ -303,7 +303,6 @@ class BaseUseCase[
         Raises:
             ValidationError: If validation fails.
         """
-        pass
 
     def _validate_update(self, data: UpdateDTO) -> None:
         """Validate update data.
@@ -316,4 +315,3 @@ class BaseUseCase[
         Raises:
             ValidationError: If validation fails.
         """
-        pass

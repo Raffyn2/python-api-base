@@ -115,6 +115,6 @@ def compare_ulids(ulid1: str, ulid2: str) -> int:
     """
     if ulid1 < ulid2:
         return -1
-    elif ulid1 > ulid2:
+    if ulid1 > ulid2:
         return 1
     return 0

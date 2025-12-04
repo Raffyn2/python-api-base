@@ -5,8 +5,7 @@
 """
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 try:
     from infrastructure.cache.local_cache import LRUCache
@@ -15,7 +14,9 @@ except ImportError:
     pytest.skip("my_app modules not available", allow_module_level=True)
 
 
-key_strategy = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_")
+key_strategy = st.text(
+    min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_"
+)
 string_value_strategy = st.text(max_size=200)
 int_value_strategy = st.integers(min_value=-1000000, max_value=1000000)
 float_value_strategy = st.floats(allow_nan=False, allow_infinity=False)
@@ -45,7 +46,7 @@ class TestCacheRoundTrip:
     def test_string_roundtrip(self, key: str, value: str) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 9: Cache Get/Set Round-Trip**
-        
+
         For any string value stored in cache, retrieving SHALL return equal value.
         **Validates: Requirements 7.2**
         """
@@ -121,12 +122,12 @@ class TestCacheRoundTrip:
         **Validates: Requirements 7.2**
         """
         cache = LRUCache(max_size=1000)
-        
+
         # Use min length to pair keys with values
-        pairs = list(zip(keys, values))
-        
+        pairs = list(zip(keys, values, strict=False))
+
         for key, value in pairs:
             cache.set(key, value)
-        
+
         for key, value in pairs:
             assert cache.get(key) == value

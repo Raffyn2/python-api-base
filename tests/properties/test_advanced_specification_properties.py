@@ -4,14 +4,16 @@
 **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.6**
 """
 
-
 import pytest
-pytest.skip('Module domain.common.advanced_specification not implemented', allow_module_level=True)
+
+pytest.skip(
+    "Module domain.common.advanced_specification not implemented",
+    allow_module_level=True,
+)
 
 from dataclasses import dataclass
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from domain.common.advanced_specification import (
     ComparisonOperator,
@@ -44,7 +46,9 @@ class SampleEntity:
 entity_strategy = st.builds(
     SampleEntity,
     id=st.integers(min_value=1, max_value=10000),
-    name=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))),
+    name=st.text(
+        min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))
+    ),
     age=st.integers(min_value=0, max_value=150),
     score=st.floats(min_value=0.0, max_value=100.0, allow_nan=False),
     status=st.sampled_from(["active", "inactive", "pending", "deleted"]),
@@ -367,7 +371,9 @@ class TestSpecificationBuilder:
             .build()
         )
 
-        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(entity)
+        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(
+            entity
+        )
 
     @settings(max_examples=50)
     @given(
@@ -389,7 +395,9 @@ class TestSpecificationBuilder:
             .build()
         )
 
-        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(entity)
+        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(
+            entity
+        )
 
     @settings(max_examples=50)
     @given(
@@ -411,8 +419,9 @@ class TestSpecificationBuilder:
             .build()
         )
 
-        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(entity)
-
+        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(
+            entity
+        )
 
 
 class TestSpecificationSQLEquivalence:

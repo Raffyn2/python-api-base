@@ -4,15 +4,13 @@
 **Validates: Requirements 10.3, 10.4**
 """
 
-import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
-pytest.skip('Module core.security not implemented', allow_module_level=True)
+pytest.skip("Module core.security not implemented", allow_module_level=True)
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.security.audit_logger import (
     SecurityAuditLogger,
@@ -21,10 +19,10 @@ from core.security.audit_logger import (
     get_audit_logger,
 )
 
-
 # =============================================================================
 # Strategies
 # =============================================================================
+
 
 @st.composite
 def ip_address_strategy(draw: st.DrawFn) -> str:
@@ -36,27 +34,38 @@ def ip_address_strategy(draw: st.DrawFn) -> str:
 @st.composite
 def user_id_strategy(draw: st.DrawFn) -> str:
     """Generate valid user IDs."""
-    return draw(st.text(
-        min_size=1,
-        max_size=50,
-        alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_-"),
-    ).filter(lambda x: x.strip() != ""))
+    return draw(
+        st.text(
+            min_size=1,
+            max_size=50,
+            alphabet=st.characters(
+                whitelist_categories=("L", "N"), whitelist_characters="_-"
+            ),
+        ).filter(lambda x: x.strip() != "")
+    )
 
 
 @st.composite
 def resource_strategy(draw: st.DrawFn) -> str:
     """Generate valid resource paths."""
-    segments = draw(st.lists(
-        st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-"),
-        min_size=1,
-        max_size=5,
-    ))
+    segments = draw(
+        st.lists(
+            st.text(
+                min_size=1,
+                max_size=20,
+                alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-",
+            ),
+            min_size=1,
+            max_size=5,
+        )
+    )
     return "/" + "/".join(segments)
 
 
 # =============================================================================
 # Property Tests - Audit Log Completeness
 # =============================================================================
+
 
 class TestAuditLogCompletenessProperties:
     """Property tests for audit log completeness.
@@ -172,6 +181,7 @@ class TestAuditLogCompletenessProperties:
 # Property Tests - Secret Access Logging
 # =============================================================================
 
+
 class TestSecretAccessLoggingProperties:
     """Property tests for secret access logging.
 
@@ -180,7 +190,9 @@ class TestSecretAccessLoggingProperties:
     """
 
     @given(
-        secret_name=st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-"),
+        secret_name=st.text(
+            min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-"
+        ),
         accessor=user_id_strategy(),
         action=st.sampled_from(["read", "rotate", "delete", "create"]),
     )
@@ -241,6 +253,7 @@ class TestSecretAccessLoggingProperties:
 # Property Tests - PII Redaction
 # =============================================================================
 
+
 class TestPIIRedactionProperties:
     """Property tests for PII redaction in logs."""
 
@@ -299,6 +312,7 @@ class TestPIIRedactionProperties:
 # Property Tests - Event Serialization
 # =============================================================================
 
+
 class TestEventSerializationProperties:
     """Property tests for security event serialization."""
 
@@ -323,7 +337,7 @@ class TestEventSerializationProperties:
         """
         event = SecurityEvent(
             event_type=event_type,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             client_ip=client_ip,
             user_id=user_id,
             resource=resource,
@@ -373,6 +387,7 @@ class TestEventSerializationProperties:
 # =============================================================================
 # Property Tests - Singleton Pattern
 # =============================================================================
+
 
 class TestSingletonProperties:
     """Property tests for audit logger singleton."""

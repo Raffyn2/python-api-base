@@ -4,23 +4,21 @@
 **Validates: Requirements 2.10**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.auth.jwt import JWTService
 from infrastructure.auth.token_store import (
     InMemoryTokenStore,
     StoredToken,
 )
-
 
 # Strategy for generating valid user IDs
 user_id_strategy = st.text(
@@ -56,6 +54,7 @@ class TestTokenRevocationConsistency:
 
         For any stored token, after revocation, is_valid() SHALL return False.
         """
+
         async def run_test():
             store = InMemoryTokenStore()
             service = JWTService(secret_key=TEST_SECRET_KEY)
@@ -90,6 +89,7 @@ class TestTokenRevocationConsistency:
 
         For any revoked token, the stored token SHALL have revoked=True.
         """
+
         async def run_test():
             store = InMemoryTokenStore()
             service = JWTService(secret_key=TEST_SECRET_KEY)
@@ -124,6 +124,7 @@ class TestTokenRevocationConsistency:
         For any user with multiple tokens, revoke_all_for_user() SHALL
         invalidate all tokens for that user.
         """
+
         async def run_test():
             store = InMemoryTokenStore()
             service = JWTService(secret_key=TEST_SECRET_KEY)
@@ -162,6 +163,7 @@ class TestTokenRevocationConsistency:
 
         Revoking a non-existent token SHALL return False.
         """
+
         async def run_test():
             store = InMemoryTokenStore()
             revoked = await store.revoke(jti)
@@ -182,8 +184,8 @@ class TestStoredTokenValidity:
         token = StoredToken(
             jti=jti,
             user_id=user_id,
-            created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
             revoked=False,
         )
         assert token.is_valid()
@@ -198,8 +200,8 @@ class TestStoredTokenValidity:
         token = StoredToken(
             jti=jti,
             user_id=user_id,
-            created_at=datetime.now(timezone.utc) - timedelta(hours=2),
-            expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
+            created_at=datetime.now(UTC) - timedelta(hours=2),
+            expires_at=datetime.now(UTC) - timedelta(hours=1),
             revoked=False,
         )
         assert token.is_expired()
@@ -214,8 +216,8 @@ class TestStoredTokenValidity:
         token = StoredToken(
             jti=jti,
             user_id=user_id,
-            created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
             revoked=True,
         )
         assert not token.is_expired()
@@ -242,7 +244,7 @@ class TestStoredTokenSerialization:
         For any StoredToken, serializing then deserializing SHALL produce
         an equivalent token.
         """
-        now = datetime.now(timezone.utc).replace(microsecond=0)
+        now = datetime.now(UTC).replace(microsecond=0)
         original = StoredToken(
             jti=jti,
             user_id=user_id,

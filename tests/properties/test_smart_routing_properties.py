@@ -4,11 +4,10 @@
 **Validates: Requirements 4.4**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
-from datetime import timedelta
 
 import pytest
 from hypothesis import given, settings, strategies as st
@@ -30,7 +29,6 @@ from infrastructure.resilience.smart_routing import (
     create_smart_router,
 )
 
-
 # Strategies
 strategy_type = st.sampled_from(list(LoadBalancingStrategy))
 status_type = st.sampled_from(list(EndpointStatus))
@@ -47,9 +45,7 @@ class TestEndpointMetricsProperties:
         )
     )
     @settings(max_examples=100)
-    def test_avg_response_time_calculation(
-        self, response_times: list[float]
-    ) -> None:
+    def test_avg_response_time_calculation(self, response_times: list[float]) -> None:
         """Property: Average response time is calculated correctly."""
         metrics = EndpointMetrics()
         for rt in response_times:
@@ -125,9 +121,7 @@ class TestRoundRobinBalancerProperties:
 
     @given(endpoint_count=st.integers(min_value=1, max_value=10))
     @settings(max_examples=50)
-    def test_round_robin_cycles_through_endpoints(
-        self, endpoint_count: int
-    ) -> None:
+    def test_round_robin_cycles_through_endpoints(self, endpoint_count: int) -> None:
         """Property: Round robin cycles through all endpoints."""
         balancer = RoundRobinBalancer()
         endpoints = [
@@ -174,7 +168,6 @@ class TestRandomBalancerProperties:
         assert balancer.select([], {}) is None
 
 
-
 class TestLeastConnectionsBalancerProperties:
     """Property tests for LeastConnectionsBalancer."""
 
@@ -203,8 +196,12 @@ class TestWeightedBalancerProperties:
         """Property: Weighted balancer respects weights over many selections."""
         balancer = WeightedBalancer()
 
-        ep1 = Endpoint(id="ep1", url="http://ep1", weight=10, status=EndpointStatus.HEALTHY)
-        ep2 = Endpoint(id="ep2", url="http://ep2", weight=1, status=EndpointStatus.HEALTHY)
+        ep1 = Endpoint(
+            id="ep1", url="http://ep1", weight=10, status=EndpointStatus.HEALTHY
+        )
+        ep2 = Endpoint(
+            id="ep2", url="http://ep2", weight=1, status=EndpointStatus.HEALTHY
+        )
 
         selections = {"ep1": 0, "ep2": 0}
         for _ in range(1000):
@@ -346,10 +343,7 @@ class TestSmartRouterBuilderProperties:
         """Property: Builder methods return builder for chaining."""
         builder = SmartRouterBuilder()
         result = (
-            builder
-            .round_robin()
-            .error_threshold(0.3)
-            .add_endpoint("ep1", "http://ep1")
+            builder.round_robin().error_threshold(0.3).add_endpoint("ep1", "http://ep1")
         )
         assert result is builder
 

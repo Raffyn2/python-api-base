@@ -62,8 +62,6 @@ class Specification[T](ABC):
 class CompositeSpecification[T](Specification[T]):
     """Base class for composite specifications."""
 
-    pass
-
 
 class AndSpecification[T](CompositeSpecification[T]):
     """Specification that combines two specs with AND logic.

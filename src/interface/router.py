@@ -7,10 +7,10 @@ Provides automatic generation of REST endpoints with full OpenAPI documentation.
 **Validates: Requirements 13.1, 13.2, 13.3, 13.4, 13.5**
 """
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
-from collections.abc import Callable, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -41,7 +41,7 @@ class CRUDRouterConfig:
 
     # Route enablement
     enabled_operations: set[RouteOperation] = field(
-        default_factory=lambda: {op for op in RouteOperation}
+        default_factory=lambda: set(RouteOperation)
     )
 
     # Pagination defaults

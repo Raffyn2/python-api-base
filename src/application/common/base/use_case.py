@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from typing import Any, overload
 
 from application.common.base.dto import PaginatedResponse
-from core.base.patterns.result import Result, Ok, Err
+from core.base.patterns.result import Err, Ok, Result
 
 logger = logging.getLogger(__name__)
 
@@ -305,15 +305,12 @@ class BaseUseCase[TEntity, TId](ABC):
 
     async def _after_create(self, entity: TEntity) -> None:
         """Hook called after entity creation. Override for side effects."""
-        pass
 
     async def _after_update(self, entity: TEntity) -> None:
         """Hook called after entity update. Override for side effects."""
-        pass
 
     async def _after_delete(self, entity_id: TId) -> None:
         """Hook called after entity deletion. Override for side effects."""
-        pass
 
     def _get_entity_name(self) -> str:
         """Get the entity type name for error messages."""

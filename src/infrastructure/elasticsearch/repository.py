@@ -10,7 +10,7 @@ Provides type-safe CRUD and search operations for Elasticsearch documents.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 
 from infrastructure.elasticsearch.client import ElasticsearchClient
@@ -19,9 +19,9 @@ from infrastructure.elasticsearch.document import (
     ElasticsearchDocument,
 )
 from infrastructure.elasticsearch.query import (
+    AggregationResult,
     SearchQuery,
     SearchResult,
-    AggregationResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -189,13 +189,11 @@ class ElasticsearchRepository(Generic[T]):
 
         result = await self._client.bulk(operations=operations, refresh=refresh)
 
-        deleted = sum(
+        return sum(
             1
             for item in result.get("items", [])
             if "delete" in item and item["delete"].get("result") == "deleted"
         )
-
-        return deleted
 
     # Search Operations
 
@@ -328,8 +326,8 @@ class ElasticsearchRepository(Generic[T]):
 
 # Re-export query models for backward compatibility
 __all__ = [
+    "AggregationResult",
     "ElasticsearchRepository",
     "SearchQuery",
     "SearchResult",
-    "AggregationResult",
 ]

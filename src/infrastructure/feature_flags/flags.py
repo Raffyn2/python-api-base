@@ -7,7 +7,7 @@
 import hashlib
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
@@ -82,10 +82,7 @@ class FeatureFlag[TContext]:
 
         # Check group targeting
         if self.status == FlagStatus.TARGETED:
-            for group in context.groups:
-                if group in self.enabled_groups:
-                    return True
-            return False
+            return any(group in self.enabled_groups for group in context.groups)
 
         # Percentage rollout
         if self.status == FlagStatus.PERCENTAGE and context.user_id:
@@ -96,7 +93,7 @@ class FeatureFlag[TContext]:
     def _check_percentage(self, user_id: str) -> bool:
         """Check percentage rollout using consistent hashing."""
         hash_input = f"{self.key}:{user_id}"
-        hash_value = int(hashlib.md5(hash_input.encode()).hexdigest(), 16)
+        hash_value = int(hashlib.md5(hash_input.encode()).hexdigest(), 16)  # noqa: S324
         bucket = hash_value % 100
         return bucket < self.percentage
 
@@ -286,7 +283,7 @@ class FlagAuditLogger:
             user_id=context.user_id,
             result=result.enabled,
             reason=result.reason,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             context_attributes=context.attributes,
         )
         self._logs.append(log_entry)

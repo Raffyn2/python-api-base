@@ -4,24 +4,22 @@
 **Validates: Requirements 1.1, 1.3, 1.6**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.auth.jwt import (
     JWTService,
     TokenExpiredError,
     TokenInvalidError,
-    TokenPayload,
     TokenPair,
+    TokenPayload,
 )
-
 
 # Strategy for generating valid user IDs (ULID-like)
 user_id_strategy = st.text(
@@ -145,7 +143,7 @@ class TestTokenPayloadRoundTrip:
         For any valid token payload, serializing then deserializing SHALL produce
         an equivalent payload.
         """
-        now = datetime.now(timezone.utc).replace(microsecond=0)
+        now = datetime.now(UTC).replace(microsecond=0)
         original = TokenPayload(
             sub=user_id,
             exp=now + timedelta(hours=1),
@@ -230,7 +228,7 @@ class TestExpiredTokenRejection:
         payload = service.verify_token(token)
 
         assert payload.sub == user_id
-        assert payload.exp > datetime.now(timezone.utc)
+        assert payload.exp > datetime.now(UTC)
 
 
 class TestTokenValidation:
@@ -307,9 +305,9 @@ class TestRefreshTokenRoundTrip:
         For any valid refresh token, submitting it SHALL return a new valid
         access token that can authenticate requests.
         """
-        from infrastructure.auth.token_store import InMemoryTokenStore
-
         import asyncio
+
+        from infrastructure.auth.token_store import InMemoryTokenStore
 
         async def run_test():
             service = JWTService(secret_key=TEST_SECRET_KEY)
@@ -357,9 +355,9 @@ class TestRefreshTokenRoundTrip:
 
         For any stored token, retrieving it SHALL return the same data.
         """
-        from infrastructure.auth.token_store import InMemoryTokenStore
-
         import asyncio
+
+        from infrastructure.auth.token_store import InMemoryTokenStore
 
         async def run_test():
             service = JWTService(secret_key=TEST_SECRET_KEY)
@@ -396,9 +394,9 @@ class TestLogoutInvalidation:
         For any logged-in user, after logout, the refresh token SHALL be invalid
         and token refresh SHALL fail.
         """
-        from infrastructure.auth.token_store import InMemoryTokenStore
-
         import asyncio
+
+        from infrastructure.auth.token_store import InMemoryTokenStore
 
         async def run_test():
             service = JWTService(secret_key=TEST_SECRET_KEY)
@@ -440,9 +438,9 @@ class TestLogoutInvalidation:
         For any user with multiple sessions, logout from all devices SHALL
         invalidate all refresh tokens.
         """
-        from infrastructure.auth.token_store import InMemoryTokenStore
-
         import asyncio
+
+        from infrastructure.auth.token_store import InMemoryTokenStore
 
         async def run_test():
             service = JWTService(secret_key=TEST_SECRET_KEY)
@@ -482,9 +480,9 @@ class TestLogoutInvalidation:
 
         Revoking a non-existent token SHALL return False.
         """
-        from infrastructure.auth.token_store import InMemoryTokenStore
-
         import asyncio
+
+        from infrastructure.auth.token_store import InMemoryTokenStore
 
         async def run_test():
             store = InMemoryTokenStore()
@@ -596,9 +594,10 @@ class TestJWTAlgorithmRestrictionProperties:
         with pytest.raises(InvalidTokenError) as exc_info:
             JWTValidator(secret_or_key="test-secret-key-32-chars-long!!", algorithm=alg)
 
-        assert "none" in str(exc_info.value).lower() or "not allowed" in str(
-            exc_info.value
-        ).lower()
+        assert (
+            "none" in str(exc_info.value).lower()
+            or "not allowed" in str(exc_info.value).lower()
+        )
 
     @given(st.sampled_from(["RS256", "ES256", "HS256"]))
     @settings(max_examples=10)
@@ -616,7 +615,11 @@ class TestJWTAlgorithmRestrictionProperties:
         )
         assert validator._algorithm == alg
 
-    @given(st.text(min_size=1, max_size=20).filter(lambda x: x not in ["RS256", "ES256", "HS256", "none", "None"]))
+    @given(
+        st.text(min_size=1, max_size=20).filter(
+            lambda x: x not in ["RS256", "ES256", "HS256", "none", "None"]
+        )
+    )
     @settings(max_examples=50)
     def test_unknown_algorithms_rejected(self, alg: str) -> None:
         """Property: Unknown algorithms are rejected.

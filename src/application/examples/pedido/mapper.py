@@ -8,13 +8,13 @@ Implements IMapper interface for entity-DTO transformations.
 
 from collections.abc import Sequence
 
-from domain.examples.pedido.entity import PedidoExample, PedidoItemExample
-from application.examples.shared.dtos import MoneyDTO
+from application.common.base.mapper import IMapper
 from application.examples.pedido.dtos import (
     PedidoExampleResponse,
     PedidoItemResponse,
 )
-from application.common.base.mapper import IMapper
+from application.examples.shared.dtos import MoneyDTO
+from domain.examples.pedido.entity import PedidoExample, PedidoItemExample
 
 
 class PedidoItemMapper:
@@ -46,7 +46,7 @@ class PedidoItemMapper:
 
 class PedidoExampleMapper(IMapper[PedidoExample, PedidoExampleResponse]):
     """Mapper for PedidoExample entity to DTOs.
-    
+
     Implements IMapper interface for consistent mapping patterns.
     """
 
@@ -95,11 +95,15 @@ class PedidoExampleMapper(IMapper[PedidoExample, PedidoExampleResponse]):
         pedido._id = dto.id
         return pedido
 
-    def to_dto_list(self, entities: Sequence[PedidoExample]) -> list[PedidoExampleResponse]:
+    def to_dto_list(
+        self, entities: Sequence[PedidoExample]
+    ) -> list[PedidoExampleResponse]:
         """Map list of entities to response DTOs."""
         return [self.to_dto(e) for e in entities]
 
-    def to_entity_list(self, dtos: Sequence[PedidoExampleResponse]) -> list[PedidoExample]:
+    def to_entity_list(
+        self, dtos: Sequence[PedidoExampleResponse]
+    ) -> list[PedidoExample]:
         """Map list of DTOs to entities."""
         return [self.to_entity(d) for d in dtos]
 

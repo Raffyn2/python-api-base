@@ -8,28 +8,32 @@ from decimal import Decimal
 
 import pytest
 
-pytest.skip('Module core.shared.value_objects not implemented', allow_module_level=True)
+pytest.skip("Module core.shared.value_objects not implemented", allow_module_level=True)
 
-from hypothesis import given, strategies as st, assume, settings
+from hypothesis import assume, given, settings, strategies as st
 
-from core.shared.value_objects.money import Money, CurrencyCode
+from core.shared.value_objects.common import Percentage, Slug
 from core.shared.value_objects.email import Email
+from core.shared.value_objects.money import CurrencyCode, Money
 from core.shared.value_objects.phone import PhoneNumber
-from core.shared.value_objects.common import Percentage, Slug, Url
-
 
 # =============================================================================
 # Money Value Object Tests
 # =============================================================================
 
+
 class TestMoneyProperties:
     """Property tests for Money value object.
-    
+
     **Feature: 2025-generics-clean-code-review, Property 4: Value Object Pattern Consistency**
     **Validates: Requirements 4.5**
     """
 
-    @given(st.decimals(min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False))
+    @given(
+        st.decimals(
+            min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False
+        )
+    )
     @settings(max_examples=100)
     def test_money_immutability(self, amount: Decimal) -> None:
         """Money instances are immutable."""
@@ -37,7 +41,11 @@ class TestMoneyProperties:
         with pytest.raises(AttributeError):
             money.amount = Decimal("999")  # type: ignore
 
-    @given(st.decimals(min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False))
+    @given(
+        st.decimals(
+            min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False
+        )
+    )
     @settings(max_examples=100)
     def test_money_equality(self, amount: Decimal) -> None:
         """Two Money with same amount and currency are equal."""
@@ -46,8 +54,12 @@ class TestMoneyProperties:
         assert money1 == money2
 
     @given(
-        st.decimals(min_value=0, max_value=500_000, allow_nan=False, allow_infinity=False),
-        st.decimals(min_value=0, max_value=500_000, allow_nan=False, allow_infinity=False),
+        st.decimals(
+            min_value=0, max_value=500_000, allow_nan=False, allow_infinity=False
+        ),
+        st.decimals(
+            min_value=0, max_value=500_000, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=100)
     def test_money_addition_commutative(self, a: Decimal, b: Decimal) -> None:
@@ -63,13 +75,19 @@ class TestMoneyProperties:
         money = Money.from_cents(cents, CurrencyCode.USD)
         assert money.to_cents() == cents
 
-    @given(st.decimals(min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False))
+    @given(
+        st.decimals(
+            min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False
+        )
+    )
     @settings(max_examples=100)
     def test_money_serialization_round_trip(self, amount: Decimal) -> None:
         """Money to_dict preserves data for reconstruction."""
         money = Money.create(amount, CurrencyCode.USD)
         data = money.to_dict()
-        reconstructed = Money.create(Decimal(data["amount"]), CurrencyCode(data["currency"]))
+        reconstructed = Money.create(
+            Decimal(data["amount"]), CurrencyCode(data["currency"])
+        )
         assert money == reconstructed
 
 
@@ -77,9 +95,10 @@ class TestMoneyProperties:
 # Email Value Object Tests
 # =============================================================================
 
+
 class TestEmailProperties:
     """Property tests for Email value object.
-    
+
     **Feature: 2025-generics-clean-code-review, Property 4: Value Object Pattern Consistency**
     **Validates: Requirements 4.5**
     """
@@ -134,9 +153,10 @@ class TestEmailProperties:
 # PhoneNumber Value Object Tests
 # =============================================================================
 
+
 class TestPhoneNumberProperties:
     """Property tests for PhoneNumber value object.
-    
+
     **Feature: 2025-generics-clean-code-review, Property 4: Value Object Pattern Consistency**
     **Validates: Requirements 4.5**
     """
@@ -171,9 +191,10 @@ class TestPhoneNumberProperties:
 # Percentage Value Object Tests
 # =============================================================================
 
+
 class TestPercentageProperties:
     """Property tests for Percentage value object.
-    
+
     **Feature: 2025-generics-clean-code-review, Property 4: Value Object Pattern Consistency**
     **Validates: Requirements 4.5**
     """
@@ -198,14 +219,21 @@ class TestPercentageProperties:
 # Slug Value Object Tests
 # =============================================================================
 
+
 class TestSlugProperties:
     """Property tests for Slug value object.
-    
+
     **Feature: 2025-generics-clean-code-review, Property 4: Value Object Pattern Consistency**
     **Validates: Requirements 4.5**
     """
 
-    @given(st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_"))
+    @given(
+        st.text(
+            min_size=1,
+            max_size=50,
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_",
+        )
+    )
     @settings(max_examples=100)
     def test_slug_from_text_is_lowercase(self, text: str) -> None:
         """Slug from_text produces lowercase result."""
@@ -213,7 +241,13 @@ class TestSlugProperties:
         slug = Slug.from_text(text)
         assert slug.value == slug.value.lower()
 
-    @given(st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_"))
+    @given(
+        st.text(
+            min_size=1,
+            max_size=50,
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_",
+        )
+    )
     @settings(max_examples=100)
     def test_slug_from_text_no_special_chars(self, text: str) -> None:
         """Slug from_text contains only lowercase letters, numbers, hyphens."""

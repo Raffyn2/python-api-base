@@ -4,12 +4,10 @@
 **Validates: Requirements 5.3**
 """
 
-
 import pytest
-pytest.skip('Module interface.api not implemented', allow_module_level=True)
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+pytest.skip("Module interface.api not implemented", allow_module_level=True)
+
 
 from interface.api.middleware.cors_manager import (
     CORSManager,

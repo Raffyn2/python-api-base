@@ -11,10 +11,10 @@ Exports:
     - AuditEvent: Audit event model
 """
 
-from infrastructure.rbac.permission import Permission, Action, Resource
-from infrastructure.rbac.role import Role, RoleRegistry
-from infrastructure.rbac.checker import RBAC, requires
 from infrastructure.rbac.audit import AuditEvent, AuditLogger, InMemoryAuditSink
+from infrastructure.rbac.checker import RBAC, requires
+from infrastructure.rbac.permission import Action, Permission, Resource
+from infrastructure.rbac.role import Role, RoleRegistry
 
 __all__ = [
     # Permission

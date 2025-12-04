@@ -6,15 +6,13 @@
 
 import pytest
 
-pytest.skip('Module interface.api not implemented', allow_module_level=True)
+pytest.skip("Module interface.api not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
 from interface.api.graphql.graphql_federation import (
     FederatedEntity,
     FederatedSchema,
-    KeyDirective,
-    RequiresDirective,
     Subgraph,
 )
 
@@ -185,12 +183,12 @@ class TestSDLGeneration:
     @settings(max_examples=100)
     @given(
         name=st.text(
-            min_size=1, max_size=30,
-            alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+            min_size=1,
+            max_size=30,
+            alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
         ),
         key_field=st.text(
-            min_size=1, max_size=20,
-            alphabet="abcdefghijklmnopqrstuvwxyz_"
+            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"
         ),
     )
     def test_sdl_contains_entity_name(self, name: str, key_field: str) -> None:

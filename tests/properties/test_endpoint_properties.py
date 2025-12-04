@@ -6,14 +6,12 @@
 
 import pytest
 
-pytest.skip('Module application.examples.dtos not implemented', allow_module_level=True)
+pytest.skip("Module application.examples.dtos not implemented", allow_module_level=True)
 
-from hypothesis import given, settings, HealthCheck
-from hypothesis import strategies as st
 from httpx import ASGITransport, AsyncClient
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 from main import app
-
 
 # Strategy for valid item names
 item_name_strategy = st.text(
@@ -40,14 +38,14 @@ def anyio_backend() -> str:
 class TestEndpointPostProperty:
     """Property tests for POST endpoint."""
 
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(
+        max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None
+    )
     @given(
         name=item_name_strategy,
         price=price_strategy,
     )
-    async def test_post_returns_201_with_entity(
-        self, name: str, price: float
-    ) -> None:
+    async def test_post_returns_201_with_entity(self, name: str, price: float) -> None:
         """
         **Feature: generic-fastapi-crud, Property 11: Endpoint POST Returns 201 with Entity**
 
@@ -60,7 +58,7 @@ class TestEndpointPostProperty:
                 "/api/v1/items",
                 json={"name": name, "price": price},
             )
-            
+
             assert response.status_code == 201
             data = response.json()
             assert "data" in data
@@ -73,7 +71,9 @@ class TestEndpointPostProperty:
 class TestEndpointGetListProperty:
     """Property tests for GET list endpoint."""
 
-    @settings(max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(
+        max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None
+    )
     @given(
         page=st.integers(min_value=1, max_value=10),
         size=st.integers(min_value=1, max_value=50),
@@ -89,13 +89,11 @@ class TestEndpointGetListProperty:
         """
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            response = await client.get(
-                f"/api/v1/items?page={page}&size={size}"
-            )
-            
+            response = await client.get(f"/api/v1/items?page={page}&size={size}")
+
             assert response.status_code == 200
             data = response.json()
-            
+
             # Check all required pagination fields
             assert "items" in data
             assert "total" in data
@@ -104,7 +102,7 @@ class TestEndpointGetListProperty:
             assert "pages" in data
             assert "has_next" in data
             assert "has_previous" in data
-            
+
             # Verify types
             assert isinstance(data["items"], list)
             assert isinstance(data["total"], int)
@@ -119,14 +117,14 @@ class TestEndpointGetListProperty:
 class TestEndpointGetDetailProperty:
     """Property tests for GET detail endpoint."""
 
-    @settings(max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(
+        max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None
+    )
     @given(
         name=item_name_strategy,
         price=price_strategy,
     )
-    async def test_get_detail_returns_entity(
-        self, name: str, price: float
-    ) -> None:
+    async def test_get_detail_returns_entity(self, name: str, price: float) -> None:
         """
         **Feature: generic-fastapi-crud, Property 13: Endpoint GET Detail Returns Entity or 404**
 
@@ -141,16 +139,22 @@ class TestEndpointGetDetailProperty:
                 "/api/v1/items",
                 json={"name": name, "price": price},
             )
-            
+
             # Verify create response contains the entity with ID
             assert create_resp.status_code == 201
             data = create_resp.json()
             assert data["data"]["id"] is not None
             assert data["data"]["name"] == name
 
-    @settings(max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(
+        max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None
+    )
     @given(
-        fake_id=st.text(min_size=10, max_size=30, alphabet=st.characters(whitelist_categories=("L", "N"))),
+        fake_id=st.text(
+            min_size=10,
+            max_size=30,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
     )
     async def test_get_nonexistent_returns_404(self, fake_id: str) -> None:
         """
@@ -168,13 +172,17 @@ class TestEndpointGetDetailProperty:
 class TestEndpointDeleteProperty:
     """Property tests for DELETE endpoint."""
 
-    @settings(max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None)
-    @given(
-        fake_id=st.text(min_size=10, max_size=30, alphabet=st.characters(whitelist_categories=("L", "N"))),
+    @settings(
+        max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None
     )
-    async def test_delete_nonexistent_returns_404_property(
-        self, fake_id: str
-    ) -> None:
+    @given(
+        fake_id=st.text(
+            min_size=10,
+            max_size=30,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
+    )
+    async def test_delete_nonexistent_returns_404_property(self, fake_id: str) -> None:
         """
         **Feature: generic-fastapi-crud, Property 14: Endpoint DELETE Returns 204 or 404**
 
@@ -187,9 +195,15 @@ class TestEndpointDeleteProperty:
             response = await client.delete(f"/api/v1/items/{fake_id}")
             assert response.status_code == 404
 
-    @settings(max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(
+        max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None
+    )
     @given(
-        fake_id=st.text(min_size=10, max_size=30, alphabet=st.characters(whitelist_categories=("L", "N"))),
+        fake_id=st.text(
+            min_size=10,
+            max_size=30,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
     )
     async def test_delete_random_id_returns_404(self, fake_id: str) -> None:
         """

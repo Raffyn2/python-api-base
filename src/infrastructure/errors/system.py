@@ -14,13 +14,9 @@ class TelemetryError(InfrastructureError):
     metric collection or trace export failures.
     """
 
-    pass
-
 
 class ConfigurationError(InfrastructureError):
     """Configuration error.
 
     Raised when configuration is invalid or missing.
     """
-
-    pass

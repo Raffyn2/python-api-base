@@ -13,8 +13,8 @@ type JsonObject = dict[str, JsonValue]
 type JsonArray = list[JsonValue]
 
 __all__ = [
+    "JsonArray",
+    "JsonObject",
     "JsonPrimitive",
     "JsonValue",
-    "JsonObject",
-    "JsonArray",
 ]

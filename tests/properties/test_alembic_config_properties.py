@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-pytest.skip('Module infrastructure.database not implemented', allow_module_level=True)
+pytest.skip("Module infrastructure.database not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -108,7 +108,6 @@ class TestURLResolutionPrecedence:
             assert result == url
 
 
-
 class TestInvalidURLRejection:
     """Property 3: Invalid URL Rejection.
 
@@ -177,7 +176,6 @@ class TestInvalidURLRejection:
             assert "alembic.ini" in error_msg
             # Should not expose actual placeholder values
             assert "user:pass" not in error_msg
-
 
 
 class TestModelAutoDiscovery:
@@ -268,7 +266,6 @@ class TestModelAutoDiscovery:
             assert not module.startswith("_"), f"Private module {module} was imported"
 
 
-
 class TestMigrationFKIntegrity:
     """Property 5: Foreign Key Integrity in Migration Chain.
 
@@ -298,7 +295,7 @@ class TestMigrationFKIntegrity:
             # Extract revision
             rev_match = re.search(r'revision:\s*str\s*=\s*["\']([^"\']+)["\']', content)
             down_rev_match = re.search(
-                r'down_revision:\s*Union\[str,\s*None\]\s*=\s*([^\n]+)', content
+                r"down_revision:\s*Union\[str,\s*None\]\s*=\s*([^\n]+)", content
             )
 
             if rev_match:
@@ -480,7 +477,6 @@ class TestMigrationFKIntegrity:
         self.test_fk_references_have_prior_table_creation()
 
 
-
 class TestFloatToNumericConversion:
     """Property 4: Float to Numeric Round-Trip Preservation.
 
@@ -534,7 +530,7 @@ class TestFloatToNumericConversion:
             allow_infinity=False,
         )
     )
-    def test_numeric_precision_maintained(self, price: "Decimal") -> None:
+    def test_numeric_precision_maintained(self, price: Decimal) -> None:
         """Numeric values should maintain exact precision.
 
         *For any* Decimal value with 2 decimal places,

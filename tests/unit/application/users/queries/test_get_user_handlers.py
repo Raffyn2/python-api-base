@@ -4,21 +4,20 @@
 **Validates: Requirements Query Handler correctness**
 """
 
-import pytest
 from unittest.mock import AsyncMock
-from datetime import datetime, UTC
+
+import pytest
 
 from application.users.queries.get_user import (
-    GetUserByIdQuery,
-    GetUserByIdHandler,
-    GetUserByEmailQuery,
     GetUserByEmailHandler,
-    ListUsersQuery,
+    GetUserByEmailQuery,
+    GetUserByIdHandler,
+    GetUserByIdQuery,
     ListUsersHandler,
+    ListUsersQuery,
 )
 from domain.users.aggregates import UserAggregate
-from domain.users.repositories import IUserRepository, IUserReadRepository
-from core.base.patterns.result import Ok, Err
+from domain.users.repositories import IUserReadRepository, IUserRepository
 
 
 class TestGetUserByIdHandler:
@@ -130,8 +129,7 @@ class TestGetUserByIdHandler:
 
         # Assert
         assert result.is_err()
-        error = result.unwrap_err()
-        assert "Database read failed" in str(error)
+        assert "Database read failed" in str(result.error)
 
 
 class TestGetUserByEmailHandler:
@@ -259,7 +257,10 @@ class TestListUsersHandler:
         # Arrange
         query = ListUsersQuery(page=3, page_size=10)
 
-        users = [{"id": f"user-{i}", "email": f"user{i}@example.com", "is_active": True} for i in range(10)]
+        users = [
+            {"id": f"user-{i}", "email": f"user{i}@example.com", "is_active": True}
+            for i in range(10)
+        ]
         mock_read_repository.list_all.return_value = users
 
         # Act

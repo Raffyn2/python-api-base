@@ -6,9 +6,9 @@
 
 from dataclasses import dataclass
 
-from core.base.cqrs.command import BaseCommand
-from core.base.patterns.result import Result, Ok, Err
 from application.common.cqrs.handlers import CommandHandler
+from core.base.cqrs.command import BaseCommand
+from core.base.patterns.result import Err, Ok, Result
 from domain.users.repositories import IUserRepository
 
 
@@ -30,9 +30,7 @@ class DeleteUserHandler(CommandHandler[DeleteUserCommand, bool]):
     def __init__(self, user_repository: IUserRepository) -> None:
         self._repository = user_repository
 
-    async def handle(
-        self, command: DeleteUserCommand
-    ) -> Result[bool, Exception]:
+    async def handle(self, command: DeleteUserCommand) -> Result[bool, Exception]:
         """Handle delete user command.
 
         Args:

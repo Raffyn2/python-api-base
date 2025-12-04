@@ -22,8 +22,8 @@ from infrastructure.auth.password_policy import (
 )
 
 __all__ = [
-    "COMMON_PASSWORD_PENALTY",
     "COMMON_PASSWORDS",
+    "COMMON_PASSWORD_PENALTY",
     "LENGTH_BONUS_MULTIPLIER",
     "MAX_LENGTH_BONUS",
     "MAX_SCORE",

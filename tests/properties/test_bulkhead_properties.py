@@ -11,13 +11,12 @@ from hypothesis import given, settings, strategies as st
 
 from infrastructure.resilience.bulkhead import (
     Bulkhead,
-    BulkheadRejectedError,
     BulkheadRegistry,
+    BulkheadRejectedError,
     BulkheadState,
     BulkheadStats,
     bulkhead,
 )
-
 
 identifier_strategy = st.text(
     alphabet=st.sampled_from("abcdefghijklmnopqrstuvwxyz_"),

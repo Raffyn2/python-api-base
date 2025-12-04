@@ -5,19 +5,17 @@
 """
 
 import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import assume, given, settings, strategies as st
 from pydantic import BaseModel
 
 from interface.graphql import (
+    Connection,
     DataLoader,
     DataLoaderConfig,
-    Connection,
     Edge,
     PageInfo,
     PydanticGraphQLMapper,
 )
-
 
 # =============================================================================
 # Strategies
@@ -153,6 +151,7 @@ class TestDataLoaderClear:
     @pytest.mark.anyio
     async def test_clear_removes_specific_key(self) -> None:
         """clear(key) SHALL remove that key from cache."""
+
         async def batch_fn(keys: list[str]) -> list[int | None]:
             return [len(k) for k in keys]
 
@@ -173,6 +172,7 @@ class TestDataLoaderClear:
     @pytest.mark.anyio
     async def test_clear_all_removes_entire_cache(self) -> None:
         """clear() without key SHALL remove all entries."""
+
         async def batch_fn(keys: list[str]) -> list[int | None]:
             return [1] * len(keys)
 
@@ -234,10 +234,10 @@ class TestDataLoaderPrime:
         config = DataLoaderConfig(batch_size=100, cache=True)
         loader = DataLoader[str, int](batch_fn, config)
 
-        for key, value in zip(keys, values):
+        for key, value in zip(keys, values, strict=False):
             loader.prime(key, value)
 
-        for key, value in zip(keys, values):
+        for key, value in zip(keys, values, strict=False):
             assert loader._cache[key] == value
 
 
@@ -264,7 +264,9 @@ class TestRelayConnectionEdgeCount:
             start_cursor=edges[0].cursor if edges else None,
             end_cursor=edges[-1].cursor if edges else None,
         )
-        connection = Connection(edges=edges, page_info=page_info, total_count=len(items))
+        connection = Connection(
+            edges=edges, page_info=page_info, total_count=len(items)
+        )
 
         assert len(connection.edges) == len(items)
 
@@ -305,7 +307,9 @@ class TestRelayPageInfoConsistency:
             start_cursor=edges[0].cursor,
             end_cursor=edges[-1].cursor,
         )
-        connection = Connection(edges=edges, page_info=page_info, total_count=len(items))
+        connection = Connection(
+            edges=edges, page_info=page_info, total_count=len(items)
+        )
 
         assert connection.page_info.start_cursor is not None
         assert connection.page_info.end_cursor is not None

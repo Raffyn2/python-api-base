@@ -94,8 +94,6 @@ class PedidoExampleResponse(BaseModel):
 class ConfirmPedidoRequest(BaseModel):
     """Request to confirm an order."""
 
-    pass
-
 
 class CancelPedidoRequest(BaseModel):
     """Request to cancel an order."""

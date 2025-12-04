@@ -4,14 +4,16 @@
 **Validates: Requirements 5.1, 5.4**
 """
 
-
 import pytest
-pytest.skip('Module infrastructure.security.api_key_service not implemented', allow_module_level=True)
 
-from datetime import datetime, timedelta, UTC
+pytest.skip(
+    "Module infrastructure.security.api_key_service not implemented",
+    allow_module_level=True,
+)
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from datetime import UTC, datetime, timedelta
+
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.security.api_key_service import (
     APIKey,

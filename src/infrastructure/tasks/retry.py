@@ -4,9 +4,9 @@
 **Validates: Requirements 23.4**
 """
 
+import random
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import random
 
 
 class RetryPolicy(ABC):
@@ -108,7 +108,7 @@ class ExponentialBackoff(RetryPolicy):
         delay = min(delay, self.max_delay)
 
         if self.jitter > 0:
-            jitter_amount = delay * self.jitter * random.random()
+            jitter_amount = delay * self.jitter * random.random()  # noqa: S311
             delay += jitter_amount
 
         return delay

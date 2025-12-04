@@ -4,11 +4,11 @@
 """
 
 import pytest
+
 pytest.skip("Module interface.api not implemented", allow_module_level=True)
 
-import base64
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from hypothesis import given, settings, strategies as st
@@ -21,6 +21,7 @@ from interface.api.middleware.request_logger import (
     mask_dict,
     sanitize_headers,
 )
+
 # GraphQL imports - conditional to avoid strawberry dependency in tests
 try:
     from interface.api.graphql.types import (
@@ -29,6 +30,7 @@ try:
         decode_cursor,
         encode_cursor,
     )
+
     HAS_GRAPHQL = True
 except ImportError:
     HAS_GRAPHQL = False
@@ -37,7 +39,6 @@ except ImportError:
     decode_cursor = None
     encode_cursor = None
 from application.common.dto import ProblemDetail
-
 
 # =============================================================================
 # Property 1: Repository Data Integrity
@@ -110,10 +111,12 @@ def test_valid_ipv6_addresses_accepted(ip: Any) -> None:
     assert _is_valid_ip(str(ip)) is True
 
 
-@given(st.text(min_size=0, max_size=100).filter(
-    lambda x: not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", x)
-    and ":" not in x
-))
+@given(
+    st.text(min_size=0, max_size=100).filter(
+        lambda x: not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", x)
+        and ":" not in x
+    )
+)
 @settings(max_examples=100)
 def test_invalid_ip_strings_rejected(invalid_ip: str) -> None:
     """
@@ -130,12 +133,14 @@ def test_invalid_ip_strings_rejected(invalid_ip: str) -> None:
 # **Feature: adapters-code-review, Property 4: Sensitive Data Masking**
 # **Validates: Requirements 2.3**
 # =============================================================================
-@given(st.dictionaries(
-    keys=st.sampled_from(list(SENSITIVE_FIELDS)),
-    values=st.text(min_size=1, max_size=50),
-    min_size=1,
-    max_size=5,
-))
+@given(
+    st.dictionaries(
+        keys=st.sampled_from(list(SENSITIVE_FIELDS)),
+        values=st.text(min_size=1, max_size=50),
+        min_size=1,
+        max_size=5,
+    )
+)
 @settings(max_examples=100)
 def test_sensitive_fields_masked(data: dict[str, str]) -> None:
     """
@@ -150,12 +155,14 @@ def test_sensitive_fields_masked(data: dict[str, str]) -> None:
         assert result[key] == MASK_VALUE, f"Field {key} was not masked"
 
 
-@given(st.dictionaries(
-    keys=st.sampled_from(list(SENSITIVE_HEADERS)),
-    values=st.text(min_size=1, max_size=50),
-    min_size=1,
-    max_size=3,
-))
+@given(
+    st.dictionaries(
+        keys=st.sampled_from(list(SENSITIVE_HEADERS)),
+        values=st.text(min_size=1, max_size=50),
+        min_size=1,
+        max_size=3,
+    )
+)
 @settings(max_examples=100)
 def test_sensitive_headers_masked(headers: dict[str, str]) -> None:
     """
@@ -209,7 +216,7 @@ def test_problem_detail_rfc7807_compliance(
     # Serialized output should not contain stack traces
     serialized = problem.model_dump_json()
     assert "Traceback" not in serialized
-    assert "File \"" not in serialized
+    assert 'File "' not in serialized
 
 
 # =============================================================================
@@ -235,9 +242,7 @@ def test_valid_uuid_format_accepted(uuid_val: Any) -> None:
     assert UUID_PATTERN.match(str(uuid_val)) is not None
 
 
-@given(st.text(min_size=0, max_size=50).filter(
-    lambda x: not UUID_PATTERN.match(x)
-))
+@given(st.text(min_size=0, max_size=50).filter(lambda x: not UUID_PATTERN.match(x)))
 @settings(max_examples=100)
 def test_invalid_uuid_format_rejected(invalid_uuid: str) -> None:
     """
@@ -296,9 +301,7 @@ def test_valid_version_format(version_num: int) -> None:
     assert VERSION_PATTERN.match(version_str) is not None
 
 
-@given(st.text(min_size=0, max_size=20).filter(
-    lambda x: not VERSION_PATTERN.match(x)
-))
+@given(st.text(min_size=0, max_size=20).filter(lambda x: not VERSION_PATTERN.match(x)))
 @settings(max_examples=100)
 def test_invalid_version_format_rejected(invalid_version: str) -> None:
     """
@@ -317,14 +320,20 @@ def test_invalid_version_format_rejected(invalid_version: str) -> None:
 # =============================================================================
 import pytest
 
-pytest.skip('Module interface.api not implemented', allow_module_level=True)
+pytest.skip("Module interface.api not implemented", allow_module_level=True)
 
 
 @pytest.mark.skipif(not HAS_GRAPHQL, reason="strawberry not installed")
-@given(st.text(min_size=1, max_size=50, alphabet=st.characters(
-    whitelist_categories=("L", "N"),
-    whitelist_characters="_-",
-)))
+@given(
+    st.text(
+        min_size=1,
+        max_size=50,
+        alphabet=st.characters(
+            whitelist_categories=("L", "N"),
+            whitelist_characters="_-",
+        ),
+    )
+)
 @settings(max_examples=100)
 def test_cursor_round_trip(value: str) -> None:
     """

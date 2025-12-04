@@ -6,13 +6,12 @@
 
 import ast
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from pydantic import SecretStr
 
 # =============================================================================
@@ -46,7 +45,7 @@ def test_property_1_domain_layer_independence():
     domain_path = Path("src/my_app/domain")
     if not domain_path.exists():
         pytest.skip("Domain path does not exist")
-    
+
     violations = []
     for py_file in domain_path.rglob("*.py"):
         if "__pycache__" in str(py_file):
@@ -57,7 +56,7 @@ def test_property_1_domain_layer_independence():
                 parts = imp.split(".")
                 if len(parts) >= 2 and parts[1] in FORBIDDEN_IMPORTS_FOR_DOMAIN:
                     violations.append(f"{py_file}: imports {imp}")
-    
+
     assert len(violations) == 0, f"Domain layer violations: {violations}"
 
 
@@ -75,7 +74,7 @@ def test_property_2_file_size_compliance():
     base_path = Path("src/my_app")
     if not base_path.exists():
         pytest.skip("Base path does not exist")
-    
+
     violations = []
     for py_file in base_path.rglob("*.py"):
         if "__pycache__" in str(py_file):
@@ -86,7 +85,7 @@ def test_property_2_file_size_compliance():
                 violations.append(f"{py_file}: {lines} lines (max {MAX_FILE_LINES})")
         except UnicodeDecodeError:
             continue
-    
+
     assert len(violations) == 0, f"File size violations: {violations}"
 
 
@@ -96,28 +95,40 @@ def test_property_2_file_size_compliance():
 # **Validates: Requirements 3.1, 3.2**
 # =============================================================================
 
+
 @given(
     message=st.text(min_size=1, max_size=100),
     error_code=st.text(min_size=1, max_size=50).filter(lambda x: x.strip()),
     status_code=st.integers(min_value=400, max_value=599),
 )
 @settings(max_examples=100)
-def test_property_3_exception_serialization_consistency(message, error_code, status_code):
+def test_property_3_exception_serialization_consistency(
+    message, error_code, status_code
+):
     """Property 3: AppException.to_dict() produces consistent structure."""
     from core.exceptions import AppException
-    
+
     exc = AppException(
         message=message,
         error_code=error_code,
         status_code=status_code,
     )
-    
+
     result = exc.to_dict()
-    
+
     # Required keys must be present
-    required_keys = {"message", "error_code", "status_code", "details", "correlation_id", "timestamp"}
-    assert required_keys.issubset(result.keys()), f"Missing keys: {required_keys - result.keys()}"
-    
+    required_keys = {
+        "message",
+        "error_code",
+        "status_code",
+        "details",
+        "correlation_id",
+        "timestamp",
+    }
+    assert required_keys.issubset(result.keys()), (
+        f"Missing keys: {required_keys - result.keys()}"
+    )
+
     # Values must match
     assert result["message"] == message
     assert result["error_code"] == error_code
@@ -130,17 +141,18 @@ def test_property_3_exception_serialization_consistency(message, error_code, sta
 # **Validates: Requirements 4.1**
 # =============================================================================
 
+
 @given(user_id=st.text(min_size=1, max_size=50).filter(lambda x: x.strip()))
 @settings(max_examples=100)
 def test_property_4_jwt_required_claims(user_id):
     """Property 4: JWT tokens contain required claims (sub, exp, iat, jti)."""
     from core.auth.jwt import JWTService
-    
+
     secret = "a" * 32  # Minimum 32 chars
     service = JWTService(secret_key=secret)
-    
+
     token, payload = service.create_access_token(user_id=user_id)
-    
+
     # Required claims
     assert payload.sub == user_id
     assert payload.exp is not None
@@ -155,12 +167,13 @@ def test_property_4_jwt_required_claims(user_id):
 # **Validates: Requirements 4.1**
 # =============================================================================
 
+
 @given(short_key=st.text(min_size=0, max_size=31))
 @settings(max_examples=100)
 def test_property_5_secret_key_entropy_rejection(short_key):
     """Property 5: Secret keys shorter than 32 chars are rejected."""
     from core.auth.jwt import JWTService
-    
+
     with pytest.raises(ValueError, match="at least 32 characters"):
         JWTService(secret_key=short_key)
 
@@ -171,19 +184,24 @@ def test_property_5_secret_key_entropy_rejection(short_key):
 # **Validates: Requirements 4.4**
 # =============================================================================
 
-@given(password=st.text(min_size=12, max_size=50).filter(
-    lambda p: any(c.isupper() for c in p) and 
-              any(c.islower() for c in p) and 
-              any(c.isdigit() for c in p) and
-              any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in p)
-))
+
+@given(
+    password=st.text(min_size=12, max_size=50).filter(
+        lambda p: any(c.isupper() for c in p)
+        and any(c.islower() for c in p)
+        and any(c.isdigit() for c in p)
+        and any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in p)
+    )
+)
 @settings(max_examples=50)
 def test_property_6_password_hash_format(password):
     """Property 6: Password hashes use Argon2id format."""
     from core.shared.utils.password import hash_password
-    
+
     hashed = hash_password(password)
-    assert hashed.startswith("$argon2id$"), f"Hash should start with $argon2id$: {hashed[:20]}"
+    assert hashed.startswith("$argon2id$"), (
+        f"Hash should start with $argon2id$: {hashed[:20]}"
+    )
 
 
 # =============================================================================
@@ -192,13 +210,17 @@ def test_property_6_password_hash_format(password):
 # **Validates: Requirements 4.5**
 # =============================================================================
 
+
 def test_property_7_cors_wildcard_warning():
     """Property 7: Wildcard CORS in production triggers warning."""
     import logging
+
     from core.config import SecuritySettings
-    
+
     with patch.dict(os.environ, {"ENVIRONMENT": "production"}):
-        with patch.object(logging.getLogger("my_app.core.config"), "warning") as mock_warn:
+        with patch.object(
+            logging.getLogger("my_app.core.config"), "warning"
+        ) as mock_warn:
             # This should trigger warning validation
             settings = SecuritySettings(
                 secret_key=SecretStr("a" * 32),
@@ -214,22 +236,24 @@ def test_property_7_cors_wildcard_warning():
 # **Validates: Requirements 4.6**
 # =============================================================================
 
+
 def test_property_8_security_headers_presence():
     """Property 8: Security headers middleware adds required headers."""
-    from starlette.testclient import TestClient
     from fastapi import FastAPI
+    from starlette.testclient import TestClient
+
     from interface.api.middleware.security_headers import SecurityHeadersMiddleware
-    
+
     app = FastAPI()
     app.add_middleware(SecurityHeadersMiddleware)
-    
+
     @app.get("/test")
     def test_endpoint():
         return {"status": "ok"}
-    
+
     client = TestClient(app)
     response = client.get("/test")
-    
+
     # Required security headers
     assert "X-Content-Type-Options" in response.headers
     assert "X-Frame-Options" in response.headers
@@ -242,6 +266,7 @@ def test_property_8_security_headers_presence():
 # **Validates: Requirements 6.2**
 # =============================================================================
 
+
 @given(
     limit=st.integers(min_value=1, max_value=100),
     total_items=st.integers(min_value=0, max_value=200),
@@ -252,7 +277,7 @@ def test_property_9_repository_pagination(limit, total_items):
     # Simulate pagination logic
     items = list(range(total_items))
     result = items[:limit]
-    
+
     assert len(result) <= limit, f"Result {len(result)} exceeds limit {limit}"
 
 
@@ -262,17 +287,19 @@ def test_property_9_repository_pagination(limit, total_items):
 # **Validates: Requirements 6.3**
 # =============================================================================
 
+
 def test_property_10_soft_delete_behavior():
     """Property 10: Soft-deleted entities are excluded from queries."""
     # This tests the repository logic pattern
-    from sqlalchemy import false
-    
+
     # Verify the pattern is used in repository
     repo_path = Path("src/my_app/adapters/repositories/sqlmodel_repository.py")
     if repo_path.exists():
         content = repo_path.read_text()
         assert "is_deleted" in content, "Repository should check is_deleted"
-        assert "false()" in content or "is_(false())" in content, "Should filter soft-deleted"
+        assert "false()" in content or "is_(false())" in content, (
+            "Should filter soft-deleted"
+        )
 
 
 # =============================================================================
@@ -282,41 +309,49 @@ def test_property_10_soft_delete_behavior():
 # **Validates: Requirements 11.4**
 # =============================================================================
 
+
 @given(num_hooks=st.integers(min_value=1, max_value=10))
 @settings(max_examples=50)
 def test_property_11_12_lifecycle_hook_order(num_hooks):
     """Property 11 & 12: Hooks execute in correct order."""
     from core.container import LifecycleManager
-    
+
     manager = LifecycleManager()
     execution_order = []
-    
+
     # Register hooks
     for i in range(num_hooks):
+
         def make_hook(idx):
             def hook():
                 execution_order.append(idx)
+
             hook.__name__ = f"hook_{idx}"
             return hook
+
         manager.on_startup(make_hook(i))
         manager.on_shutdown(make_hook(i + 100))
-    
+
     # Run startup - should be in order
     manager.run_startup()
     startup_order = execution_order.copy()
     execution_order.clear()
-    
+
     # Run shutdown - should be in reverse order
     manager.run_shutdown()
     shutdown_order = execution_order.copy()
-    
+
     # Verify startup order
     expected_startup = list(range(num_hooks))
-    assert startup_order == expected_startup, f"Startup: {startup_order} != {expected_startup}"
-    
+    assert startup_order == expected_startup, (
+        f"Startup: {startup_order} != {expected_startup}"
+    )
+
     # Verify shutdown reverse order
     expected_shutdown = list(range(100 + num_hooks - 1, 99, -1))
-    assert shutdown_order == expected_shutdown, f"Shutdown: {shutdown_order} != {expected_shutdown}"
+    assert shutdown_order == expected_shutdown, (
+        f"Shutdown: {shutdown_order} != {expected_shutdown}"
+    )
 
 
 # =============================================================================
@@ -325,20 +360,20 @@ def test_property_11_12_lifecycle_hook_order(num_hooks):
 # **Validates: Requirements 10.5**
 # =============================================================================
 
+
 def test_property_13_configuration_caching():
     """Property 13: get_settings() returns same instance."""
     # Set required env vars
     with patch.dict(os.environ, {"SECURITY__SECRET_KEY": "a" * 32}):
         # Import inside test to avoid initialization issues
-        import importlib
         import my_app.core.config as config_module
-        
+
         # Clear cache and reload
         config_module.get_settings.cache_clear()
-        
+
         settings1 = config_module.get_settings()
         settings2 = config_module.get_settings()
-        
+
         assert settings1 is settings2, "get_settings() should return cached instance"
 
 
@@ -348,15 +383,16 @@ def test_property_13_configuration_caching():
 # **Validates: Requirements 10.2**
 # =============================================================================
 
+
 @given(secret=st.text(min_size=32, max_size=100))
 @settings(max_examples=100)
 def test_property_14_secretstr_redaction(secret):
     """Property 14: SecretStr does not reveal secret in str/repr."""
     secret_str = SecretStr(secret)
-    
+
     str_repr = str(secret_str)
     repr_repr = repr(secret_str)
-    
+
     # Secret should not appear in string representations
     assert secret not in str_repr, "Secret exposed in str()"
     assert secret not in repr_repr, "Secret exposed in repr()"
@@ -369,19 +405,22 @@ def test_property_14_secretstr_redaction(secret):
 # **Validates: Requirements 8.5**
 # =============================================================================
 
+
 def test_property_15_url_credential_redaction():
     """Property 15: URL credentials are redacted."""
     from core.config import redact_url_credentials
-    
+
     test_cases = [
         ("postgresql://user:secret123@localhost/db", "secret123"),
         ("postgresql://admin:p@ssw0rd!@host.com/mydb", "p@ssw0rd!"),
         ("mysql://root:verysecret@127.0.0.1:3306/test", "verysecret"),
     ]
-    
+
     for url, password in test_cases:
         redacted = redact_url_credentials(url)
-        assert password not in redacted, f"Password '{password}' found in redacted URL: {redacted}"
+        assert password not in redacted, (
+            f"Password '{password}' found in redacted URL: {redacted}"
+        )
         assert "[REDACTED]" in redacted, f"Redaction marker not found in: {redacted}"
 
 
@@ -391,16 +430,23 @@ def test_property_15_url_credential_redaction():
 # **Validates: Requirements 4.3**
 # =============================================================================
 
-@given(invalid_format=st.text(min_size=1, max_size=20).filter(
-    lambda x: not any(x.endswith(f"/{unit}") for unit in ["second", "minute", "hour", "day"])
-))
+
+@given(
+    invalid_format=st.text(min_size=1, max_size=20).filter(
+        lambda x: not any(
+            x.endswith(f"/{unit}") for unit in ["second", "minute", "hour", "day"]
+        )
+    )
+)
 @settings(max_examples=100)
 def test_property_16_rate_limit_format_validation(invalid_format):
     """Property 16: Invalid rate limit formats are rejected."""
     from core.config import RATE_LIMIT_PATTERN
-    
+
     # Invalid formats should not match
-    assert not RATE_LIMIT_PATTERN.match(invalid_format), f"Should reject: {invalid_format}"
+    assert not RATE_LIMIT_PATTERN.match(invalid_format), (
+        f"Should reject: {invalid_format}"
+    )
 
 
 # =============================================================================
@@ -409,9 +455,12 @@ def test_property_16_rate_limit_format_validation(invalid_format):
 # **Validates: Requirements 3.1**
 # =============================================================================
 
+
 @given(
     field_errors=st.dictionaries(
-        keys=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))),
+        keys=st.text(
+            min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))
+        ),
         values=st.text(min_size=1, max_size=50),
         min_size=1,
         max_size=5,
@@ -421,15 +470,15 @@ def test_property_16_rate_limit_format_validation(invalid_format):
 def test_property_17_validation_error_normalization(field_errors):
     """Property 17: Dict errors are normalized to list format."""
     from core.exceptions import ValidationError
-    
+
     exc = ValidationError(errors=field_errors)
     result = exc.to_dict()
-    
+
     # Errors should be in list format
     assert "errors" in result["details"]
     errors_list = result["details"]["errors"]
     assert isinstance(errors_list, list)
-    
+
     # Each error should have field and message
     for error in errors_list:
         assert "field" in error
@@ -442,14 +491,15 @@ def test_property_17_validation_error_normalization(field_errors):
 # **Validates: Requirements 3.3**
 # =============================================================================
 
+
 @given(error_msg=st.text(min_size=1, max_size=100))
 @settings(max_examples=100)
 def test_property_18_result_pattern_unwrap_safety(error_msg):
     """Property 18: Err.unwrap() raises ValueError."""
     from core.shared.result import Err
-    
+
     err = Err(error_msg)
-    
+
     with pytest.raises(ValueError):
         err.unwrap()
 
@@ -460,21 +510,22 @@ def test_property_18_result_pattern_unwrap_safety(error_msg):
 # **Validates: Requirements 4.1**
 # =============================================================================
 
+
 def test_property_19_token_expiration_check():
     """Property 19: Expired tokens raise TokenExpiredError."""
-    from core.auth.jwt import JWTService, TokenExpiredError, SystemTimeSource
-    from datetime import datetime, timedelta, timezone
-    
+    from core.auth.jwt import JWTService, TokenExpiredError
+
     class PastTimeSource:
         """Time source that returns time in the past."""
+
         def __init__(self, offset_hours: int):
             self.offset = timedelta(hours=offset_hours)
-        
+
         def now(self) -> datetime:
-            return datetime.now(timezone.utc) - self.offset
-    
+            return datetime.now(UTC) - self.offset
+
     secret = "a" * 32
-    
+
     # Create token with past time source (token will be expired)
     past_service = JWTService(
         secret_key=secret,
@@ -482,10 +533,10 @@ def test_property_19_token_expiration_check():
         time_source=PastTimeSource(2),  # 2 hours in past
     )
     token, _ = past_service.create_access_token("user123")
-    
+
     # Verify with current time should fail
     current_service = JWTService(secret_key=secret)
-    
+
     with pytest.raises(TokenExpiredError):
         current_service.verify_token(token)
 
@@ -496,20 +547,21 @@ def test_property_19_token_expiration_check():
 # **Validates: Requirements 4.1**
 # =============================================================================
 
+
 def test_property_20_refresh_token_replay_protection():
     """Property 20: Used refresh tokens are rejected on second use."""
     from core.auth.jwt import JWTService, TokenRevokedError
-    
+
     secret = "a" * 32
     service = JWTService(secret_key=secret)
     service.clear_used_refresh_tokens()
-    
+
     # Create refresh token
     token, _ = service.create_refresh_token("user123")
-    
+
     # First use should succeed
     service.verify_refresh_token(token)
-    
+
     # Second use should fail
     with pytest.raises(TokenRevokedError):
         service.verify_refresh_token(token)

@@ -11,7 +11,6 @@ from dataclasses import dataclass
 import pytest
 from hypothesis import given, settings, strategies as st
 
-
 # Tenant context using contextvars
 _current_tenant: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "current_tenant", default=None
@@ -79,7 +78,9 @@ class TenantRepository[T]:
         """Attempt cross-tenant access (should be blocked)."""
         current = self._get_tenant()
         if target_tenant != current:
-            raise PermissionError(f"Cross-tenant access denied: {current} -> {target_tenant}")
+            raise PermissionError(
+                f"Cross-tenant access denied: {current} -> {target_tenant}"
+            )
         return self._storage.get(f"{target_tenant}:{entity_id}")  # type: ignore
 
 

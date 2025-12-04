@@ -4,8 +4,7 @@
 **Validates: Requirements 16.7**
 """
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from domain.common.specification import spec
 
@@ -128,9 +127,7 @@ class TestSpecificationComposition:
         value=st.integers(),
         threshold=st.integers(),
     )
-    def test_operator_invert_equals_not_spec(
-        self, value: int, threshold: int
-    ) -> None:
+    def test_operator_invert_equals_not_spec(self, value: int, threshold: int) -> None:
         """
         The ~ operator SHALL produce the same result as not_spec.
         """

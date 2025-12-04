@@ -22,7 +22,6 @@ from infrastructure.messaging.asyncapi import (
     create_event_schema,
 )
 
-
 identifier_strategy = st.text(
     alphabet=st.sampled_from("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"),
     min_size=1,
@@ -81,9 +80,14 @@ class TestMessageObject:
         result = message.to_dict()
         assert result["name"] == name
 
-    @given(name=identifier_strategy, content_type=st.sampled_from(
-        ["application/json", "application/xml", "text/plain"]
-    ))
+    @given(
+        name=identifier_strategy,
+        content_type=st.sampled_from([
+            "application/json",
+            "application/xml",
+            "text/plain",
+        ]),
+    )
     @settings(max_examples=50)
     def test_content_type_in_dict(self, name: str, content_type: str):
         """Content type should be in to_dict."""

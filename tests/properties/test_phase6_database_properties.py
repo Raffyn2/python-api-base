@@ -17,13 +17,11 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
-from typing import Any
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
-from hypothesis import given, settings, strategies as st, assume
-
+from hypothesis import assume, given, settings, strategies as st
 
 # === Mock Classes for Testing ===
 
@@ -83,7 +81,7 @@ class MockUnitOfWork:
         await self._session.rollback()
         self._rolled_back = True
 
-    async def __aenter__(self) -> "MockUnitOfWork":
+    async def __aenter__(self) -> MockUnitOfWork:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -117,7 +115,9 @@ class TestTransactionRollbackOnFailure:
             try:
                 async with uow:
                     # Simulate some operations
-                    await session.execute(f"INSERT INTO entities (name) VALUES ('{entity_name}')")
+                    await session.execute(
+                        f"INSERT INTO entities (name) VALUES ('{entity_name}')"
+                    )
                     # Raise an exception
                     raise ValueError("Simulated error")
             except ValueError:
@@ -138,7 +138,9 @@ class TestTransactionRollbackOnFailure:
 
         async def run_test() -> None:
             async with uow:
-                await session.execute(f"INSERT INTO entities (name) VALUES ('{entity_name}')")
+                await session.execute(
+                    f"INSERT INTO entities (name) VALUES ('{entity_name}')"
+                )
                 await uow.commit()
 
             # Should not have rolled back

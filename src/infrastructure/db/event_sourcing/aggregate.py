@@ -13,7 +13,6 @@ from typing import Any
 from .events import SourcedEvent
 from .snapshots import Snapshot
 
-
 # Type alias for backward compatibility
 type AggregateId = str | int
 

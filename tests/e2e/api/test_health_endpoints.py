@@ -14,7 +14,7 @@ class TestHealthEndpoints:
     async def test_liveness_endpoint(self, test_client: AsyncClient) -> None:
         """Test /health/live endpoint returns ok status."""
         response = await test_client.get("/health/live")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "ok"
@@ -22,25 +22,25 @@ class TestHealthEndpoints:
     async def test_readiness_endpoint(self, test_client: AsyncClient) -> None:
         """Test /health/ready endpoint returns status with checks."""
         response = await test_client.get("/health/ready")
-        
+
         # Should return 200 (healthy or degraded) or 503 (unhealthy)
         assert response.status_code in [200, 503]
         data = response.json()
         assert data["status"] in ["healthy", "degraded", "unhealthy"]
         assert "checks" in data
-        
+
         # Should have database check
         assert "database" in data["checks"]
         db_check = data["checks"]["database"]
         assert "status" in db_check
-        
+
         # Should have redis check (optional)
         assert "redis" in data["checks"]
 
     async def test_readiness_returns_version(self, test_client: AsyncClient) -> None:
         """Test /health/ready endpoint returns version info."""
         response = await test_client.get("/health/ready")
-        
+
         assert response.status_code in [200, 503]
         data = response.json()
         # Version may be None if settings not initialized
@@ -49,10 +49,10 @@ class TestHealthEndpoints:
     async def test_readiness_database_latency(self, test_client: AsyncClient) -> None:
         """Test /health/ready returns database latency when healthy."""
         response = await test_client.get("/health/ready")
-        
+
         data = response.json()
         db_check = data["checks"]["database"]
-        
+
         if db_check["status"] == "healthy":
             assert "latency_ms" in db_check
             assert db_check["latency_ms"] >= 0
@@ -71,7 +71,7 @@ class TestApplicationStartup:
     async def test_openapi_spec_available(self, test_client: AsyncClient) -> None:
         """Test that OpenAPI spec is available."""
         response = await test_client.get("/openapi.json")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "openapi" in data
@@ -103,7 +103,7 @@ class TestApplicationStartup:
     async def test_security_headers_present(self, test_client: AsyncClient) -> None:
         """Test that security headers are present in responses."""
         response = await test_client.get("/health/live")
-        
+
         assert response.status_code == 200
         # Check security headers
         assert "x-frame-options" in response.headers

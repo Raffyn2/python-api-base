@@ -10,6 +10,7 @@ import logging
 from typing import Any
 
 from prometheus_client import (
+    CONTENT_TYPE_LATEST,
     REGISTRY,
     CollectorRegistry,
     Counter,
@@ -17,7 +18,6 @@ from prometheus_client import (
     Histogram,
     Summary,
     generate_latest,
-    CONTENT_TYPE_LATEST,
 )
 
 from infrastructure.prometheus.config import PrometheusConfig
@@ -25,7 +25,7 @@ from infrastructure.prometheus.config import PrometheusConfig
 logger = logging.getLogger(__name__)
 
 # Global registry instance
-_registry: "MetricsRegistry | None" = None
+_registry: MetricsRegistry | None = None
 
 
 class MetricsRegistry:

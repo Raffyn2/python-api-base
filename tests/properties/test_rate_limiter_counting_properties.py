@@ -5,14 +5,13 @@
 """
 
 import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import assume, given, settings, strategies as st
 
 try:
     from infrastructure.security.sliding_window import (
+        RateLimitResult,
         SlidingWindowConfig,
         SlidingWindowRateLimiter,
-        RateLimitResult,
         parse_rate_limit,
     )
 except ImportError:
@@ -22,7 +21,9 @@ except ImportError:
 # Strategy for rate limit values
 requests_strategy = st.integers(min_value=1, max_value=100)
 window_strategy = st.integers(min_value=1, max_value=3600)
-key_strategy = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789:_-")
+key_strategy = st.text(
+    min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789:_-"
+)
 
 
 class TestRateLimiterCounting:
@@ -36,7 +37,7 @@ class TestRateLimiterCounting:
     ) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 14: Rate Limiter Request Counting**
-        
+
         For any rate limit of N requests per window, making N requests SHALL succeed,
         and the (N+1)th request SHALL be rejected.
         **Validates: Requirements 9.4**
@@ -46,12 +47,14 @@ class TestRateLimiterCounting:
             window_size_seconds=60,
         )
         limiter = SlidingWindowRateLimiter(config)
-        
+
         # Make N requests - all should succeed
         for i in range(max_requests):
             result = await limiter.is_allowed(key)
-            assert result.allowed is True, f"Request {i+1} of {max_requests} should be allowed"
-        
+            assert result.allowed is True, (
+                f"Request {i + 1} of {max_requests} should be allowed"
+            )
+
         # (N+1)th request should be rejected
         result = await limiter.is_allowed(key)
         assert result.allowed is False
@@ -69,13 +72,13 @@ class TestRateLimiterCounting:
         **Validates: Requirements 9.4**
         """
         assume(max_requests >= 3)
-        
+
         config = SlidingWindowConfig(
             requests_per_window=max_requests,
             window_size_seconds=60,
         )
         limiter = SlidingWindowRateLimiter(config)
-        
+
         previous_remaining = max_requests
         for _ in range(min(max_requests, 5)):
             result = await limiter.is_allowed(key)
@@ -94,21 +97,21 @@ class TestRateLimiterCounting:
         **Validates: Requirements 9.4**
         """
         assume(key1 != key2)
-        
+
         config = SlidingWindowConfig(
             requests_per_window=max_requests,
             window_size_seconds=60,
         )
         limiter = SlidingWindowRateLimiter(config)
-        
+
         # Exhaust key1's limit
         for _ in range(max_requests):
             await limiter.is_allowed(key1)
-        
+
         # key1 should be blocked
         result1 = await limiter.is_allowed(key1)
         assert result1.allowed is False
-        
+
         # key2 should still be allowed
         result2 = await limiter.is_allowed(key2)
         assert result2.allowed is True
@@ -126,18 +129,18 @@ class TestRateLimiterCounting:
             window_size_seconds=60,
         )
         limiter = SlidingWindowRateLimiter(config)
-        
+
         # Exhaust limit
         for _ in range(5):
             await limiter.is_allowed(key)
-        
+
         # Should be blocked
         result = await limiter.is_allowed(key)
         assert result.allowed is False
-        
+
         # Reset
         await limiter.reset(key)
-        
+
         # Should be allowed again
         result = await limiter.is_allowed(key)
         assert result.allowed is True
@@ -154,9 +157,9 @@ class TestRateLimiterCounting:
         """
         rate_string = f"{requests}/{unit}"
         config = parse_rate_limit(rate_string)
-        
+
         assert config.requests_per_window == requests
-        
+
         expected_seconds = {
             "second": 1,
             "minute": 60,
@@ -180,11 +183,11 @@ class TestRateLimiterCounting:
             window_size_seconds=60,
         )
         limiter = SlidingWindowRateLimiter(config)
-        
+
         # Exhaust limit
         for _ in range(max_requests):
             await limiter.is_allowed(key)
-        
+
         # Rejected request should have retry info
         result = await limiter.is_allowed(key)
         assert result.allowed is False

@@ -5,11 +5,9 @@
 """
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.shared.utils.password import hash_password, verify_password
-
 
 # Strategy for generating valid passwords
 password_strategy = st.text(

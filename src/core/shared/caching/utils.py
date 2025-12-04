@@ -5,8 +5,8 @@
 """
 
 import hashlib
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 
 def generate_cache_key(

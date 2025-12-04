@@ -6,8 +6,7 @@
 
 import time
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.shared.utils.ids import (
     generate_ulid,
@@ -120,9 +119,7 @@ class TestIDGeneration:
         assert not is_valid_ulid(invalid_str)
 
     @settings(max_examples=20)
-    @given(
-        invalid_str=st.text(min_size=0, max_size=50).filter(lambda x: len(x) != 36)
-    )
+    @given(invalid_str=st.text(min_size=0, max_size=50).filter(lambda x: len(x) != 36))
     def test_invalid_uuid7_detection(self, invalid_str: str) -> None:
         """
         For any string that is not a valid UUID format, is_valid_uuid7 SHALL return False.

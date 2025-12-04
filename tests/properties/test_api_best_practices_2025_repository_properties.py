@@ -8,16 +8,13 @@ Property tests for:
 - Property 8: Repository Idempotency
 """
 
-from dataclasses import dataclass, field
-from typing import Any
 from collections.abc import Sequence
+from typing import Any
 from uuid import uuid4
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from pydantic import BaseModel
-
 
 # === Test Models ===
 
@@ -166,17 +163,17 @@ class TestCRUDRoundTrip:
         **Validates: Requirements 4.1**
         """
         repo = InMemoryRepository()
-        
+
         # Create
         created = await repo.create(create_dto)
-        
+
         # Verify ID was assigned
         assert created.id is not None
         assert len(created.id) > 0
-        
+
         # Get
         retrieved = await repo.get_by_id(created.id)
-        
+
         # Verify round-trip consistency
         assert retrieved is not None
         assert retrieved.name == create_dto.name
@@ -202,19 +199,19 @@ class TestCRUDRoundTrip:
         **Validates: Requirements 4.2**
         """
         repo = InMemoryRepository()
-        
+
         # Create
         created = await repo.create(create_dto)
-        
+
         # Update
         update_dto = SampleUpdateDTO(name=new_name, value=new_value)
         updated = await repo.update(created.id, update_dto)
-        
+
         # Verify update
         assert updated is not None
         assert updated.name == new_name
         assert updated.value == new_value
-        
+
         # Get and verify persistence
         retrieved = await repo.get_by_id(created.id)
         assert retrieved is not None
@@ -224,26 +221,24 @@ class TestCRUDRoundTrip:
     @settings(max_examples=50, deadline=None)
     @given(create_dto=create_dto_strategy)
     @pytest.mark.asyncio
-    async def test_delete_removes_entity(
-        self, create_dto: SampleCreateDTO
-    ) -> None:
+    async def test_delete_removes_entity(self, create_dto: SampleCreateDTO) -> None:
         """Deleted entity SHALL not be retrievable.
 
         **Feature: api-best-practices-review-2025, Property 7**
         **Validates: Requirements 4.3**
         """
         repo = InMemoryRepository()
-        
+
         # Create
         created = await repo.create(create_dto)
-        
+
         # Verify exists
         assert await repo.exists(created.id) is True
-        
+
         # Delete
         deleted = await repo.delete(created.id)
         assert deleted is True
-        
+
         # Verify not exists
         assert await repo.exists(created.id) is False
         retrieved = await repo.get_by_id(created.id)
@@ -263,27 +258,25 @@ class TestRepositoryIdempotency:
     @settings(max_examples=50, deadline=None)
     @given(create_dto=create_dto_strategy)
     @pytest.mark.asyncio
-    async def test_delete_idempotent(
-        self, create_dto: SampleCreateDTO
-    ) -> None:
+    async def test_delete_idempotent(self, create_dto: SampleCreateDTO) -> None:
         """Delete SHALL be idempotent (second delete returns False).
 
         **Feature: api-best-practices-review-2025, Property 8**
         **Validates: Requirements 4.4**
         """
         repo = InMemoryRepository()
-        
+
         # Create
         created = await repo.create(create_dto)
-        
+
         # First delete succeeds
         first_delete = await repo.delete(created.id)
         assert first_delete is True
-        
+
         # Second delete returns False (not error)
         second_delete = await repo.delete(created.id)
         assert second_delete is False
-        
+
         # Third delete also False
         third_delete = await repo.delete(created.id)
         assert third_delete is False
@@ -296,11 +289,11 @@ class TestRepositoryIdempotency:
         **Validates: Requirements 4.5**
         """
         repo = InMemoryRepository()
-        
+
         # Get non-existent
         result = await repo.get_by_id("non-existent-id")
         assert result is None
-        
+
         # Exists returns False
         exists = await repo.exists("non-existent-id")
         assert exists is False
@@ -313,7 +306,7 @@ class TestRepositoryIdempotency:
         **Validates: Requirements 4.5**
         """
         repo = InMemoryRepository()
-        
+
         # Update non-existent
         update_dto = SampleUpdateDTO(name="new name")
         result = await repo.update("non-existent-id", update_dto)
@@ -337,12 +330,12 @@ class TestRepositoryPagination:
         **Validates: Requirements 4.6**
         """
         repo = InMemoryRepository()
-        
+
         # Create entities
         for i in range(count):
             dto = SampleCreateDTO(name=f"item-{i}", value=i)
             await repo.create(dto)
-        
+
         # List all
         items = await repo.list_all()
         assert len(items) == count
@@ -363,15 +356,15 @@ class TestRepositoryPagination:
         **Validates: Requirements 4.6**
         """
         repo = InMemoryRepository()
-        
+
         # Create entities
         for i in range(count):
             dto = SampleCreateDTO(name=f"item-{i}", value=i)
             await repo.create(dto)
-        
+
         # List with pagination
         items = await repo.list_all(skip=skip, limit=limit)
-        
+
         # Verify pagination
         expected_count = min(limit, max(0, count - skip))
         assert len(items) == expected_count
@@ -394,15 +387,15 @@ class TestRepositoryCount:
         **Validates: Requirements 4.6**
         """
         repo = InMemoryRepository()
-        
+
         # Empty repository
         assert await repo.count() == 0
-        
+
         # Create entities
         for i in range(count):
             dto = SampleCreateDTO(name=f"item-{i}", value=i)
             await repo.create(dto)
-        
+
         # Count matches
         assert await repo.count() == count
 
@@ -416,20 +409,20 @@ class TestRepositoryCount:
         **Validates: Requirements 4.6**
         """
         repo = InMemoryRepository()
-        
+
         # Create entities
         created_ids: list[str] = []
         for i in range(create_count):
             dto = SampleCreateDTO(name=f"item-{i}", value=i)
             entity = await repo.create(dto)
             created_ids.append(entity.id)
-        
+
         assert await repo.count() == create_count
-        
+
         # Delete first entity
         await repo.delete(created_ids[0])
         assert await repo.count() == create_count - 1
-        
+
         # Delete another
         await repo.delete(created_ids[1])
         assert await repo.count() == create_count - 2
@@ -457,16 +450,16 @@ class TestPartialUpdate:
         **Validates: Requirements 4.2**
         """
         repo = InMemoryRepository()
-        
+
         # Create
         created = await repo.create(create_dto)
         original_value = created.value
         original_active = created.active
-        
+
         # Partial update (only name)
         update_dto = SampleUpdateDTO(name=new_name)
         updated = await repo.update(created.id, update_dto)
-        
+
         # Verify partial update
         assert updated is not None
         assert updated.name == new_name  # Changed

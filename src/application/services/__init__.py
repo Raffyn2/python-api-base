@@ -9,8 +9,8 @@ Provides shared services used across bounded contexts:
 """
 
 from .feature_flags import FeatureFlagService, FlagConfig, FlagStatus
-from .file_upload import FileUploadService, FileMetadata, UploadResult
-from .multitenancy import TenantMiddleware, TenantContext, get_current_tenant
+from .file_upload import FileMetadata, FileUploadService, UploadResult
+from .multitenancy import TenantContext, TenantMiddleware, get_current_tenant
 
 __all__ = [
     # Feature Flags

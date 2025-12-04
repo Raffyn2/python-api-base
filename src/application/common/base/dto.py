@@ -3,7 +3,7 @@
 Uses PEP 695 type parameter syntax (Python 3.12+) for cleaner generic definitions.
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, computed_field
 

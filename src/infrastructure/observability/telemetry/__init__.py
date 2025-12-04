@@ -30,12 +30,16 @@ from .service import (
 )
 from .types import (
     AttributePrimitive,
-    AttributeSequence,
     Attributes,
+    AttributeSequence,
     AttributeValue,
 )
 
 __all__ = [
+    "AttributePrimitive",
+    "AttributeSequence",
+    "AttributeValue",
+    "Attributes",
     "P",
     "TelemetryProvider",
     "_NoOpCounter",
@@ -50,8 +54,4 @@ __all__ = [
     "get_telemetry",
     "init_telemetry",
     "traced",
-    "AttributePrimitive",
-    "AttributeSequence",
-    "AttributeValue",
-    "Attributes",
 ]

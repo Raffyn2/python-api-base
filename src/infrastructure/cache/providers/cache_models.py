@@ -15,7 +15,7 @@ class JitterConfig:
 
     **Feature: api-best-practices-review-2025**
     **Validates: Requirements 22.1**
-    
+
     Attributes:
         min_jitter_percent: Minimum jitter as percentage (e.g., 0.05 for 5%).
         max_jitter_percent: Maximum jitter as percentage (e.g., 0.15 for 15%).
@@ -37,7 +37,7 @@ class TTLPattern:
 
     **Feature: api-best-practices-review-2025**
     **Validates: Requirements 22.5**
-    
+
     Attributes:
         pattern: Key pattern to match (glob-style).
         ttl_seconds: TTL in seconds for matching keys.
@@ -57,7 +57,7 @@ class CacheStats:
 
     **Feature: api-best-practices-review-2025**
     **Validates: Requirements 22.6**
-    
+
     Attributes:
         hits: Number of cache hits.
         misses: Number of cache misses.
@@ -75,7 +75,7 @@ class CacheStats:
     @property
     def hit_ratio(self) -> float:
         """Calculate cache hit ratio.
-        
+
         Returns:
             Hit ratio between 0.0 and 1.0.
         """

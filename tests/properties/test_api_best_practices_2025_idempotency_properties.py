@@ -8,22 +8,19 @@ Property tests for:
 - Property 12: Idempotency Key Conflict Detection
 """
 
-import asyncio
 import json
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
-from hypothesis import given, settings, HealthCheck
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.idempotency import (
-    IdempotencyHandler,
-    IdempotencyRecord,
     IdempotencyConfig,
+    IdempotencyHandler,
     IdempotencyKeyConflictError,
+    IdempotencyRecord,
 )
 from infrastructure.idempotency.handler import compute_request_hash
-
 
 # === Test Fixtures ===
 
@@ -67,7 +64,9 @@ def handler_with_mock_redis(
 idempotency_key_strategy = st.uuids().map(str)
 
 request_body_strategy = st.dictionaries(
-    st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L", "N"))),
+    st.text(
+        min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L", "N"))
+    ),
     st.one_of(st.text(max_size=50), st.integers(), st.booleans()),
     min_size=1,
     max_size=5,
@@ -105,47 +104,47 @@ class TestIdempotencyKeyReplay:
         """
         # Setup
         stored_record: dict | None = None
-        
+
         async def mock_get(key: str) -> str | None:
             if stored_record:
                 return json.dumps(stored_record)
             return None
-        
+
         async def mock_setex(key: str, ttl: int, value: str) -> None:
             nonlocal stored_record
             stored_record = json.loads(value)
-        
+
         mock_redis = AsyncMock()
         mock_redis.ping = AsyncMock()
         mock_redis.get = mock_get
         mock_redis.setex = mock_setex
-        
+
         handler = IdempotencyHandler()
         handler._redis = mock_redis
         handler._connected = True
-        
+
         # Compute request hash
         body_bytes = json.dumps(request_body).encode()
         request_hash = compute_request_hash("POST", "/api/test", body_bytes)
-        
+
         # Track operation execution count
         execution_count = 0
-        
+
         async def operation() -> tuple[str, int]:
             nonlocal execution_count
             execution_count += 1
             return json.dumps({"result": "success"}), 200
-        
+
         # First request
         body1, status1, is_replay1 = await handler.execute_idempotent(
             idempotency_key, request_hash, operation
         )
-        
+
         # Second request (duplicate)
         body2, status2, is_replay2 = await handler.execute_idempotent(
             idempotency_key, request_hash, operation
         )
-        
+
         # Assertions
         assert execution_count == 1, "Operation should execute only once"
         assert is_replay1 is False, "First request should not be replay"
@@ -165,41 +164,41 @@ class TestIdempotencyKeyReplay:
         **Feature: api-best-practices-review-2025, Property 11**
         """
         stored_record: dict | None = None
-        
+
         async def mock_get(key: str) -> str | None:
             if stored_record:
                 return json.dumps(stored_record)
             return None
-        
+
         async def mock_setex(key: str, ttl: int, value: str) -> None:
             nonlocal stored_record
             stored_record = json.loads(value)
-        
+
         mock_redis = AsyncMock()
         mock_redis.ping = AsyncMock()
         mock_redis.get = mock_get
         mock_redis.setex = mock_setex
-        
+
         handler = IdempotencyHandler()
         handler._redis = mock_redis
         handler._connected = True
-        
+
         request_hash = compute_request_hash("POST", "/api/test", b"{}")
-        
+
         # Operation returns 201 Created
         async def operation() -> tuple[str, int]:
             return json.dumps({"id": "123"}), 201
-        
+
         # First request
         _, status1, _ = await handler.execute_idempotent(
             idempotency_key, request_hash, operation
         )
-        
+
         # Second request
         _, status2, is_replay = await handler.execute_idempotent(
             idempotency_key, request_hash, operation
         )
-        
+
         assert status1 == 201
         assert status2 == 201
         assert is_replay is True
@@ -236,41 +235,41 @@ class TestIdempotencyKeyConflict:
         # Skip if bodies happen to be equal
         if body1 == body2:
             return
-        
+
         stored_record: dict | None = None
-        
+
         async def mock_get(key: str) -> str | None:
             if stored_record:
                 return json.dumps(stored_record)
             return None
-        
+
         async def mock_setex(key: str, ttl: int, value: str) -> None:
             nonlocal stored_record
             stored_record = json.loads(value)
-        
+
         mock_redis = AsyncMock()
         mock_redis.ping = AsyncMock()
         mock_redis.get = mock_get
         mock_redis.setex = mock_setex
-        
+
         handler = IdempotencyHandler()
         handler._redis = mock_redis
         handler._connected = True
-        
+
         # Compute different hashes for different bodies
         hash1 = compute_request_hash("POST", "/api/test", json.dumps(body1).encode())
         hash2 = compute_request_hash("POST", "/api/test", json.dumps(body2).encode())
-        
+
         async def operation() -> tuple[str, int]:
             return json.dumps({"result": "success"}), 200
-        
+
         # First request succeeds
         await handler.execute_idempotent(idempotency_key, hash1, operation)
-        
+
         # Second request with different body should raise conflict
         with pytest.raises(IdempotencyKeyConflictError) as exc_info:
             await handler.execute_idempotent(idempotency_key, hash2, operation)
-        
+
         assert exc_info.value.idempotency_key == idempotency_key
 
     @pytest.mark.asyncio
@@ -280,7 +279,7 @@ class TestIdempotencyKeyConflict:
         **Feature: api-best-practices-review-2025, Property 12**
         """
         error = IdempotencyKeyConflictError("test-key-123")
-        
+
         assert "test-key-123" in str(error)
         assert error.idempotency_key == "test-key-123"
 
@@ -311,7 +310,7 @@ class TestRequestHashComputation:
         """
         hash1 = compute_request_hash(method, path, body)
         hash2 = compute_request_hash(method, path, body)
-        
+
         assert hash1 == hash2, "Hash must be deterministic"
 
     @settings(max_examples=50, deadline=None)
@@ -331,10 +330,10 @@ class TestRequestHashComputation:
         """
         if body1 == body2:
             return
-        
+
         hash1 = compute_request_hash("POST", "/api/test", body1)
         hash2 = compute_request_hash("POST", "/api/test", body2)
-        
+
         assert hash1 != hash2, "Different bodies must have different hashes"
 
     def test_method_affects_hash(self) -> None:
@@ -344,10 +343,10 @@ class TestRequestHashComputation:
         **Validates: Requirements 23.4**
         """
         body = b'{"data": "test"}'
-        
+
         hash_post = compute_request_hash("POST", "/api/test", body)
         hash_patch = compute_request_hash("PATCH", "/api/test", body)
-        
+
         assert hash_post != hash_patch
 
     def test_path_affects_hash(self) -> None:
@@ -357,10 +356,10 @@ class TestRequestHashComputation:
         **Validates: Requirements 23.4**
         """
         body = b'{"data": "test"}'
-        
+
         hash1 = compute_request_hash("POST", "/api/v1/users", body)
         hash2 = compute_request_hash("POST", "/api/v1/orders", body)
-        
+
         assert hash1 != hash2
 
 
@@ -392,11 +391,11 @@ class TestIdempotencyRecord:
             response_body='{"result": "success"}',
             status_code=status_code,
         )
-        
+
         # Round-trip through dict
         record_dict = record.to_dict()
         restored = IdempotencyRecord.from_dict(record_dict)
-        
+
         assert restored.idempotency_key == record.idempotency_key
         assert restored.request_hash == record.request_hash
         assert restored.response_body == record.response_body
@@ -413,7 +412,7 @@ class TestIdempotencyConfig:
     def test_default_config(self) -> None:
         """Default config SHALL have reasonable defaults."""
         config = IdempotencyConfig()
-        
+
         assert config.ttl_hours == 24
         assert config.header_name == "Idempotency-Key"
         assert config.key_prefix == "idempotency"
@@ -425,7 +424,7 @@ class TestIdempotencyConfig:
             key_prefix="custom-prefix",
             header_name="X-Idempotency-Key",
         )
-        
+
         assert config.ttl_hours == 48
         assert config.key_prefix == "custom-prefix"
         assert config.header_name == "X-Idempotency-Key"

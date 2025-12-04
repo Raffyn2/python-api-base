@@ -6,47 +6,57 @@
 
 import pytest
 
-pytest.skip('Module core.shared.grpc_service not implemented', allow_module_level=True)
+pytest.skip("Module core.shared.grpc_service not implemented", allow_module_level=True)
 
-from hypothesis import given, strategies as st, settings
+from hypothesis import given, settings, strategies as st
 
 from core.shared.grpc_service import (
-    GRPCStatus,
-    MethodType,
+    GRPCContext,
     GRPCError,
     GRPCMetadata,
-    GRPCContext,
-    MethodDescriptor,
-    ServiceDescriptor,
     GRPCService,
-    ServiceRegistry,
+    GRPCStatus,
+    MethodDescriptor,
+    MethodType,
     ProtoField,
-    ProtoMessage,
     ProtoGenerator,
+    ProtoMessage,
+    ServiceDescriptor,
+    ServiceRegistry,
     create_service_descriptor,
-    create_unary_method,
     create_streaming_method,
+    create_unary_method,
 )
-
 
 # Strategies
 names = st.text(
     alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_"),
-    min_size=1, max_size=30,
+    min_size=1,
+    max_size=30,
 )
 packages = st.text(
     alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="._"),
-    min_size=0, max_size=30,
+    min_size=0,
+    max_size=30,
 )
 header_keys = st.text(
     alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="-_"),
-    min_size=1, max_size=20,
+    min_size=1,
+    max_size=20,
 )
 header_values = st.text(min_size=1, max_size=50)
 grpc_statuses = st.sampled_from(list(GRPCStatus))
 method_types = st.sampled_from(list(MethodType))
 field_numbers = st.integers(min_value=1, max_value=1000)
-proto_types = st.sampled_from(["string", "int32", "int64", "bool", "float", "double", "bytes"])
+proto_types = st.sampled_from([
+    "string",
+    "int32",
+    "int64",
+    "bool",
+    "float",
+    "double",
+    "bytes",
+])
 
 
 class TestGRPCError:
@@ -73,7 +83,10 @@ class TestGRPCMetadata:
         metadata.add_header(key, value)
         assert metadata.get_header(key) == value
 
-    @given(key=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=20), value=header_values)
+    @given(
+        key=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=20),
+        value=header_values,
+    )
     @settings(max_examples=100)
     def test_header_case_insensitive(self, key: str, value: str) -> None:
         """Headers are case insensitive."""
@@ -111,10 +124,16 @@ class TestMethodDescriptor:
 
     @given(name=names, method_type=method_types, input_type=names, output_type=names)
     @settings(max_examples=100)
-    def test_to_dict(self, name: str, method_type: MethodType, input_type: str, output_type: str) -> None:
+    def test_to_dict(
+        self, name: str, method_type: MethodType, input_type: str, output_type: str
+    ) -> None:
         """to_dict contains all fields."""
-        method = MethodDescriptor(name=name, method_type=method_type,
-                                  input_type=input_type, output_type=output_type)
+        method = MethodDescriptor(
+            name=name,
+            method_type=method_type,
+            input_type=input_type,
+            output_type=output_type,
+        )
         d = method.to_dict()
         assert d["name"] == name
         assert d["type"] == method_type.value
@@ -125,8 +144,12 @@ class TestMethodDescriptor:
     @settings(max_examples=100)
     def test_full_name(self, name: str) -> None:
         """full_name returns method name."""
-        method = MethodDescriptor(name=name, method_type=MethodType.UNARY,
-                                  input_type="Request", output_type="Response")
+        method = MethodDescriptor(
+            name=name,
+            method_type=MethodType.UNARY,
+            input_type="Request",
+            output_type="Response",
+        )
         assert method.full_name == name
 
 
@@ -148,8 +171,12 @@ class TestServiceDescriptor:
     def test_add_and_get_method(self, service_name: str, method_name: str) -> None:
         """Added method can be retrieved."""
         service = ServiceDescriptor(name=service_name)
-        method = MethodDescriptor(name=method_name, method_type=MethodType.UNARY,
-                                  input_type="Request", output_type="Response")
+        method = MethodDescriptor(
+            name=method_name,
+            method_type=MethodType.UNARY,
+            input_type="Request",
+            output_type="Response",
+        )
         service.add_method(method)
         retrieved = service.get_method(method_name)
         assert retrieved is not None
@@ -171,8 +198,12 @@ class TestGRPCService:
     def test_register_handler(self, service_name: str, method_name: str) -> None:
         """Handler can be registered and retrieved."""
         descriptor = ServiceDescriptor(name=service_name)
-        method = MethodDescriptor(name=method_name, method_type=MethodType.UNARY,
-                                  input_type="Request", output_type="Response")
+        method = MethodDescriptor(
+            name=method_name,
+            method_type=MethodType.UNARY,
+            input_type="Request",
+            output_type="Response",
+        )
         descriptor.add_method(method)
         service: GRPCService[Any] = GRPCService(descriptor)
         handler = lambda req, ctx: "response"
@@ -232,7 +263,9 @@ class TestProtoField:
     @settings(max_examples=100)
     def test_repeated_field(self, name: str, number: int, field_type: str) -> None:
         """Repeated field has 'repeated' prefix."""
-        field = ProtoField(name=name, number=number, field_type=field_type, repeated=True)
+        field = ProtoField(
+            name=name, number=number, field_type=field_type, repeated=True
+        )
         proto = field.to_proto()
         assert "repeated" in proto
 
@@ -250,9 +283,13 @@ class TestProtoMessage:
         assert "{" in proto
         assert "}" in proto
 
-    @given(msg_name=names, field_name=names, number=field_numbers, field_type=proto_types)
+    @given(
+        msg_name=names, field_name=names, number=field_numbers, field_type=proto_types
+    )
     @settings(max_examples=100)
-    def test_add_field(self, msg_name: str, field_name: str, number: int, field_type: str) -> None:
+    def test_add_field(
+        self, msg_name: str, field_name: str, number: int, field_type: str
+    ) -> None:
         """Added field appears in proto."""
         message = ProtoMessage(name=msg_name)
         message.add_field(field_name, number, field_type)
@@ -289,8 +326,12 @@ class TestProtoGenerator:
         """Generated proto includes service."""
         generator = ProtoGenerator()
         service = ServiceDescriptor(name=service_name)
-        method = MethodDescriptor(name=method_name, method_type=MethodType.UNARY,
-                                  input_type="Request", output_type="Response")
+        method = MethodDescriptor(
+            name=method_name,
+            method_type=MethodType.UNARY,
+            input_type="Request",
+            output_type="Response",
+        )
         service.add_method(method)
         generator.add_service(service)
         proto = generator.generate()
@@ -311,7 +352,9 @@ class TestHelperFunctions:
 
     @given(name=names, input_type=names, output_type=names)
     @settings(max_examples=100)
-    def test_create_unary_method(self, name: str, input_type: str, output_type: str) -> None:
+    def test_create_unary_method(
+        self, name: str, input_type: str, output_type: str
+    ) -> None:
         """create_unary_method creates unary method."""
         method = create_unary_method(name, input_type, output_type)
         assert method.name == name

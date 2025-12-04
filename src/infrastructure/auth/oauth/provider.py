@@ -8,11 +8,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from pydantic import BaseModel
-
 
 # =============================================================================
 # Credentials
@@ -21,8 +20,6 @@ from pydantic import BaseModel
 
 class Credentials(BaseModel):
     """Base credentials model."""
-
-    pass
 
 
 class PasswordCredentials(Credentials):
@@ -36,7 +33,7 @@ class TokenCredentials(Credentials):
     """Token-based credentials."""
 
     token: str
-    token_type: str = "Bearer"
+    token_type: str = "Bearer"  # noqa: S105 - Token type, not password
 
 
 class OAuth2Credentials(Credentials):
@@ -64,7 +61,7 @@ class TokenPair[TClaims]:
 
     access_token: str
     refresh_token: str | None
-    token_type: str = "Bearer"
+    token_type: str = "Bearer"  # noqa: S105 - Token type, not password
     expires_in: int = 3600
     scope: str | None = None
     claims: TClaims | None = None
@@ -104,7 +101,7 @@ class AuthResult[TUser, TClaims]:
         user: TUser,
         claims: TClaims,
         tokens: TokenPair[TClaims],
-    ) -> "AuthResult[TUser, TClaims]":
+    ) -> AuthResult[TUser, TClaims]:
         """Create successful result."""
         return cls(
             success=True,
@@ -118,7 +115,7 @@ class AuthResult[TUser, TClaims]:
         cls,
         error: str,
         description: str | None = None,
-    ) -> "AuthResult[TUser, TClaims]":
+    ) -> AuthResult[TUser, TClaims]:
         """Create failed result."""
         return cls(
             success=False,

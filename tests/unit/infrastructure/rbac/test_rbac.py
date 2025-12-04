@@ -4,21 +4,20 @@
 **Requirement: R14 - Generic RBAC System**
 """
 
-import pytest
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 
+import pytest
+
+from infrastructure.rbac.audit import AuditEvent, AuditLogger, InMemoryAuditSink
+from infrastructure.rbac.checker import RBAC
 from infrastructure.rbac.permission import (
     Permission,
     PermissionSet,
-    StandardResource,
     StandardAction,
     create_crud_permissions,
 )
-from infrastructure.rbac.role import Role, RoleRegistry, create_standard_roles
-from infrastructure.rbac.checker import RBAC
-from infrastructure.rbac.audit import AuditEvent, AuditLogger, InMemoryAuditSink
-
+from infrastructure.rbac.role import Role, RoleRegistry
 
 # =============================================================================
 # Test Enums

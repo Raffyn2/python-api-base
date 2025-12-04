@@ -7,7 +7,7 @@
 
 import logging
 from collections.abc import Sequence
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -15,6 +15,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.base.repository import IRepository
+
 from .models import get_current_tenant
 
 logger = logging.getLogger(__name__)
@@ -149,7 +150,7 @@ class TenantRepository[T, CreateT: BaseModel, UpdateT: BaseModel](
                 setattr(entity, field, value)
 
         if hasattr(entity, "updated_at"):
-            setattr(entity, "updated_at", datetime.now(tz=UTC))
+            entity.updated_at = datetime.now(tz=UTC)
 
         await self._session.flush()
         await self._session.refresh(entity)
@@ -162,9 +163,9 @@ class TenantRepository[T, CreateT: BaseModel, UpdateT: BaseModel](
             return False
 
         if soft and hasattr(entity, "is_deleted"):
-            setattr(entity, "is_deleted", True)
+            entity.is_deleted = True
             if hasattr(entity, "updated_at"):
-                setattr(entity, "updated_at", datetime.now(tz=UTC))
+                entity.updated_at = datetime.now(tz=UTC)
             await self._session.flush()
             logger.info(
                 f"Soft deleted {self._model_class.__name__} {id} for tenant {self.tenant_id}"

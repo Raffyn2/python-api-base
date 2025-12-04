@@ -5,23 +5,18 @@
 """
 
 import pytest
-from datetime import timedelta
-
 from pydantic import BaseModel
 
-from infrastructure.auth.oauth.provider import (
-    OAuthConfig,
-    TokenPair,
-    AuthResult,
-    AuthError,
-    InvalidTokenError,
-    Credentials,
-    PasswordCredentials,
-    OAuth2Credentials,
-)
-from infrastructure.auth.oauth.keycloak import KeycloakConfig, KeycloakProvider
 from infrastructure.auth.oauth.auth0 import Auth0Config, Auth0Provider
-
+from infrastructure.auth.oauth.keycloak import KeycloakConfig, KeycloakProvider
+from infrastructure.auth.oauth.provider import (
+    AuthError,
+    AuthResult,
+    InvalidTokenError,
+    OAuth2Credentials,
+    PasswordCredentials,
+    TokenPair,
+)
 
 # =============================================================================
 # Test Models
@@ -74,7 +69,7 @@ class TestTokenPair:
         )
 
         # Should be approximately 1 hour from now
-        from datetime import datetime, UTC
+        from datetime import UTC, datetime
 
         now = datetime.now(UTC)
         diff = (pair.expires_at - now).total_seconds()
@@ -227,7 +222,9 @@ class TestKeycloakProvider:
         )
 
     @pytest.fixture
-    def provider(self, config: KeycloakConfig) -> KeycloakProvider[TestUser, TestClaims]:
+    def provider(
+        self, config: KeycloakConfig
+    ) -> KeycloakProvider[TestUser, TestClaims]:
         """Create test provider."""
         return KeycloakProvider[TestUser, TestClaims](
             config=config,
@@ -248,6 +245,7 @@ class TestKeycloakProvider:
         provider: KeycloakProvider[TestUser, TestClaims],
     ) -> None:
         """Test extracting realm roles from claims."""
+
         # Create claims with realm_access.roles
         class ClaimsWithRoles(BaseModel):
             sub: str

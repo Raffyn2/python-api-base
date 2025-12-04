@@ -8,24 +8,20 @@ import asyncio
 import time
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.shared.caching import (
     CacheConfig,
     CacheEntry,
     InMemoryCacheProvider,
     cached,
-    get_default_cache,
 )
-
 
 # Strategies for generating test data
 json_serializable = st.recursive(
     st.none() | st.booleans() | st.integers() | st.floats(allow_nan=False) | st.text(),
-    lambda children: st.lists(children, max_size=5) | st.dictionaries(
-        st.text(min_size=1, max_size=10), children, max_size=5
-    ),
+    lambda children: st.lists(children, max_size=5)
+    | st.dictionaries(st.text(min_size=1, max_size=10), children, max_size=5),
     max_leaves=10,
 )
 
@@ -94,15 +90,13 @@ class TestCacheRoundTrip:
         keys=st.lists(cache_key_strategy, min_size=1, max_size=10, unique=True),
         values=st.lists(json_serializable, min_size=1, max_size=10),
     )
-    def test_multiple_keys_independent(
-        self, keys: list[str], values: list
-    ) -> None:
+    def test_multiple_keys_independent(self, keys: list[str], values: list) -> None:
         """
         Multiple cache entries SHALL be stored and retrieved independently.
         """
         cache = InMemoryCacheProvider(CacheConfig(ttl=3600))
         # Pair keys with values (cycling if needed)
-        pairs = list(zip(keys, values * (len(keys) // len(values) + 1)))
+        pairs = list(zip(keys, values * (len(keys) // len(values) + 1), strict=False))
 
         async def run_test():
             # Set all values

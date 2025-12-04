@@ -11,7 +11,6 @@ Usage:
 import asyncio
 import logging
 from decimal import Decimal
-from uuid import uuid4
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 async def seed_items(session) -> list[str]:
     """Create sample items."""
-    from domain.examples.item.entity import ItemExample, Money, ItemExampleStatus
+    from domain.examples.item.entity import ItemExample, Money
     from infrastructure.db.repositories.examples import ItemExampleRepository
 
     repo = ItemExampleRepository(session)

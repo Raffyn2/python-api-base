@@ -10,7 +10,10 @@ import time
 
 import pytest
 
-pytest.skip('Module infrastructure.security.secrets_manager not implemented', allow_module_level=True)
+pytest.skip(
+    "Module infrastructure.security.secrets_manager not implemented",
+    allow_module_level=True,
+)
 
 from hypothesis import given, settings, strategies as st
 
@@ -26,7 +29,9 @@ from infrastructure.security.secrets_manager.providers import LocalSecretsProvid
 @settings(max_examples=100)
 @given(
     secret_name=st.text(
-        alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_-"),
+        alphabet=st.characters(
+            whitelist_categories=("L", "N"), whitelist_characters="_-"
+        ),
         min_size=1,
         max_size=50,
     ),
@@ -45,7 +50,9 @@ def test_secret_crud_round_trip(secret_name: str, secret_value: str) -> None:
         provider = LocalSecretsProvider()
 
         # Create secret
-        metadata = await provider.create_secret(secret_name, secret_value, SecretType.STRING)
+        metadata = await provider.create_secret(
+            secret_name, secret_value, SecretType.STRING
+        )
 
         # Verify metadata has valid timestamps
         assert metadata.name == secret_name
@@ -82,7 +89,9 @@ def test_secret_crud_round_trip(secret_name: str, secret_value: str) -> None:
 @settings(max_examples=100)
 @given(
     secret_name=st.text(
-        alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_-"),
+        alphabet=st.characters(
+            whitelist_categories=("L", "N"), whitelist_characters="_-"
+        ),
         min_size=1,
         max_size=50,
     ),
@@ -155,7 +164,10 @@ def test_secret_key_minimum_length_validation(key_length: int) -> None:
     RequestVerifier should raise ValueError with a message containing the
     minimum required length.
     """
-    from infrastructure.security.request_signing.service import RequestSigner, RequestVerifier
+    from infrastructure.security.request_signing.service import (
+        RequestSigner,
+        RequestVerifier,
+    )
 
     short_key = "x" * key_length
 
@@ -181,7 +193,10 @@ def test_secret_key_valid_length_accepted(key_length: int) -> None:
 
     For any secret key of 32 bytes or longer, instantiation should succeed.
     """
-    from infrastructure.security.request_signing.service import RequestSigner, RequestVerifier
+    from infrastructure.security.request_signing.service import (
+        RequestSigner,
+        RequestVerifier,
+    )
 
     valid_key = "x" * key_length
 

@@ -61,16 +61,12 @@ class _NoOpMeter:
 class _NoOpCounter:
     """No-op counter."""
 
-    def add(
-        self, amount: int | float, attributes: Attributes | None = None
-    ) -> None:
+    def add(self, amount: int | float, attributes: Attributes | None = None) -> None:
         pass
 
 
 class _NoOpHistogram:
     """No-op histogram."""
 
-    def record(
-        self, amount: int | float, attributes: Attributes | None = None
-    ) -> None:
+    def record(self, amount: int | float, attributes: Attributes | None = None) -> None:
         pass

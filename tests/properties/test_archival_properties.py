@@ -6,23 +6,27 @@
 
 import pytest
 
-pytest.skip('Module infrastructure.storage.archival not implemented', allow_module_level=True)
+pytest.skip(
+    "Module infrastructure.storage.archival not implemented", allow_module_level=True
+)
 
-from hypothesis import given, strategies as st, settings
-from datetime import datetime, timedelta
 from dataclasses import dataclass
+from datetime import datetime
+
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.storage.archival import (
-    RetentionPolicy,
     ArchivalService,
-    StorageTier,
     InMemoryArchivalBackend,
+    RetentionPolicy,
+    StorageTier,
 )
 
 
 @dataclass
 class TestRecord:
     """Test record for archival."""
+
     id: str
     name: str
     created_at: datetime
@@ -35,10 +39,7 @@ class TestSourceRepository:
         self._records: list[TestRecord] = []
 
     async def find_older_than(
-        self,
-        entity_type: str,
-        cutoff_date: datetime,
-        limit: int
+        self, entity_type: str, cutoff_date: datetime, limit: int
     ) -> list[TestRecord]:
         return [r for r in self._records if r.created_at < cutoff_date][:limit]
 
@@ -61,15 +62,11 @@ class TestRetentionPolicyProperties:
         st.integers(min_value=1, max_value=30),
         st.integers(min_value=31, max_value=90),
         st.integers(min_value=91, max_value=365),
-        st.integers(min_value=0, max_value=400)
+        st.integers(min_value=0, max_value=400),
     )
     @settings(max_examples=100)
     def test_tier_assignment_correct(
-        self,
-        hot_days: int,
-        warm_days: int,
-        cold_days: int,
-        age_days: int
+        self, hot_days: int, warm_days: int, cold_days: int, age_days: int
     ) -> None:
         """Tier assignment based on age is correct."""
         policy = RetentionPolicy(
@@ -77,7 +74,7 @@ class TestRetentionPolicyProperties:
             entity_type="test",
             hot_retention_days=hot_days,
             warm_retention_days=warm_days,
-            cold_retention_days=cold_days
+            cold_retention_days=cold_days,
         )
 
         tier = policy.get_tier_for_age(age_days)
@@ -96,9 +93,7 @@ class TestRetentionPolicyProperties:
     def test_hot_tier_for_recent_data(self, age_days: int) -> None:
         """Recent data is always in hot tier."""
         policy = RetentionPolicy(
-            name="test",
-            entity_type="test",
-            hot_retention_days=100
+            name="test", entity_type="test", hot_retention_days=100
         )
 
         tier = policy.get_tier_for_age(age_days)
@@ -118,9 +113,7 @@ class TestArchivalServiceProperties:
         service: ArchivalService[TestRecord] = ArchivalService(backend, source)
 
         policy = RetentionPolicy(
-            name="test",
-            entity_type="test_entity",
-            hot_retention_days=30
+            name="test", entity_type="test_entity", hot_retention_days=30
         )
         service.register_policy(policy)
 

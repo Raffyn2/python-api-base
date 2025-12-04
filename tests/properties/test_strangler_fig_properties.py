@@ -4,8 +4,8 @@
 **Validates: Requirements 4.3**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import pytest
@@ -19,7 +19,6 @@ from infrastructure.migration.strangler_fig import (
     StranglerRouter,
     create_migration_plan,
 )
-
 
 identifier_strategy = st.text(
     alphabet=st.sampled_from("abcdefghijklmnopqrstuvwxyz/_"),
@@ -53,9 +52,7 @@ class TestRoutingDecision:
 
     def test_to_dict(self):
         """to_dict should contain all fields."""
-        config = RouteConfig(
-            path_pattern="/api/*", strategy=RoutingStrategy.PERCENTAGE
-        )
+        config = RouteConfig(path_pattern="/api/*", strategy=RoutingStrategy.PERCENTAGE)
         decision = RoutingDecision(
             route_to_new=True,
             reason="Test reason",
@@ -128,6 +125,7 @@ class TestStranglerRouter:
     @pytest.mark.asyncio
     async def test_route_to_new_with_new_only_strategy(self):
         """Should route to new with NEW_ONLY strategy."""
+
         async def legacy_handler(ctx):
             return "legacy"
 
@@ -144,6 +142,7 @@ class TestStranglerRouter:
     @pytest.mark.asyncio
     async def test_route_with_header_based_strategy(self):
         """Should route based on header."""
+
         async def legacy_handler(ctx):
             return "legacy"
 
@@ -169,6 +168,7 @@ class TestStranglerRouter:
     @pytest.mark.asyncio
     async def test_route_with_user_based_strategy(self):
         """Should route based on user."""
+
         async def legacy_handler(ctx):
             return "legacy"
 
@@ -192,6 +192,7 @@ class TestStranglerRouter:
 
     def test_add_and_remove_route(self):
         """Should add and remove routes."""
+
         async def handler(ctx):
             return "result"
 
@@ -207,6 +208,7 @@ class TestStranglerRouter:
 
     def test_update_percentage(self):
         """Should update percentage for route."""
+
         async def handler(ctx):
             return "result"
 
@@ -227,6 +229,7 @@ class TestStranglerRouter:
 
     def test_get_stats(self):
         """Should return routing stats."""
+
         async def handler(ctx):
             return "result"
 
@@ -239,6 +242,7 @@ class TestStranglerRouter:
 
     def test_list_routes(self):
         """Should list all routes."""
+
         async def handler(ctx):
             return "result"
 

@@ -8,10 +8,10 @@ Provides audit capabilities:
 
 from infrastructure.security.audit.log import (
     AuditAction,
-    AuditResult,
     AuditEntry,
     AuditFilters,
     AuditLogger,
+    AuditResult,
     InMemoryAuditLogger,
 )
 from infrastructure.security.audit.trail import (

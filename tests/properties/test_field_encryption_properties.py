@@ -5,12 +5,12 @@
 """
 
 import pytest
-from hypothesis import given, strategies as st, settings
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.security.field_encryption import (
-    FieldEncryptor,
     EncryptedValue,
     EncryptionAlgorithm,
+    FieldEncryptor,
     InMemoryKeyProvider,
 )
 
@@ -48,8 +48,7 @@ class TestFieldEncryptionProperties:
     @settings(max_examples=50)
     @pytest.mark.asyncio
     async def test_different_encryptions_different_ciphertext(
-        self,
-        plaintext: str
+        self, plaintext: str
     ) -> None:
         """Same plaintext produces different ciphertext (due to nonce)."""
         provider = InMemoryKeyProvider()
@@ -59,7 +58,10 @@ class TestFieldEncryptionProperties:
         encrypted2 = await encryptor.encrypt(plaintext)
 
         # Ciphertext should differ due to random nonce
-        assert encrypted1.ciphertext != encrypted2.ciphertext or encrypted1.nonce != encrypted2.nonce
+        assert (
+            encrypted1.ciphertext != encrypted2.ciphertext
+            or encrypted1.nonce != encrypted2.nonce
+        )
 
     @given(st.text(min_size=1, max_size=100))
     @settings(max_examples=50)
@@ -93,15 +95,11 @@ class TestEncryptedValueProperties:
         st.text(min_size=1, max_size=20),
         st.binary(min_size=12, max_size=12),
         st.binary(min_size=1, max_size=100),
-        st.binary(min_size=16, max_size=16)
+        st.binary(min_size=16, max_size=16),
     )
     @settings(max_examples=100)
     def test_serialization_round_trip(
-        self,
-        key_id: str,
-        nonce: bytes,
-        ciphertext: bytes,
-        tag: bytes
+        self, key_id: str, nonce: bytes, ciphertext: bytes, tag: bytes
     ) -> None:
         """Serialization round trip preserves data."""
         # Skip if key_id contains colons (delimiter)
@@ -113,7 +111,7 @@ class TestEncryptedValueProperties:
             key_id=key_id,
             algorithm=EncryptionAlgorithm.AES_256_GCM,
             nonce=nonce,
-            tag=tag
+            tag=tag,
         )
 
         serialized = original.to_string()

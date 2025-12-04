@@ -12,7 +12,6 @@ from typing import Any
 
 from infrastructure.rbac.permission import Permission
 
-
 # =============================================================================
 # Generic Role
 # =============================================================================
@@ -43,7 +42,7 @@ class Role[TPermission]:
     name: str
     description: str = ""
     permissions: set[TPermission] = field(default_factory=set)
-    parent: "Role[TPermission] | None" = None
+    parent: Role[TPermission] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def has_permission(self, permission: TPermission) -> bool:
@@ -90,7 +89,7 @@ class Role[TPermission]:
             perms |= self.parent.get_all_permissions()
         return perms
 
-    def inherits_from(self, parent: "Role[TPermission]") -> "Role[TPermission]":
+    def inherits_from(self, parent: Role[TPermission]) -> Role[TPermission]:
         """Set parent role for inheritance.
 
         Args:

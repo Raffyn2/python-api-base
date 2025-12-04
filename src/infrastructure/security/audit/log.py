@@ -9,7 +9,7 @@ import logging
 import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -25,8 +25,8 @@ class AuditAction(str, Enum):
     LOGIN = "login"
     LOGOUT = "logout"
     LOGIN_FAILED = "login_failed"
-    TOKEN_REFRESH = "token_refresh"
-    PASSWORD_CHANGE = "password_change"
+    TOKEN_REFRESH = "token_refresh"  # noqa: S105 - Enum value, not password
+    PASSWORD_CHANGE = "password_change"  # noqa: S105 - Enum value, not password
 
     # Authorization actions
     PERMISSION_DENIED = "permission_denied"

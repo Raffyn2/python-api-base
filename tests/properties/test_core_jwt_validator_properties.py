@@ -4,28 +4,26 @@
 **Validates: Requirements 4.2, 4.3, 5.1, 5.2, 5.4, 5.5, 6.1, 6.2, 6.5**
 """
 
-import string
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-pytest.skip('Module core.auth not implemented', allow_module_level=True)
+pytest.skip("Module core.auth not implemented", allow_module_level=True)
 
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import assume, given, settings, strategies as st
 from jose import jwt
 
 from core.auth.jwt_validator import (
-    JWTValidator,
     InvalidTokenError,
+    JWTValidator,
     ValidatedToken,
 )
 
 
 class TestJWTAlgorithmValidation:
     """Property tests for JWT algorithm validation.
-    
+
     **Feature: core-code-review, Property 7: JWT Algorithm Validation**
     **Validates: Requirements 4.2, 5.1, 5.4**
     """
@@ -42,14 +40,16 @@ class TestJWTAlgorithmValidation:
             )
             assert validator._algorithm == algorithm
 
-    @given(st.text(min_size=1, max_size=20).filter(
-        lambda x: x.upper() not in ["RS256", "ES256", "HS256", "NONE"]
-    ))
+    @given(
+        st.text(min_size=1, max_size=20).filter(
+            lambda x: x.upper() not in ["RS256", "ES256", "HS256", "NONE"]
+        )
+    )
     @settings(max_examples=50)
     def test_invalid_algorithms_rejected(self, algorithm: str):
         """For any algorithm not in allowlist, initialization SHALL raise error."""
         assume(algorithm.upper() not in ["RS256", "ES256", "HS256", "NONE"])
-        
+
         with pytest.raises(InvalidTokenError):
             JWTValidator(secret_or_key="a" * 32, algorithm=algorithm)
 
@@ -57,47 +57,49 @@ class TestJWTAlgorithmValidation:
         """Algorithm 'none' SHALL be rejected at initialization."""
         with pytest.raises(InvalidTokenError) as exc_info:
             JWTValidator(secret_or_key="a" * 32, algorithm="none")
-        
+
         assert "none" in str(exc_info.value).lower()
 
     def test_none_algorithm_rejected_in_token(self):
         """Token with 'none' algorithm SHALL be rejected.
-        
+
         **Feature: core-code-review, Property 8: JWT None Algorithm Rejection**
         **Validates: Requirements 4.3, 5.5**
         """
         validator = JWTValidator(secret_or_key="a" * 32, algorithm="HS256")
-        
+
         # Create a token with "none" algorithm (unsigned)
         payload = {
             "sub": "user123",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
             "jti": "test-jti",
         }
-        
+
         # Manually construct token with "none" algorithm
         import base64
         import json
-        
-        header = base64.urlsafe_b64encode(
-            json.dumps({"alg": "none", "typ": "JWT"}).encode()
-        ).rstrip(b"=").decode()
-        payload_b64 = base64.urlsafe_b64encode(
-            json.dumps(payload).encode()
-        ).rstrip(b"=").decode()
-        
+
+        header = (
+            base64.urlsafe_b64encode(json.dumps({"alg": "none", "typ": "JWT"}).encode())
+            .rstrip(b"=")
+            .decode()
+        )
+        payload_b64 = (
+            base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+        )
+
         none_token = f"{header}.{payload_b64}."
-        
+
         with pytest.raises(InvalidTokenError) as exc_info:
             validator.validate(none_token)
-        
+
         assert "none" in str(exc_info.value).lower()
 
 
 class TestSecureAlgorithmEnforcement:
     """Property tests for secure algorithm enforcement.
-    
+
     **Feature: core-code-review**
     **Validates: Requirements 5.2**
     """
@@ -110,7 +112,7 @@ class TestSecureAlgorithmEnforcement:
                 algorithm="HS256",
                 require_secure_algorithm=True,
             )
-        
+
         assert "secure" in str(exc_info.value).lower()
 
     def test_hs256_allowed_when_secure_not_required(self):
@@ -129,21 +131,21 @@ class TestAlgorithmMismatchDetection:
     def test_algorithm_mismatch_rejected(self):
         """Token with mismatched algorithm SHALL be rejected."""
         validator = JWTValidator(secret_or_key="a" * 32, algorithm="HS256")
-        
+
         # Create token with different algorithm claim
         payload = {
             "sub": "user123",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
             "jti": "test-jti",
         }
-        
+
         # Create valid HS256 token but validator expects different
         token = jwt.encode(payload, "a" * 32, algorithm="HS256")
-        
+
         # Create validator expecting different algorithm
         validator2 = JWTValidator(secret_or_key="b" * 32, algorithm="HS256")
-        
+
         # Should fail due to signature mismatch
         with pytest.raises(InvalidTokenError):
             validator2.validate(token)
@@ -151,7 +153,7 @@ class TestAlgorithmMismatchDetection:
 
 class TestRevocationFailClosed:
     """Property tests for revocation store fail-closed behavior.
-    
+
     **Feature: core-code-review, Property 10: Revocation Store Fail-Closed**
     **Validates: Requirements 6.5**
     """
@@ -162,32 +164,35 @@ class TestRevocationFailClosed:
         # Create mock revocation store that raises exception
         mock_store = MagicMock()
         mock_store.is_revoked = AsyncMock(side_effect=Exception("Store unavailable"))
-        
+
         validator = JWTValidator(
             secret_or_key="a" * 32,
             algorithm="HS256",
             revocation_store=mock_store,
         )
-        
+
         # Create valid token
         payload = {
             "sub": "user123",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
             "jti": "test-jti",
         }
         token = jwt.encode(payload, "a" * 32, algorithm="HS256")
-        
+
         # Should fail closed
         with pytest.raises(InvalidTokenError) as exc_info:
             await validator.validate_with_revocation(token)
-        
-        assert "verify" in str(exc_info.value).lower() or "status" in str(exc_info.value).lower()
+
+        assert (
+            "verify" in str(exc_info.value).lower()
+            or "status" in str(exc_info.value).lower()
+        )
 
 
 class TestTokenRevocationRoundTrip:
     """Property tests for token revocation.
-    
+
     **Feature: core-code-review, Property 9: Token Revocation Round-Trip**
     **Validates: Requirements 6.1, 6.2**
     """
@@ -197,37 +202,39 @@ class TestTokenRevocationRoundTrip:
         """Revoked token SHALL be rejected."""
         # Create mock revocation store
         revoked_jtis: set[str] = set()
-        
+
         mock_store = MagicMock()
         mock_store.is_revoked = AsyncMock(side_effect=lambda jti: jti in revoked_jtis)
-        mock_store.revoke = AsyncMock(side_effect=lambda jti, exp: revoked_jtis.add(jti))
-        
+        mock_store.revoke = AsyncMock(
+            side_effect=lambda jti, exp: revoked_jtis.add(jti)
+        )
+
         validator = JWTValidator(
             secret_or_key="a" * 32,
             algorithm="HS256",
             revocation_store=mock_store,
         )
-        
+
         # Create valid token
         payload = {
             "sub": "user123",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
             "jti": "test-jti-revoke",
         }
         token = jwt.encode(payload, "a" * 32, algorithm="HS256")
-        
+
         # Token should be valid initially
         result = await validator.validate_with_revocation(token)
         assert result.sub == "user123"
-        
+
         # Revoke the token
         await validator.revoke(token)
-        
+
         # Token should now be rejected
         with pytest.raises(InvalidTokenError) as exc_info:
             await validator.validate_with_revocation(token)
-        
+
         assert "revoked" in str(exc_info.value).lower()
 
 
@@ -237,19 +244,19 @@ class TestValidatedTokenStructure:
     def test_validated_token_contains_all_fields(self):
         """ValidatedToken SHALL contain all required fields."""
         validator = JWTValidator(secret_or_key="a" * 32, algorithm="HS256")
-        
+
         payload = {
             "sub": "user123",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
             "jti": "test-jti",
             "scopes": ["read", "write"],
             "token_type": "access",
         }
         token = jwt.encode(payload, "a" * 32, algorithm="HS256")
-        
+
         result = validator.validate(token)
-        
+
         assert isinstance(result, ValidatedToken)
         assert result.sub == "user123"
         assert result.jti == "test-jti"

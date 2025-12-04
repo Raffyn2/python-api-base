@@ -4,23 +4,22 @@
 **Validates: Requirements 6.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 from unittest.mock import MagicMock
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
-from starlette.requests import Request
+from hypothesis import given, settings, strategies as st
 from starlette.datastructures import Headers
+from starlette.requests import Request
 
+from application.common.dto import ProblemDetail
 from interface.api.middleware.rate_limiter import (
     get_client_ip,
     rate_limit_exceeded_handler,
 )
-from application.common.dto import ProblemDetail
 
 
 # Generators for IP addresses
@@ -41,7 +40,7 @@ def forwarded_for_headers(draw: st.DrawFn) -> str:
 
 class TestGetClientIp:
     """Property tests for client IP extraction.
-    
+
     **Feature: api-architecture-analysis**
     **Validates: Requirements 6.5**
     """
@@ -55,9 +54,9 @@ class TestGetClientIp:
         # Create mock request with X-Forwarded-For header
         mock_request = MagicMock(spec=Request)
         mock_request.headers = Headers({"X-Forwarded-For": ip})
-        
+
         result = get_client_ip(mock_request)
-        
+
         assert result == ip
 
     @given(forwarded=forwarded_for_headers())
@@ -68,16 +67,16 @@ class TestGetClientIp:
         """
         mock_request = MagicMock(spec=Request)
         mock_request.headers = Headers({"X-Forwarded-For": forwarded})
-        
+
         result = get_client_ip(mock_request)
         expected_first_ip = forwarded.split(",")[0].strip()
-        
+
         assert result == expected_first_ip
 
 
 class TestRateLimitResponseFormat:
     """Property tests for rate limit response format.
-    
+
     **Feature: api-architecture-analysis, Property 14: Rate Limit Response Format**
     **Validates: Requirements 6.5**
     """
@@ -96,7 +95,7 @@ class TestRateLimitResponseFormat:
         """
         **Feature: api-architecture-analysis, Property 14: Rate Limit Response Format**
         **Validates: Requirements 6.5**
-        
+
         For any rate limit exceeded response, the body SHALL follow RFC 7807
         Problem Details format with required fields.
         """
@@ -104,17 +103,17 @@ class TestRateLimitResponseFormat:
         mock_request = MagicMock(spec=Request)
         mock_request.url = MagicMock()
         mock_request.url.__str__ = MagicMock(return_value=url)
-        
+
         # Create mock exception
         mock_exc = MagicMock()
         mock_exc.detail = detail_message
-        
+
         # Call handler
         response = await rate_limit_exceeded_handler(mock_request, mock_exc)
-        
+
         # Verify status code
         assert response.status_code == 429
-        
+
         # Verify RFC 7807 fields in body
         body = response.body.decode()
         assert "type" in body
@@ -133,21 +132,21 @@ class TestRateLimitResponseFormat:
         """
         **Feature: api-architecture-analysis, Property 14: Rate Limit Response Format**
         **Validates: Requirements 6.5**
-        
+
         For any rate limit exceeded response, the Retry-After header SHALL be present.
         """
         mock_request = MagicMock(spec=Request)
         mock_request.url = MagicMock()
         mock_request.url.__str__ = MagicMock(return_value="http://test.com/api")
-        
+
         mock_exc = MagicMock()
         mock_exc.detail = "Rate limit exceeded"
-        
+
         response = await rate_limit_exceeded_handler(mock_request, mock_exc)
-        
+
         # Verify Retry-After header is present
         assert "Retry-After" in response.headers
-        
+
         # Verify it's a valid integer
         retry_value = response.headers["Retry-After"]
         assert retry_value.isdigit()
@@ -156,7 +155,7 @@ class TestRateLimitResponseFormat:
 
 class TestProblemDetailFormat:
     """Property tests for ProblemDetail RFC 7807 compliance.
-    
+
     **Feature: api-architecture-analysis, Property 7: ProblemDetail RFC 7807 Compliance**
     **Validates: Requirements 4.4**
     """
@@ -176,7 +175,7 @@ class TestProblemDetailFormat:
         """
         **Feature: api-architecture-analysis, Property 7: ProblemDetail RFC 7807 Compliance**
         **Validates: Requirements 4.4**
-        
+
         For any ProblemDetail, the fields type, title, and status SHALL be present
         and status SHALL be a valid HTTP status code (100-599).
         """
@@ -186,18 +185,20 @@ class TestProblemDetailFormat:
             status=status,
             detail=detail if detail else None,
         )
-        
+
         # Verify required fields
         assert problem.type is not None
         assert problem.title is not None
         assert problem.status is not None
-        
+
         # Verify status is valid HTTP code
         assert 100 <= problem.status <= 599
 
     @given(
         error_code=st.text(
-            alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_"),
+            alphabet=st.characters(
+                whitelist_categories=("L", "N"), whitelist_characters="_"
+            ),
             min_size=1,
             max_size=50,
         ),
@@ -215,9 +216,13 @@ class TestProblemDetailFormat:
             title="Test Error",
             status=400,
         )
-        
+
         # Verify type starts with valid URI scheme
-        assert problem.type.startswith("https://") or problem.type.startswith("http://") or problem.type == "about:blank"
+        assert (
+            problem.type.startswith("https://")
+            or problem.type.startswith("http://")
+            or problem.type == "about:blank"
+        )
 
     @given(
         errors=st.lists(
@@ -245,7 +250,7 @@ class TestProblemDetailFormat:
             status=422,
             errors=errors if errors else None,
         )
-        
+
         if problem.errors:
             for error in problem.errors:
                 assert "field" in error

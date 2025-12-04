@@ -12,55 +12,55 @@ Provides structured error handling:
 from core.errors.base import (
     # Domain
     AppException,
+    # Application
+    ApplicationError,
     AuthenticationError,
     AuthorizationError,
     BusinessRuleViolationError,
-    ConflictError,
-    EntityNotFoundError,
-    ErrorContext,
-    RateLimitExceededError,
-    ValidationError,
-    # Application
-    ApplicationError,
     CommandHandlerError,
     ConcurrencyError,
+    ConflictError,
+    DatabaseError,
+    EntityNotFoundError,
+    ErrorContext,
+    ExternalServiceError,
     HandlerNotFoundError,
+    # Infrastructure
+    InfrastructureError,
     InvalidCommandError,
     InvalidQueryError,
     QueryHandlerError,
+    RateLimitExceededError,
     TransactionError,
     UseCaseError,
-    # Infrastructure
-    InfrastructureError,
-    DatabaseError,
-    ExternalServiceError,
+    ValidationError,
 )
 
 # HTTP/API
 from core.errors.http import (
-    # Problem Details
-    ProblemDetail,
-    ValidationErrorDetail,
     PROBLEM_JSON_MEDIA_TYPE,
-    # Exception Handlers
-    setup_exception_handlers,
-    http_exception_handler,
-    validation_exception_handler,
-    generic_exception_handler,
-    # Constants
-    HttpStatus,
     ErrorCode,
     ErrorCodes,
     ErrorMessages,
+    # Constants
+    HttpStatus,
+    # Problem Details
+    ProblemDetail,
+    ValidationErrorDetail,
+    generic_exception_handler,
+    http_exception_handler,
+    # Exception Handlers
+    setup_exception_handlers,
+    validation_exception_handler,
 )
 
 # Status enums
 from core.errors.status import (
-    OperationStatus,
-    ValidationStatus,
     EntityStatus,
-    UserStatus,
+    OperationStatus,
     TaskStatus,
+    UserStatus,
+    ValidationStatus,
 )
 
 __all__ = [

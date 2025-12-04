@@ -10,7 +10,7 @@ import signal
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -187,14 +187,14 @@ class ShutdownHandler:
                 timeout=self._config.drain_timeout,
             )
             logger.info("All in-flight requests completed")
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(
                 f"Drain timeout reached with {self._in_flight_requests} requests remaining"
             )
 
     async def _run_hooks(self) -> None:
         """Run all shutdown hooks."""
-        for name, hook, priority in self._hooks:
+        for name, hook, _priority in self._hooks:
             try:
                 logger.info(f"Running shutdown hook: {name}")
                 await asyncio.wait_for(
@@ -204,7 +204,7 @@ class ShutdownHandler:
                     else self._config.timeout,
                 )
                 logger.info(f"Shutdown hook completed: {name}")
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.error(f"Shutdown hook timed out: {name}")
             except Exception as e:
                 logger.error(f"Shutdown hook failed: {name} - {e}")

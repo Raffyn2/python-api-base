@@ -9,13 +9,13 @@ Main client interface that composes connection and operations management.
 
 from __future__ import annotations
 
-from typing import Any, TypeVar, Generic
 from collections.abc import Sequence
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
-from infrastructure.redis.config import RedisConfig
 from infrastructure.redis.circuit_breaker import CircuitBreaker
+from infrastructure.redis.config import RedisConfig
 from infrastructure.redis.connection import RedisConnection
 from infrastructure.redis.operations import RedisOperations
 
@@ -56,7 +56,7 @@ class RedisClient(Generic[T]):
         self._connection = RedisConnection(self._config, self._circuit)
         self._operations = RedisOperations[T](self._connection)
 
-    async def __aenter__(self) -> "RedisClient[T]":
+    async def __aenter__(self) -> RedisClient[T]:
         """Async context manager entry."""
         await self.connect()
         return self

@@ -4,28 +4,32 @@
 **Validates: Requirements 9.5**
 """
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, UTC, timedelta
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 try:
+    from core.shared.utils.ids import generate_ulid
     from infrastructure.security.audit_log import (
-        AuditEntry,
         AuditAction,
-        AuditResult,
+        AuditEntry,
         AuditFilters,
+        AuditResult,
         InMemoryAuditLogger,
     )
-    from core.shared.utils.ids import generate_ulid
 except ImportError:
     pytest.skip("my_app modules not available", allow_module_level=True)
 
 
 # Strategies
-user_id_strategy = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_")
+user_id_strategy = st.text(
+    min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_"
+)
 resource_type_strategy = st.sampled_from(["user", "order", "item", "config", "role"])
-resource_id_strategy = st.text(min_size=1, max_size=30, alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ")
+resource_id_strategy = st.text(
+    min_size=1, max_size=30, alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+)
 action_strategy = st.sampled_from(list(AuditAction))
 result_strategy = st.sampled_from(list(AuditResult))
 ip_strategy = st.from_regex(r"^(\d{1,3}\.){3}\d{1,3}$", fullmatch=True)
@@ -58,13 +62,13 @@ class TestAuditLogPersistence:
     ) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 15: Audit Log Entry Persistence**
-        
+
         For any auditable action performed, an audit log entry SHALL be created
         and SHALL be retrievable by query.
         **Validates: Requirements 9.5**
         """
         logger = InMemoryAuditLogger()
-        
+
         entry = await logger.log_action(
             action=action,
             resource_type=resource_type,
@@ -72,11 +76,11 @@ class TestAuditLogPersistence:
             user_id=user_id,
             resource_id=resource_id,
         )
-        
+
         # Query by user_id
         filters = AuditFilters(user_id=user_id)
         results = await logger.query(filters)
-        
+
         assert len(results) >= 1
         found = any(e.id == entry.id for e in results)
         assert found, "Logged entry should be retrievable"
@@ -101,14 +105,14 @@ class TestAuditLogPersistence:
         **Validates: Requirements 9.5**
         """
         logger = InMemoryAuditLogger()
-        
+
         entry = await logger.log_action(
             action=action,
             resource_type=resource_type,
             user_id=user_id,
             details=details,
         )
-        
+
         # Verify required fields
         assert entry.id is not None
         assert entry.timestamp is not None
@@ -138,7 +142,7 @@ class TestAuditLogPersistence:
         **Validates: Requirements 9.5**
         """
         logger = InMemoryAuditLogger()
-        
+
         # Log entry with specific action
         await logger.log_action(
             action=action,
@@ -146,11 +150,11 @@ class TestAuditLogPersistence:
             user_id=user_id,
             ip_address=ip_address,
         )
-        
+
         # Query by action
         filters = AuditFilters(action=action.value)
         results = await logger.query(filters)
-        
+
         assert len(results) >= 1
         assert all(e.action == action.value for e in results)
 
@@ -170,16 +174,16 @@ class TestAuditLogPersistence:
         **Validates: Requirements 9.5**
         """
         logger = InMemoryAuditLogger()
-        
+
         await logger.log_action(
             action=AuditAction.CREATE,
             resource_type=resource_type,
             user_id=user_id,
         )
-        
+
         filters = AuditFilters(resource_type=resource_type)
         results = await logger.query(filters)
-        
+
         assert len(results) >= 1
         assert all(e.resource_type == resource_type for e in results)
 
@@ -199,17 +203,17 @@ class TestAuditLogPersistence:
         **Validates: Requirements 9.5**
         """
         logger = InMemoryAuditLogger()
-        
+
         await logger.log_action(
             action=AuditAction.LOGIN,
             resource_type="session",
             user_id=user_id,
             result=result,
         )
-        
+
         filters = AuditFilters(result=result.value)
         results = await logger.query(filters)
-        
+
         assert len(results) >= 1
         assert all(e.result == result.value for e in results)
 
@@ -238,11 +242,11 @@ class TestAuditLogPersistence:
             user_id="test_user",
             details=details,
         )
-        
+
         # Dict round-trip
         entry_dict = entry.to_dict()
         restored = AuditEntry.from_dict(entry_dict)
-        
+
         assert restored.id == entry.id
         assert restored.action == entry.action
         assert restored.resource_type == entry.resource_type
@@ -271,10 +275,10 @@ class TestAuditLogPersistence:
             resource_type=resource_type,
             result=AuditResult.SUCCESS.value,
         )
-        
+
         json_str = entry.to_json()
         restored = AuditEntry.from_json(json_str)
-        
+
         assert restored.id == entry.id
         assert restored.action == entry.action
         assert restored.resource_type == entry.resource_type

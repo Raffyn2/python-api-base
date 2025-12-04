@@ -12,7 +12,8 @@ import functools
 import hashlib
 import json
 import logging
-from typing import Any, Callable, ParamSpec, TypeVar
+from collections.abc import Callable
+from typing import Any, ParamSpec, TypeVar
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -58,14 +59,14 @@ def cached(
             # Build cache key
             if key_builder:
                 cache_key = key_builder(*args, **kwargs)
+            # Default key builder: prefix:first_arg or prefix:hash(args)
+            elif args:
+                cache_key = f"{key_prefix}:{args[0]}"
             else:
-                # Default key builder: prefix:first_arg or prefix:hash(args)
-                if args:
-                    cache_key = f"{key_prefix}:{args[0]}"
-                else:
-                    key_data = json.dumps(kwargs, sort_keys=True, default=str)
-                    key_hash = hashlib.md5(key_data.encode()).hexdigest()[:8]
-                    cache_key = f"{key_prefix}:{key_hash}"
+                key_data = json.dumps(kwargs, sort_keys=True, default=str)
+                # SHA256 for cache key hashing - use 16 chars for collision resistance
+                key_hash = hashlib.sha256(key_data.encode()).hexdigest()[:16]
+                cache_key = f"{key_prefix}:{key_hash}"
 
             # Try to get from cache
             try:
@@ -132,12 +133,11 @@ def invalidate_cache(
             # Build cache key to invalidate
             if key_builder:
                 cache_key = key_builder(*args, **kwargs)
+            elif args:
+                cache_key = f"{key_prefix}:{args[0]}"
             else:
-                if args:
-                    cache_key = f"{key_prefix}:{args[0]}"
-                else:
-                    # Can't determine key, skip invalidation
-                    return result
+                # Can't determine key, skip invalidation
+                return result
 
             # Invalidate cache
             try:
@@ -203,7 +203,9 @@ def invalidate_pattern(
 
             try:
                 deleted = await redis.delete_pattern(pattern)
-                logger.debug("cache_pattern_invalidated", pattern=pattern, count=deleted)
+                logger.debug(
+                    "cache_pattern_invalidated", pattern=pattern, count=deleted
+                )
             except Exception as e:
                 logger.warning("cache_pattern_error", pattern=pattern, error=str(e))
 

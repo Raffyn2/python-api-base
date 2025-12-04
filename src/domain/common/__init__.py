@@ -3,12 +3,6 @@
 **Feature: domain-consolidation-2025**
 """
 
-from domain.common.value_objects import (
-    CurrencyCode,
-    Money,
-    Percentage,
-    Slug,
-)
 from domain.common.specification import (
     AndSpecification,
     AttributeSpecification,
@@ -25,6 +19,12 @@ from domain.common.specification import (
     less_than,
     not_equals,
     spec,
+)
+from domain.common.value_objects import (
+    CurrencyCode,
+    Money,
+    Percentage,
+    Slug,
 )
 
 __all__ = [

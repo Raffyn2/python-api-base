@@ -5,17 +5,16 @@
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
 from core.base.events.domain_event import DomainEvent
 
 try:
     from core.shared.utils.time import utc_now
 except ImportError:
-    from datetime import timezone
 
     def utc_now() -> datetime:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
 
 @dataclass(frozen=True, slots=True)

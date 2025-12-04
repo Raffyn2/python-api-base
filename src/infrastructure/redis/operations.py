@@ -7,8 +7,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TypeVar, Generic
 from collections.abc import Sequence
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
@@ -55,9 +55,7 @@ class RedisOperations(Generic[T]):
             Cached value or None
         """
         if await self._conn.use_fallback():
-            return (
-                await self._conn.fallback.get(key) if self._conn.fallback else None
-            )
+            return await self._conn.fallback.get(key) if self._conn.fallback else None
 
         try:
             full_key = self._conn.make_key(key)
@@ -101,9 +99,7 @@ class RedisOperations(Generic[T]):
         try:
             full_key = self._conn.make_key(key)
             data = self._conn.serialize(value)
-            effective_ttl = (
-                ttl if ttl is not None else self._conn._config.default_ttl
-            )
+            effective_ttl = ttl if ttl is not None else self._conn._config.default_ttl
 
             if effective_ttl:
                 await self._conn.client.setex(full_key, effective_ttl, data)
@@ -140,9 +136,7 @@ class RedisOperations(Generic[T]):
         """
         if await self._conn.use_fallback():
             return (
-                await self._conn.fallback.delete(key)
-                if self._conn.fallback
-                else False
+                await self._conn.fallback.delete(key) if self._conn.fallback else False
             )
 
         try:
@@ -176,9 +170,7 @@ class RedisOperations(Generic[T]):
         """
         if await self._conn.use_fallback():
             return (
-                await self._conn.fallback.exists(key)
-                if self._conn.fallback
-                else False
+                await self._conn.fallback.exists(key) if self._conn.fallback else False
             )
 
         try:
@@ -264,9 +256,7 @@ class RedisOperations(Generic[T]):
 
         try:
             pipe = self._conn.client.pipeline()
-            effective_ttl = (
-                ttl if ttl is not None else self._conn._config.default_ttl
-            )
+            effective_ttl = ttl if ttl is not None else self._conn._config.default_ttl
 
             for key, value in items.items():
                 full_key = self._conn.make_key(key)
@@ -321,7 +311,7 @@ class RedisOperations(Generic[T]):
 
             await self._conn.circuit_breaker.record_success()
             logger.info(
-                f"Pattern delete completed",
+                "Pattern delete completed",
                 extra={"pattern": pattern, "deleted": deleted},
             )
             return deleted

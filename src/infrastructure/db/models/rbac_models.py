@@ -12,11 +12,11 @@ Provides database models for Role-Based Access Control:
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, Text, JSON, Index
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from infrastructure.db.models.read_models import Base
 from core.shared.utils.datetime import utc_now
+from infrastructure.db.models.read_models import Base
 
 
 class RoleModel(Base):

@@ -4,14 +4,13 @@
 **Validates: Requirements UpdateUserHandler correctness**
 """
 
-import pytest
 from unittest.mock import AsyncMock
-from datetime import datetime, UTC
+
+import pytest
 
 from application.users.commands.update_user import UpdateUserCommand, UpdateUserHandler
 from domain.users.aggregates import UserAggregate
 from domain.users.repositories import IUserRepository
-from core.base.patterns.result import Ok, Err
 
 
 class TestUpdateUserHandler:
@@ -105,8 +104,7 @@ class TestUpdateUserHandler:
 
         # Assert
         assert result.is_err()
-        error = result.unwrap_err()
-        assert "not found" in str(error).lower()
+        assert "not found" in str(result.error).lower()
 
         # Should not attempt to save
         mock_repository.save.assert_not_called()
@@ -178,8 +176,7 @@ class TestUpdateUserHandler:
 
         # Assert
         assert result.is_err()
-        error = result.unwrap_err()
-        assert "Database error" in str(error)
+        assert "Database error" in str(result.error)
 
     @pytest.mark.asyncio
     async def test_update_user_with_empty_fields(

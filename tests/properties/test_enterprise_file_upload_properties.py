@@ -5,19 +5,18 @@
 """
 
 import asyncio
-from datetime import datetime, timedelta
 
-import pytest
 from hypothesis import given, settings, strategies as st
 
 from application.services.file_upload.models import (
-    FileMetadata,
     FileValidationConfig,
     UploadError,
 )
-from application.services.file_upload.service import FileUploadService, InMemoryStorageProvider
-from application.services.file_upload.validators import validate_file, get_safe_filename
-
+from application.services.file_upload.service import (
+    FileUploadService,
+    InMemoryStorageProvider,
+)
+from application.services.file_upload.validators import get_safe_filename, validate_file
 
 # Strategies
 filenames = st.text(
@@ -27,10 +26,15 @@ filenames = st.text(
 ).map(lambda s: f"{s}.txt")
 
 valid_content_types = st.sampled_from([
-    "image/jpeg", "image/png", "application/pdf", "text/plain"
+    "image/jpeg",
+    "image/png",
+    "application/pdf",
+    "text/plain",
 ])
 invalid_content_types = st.sampled_from([
-    "application/exe", "application/x-msdownload", "text/html"
+    "application/exe",
+    "application/x-msdownload",
+    "text/html",
 ])
 
 user_ids = st.uuids().map(str)
@@ -47,9 +51,7 @@ class TestFileUploadValidation:
         content=st.binary(min_size=1, max_size=1000),
     )
     @settings(max_examples=50)
-    def test_valid_file_passes_validation(
-        self, filename: str, content: bytes
-    ) -> None:
+    def test_valid_file_passes_validation(self, filename: str, content: bytes) -> None:
         """Valid files pass validation."""
         config = FileValidationConfig(
             max_size_bytes=10000,
@@ -68,9 +70,7 @@ class TestFileUploadValidation:
         content=st.binary(min_size=1001, max_size=2000),
     )
     @settings(max_examples=50)
-    def test_oversized_file_rejected(
-        self, filename: str, content: bytes
-    ) -> None:
+    def test_oversized_file_rejected(self, filename: str, content: bytes) -> None:
         """Files exceeding size limit are rejected."""
         config = FileValidationConfig(
             max_size_bytes=1000,
@@ -133,7 +133,7 @@ class TestFileSizeValidation:
         self, max_size: int, excess_factor: float
     ) -> None:
         """**Property 14: File Size Validation**
-        
+
         For any file exceeding max_size_bytes, validation SHALL return FILE_TOO_LARGE error.
         """
         config = FileValidationConfig(
@@ -141,13 +141,15 @@ class TestFileSizeValidation:
             allowed_types=frozenset({"text/plain"}),
             allowed_extensions=frozenset({".txt"}),
         )
-        
+
         # Create content larger than max_size
         oversized_content = b"x" * int(max_size * excess_factor)
-        
+
         result = validate_file("test.txt", oversized_content, "text/plain", config)
-        
-        assert result.is_err(), f"Expected error for {len(oversized_content)} bytes with max {max_size}"
+
+        assert result.is_err(), (
+            f"Expected error for {len(oversized_content)} bytes with max {max_size}"
+        )
         assert result.error == UploadError.FILE_TOO_LARGE
 
     @given(
@@ -159,7 +161,7 @@ class TestFileSizeValidation:
         self, max_size: int, size_factor: float
     ) -> None:
         """**Property 14: File Size Validation (within bounds)**
-        
+
         For any file within max_size_bytes, validation SHALL succeed.
         """
         config = FileValidationConfig(
@@ -167,13 +169,15 @@ class TestFileSizeValidation:
             allowed_types=frozenset({"text/plain"}),
             allowed_extensions=frozenset({".txt"}),
         )
-        
+
         # Create content smaller than max_size
         valid_content = b"x" * max(1, int(max_size * size_factor))
-        
+
         result = validate_file("test.txt", valid_content, "text/plain", config)
-        
-        assert result.is_ok(), f"Expected success for {len(valid_content)} bytes with max {max_size}"
+
+        assert result.is_ok(), (
+            f"Expected success for {len(valid_content)} bytes with max {max_size}"
+        )
 
     @given(
         max_size=st.integers(min_value=100, max_value=10000),
@@ -181,7 +185,7 @@ class TestFileSizeValidation:
     @settings(max_examples=50)
     def test_file_exactly_at_max_size_passes(self, max_size: int) -> None:
         """**Property 14: File Size Validation (boundary)**
-        
+
         File exactly at max_size_bytes SHALL pass validation.
         """
         config = FileValidationConfig(
@@ -189,12 +193,12 @@ class TestFileSizeValidation:
             allowed_types=frozenset({"text/plain"}),
             allowed_extensions=frozenset({".txt"}),
         )
-        
+
         # Create content exactly at max_size
         exact_content = b"x" * max_size
-        
+
         result = validate_file("test.txt", exact_content, "text/plain", config)
-        
+
         assert result.is_ok(), f"File exactly at {max_size} bytes should pass"
 
     @given(
@@ -203,7 +207,7 @@ class TestFileSizeValidation:
     @settings(max_examples=50)
     def test_file_one_byte_over_max_size_fails(self, max_size: int) -> None:
         """**Property 14: File Size Validation (boundary + 1)**
-        
+
         File one byte over max_size_bytes SHALL fail validation.
         """
         config = FileValidationConfig(
@@ -211,13 +215,15 @@ class TestFileSizeValidation:
             allowed_types=frozenset({"text/plain"}),
             allowed_extensions=frozenset({".txt"}),
         )
-        
+
         # Create content one byte over max_size
         over_content = b"x" * (max_size + 1)
-        
+
         result = validate_file("test.txt", over_content, "text/plain", config)
-        
-        assert result.is_err(), f"File at {max_size + 1} bytes should fail with max {max_size}"
+
+        assert result.is_err(), (
+            f"File at {max_size + 1} bytes should fail with max {max_size}"
+        )
         assert result.error == UploadError.FILE_TOO_LARGE
 
 
@@ -228,7 +234,13 @@ class TestFileTypeValidation:
 
     @given(
         allowed_types=st.frozensets(
-            st.sampled_from(["image/jpeg", "image/png", "application/pdf", "text/plain", "text/csv"]),
+            st.sampled_from([
+                "image/jpeg",
+                "image/png",
+                "application/pdf",
+                "text/plain",
+                "text/csv",
+            ]),
             min_size=1,
             max_size=3,
         ),
@@ -239,12 +251,12 @@ class TestFileTypeValidation:
         self, allowed_types: frozenset[str], content: bytes
     ) -> None:
         """**Property 15: File Type Validation**
-        
+
         For any file with content_type not in allowed_types, validation SHALL return INVALID_TYPE error.
         """
         # Use a content type that's definitely not in allowed_types
         disallowed_type = "application/x-executable"
-        
+
         # Map allowed types to extensions
         type_to_ext = {
             "image/jpeg": ".jpg",
@@ -253,16 +265,18 @@ class TestFileTypeValidation:
             "text/plain": ".txt",
             "text/csv": ".csv",
         }
-        allowed_extensions = frozenset(type_to_ext.get(t, ".bin") for t in allowed_types)
-        
+        allowed_extensions = frozenset(
+            type_to_ext.get(t, ".bin") for t in allowed_types
+        )
+
         config = FileValidationConfig(
             max_size_bytes=10000,
             allowed_types=allowed_types,
             allowed_extensions=allowed_extensions | frozenset({".bin"}),
         )
-        
+
         result = validate_file("test.bin", content, disallowed_type, config)
-        
+
         assert result.is_err(), f"Expected INVALID_TYPE for {disallowed_type}"
         assert result.error == UploadError.INVALID_TYPE
 
@@ -270,11 +284,9 @@ class TestFileTypeValidation:
         content=st.binary(min_size=1, max_size=100),
     )
     @settings(max_examples=100)
-    def test_content_type_in_allowed_passes(
-        self, content: bytes
-    ) -> None:
+    def test_content_type_in_allowed_passes(self, content: bytes) -> None:
         """**Property 15: File Type Validation (allowed types)**
-        
+
         For any file with content_type in allowed_types, validation SHALL succeed.
         Note: Uses text/plain which has no magic bytes validation.
         """
@@ -283,10 +295,10 @@ class TestFileTypeValidation:
             allowed_types=frozenset({"text/plain", "text/csv"}),
             allowed_extensions=frozenset({".txt", ".csv"}),
         )
-        
+
         result = validate_file("test.txt", content, "text/plain", config)
-        
-        assert result.is_ok(), f"Expected success for text/plain content type"
+
+        assert result.is_ok(), "Expected success for text/plain content type"
 
 
 class TestPresignedURLExpiration:
@@ -462,9 +474,14 @@ class TestFilenameSanitization:
             max_size=50,
         ),
         traversal_prefix=st.sampled_from([
-            "../", "..\\", "../../", "..\\..\\",
-            "../../../", "..\\..\\..\\",
-            "./../", ".\\..\\",
+            "../",
+            "..\\",
+            "../../",
+            "..\\..\\",
+            "../../../",
+            "..\\..\\..\\",
+            "./../",
+            ".\\..\\",
         ]),
     )
     @settings(max_examples=100)
@@ -472,12 +489,12 @@ class TestFilenameSanitization:
         self, base_name: str, traversal_prefix: str
     ) -> None:
         """**Property 16: Filename Sanitization**
-        
+
         For any filename with path traversal characters, sanitization SHALL remove dangerous characters.
         """
         malicious_filename = f"{traversal_prefix}{base_name}.txt"
         safe = get_safe_filename(malicious_filename)
-        
+
         # Path traversal sequences should be neutralized
         assert "../" not in safe
         assert "..\\" not in safe
@@ -497,12 +514,12 @@ class TestFilenameSanitization:
         self, base_name: str, dangerous_char: str
     ) -> None:
         """**Property 16: Filename Sanitization (dangerous chars)**
-        
+
         For any filename with dangerous characters, sanitization SHALL replace them.
         """
         malicious_filename = f"{base_name}{dangerous_char}file.txt"
         safe = get_safe_filename(malicious_filename)
-        
+
         # Dangerous character should be replaced
         assert dangerous_char not in safe
 
@@ -516,7 +533,7 @@ class TestFilenameSanitization:
     @settings(max_examples=100)
     def test_absolute_path_stripped(self, base_name: str) -> None:
         """**Property 16: Filename Sanitization (absolute paths)**
-        
+
         For any filename with absolute path prefix, sanitization SHALL strip the path.
         """
         # Test Windows absolute path
@@ -525,7 +542,7 @@ class TestFilenameSanitization:
         assert "C:" not in safe_windows
         assert "Users" not in safe_windows
         assert "admin" not in safe_windows
-        
+
         # Test Unix absolute path
         unix_path = f"/etc/passwd/{base_name}.txt"
         safe_unix = get_safe_filename(unix_path)
@@ -538,12 +555,12 @@ class TestFilenameSanitization:
     @settings(max_examples=50)
     def test_extension_preserved_after_sanitization(self, extension: str) -> None:
         """**Property 16: Filename Sanitization (extension preservation)**
-        
+
         For any valid filename, sanitization SHALL preserve the file extension.
         """
         filename = f"valid_file{extension}"
         safe = get_safe_filename(filename)
-        
+
         assert safe.endswith(extension), f"Extension {extension} should be preserved"
 
     @given(
@@ -552,16 +569,18 @@ class TestFilenameSanitization:
     @settings(max_examples=50)
     def test_long_filename_truncated(self, name_length: int) -> None:
         """**Property 16: Filename Sanitization (length limit)**
-        
+
         For any filename exceeding length limit, sanitization SHALL truncate the name part.
         """
         long_name = "a" * name_length
         filename = f"{long_name}.txt"
         safe = get_safe_filename(filename)
-        
+
         # Name part should be limited to 200 chars
         name_part, ext = safe.rsplit(".", 1)
-        assert len(name_part) <= 200, f"Name part should be <= 200 chars, got {len(name_part)}"
+        assert len(name_part) <= 200, (
+            f"Name part should be <= 200 chars, got {len(name_part)}"
+        )
         assert ext == "txt", "Extension should be preserved"
 
     @given(
@@ -574,13 +593,13 @@ class TestFilenameSanitization:
     @settings(max_examples=50)
     def test_null_byte_injection_prevented(self, base_name: str) -> None:
         """**Property 16: Filename Sanitization (null byte injection)**
-        
+
         For any filename with null bytes, sanitization SHALL remove/replace them.
         """
         # Null byte injection attempt
         malicious = f"{base_name}.txt\x00.exe"
         safe = get_safe_filename(malicious)
-        
+
         # Null bytes should be replaced (not present in output)
         assert "\x00" not in safe, "Null bytes should be removed/replaced"
         # The sanitized filename should not contain the original null byte

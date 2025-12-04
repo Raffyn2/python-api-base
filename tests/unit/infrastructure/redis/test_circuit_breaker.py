@@ -4,13 +4,14 @@
 **Requirement: R1.5 - Circuit breaker pattern**
 """
 
-import pytest
 import asyncio
+
+import pytest
 
 from infrastructure.redis.circuit_breaker import (
     CircuitBreaker,
-    CircuitState,
     CircuitOpenError,
+    CircuitState,
 )
 
 
@@ -78,7 +79,9 @@ class TestCircuitBreaker:
         assert breaker.state == CircuitState.HALF_OPEN
 
     @pytest.mark.asyncio
-    async def test_closes_after_half_open_success(self, breaker: CircuitBreaker) -> None:
+    async def test_closes_after_half_open_success(
+        self, breaker: CircuitBreaker
+    ) -> None:
         """Test closes after successful half-open call."""
         # Open then wait for half-open
         for _ in range(3):
@@ -92,7 +95,9 @@ class TestCircuitBreaker:
         assert breaker.state == CircuitState.CLOSED
 
     @pytest.mark.asyncio
-    async def test_reopens_after_half_open_failure(self, breaker: CircuitBreaker) -> None:
+    async def test_reopens_after_half_open_failure(
+        self, breaker: CircuitBreaker
+    ) -> None:
         """Test reopens after half-open failure."""
         # Open then wait for half-open
         for _ in range(3):

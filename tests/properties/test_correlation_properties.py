@@ -6,7 +6,7 @@
 
 import pytest
 
-pytest.skip('Module core.shared.correlation not implemented', allow_module_level=True)
+pytest.skip("Module core.shared.correlation not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -21,15 +21,12 @@ from core.shared.correlation import (
     create_correlation_service,
     generate_id,
     get_correlation_id,
-    get_current_context,
     get_request_id,
     get_span_id,
-    propagate_correlation,
     set_correlation_id,
     set_request_id,
     with_correlation,
 )
-
 
 # Strategies
 id_format_strategy = st.sampled_from(list(IdFormat))

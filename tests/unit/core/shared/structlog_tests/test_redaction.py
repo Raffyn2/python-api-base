@@ -4,12 +4,10 @@
 **Requirement: R1.5 - PII Redaction**
 """
 
-import pytest
-
 from core.shared.logging.redaction import (
-    RedactionProcessor,
-    PIIPattern,
     PII_PATTERNS,
+    PIIPattern,
+    RedactionProcessor,
     create_redaction_processor,
 )
 
@@ -110,7 +108,9 @@ class TestRedactionProcessor:
     def test_redact_bearer_token(self) -> None:
         """Test Bearer token redaction."""
         processor = RedactionProcessor()
-        event = {"event": "Auth: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature"}
+        event = {
+            "event": "Auth: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature"
+        }
 
         result = processor(None, "info", event)
 

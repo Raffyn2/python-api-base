@@ -25,6 +25,7 @@ from .exceptions import (
     ServiceNotRegisteredError,
 )
 from .lifecycle import Lifetime, Registration
+from .metrics import ContainerHooks, ContainerStats, MetricsTracker
 
 __all__ = [
     # Container
@@ -38,4 +39,8 @@ __all__ = [
     "CircularDependencyError",
     "InvalidFactoryError",
     "ServiceNotRegisteredError",
+    # Metrics
+    "ContainerStats",
+    "ContainerHooks",
+    "MetricsTracker",
 ]

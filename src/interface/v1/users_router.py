@@ -6,25 +6,25 @@
 
 from fastapi import APIRouter, HTTPException, status
 
+from application.common.base.dto import PaginatedResponse
 from application.users.commands import (
     CreateUserCommand,
-    UpdateUserCommand,
     DeleteUserCommand,
-)
-from application.users.queries import (
-    GetUserByIdQuery,
-    ListUsersQuery,
-    CountUsersQuery,
+    UpdateUserCommand,
 )
 from application.users.commands.dtos import (
-    UserDTO,
     CreateUserDTO,
     UpdateUserDTO,
+    UserDTO,
     UserListDTO,
 )
-from application.common.base.dto import PaginatedResponse
-from interface.dependencies import CommandBusDep, QueryBusDep, PaginationDep
-from core.base.patterns.result import Ok, Err
+from application.users.queries import (
+    CountUsersQuery,
+    GetUserByIdQuery,
+    ListUsersQuery,
+)
+from core.base.patterns.result import Err, Ok
+from interface.dependencies import CommandBusDep, PaginationDep, QueryBusDep
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -43,17 +43,21 @@ async def list_users(
     Returns:
         Paginated list of users.
     """
-    # Dispatch query through query bus
-    query = ListUsersQuery(
+    # Dispatch list query through query bus
+    list_query = ListUsersQuery(
         page=pagination.page,
         page_size=pagination.page_size,
         include_inactive=False,
     )
-    result = await query_bus.dispatch(query)
+    list_result = await query_bus.dispatch(list_query)
 
-    # Handle result
-    match result:
-        case Ok(users):
+    # Dispatch count query for accurate total
+    count_query = CountUsersQuery(include_inactive=False)
+    count_result = await query_bus.dispatch(count_query)
+
+    # Handle results
+    match (list_result, count_result):
+        case (Ok(users), Ok(total_count)):
             # Convert to UserListDTO format
             user_dtos = [
                 UserListDTO(
@@ -66,11 +70,11 @@ async def list_users(
             ]
             return PaginatedResponse(
                 items=user_dtos,
-                total=len(user_dtos),  # TODO: Add count query for accurate total
+                total=total_count,
                 page=pagination.page,
                 size=pagination.page_size,
             )
-        case Err(error):
+        case (Err(error), _) | (_, Err(error)):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(error),
@@ -172,16 +176,15 @@ async def create_user(data: CreateUserDTO, command_bus: CommandBusDep) -> UserDT
                     status_code=status.HTTP_409_CONFLICT,
                     detail=error_msg,
                 )
-            elif "Invalid email" in error_msg or "password" in error_msg.lower():
+            if "Invalid email" in error_msg or "password" in error_msg.lower():
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=error_msg,
                 )
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=error_msg,
-                )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=error_msg,
+            )
 
 
 @router.patch("/{user_id}", response_model=UserDTO)
@@ -236,11 +239,10 @@ async def update_user(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=error_msg,
                 )
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=error_msg,
-                )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=error_msg,
+            )
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -267,7 +269,7 @@ async def delete_user(user_id: str, command_bus: CommandBusDep) -> None:
     match result:
         case Ok(_):
             # Success - return 204 No Content
-            return None
+            return
         case Err(error):
             error_msg = str(error)
             if "not found" in error_msg.lower():
@@ -275,8 +277,7 @@ async def delete_user(user_id: str, command_bus: CommandBusDep) -> None:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=error_msg,
                 )
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=error_msg,
-                )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=error_msg,
+            )

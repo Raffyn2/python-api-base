@@ -17,22 +17,16 @@ Properties covered:
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, UTC
-from decimal import Decimal
-from typing import Any
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
-from hypothesis import given, settings, strategies as st, assume
+from hypothesis import assume, given, settings, strategies as st
 
-from core.base.patterns.result import Ok, Err, Result
 from core.base.patterns.validation import (
     FieldError,
     ValidationError,
-    Validator,
-    validate_all,
 )
-
 
 # === Strategies ===
 
@@ -70,7 +64,9 @@ password_st = st.text(
 tenant_id_st = st.text(
     min_size=1,
     max_size=50,
-    alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="-_"),
+    alphabet=st.characters(
+        whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="-_"
+    ),
 )
 
 
@@ -323,11 +319,9 @@ class TestRBACPermissionChecking:
         )
     )
     @settings(max_examples=50)
-    def test_role_has_only_granted_permissions(
-        self, permissions: list[str]
-    ) -> None:
+    def test_role_has_only_granted_permissions(self, permissions: list[str]) -> None:
         """Role only has permissions that were explicitly granted."""
-        from infrastructure.security.rbac import Role, Permission
+        from infrastructure.security.rbac import Permission, Role
 
         role = Role(
             name="test_role",
@@ -347,7 +341,9 @@ class TestRBACPermissionChecking:
             assert not role.has_permission(perm)
 
     @given(
-        role_name=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz_"),
+        role_name=st.text(
+            min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz_"
+        ),
         description=st.text(min_size=0, max_size=100),
     )
     @settings(max_examples=50)
@@ -355,7 +351,7 @@ class TestRBACPermissionChecking:
         self, role_name: str, description: str
     ) -> None:
         """Role serialization/deserialization preserves data."""
-        from infrastructure.security.rbac import Role, Permission
+        from infrastructure.security.rbac import Permission, Role
 
         original = Role(
             name=role_name,
@@ -389,8 +385,8 @@ class TestRateLimitingEnforcement:
     ) -> None:
         """Rate limiter allows requests up to the limit."""
         from infrastructure.security.rate_limit.sliding_window import (
-            SlidingWindowRateLimiter,
             SlidingWindowConfig,
+            SlidingWindowRateLimiter,
         )
 
         config = SlidingWindowConfig(
@@ -419,8 +415,8 @@ class TestRateLimitingEnforcement:
     def test_rate_limit_blocks_after_limit(self, max_requests: int) -> None:
         """Rate limiter blocks requests after limit exceeded."""
         from infrastructure.security.rate_limit.sliding_window import (
-            SlidingWindowRateLimiter,
             SlidingWindowConfig,
+            SlidingWindowRateLimiter,
         )
 
         config = SlidingWindowConfig(
@@ -456,13 +452,11 @@ class TestRateLimitReset:
         max_requests=st.integers(min_value=1, max_value=20),
     )
     @settings(max_examples=30)
-    def test_rate_limit_result_contains_reset_info(
-        self, max_requests: int
-    ) -> None:
+    def test_rate_limit_result_contains_reset_info(self, max_requests: int) -> None:
         """Rate limit result includes reset timing information."""
         from infrastructure.security.rate_limit.sliding_window import (
-            SlidingWindowRateLimiter,
             SlidingWindowConfig,
+            SlidingWindowRateLimiter,
         )
 
         config = SlidingWindowConfig(
@@ -487,8 +481,8 @@ class TestRateLimitReset:
     def test_remaining_decrements_correctly(self, max_requests: int) -> None:
         """Remaining count decrements with each request."""
         from infrastructure.security.rate_limit.sliding_window import (
-            SlidingWindowRateLimiter,
             SlidingWindowConfig,
+            SlidingWindowRateLimiter,
         )
 
         config = SlidingWindowConfig(
@@ -553,8 +547,12 @@ class TestTenantContextIsolation:
 
         from infrastructure.multitenancy.tenant import TenantInfo
 
-        info1: TenantInfo[str] = TenantInfo(id=tenant1_id, name="Tenant 1", is_active=True)
-        info2: TenantInfo[str] = TenantInfo(id=tenant2_id, name="Tenant 2", is_active=True)
+        info1: TenantInfo[str] = TenantInfo(
+            id=tenant1_id, name="Tenant 1", is_active=True
+        )
+        info2: TenantInfo[str] = TenantInfo(
+            id=tenant2_id, name="Tenant 2", is_active=True
+        )
 
         # Should be different
         assert info1.id != info2.id

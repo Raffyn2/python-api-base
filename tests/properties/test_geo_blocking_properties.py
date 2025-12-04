@@ -10,14 +10,16 @@ Tests correctness properties of geo blocking including:
 **Validates: Requirements 5.3**
 """
 
-
 import pytest
-pytest.skip('Module infrastructure.security.geo_blocking not implemented', allow_module_level=True)
+
+pytest.skip(
+    "Module infrastructure.security.geo_blocking not implemented",
+    allow_module_level=True,
+)
 
 import asyncio
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.security.geo_blocking import (
     BlockMode,
@@ -29,7 +31,6 @@ from infrastructure.security.geo_blocking import (
     InMemoryGeoProvider,
 )
 
-
 # Strategies
 ip_strategy = st.from_regex(
     r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
@@ -37,7 +38,18 @@ ip_strategy = st.from_regex(
 )
 
 country_code_strategy = st.sampled_from([
-    "US", "BR", "GB", "DE", "FR", "CN", "RU", "JP", "AU", "CA", "IN", "MX",
+    "US",
+    "BR",
+    "GB",
+    "DE",
+    "FR",
+    "CN",
+    "RU",
+    "JP",
+    "AU",
+    "CA",
+    "IN",
+    "MX",
 ])
 
 country_set_strategy = st.frozensets(country_code_strategy, min_size=1, max_size=5)
@@ -100,9 +112,7 @@ class TestBlocklistMode:
         blocked_country=country_code_strategy,
     )
     @settings(max_examples=50)
-    def test_blocked_country_is_blocked(
-        self, ip: str, blocked_country: str
-    ) -> None:
+    def test_blocked_country_is_blocked(self, ip: str, blocked_country: str) -> None:
         """Property: IPs from blocked countries are blocked.
 
         *For any* IP in a blocked country, access is denied.
@@ -153,9 +163,7 @@ class TestAllowlistMode:
         allowed_country=country_code_strategy,
     )
     @settings(max_examples=50)
-    def test_allowed_country_is_allowed(
-        self, ip: str, allowed_country: str
-    ) -> None:
+    def test_allowed_country_is_allowed(self, ip: str, allowed_country: str) -> None:
         """Property: IPs from allowed countries are allowed.
 
         *For any* IP in an allowed country, access is granted.
@@ -349,10 +357,7 @@ class TestGeoBlockConfigBuilder:
         **Validates: Requirements 5.3**
         """
         config = (
-            GeoBlockConfigBuilder()
-            .blocklist_mode()
-            .block_countries(*countries)
-            .build()
+            GeoBlockConfigBuilder().blocklist_mode().block_countries(*countries).build()
         )
 
         assert config.mode == BlockMode.BLOCKLIST
@@ -367,10 +372,7 @@ class TestGeoBlockConfigBuilder:
         **Validates: Requirements 5.3**
         """
         config = (
-            GeoBlockConfigBuilder()
-            .allowlist_mode()
-            .allow_countries(*countries)
-            .build()
+            GeoBlockConfigBuilder().allowlist_mode().allow_countries(*countries).build()
         )
 
         assert config.mode == BlockMode.ALLOWLIST

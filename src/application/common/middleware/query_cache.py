@@ -12,7 +12,7 @@ import json
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 logger = logging.getLogger(__name__)
@@ -117,9 +117,7 @@ class InMemoryQueryCache:
         """
         import fnmatch
 
-        matching_keys = [
-            key for key in self._cache.keys() if fnmatch.fnmatch(key, pattern)
-        ]
+        matching_keys = [key for key in self._cache if fnmatch.fnmatch(key, pattern)]
 
         for key in matching_keys:
             del self._cache[key]

@@ -6,11 +6,14 @@
 
 import pytest
 
-pytest.skip('Module application.common.data_export not implemented', allow_module_level=True)
+pytest.skip(
+    "Module application.common.data_export not implemented", allow_module_level=True
+)
 
-from hypothesis import given, strategies as st, settings
 from dataclasses import dataclass
 from typing import Any
+
+from hypothesis import given, settings, strategies as st
 
 from application.common.data_export import (
     DataExporter,
@@ -23,6 +26,7 @@ from application.common.data_export import (
 @dataclass
 class ExportRecord:
     """Record for export testing."""
+
     id: str
     name: str
     value: int
@@ -36,9 +40,7 @@ class ExportRecordSerializer:
 
     def from_dict(self, data: dict[str, Any]) -> ExportRecord:
         return ExportRecord(
-            id=str(data["id"]),
-            name=str(data["name"]),
-            value=int(data["value"])
+            id=str(data["id"]), name=str(data["name"]), value=int(data["value"])
         )
 
 
@@ -46,9 +48,15 @@ class ExportRecordSerializer:
 def export_record_strategy(draw: st.DrawFn) -> ExportRecord:
     """Generate valid export records."""
     return ExportRecord(
-        id=draw(st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=1, max_size=20)),
-        name=draw(st.text(alphabet="abcdefghijklmnopqrstuvwxyz ", min_size=1, max_size=50)),
-        value=draw(st.integers(min_value=0, max_value=10000))
+        id=draw(
+            st.text(
+                alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=1, max_size=20
+            )
+        ),
+        name=draw(
+            st.text(alphabet="abcdefghijklmnopqrstuvwxyz ", min_size=1, max_size=50)
+        ),
+        value=draw(st.integers(min_value=0, max_value=10000)),
     )
 
 
@@ -69,7 +77,7 @@ class TestExportImportProperties:
         imported, import_result = importer.import_json(content)
 
         assert len(imported) == len(records)
-        for orig, imp in zip(records, imported):
+        for orig, imp in zip(records, imported, strict=False):
             assert orig.id == imp.id
             assert orig.name == imp.name
             assert orig.value == imp.value
@@ -118,13 +126,16 @@ class TestExportImportProperties:
 
     @given(
         st.lists(export_record_strategy(), min_size=1, max_size=10),
-        st.lists(st.sampled_from(["id", "name", "value"]), min_size=1, max_size=3, unique=True)
+        st.lists(
+            st.sampled_from(["id", "name", "value"]),
+            min_size=1,
+            max_size=3,
+            unique=True,
+        ),
     )
     @settings(max_examples=50)
     def test_include_fields_filters(
-        self,
-        records: list[ExportRecord],
-        include_fields: list[str]
+        self, records: list[ExportRecord], include_fields: list[str]
     ) -> None:
         """Include fields filters output."""
         serializer = ExportRecordSerializer()
@@ -133,11 +144,12 @@ class TestExportImportProperties:
         config = ExportConfig(
             format=ExportFormat.JSON,
             include_fields=include_fields,
-            include_metadata=False
+            include_metadata=False,
         )
         content, _ = exporter.export(records, config)
 
         import json
+
         data = json.loads(content)
         for record in data:
             assert set(record.keys()) == set(include_fields)

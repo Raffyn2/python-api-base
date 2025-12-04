@@ -14,14 +14,14 @@ from core.config import Settings
 
 __all__ = [
     "Container",
-    "LifecycleManager",
     "LifecycleHookError",
+    "LifecycleManager",
     "create_container",
     "lifecycle",
 ]
-from infrastructure.observability.telemetry import TelemetryProvider
-from core.shared.caching import CacheConfig, InMemoryCacheProvider, RedisCacheProvider
 from application.common.cqrs import CommandBus, QueryBus
+from core.shared.caching import CacheConfig, InMemoryCacheProvider, RedisCacheProvider
+from infrastructure.observability.telemetry import TelemetryProvider
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +36,10 @@ class Container(containers.DeclarativeContainer):
 
     wiring_config = containers.WiringConfiguration(
         modules=[
-            "my_app.adapters.api.routes.items",
-            "my_app.adapters.api.routes.health",
+            "interface.v1.items_router",
+            "interface.v1.health_router",
+            "interface.v1.users_router",
+            "interface.v2.examples_router",
         ]
     )
 
@@ -64,7 +66,7 @@ class Container(containers.DeclarativeContainer):
     # Redis cache provider - uses dedicated Redis settings
     redis_cache = providers.Singleton(
         RedisCacheProvider,
-        redis_url=providers.Callable(
+        redis_url=providers.Factory(
             lambda cfg: cfg.redis.url
             if hasattr(cfg, "redis") and cfg.redis.enabled
             else "redis://localhost:6379",
@@ -79,32 +81,32 @@ class Container(containers.DeclarativeContainer):
     # CQRS Query Bus with cache support
     query_bus = providers.Singleton(QueryBus)
 
-    # Telemetry provider
+    # Telemetry provider - Factory ensures single evaluation per singleton
     telemetry = providers.Singleton(
         TelemetryProvider,
-        service_name=providers.Callable(
+        service_name=providers.Factory(
             lambda cfg: cfg.observability.service_name
             if hasattr(cfg, "observability")
             else "my-api",
             config,
         ),
-        service_version=providers.Callable(
+        service_version=providers.Factory(
             lambda cfg: cfg.version if hasattr(cfg, "version") else "0.1.0",
             config,
         ),
-        otlp_endpoint=providers.Callable(
+        otlp_endpoint=providers.Factory(
             lambda cfg: cfg.observability.otlp_endpoint
             if hasattr(cfg, "observability")
             else None,
             config,
         ),
-        enable_tracing=providers.Callable(
+        enable_tracing=providers.Factory(
             lambda cfg: cfg.observability.enable_tracing
             if hasattr(cfg, "observability")
             else True,
             config,
         ),
-        enable_metrics=providers.Callable(
+        enable_metrics=providers.Factory(
             lambda cfg: cfg.observability.enable_metrics
             if hasattr(cfg, "observability")
             else True,

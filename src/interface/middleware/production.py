@@ -167,8 +167,7 @@ class MultitenancyMiddleware(BaseHTTPMiddleware):
             logger.debug(f"Tenant context set: {tenant_id}")
 
         try:
-            response = await call_next(request)
-            return response
+            return await call_next(request)
         finally:
             # Clear tenant context
             TenantContext.set_current(None)

@@ -4,14 +4,23 @@
 **Part of: Core API (permanent)**
 """
 
-from datetime import datetime, timedelta, UTC
+import re
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, status, Header
+from fastapi import APIRouter, Header, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
-import re
 
 from application.common.base.dto import ApiResponse
+from core.config import (
+    ACCESS_TOKEN_EXPIRE_SECONDS,
+    MAX_DISPLAY_NAME_LENGTH,
+    MAX_EMAIL_LENGTH,
+    MAX_PASSWORD_LENGTH,
+    MIN_EMAIL_LENGTH,
+    MIN_PASSWORD_LENGTH,
+    REFRESH_TOKEN_EXPIRE_SECONDS,
+)
 from core.shared.utils.password import hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -23,8 +32,8 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 class LoginRequest(BaseModel):
     """Login request."""
 
-    email: str = Field(..., min_length=5, max_length=255)
-    password: str = Field(..., min_length=8)
+    email: str = Field(..., min_length=MIN_EMAIL_LENGTH, max_length=MAX_EMAIL_LENGTH)
+    password: str = Field(..., min_length=MIN_PASSWORD_LENGTH)
 
     @field_validator("email")
     @classmethod
@@ -37,9 +46,11 @@ class LoginRequest(BaseModel):
 class RegisterRequest(BaseModel):
     """User registration request."""
 
-    email: str = Field(..., min_length=5, max_length=255)
-    password: str = Field(..., min_length=8, max_length=128)
-    display_name: str = Field(..., min_length=1, max_length=100)
+    email: str = Field(..., min_length=MIN_EMAIL_LENGTH, max_length=MAX_EMAIL_LENGTH)
+    password: str = Field(
+        ..., min_length=MIN_PASSWORD_LENGTH, max_length=MAX_PASSWORD_LENGTH
+    )
+    display_name: str = Field(..., min_length=1, max_length=MAX_DISPLAY_NAME_LENGTH)
 
     @field_validator("email")
     @classmethod
@@ -53,7 +64,7 @@ class TokenResponse(BaseModel):
     """Token response."""
 
     access_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"  # noqa: S105 - Token type, not password
     expires_in: int
     refresh_token: str | None = None
 
@@ -75,7 +86,7 @@ _users: dict[str, dict] = {}
 _user_roles: dict[str, list[str]] = {}
 
 
-def _create_token(user_id: str, expires_in: int = 3600) -> str:
+def _create_token(user_id: str, expires_in: int = ACCESS_TOKEN_EXPIRE_SECONDS) -> str:
     """Create a mock JWT token."""
     import base64
     import json
@@ -157,9 +168,9 @@ async def login(data: LoginRequest) -> ApiResponse[TokenResponse]:
             detail="Account is deactivated",
         )
 
-    expires_in = 3600  # 1 hour
+    expires_in = ACCESS_TOKEN_EXPIRE_SECONDS
     access_token = _create_token(user["id"], expires_in)
-    refresh_token = _create_token(user["id"], 86400 * 7)  # 7 days
+    refresh_token = _create_token(user["id"], REFRESH_TOKEN_EXPIRE_SECONDS)
 
     return ApiResponse(
         data=TokenResponse(
@@ -211,7 +222,7 @@ async def get_current_user(
         )
 
     except (ValueError, KeyError) as e:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token") from e
 
 
 @router.post(
@@ -224,4 +235,3 @@ async def logout(
 ) -> None:
     """Logout user (invalidate token)."""
     # In a real implementation, add token to blacklist
-    pass

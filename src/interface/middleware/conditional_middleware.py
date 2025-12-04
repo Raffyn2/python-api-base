@@ -9,10 +9,10 @@ selectively based on route patterns, HTTP methods, or custom conditions.
 
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
-from collections.abc import Awaitable, Callable
 
 
 class HttpMethod(Enum):

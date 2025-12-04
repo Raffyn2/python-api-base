@@ -88,8 +88,7 @@ class CursorPagination[T, CursorT]:
         """
         try:
             decoded_bytes = base64.urlsafe_b64decode(cursor.encode())
-            data = json.loads(decoded_bytes)
-            return data  # type: ignore
+            return json.loads(decoded_bytes)
         except (ValueError, json.JSONDecodeError) as e:
             logger.warning(
                 f"Invalid cursor decode: {e}",

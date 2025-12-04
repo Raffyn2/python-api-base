@@ -4,11 +4,10 @@
 **Validates: Requirements 4.3**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
-from datetime import datetime
 
 import pytest
 from hypothesis import given, settings, strategies as st
@@ -33,7 +32,6 @@ from interface.api.response_transformation import (
     transform_for_client,
     transform_for_version,
 )
-
 
 # Strategies
 field_name_strategy = st.text(
@@ -78,9 +76,7 @@ class TestIdentityTransformerProperties:
 
     @given(data=dict_data_strategy)
     @settings(max_examples=100)
-    def test_identity_returns_unchanged_data(
-        self, data: dict[str, int]
-    ) -> None:
+    def test_identity_returns_unchanged_data(self, data: dict[str, int]) -> None:
         """Property: IdentityTransformer returns data unchanged."""
         transformer = IdentityTransformer[dict[str, int]]()
         context = TransformationContext()
@@ -118,9 +114,7 @@ class TestFieldRenameTransformerProperties:
 
     @given(data=dict_data_strategy)
     @settings(max_examples=100)
-    def test_rename_preserves_unrenamed_keys(
-        self, data: dict[str, int]
-    ) -> None:
+    def test_rename_preserves_unrenamed_keys(self, data: dict[str, int]) -> None:
         """Property: Unrenamed keys are preserved."""
         transformer = FieldRenameTransformer({})
         context = TransformationContext()
@@ -133,9 +127,7 @@ class TestFieldRemoveTransformerProperties:
 
     @given(data=dict_data_strategy)
     @settings(max_examples=100)
-    def test_remove_removes_specified_fields(
-        self, data: dict[str, int]
-    ) -> None:
+    def test_remove_removes_specified_fields(self, data: dict[str, int]) -> None:
         """Property: Remove transformer removes specified fields."""
         if not data:
             return
@@ -150,9 +142,7 @@ class TestFieldRemoveTransformerProperties:
 
     @given(data=dict_data_strategy)
     @settings(max_examples=100)
-    def test_remove_preserves_other_fields(
-        self, data: dict[str, int]
-    ) -> None:
+    def test_remove_preserves_other_fields(self, data: dict[str, int]) -> None:
         """Property: Non-removed fields are preserved."""
         transformer = FieldRemoveTransformer(set())
         context = TransformationContext()
@@ -168,9 +158,7 @@ class TestFieldAddTransformerProperties:
         new_value=st.integers(),
     )
     @settings(max_examples=100)
-    def test_add_adds_new_fields(
-        self, data: dict[str, int], new_value: int
-    ) -> None:
+    def test_add_adds_new_fields(self, data: dict[str, int], new_value: int) -> None:
         """Property: Add transformer adds new fields."""
         new_field = "new_field"
         transformer = FieldAddTransformer({new_field: new_value})
@@ -192,7 +180,6 @@ class TestFieldAddTransformerProperties:
         result = transformer.transform(data, context)
 
         assert result["doubled"] == 20
-
 
 
 class TestFieldTransformTransformerProperties:
@@ -335,10 +322,7 @@ class TestTransformationBuilderProperties:
         """Property: Builder methods return builder for chaining."""
         builder = TransformationBuilder()
         result = (
-            builder
-            .rename_fields({"a": "b"})
-            .remove_fields({"c"})
-            .add_fields({"d": 1})
+            builder.rename_fields({"a": "b"}).remove_fields({"c"}).add_fields({"d": 1})
         )
         assert result is builder
 

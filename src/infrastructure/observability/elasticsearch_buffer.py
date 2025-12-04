@@ -87,7 +87,9 @@ class FallbackWriter:
         Args:
             fallback_path: Path for fallback log file
         """
-        self._path = Path(fallback_path) if isinstance(fallback_path, str) else fallback_path
+        self._path = (
+            Path(fallback_path) if isinstance(fallback_path, str) else fallback_path
+        )
         self._logger = logging.getLogger(__name__)
 
     async def write(self, events: list[dict[str, Any]]) -> None:
@@ -129,7 +131,7 @@ class BulkIndexer:
         Returns:
             Index name with date suffix (e.g., "logs-api-2025.01.02")
         """
-        from datetime import datetime, UTC
+        from datetime import UTC, datetime
 
         date_suffix = datetime.now(UTC).strftime("%Y.%m.%d")
         return f"{self._index_prefix}-{date_suffix}"

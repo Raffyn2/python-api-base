@@ -5,6 +5,7 @@
 """
 
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -46,7 +47,7 @@ class UserSearchResultDTO(BaseModel):
 
 
 __all__ = [
-    "UserReadDTO",
     "UserListReadDTO",
+    "UserReadDTO",
     "UserSearchResultDTO",
 ]

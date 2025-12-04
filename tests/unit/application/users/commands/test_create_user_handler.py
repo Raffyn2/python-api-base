@@ -4,15 +4,16 @@
 **Validates: Requirements CreateUserHandler correctness**
 """
 
-import pytest
 from unittest.mock import AsyncMock, Mock
-from datetime import datetime, UTC
+
+import pytest
 
 from application.users.commands.create_user import CreateUserCommand, CreateUserHandler
+from application.users.commands.validators import CompositeUserValidator
+from core.base.patterns.result import Ok
 from domain.users.aggregates import UserAggregate
 from domain.users.repositories import IUserRepository
 from domain.users.services import UserDomainService
-from core.base.patterns.result import Ok, Err
 
 
 class TestCreateUserHandler:
@@ -31,15 +32,23 @@ class TestCreateUserHandler:
         return mock
 
     @pytest.fixture
+    def mock_validator(self) -> AsyncMock:
+        """Create mock composite validator."""
+        mock = AsyncMock(spec=CompositeUserValidator)
+        return mock
+
+    @pytest.fixture
     def handler(
         self,
         mock_repository: AsyncMock,
         mock_domain_service: Mock,
+        mock_validator: AsyncMock,
     ) -> CreateUserHandler:
         """Create handler instance with mocked dependencies."""
         return CreateUserHandler(
             user_repository=mock_repository,
             user_service=mock_domain_service,
+            validator=mock_validator,
         )
 
     @pytest.mark.asyncio
@@ -48,6 +57,7 @@ class TestCreateUserHandler:
         handler: CreateUserHandler,
         mock_repository: AsyncMock,
         mock_domain_service: Mock,
+        mock_validator: AsyncMock,
     ) -> None:
         """Test successful user creation.
 
@@ -62,10 +72,8 @@ class TestCreateUserHandler:
             display_name="Test User",
         )
 
-        # Setup mocks
-        mock_repository.exists_by_email.return_value = False
-        mock_domain_service.validate_email.return_value = (True, None)
-        mock_domain_service.validate_password_strength.return_value = (True, [])
+        # Setup mocks - validator returns Ok(None) for success
+        mock_validator.validate.return_value = Ok(None)
         mock_domain_service.hash_password.return_value = "hashed_password_123"
 
         created_user = UserAggregate.create(
@@ -88,11 +96,7 @@ class TestCreateUserHandler:
         assert user.display_name == "Test User"
 
         # Verify interactions
-        mock_repository.exists_by_email.assert_called_once_with("test@example.com")
-        mock_domain_service.validate_email.assert_called_once_with("test@example.com")
-        mock_domain_service.validate_password_strength.assert_called_once_with(
-            "StrongPassword123!"
-        )
+        mock_validator.validate.assert_called_once_with(command)
         mock_domain_service.hash_password.assert_called_once_with("StrongPassword123!")
         mock_repository.save.assert_called_once()
 
@@ -101,29 +105,34 @@ class TestCreateUserHandler:
         self,
         handler: CreateUserHandler,
         mock_repository: AsyncMock,
+        mock_validator: AsyncMock,
     ) -> None:
         """Test user creation fails when email already exists.
 
         **Property: Duplicate Email Prevention**
         **Validates: Requirements 1.2**
         """
+        from core.base.patterns.result import Err
+
         # Arrange
         command = CreateUserCommand(
             email="existing@example.com",
             password="StrongPassword123!",
         )
 
-        mock_repository.exists_by_email.return_value = True
+        # Validator returns error for duplicate email
+        mock_validator.validate.return_value = Err(
+            ValueError("Email already registered")
+        )
 
         # Act
         result = await handler.handle(command)
 
         # Assert
         assert result.is_err()
-        error = result.unwrap_err()
-        assert "Email already registered" in str(error)
+        assert "Email already registered" in str(result.error)
 
-        # Should not call other services if email exists
+        # Should not call save if validation fails
         mock_repository.save.assert_not_called()
 
     @pytest.mark.asyncio
@@ -131,29 +140,30 @@ class TestCreateUserHandler:
         self,
         handler: CreateUserHandler,
         mock_repository: AsyncMock,
-        mock_domain_service: Mock,
+        mock_validator: AsyncMock,
     ) -> None:
         """Test user creation fails with invalid email format.
 
         **Property: Email Validation**
         **Validates: Requirements 1.3**
         """
+        from core.base.patterns.result import Err
+
         # Arrange
         command = CreateUserCommand(
             email="invalid-email",
             password="StrongPassword123!",
         )
 
-        mock_repository.exists_by_email.return_value = False
-        mock_domain_service.validate_email.return_value = (False, "Invalid email format")
+        # Validator returns error for invalid email
+        mock_validator.validate.return_value = Err(ValueError("Invalid email format"))
 
         # Act
         result = await handler.handle(command)
 
         # Assert
         assert result.is_err()
-        error = result.unwrap_err()
-        assert "Invalid email format" in str(error)
+        assert "Invalid email format" in str(result.error)
 
         # Should not save if validation fails
         mock_repository.save.assert_not_called()
@@ -163,24 +173,24 @@ class TestCreateUserHandler:
         self,
         handler: CreateUserHandler,
         mock_repository: AsyncMock,
-        mock_domain_service: Mock,
+        mock_validator: AsyncMock,
     ) -> None:
         """Test user creation fails with weak password.
 
         **Property: Password Strength Validation**
         **Validates: Requirements 1.4**
         """
+        from core.base.patterns.result import Err
+
         # Arrange
         command = CreateUserCommand(
             email="test@example.com",
             password="weak",
         )
 
-        mock_repository.exists_by_email.return_value = False
-        mock_domain_service.validate_email.return_value = (True, None)
-        mock_domain_service.validate_password_strength.return_value = (
-            False,
-            ["Password too short", "Missing special characters"],
+        # Validator returns error for weak password
+        mock_validator.validate.return_value = Err(
+            ValueError("Password too short; Missing special characters")
         )
 
         # Act
@@ -188,8 +198,7 @@ class TestCreateUserHandler:
 
         # Assert
         assert result.is_err()
-        error = result.unwrap_err()
-        error_msg = str(error)
+        error_msg = str(result.error)
         assert "Password too short" in error_msg
         assert "Missing special characters" in error_msg
 
@@ -202,6 +211,7 @@ class TestCreateUserHandler:
         handler: CreateUserHandler,
         mock_repository: AsyncMock,
         mock_domain_service: Mock,
+        mock_validator: AsyncMock,
     ) -> None:
         """Test user creation with only required fields.
 
@@ -215,9 +225,7 @@ class TestCreateUserHandler:
         )
 
         # Setup mocks
-        mock_repository.exists_by_email.return_value = False
-        mock_domain_service.validate_email.return_value = (True, None)
-        mock_domain_service.validate_password_strength.return_value = (True, [])
+        mock_validator.validate.return_value = Ok(None)
         mock_domain_service.hash_password.return_value = "hashed_password"
 
         created_user = UserAggregate.create(
@@ -245,6 +253,7 @@ class TestCreateUserHandler:
         handler: CreateUserHandler,
         mock_repository: AsyncMock,
         mock_domain_service: Mock,
+        mock_validator: AsyncMock,
     ) -> None:
         """Test handler gracefully handles repository failures.
 
@@ -257,18 +266,12 @@ class TestCreateUserHandler:
             password="StrongPassword123!",
         )
 
-        mock_repository.exists_by_email.return_value = False
-        mock_domain_service.validate_email.return_value = (True, None)
-        mock_domain_service.validate_password_strength.return_value = (True, [])
+        mock_validator.validate.return_value = Ok(None)
         mock_domain_service.hash_password.return_value = "hashed"
 
         # Simulate repository failure
         mock_repository.save.side_effect = Exception("Database connection failed")
 
-        # Act
-        result = await handler.handle(command)
-
-        # Assert
-        assert result.is_err()
-        error = result.unwrap_err()
-        assert "Database connection failed" in str(error)
+        # Act & Assert - handler re-raises exceptions
+        with pytest.raises(Exception, match="Database connection failed"):
+            await handler.handle(command)

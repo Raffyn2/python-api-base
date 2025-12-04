@@ -22,7 +22,6 @@ from core.base.domain.entity import AuditableEntity
 from core.base.events.domain_event import DomainEvent
 from core.shared.utils.datetime import utc_now
 
-
 # === Value Objects ===
 
 

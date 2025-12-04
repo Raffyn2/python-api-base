@@ -4,15 +4,14 @@
 **Validates: Requirements 4.4**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import asyncio
 import json
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.streaming import (
     ChunkedStream,
@@ -24,21 +23,32 @@ from infrastructure.streaming import (
     stream_json_array,
 )
 
-
 # =============================================================================
 # Strategies
 # =============================================================================
+
 
 @st.composite
 def sse_event_strategy(draw: st.DrawFn) -> SSEEvent:
     """Generate SSE events."""
     return SSEEvent(
-        data=draw(st.one_of(
-            st.text(min_size=1, max_size=100),
-            st.fixed_dictionaries({"message": st.text(min_size=1, max_size=50)}),
-        )),
-        event=draw(st.one_of(st.none(), st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz"))),
-        id=draw(st.one_of(st.none(), st.text(min_size=1, max_size=10, alphabet="0123456789"))),
+        data=draw(
+            st.one_of(
+                st.text(min_size=1, max_size=100),
+                st.fixed_dictionaries({"message": st.text(min_size=1, max_size=50)}),
+            )
+        ),
+        event=draw(
+            st.one_of(
+                st.none(),
+                st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz"),
+            )
+        ),
+        id=draw(
+            st.one_of(
+                st.none(), st.text(min_size=1, max_size=10, alphabet="0123456789")
+            )
+        ),
         retry=draw(st.one_of(st.none(), st.integers(min_value=1000, max_value=30000))),
     )
 
@@ -47,10 +57,15 @@ def sse_event_strategy(draw: st.DrawFn) -> SSEEvent:
 # Property Tests - SSE Event
 # =============================================================================
 
+
 class TestSSEEventProperties:
     """Property tests for SSE events."""
 
-    @given(data=st.text(min_size=1, max_size=100, alphabet="abcdefghijklmnopqrstuvwxyz0123456789 "))
+    @given(
+        data=st.text(
+            min_size=1, max_size=100, alphabet="abcdefghijklmnopqrstuvwxyz0123456789 "
+        )
+    )
     @settings(max_examples=100)
     def test_event_contains_data(self, data: str) -> None:
         """**Property 1: SSE event contains data**
@@ -64,7 +79,11 @@ class TestSSEEventProperties:
 
         assert f"data: {data}" in result
 
-    @given(event_type=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz"))
+    @given(
+        event_type=st.text(
+            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz"
+        )
+    )
     @settings(max_examples=100)
     def test_event_contains_type(self, event_type: str) -> None:
         """**Property 2: SSE event contains event type**
@@ -137,6 +156,7 @@ class TestSSEEventProperties:
 # Property Tests - Stream Config
 # =============================================================================
 
+
 class TestStreamConfigProperties:
     """Property tests for stream configuration."""
 
@@ -172,6 +192,7 @@ class TestStreamConfigProperties:
 # Property Tests - Streaming Response
 # =============================================================================
 
+
 class TestStreamingResponseProperties:
     """Property tests for streaming response."""
 
@@ -184,6 +205,7 @@ class TestStreamingResponseProperties:
 
         **Validates: Requirements 4.4**
         """
+
         async def source() -> None:
             for item in items:
                 yield item
@@ -208,6 +230,7 @@ class TestStreamingResponseProperties:
 
         **Validates: Requirements 4.4**
         """
+
         async def source() -> None:
             for item in items:
                 yield item
@@ -231,6 +254,7 @@ class TestStreamingResponseProperties:
 
         **Validates: Requirements 4.4**
         """
+
         async def source() -> None:
             for i in range(5):
                 yield f"item_{i}"
@@ -253,6 +277,7 @@ class TestStreamingResponseProperties:
 
         **Validates: Requirements 4.4**
         """
+
         async def source() -> None:
             yield "test"
 
@@ -268,6 +293,7 @@ class TestStreamingResponseProperties:
 
         **Validates: Requirements 4.4**
         """
+
         async def source() -> None:
             yield "test"
 
@@ -280,6 +306,7 @@ class TestStreamingResponseProperties:
 # =============================================================================
 # Property Tests - SSE Stream
 # =============================================================================
+
 
 class TestSSEStreamProperties:
     """Property tests for SSE stream."""
@@ -353,6 +380,7 @@ class TestSSEStreamProperties:
 # Property Tests - Chunked Stream
 # =============================================================================
 
+
 class TestChunkedStreamProperties:
     """Property tests for chunked stream."""
 
@@ -368,6 +396,7 @@ class TestChunkedStreamProperties:
 
         **Validates: Requirements 4.4**
         """
+
         async def source() -> None:
             for item in data:
                 yield item
@@ -431,6 +460,7 @@ class TestChunkedStreamProperties:
 # Property Tests - JSON Array Streaming
 # =============================================================================
 
+
 class TestJsonArrayStreamProperties:
     """Property tests for JSON array streaming."""
 
@@ -443,6 +473,7 @@ class TestJsonArrayStreamProperties:
 
         **Validates: Requirements 4.4**
         """
+
         async def source() -> None:
             for item in items:
                 yield item
@@ -463,6 +494,7 @@ class TestJsonArrayStreamProperties:
 
         **Validates: Requirements 4.4**
         """
+
         async def source() -> None:
             return
             yield  # Make it a generator

@@ -11,9 +11,9 @@ This module provides:
 """
 
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
-from collections.abc import Callable, Awaitable
 
 from core.base.patterns.result import Ok
 
@@ -50,7 +50,7 @@ class TransactionConfig:
         ...             enabled=True,
         ...             read_only=False,
         ...             isolation_level="READ_COMMITTED",
-        ...             timeout_seconds=30
+        ...             timeout_seconds=30,
         ...         )
 
         >>> # Read-only query command (optimization)
@@ -60,7 +60,7 @@ class TransactionConfig:
         ...     def transaction_config(self) -> TransactionConfig:
         ...         return TransactionConfig(
         ...             enabled=True,
-        ...             read_only=True  # DB can optimize read-only transactions
+        ...             read_only=True,  # DB can optimize read-only transactions
         ...         )
 
         >>> # Command that doesn't need transaction (e.g., external API call)
@@ -151,9 +151,7 @@ class TransactionMiddleware:
         ...     @property
         ...     def transaction_config(self) -> TransactionConfig:
         ...         return TransactionConfig(
-        ...             enabled=True,
-        ...             isolation_level="READ_COMMITTED",
-        ...             timeout_seconds=30
+        ...             enabled=True, isolation_level="READ_COMMITTED", timeout_seconds=30
         ...         )
     """
 
@@ -182,7 +180,7 @@ class TransactionMiddleware:
         """
         # Try transaction_config property
         if hasattr(command, "transaction_config"):
-            config = getattr(command, "transaction_config")
+            config = command.transaction_config
             if isinstance(config, TransactionConfig):
                 return config
             # Handle callable property
@@ -193,7 +191,7 @@ class TransactionMiddleware:
 
         # Try get_transaction_config method
         if hasattr(command, "get_transaction_config"):
-            get_config = getattr(command, "get_transaction_config")
+            get_config = command.get_transaction_config
             if callable(get_config):
                 result = get_config()
                 if isinstance(result, TransactionConfig):

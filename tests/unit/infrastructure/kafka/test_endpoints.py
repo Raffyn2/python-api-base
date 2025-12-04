@@ -4,9 +4,10 @@
 **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
 """
 
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
-from datetime import datetime, UTC
 
 
 class TestKafkaPublishEndpoint:
@@ -18,8 +19,11 @@ class TestKafkaPublishEndpoint:
 
         **Validates: Requirements 2.1, 2.4**
         """
-        from interface.v1.infrastructure_router import kafka_publish, KafkaPublishRequest
         from infrastructure.kafka.message import MessageMetadata
+        from interface.v1.infrastructure_router import (
+            KafkaPublishRequest,
+            kafka_publish,
+        )
 
         # Mock producer
         mock_producer = AsyncMock()
@@ -50,8 +54,11 @@ class TestKafkaPublishEndpoint:
 
         **Validates: Requirements 2.1**
         """
-        from interface.v1.infrastructure_router import kafka_publish, KafkaPublishRequest
         from infrastructure.kafka.message import MessageMetadata
+        from interface.v1.infrastructure_router import (
+            KafkaPublishRequest,
+            kafka_publish,
+        )
 
         mock_producer = AsyncMock()
         mock_producer.send.return_value = MessageMetadata(
@@ -130,8 +137,9 @@ class TestGetKafkaDependency:
 
         **Validates: Requirements 2.3**
         """
-        from interface.v1.infrastructure_router import get_kafka
         from fastapi import HTTPException
+
+        from interface.v1.infrastructure_router import get_kafka
 
         mock_request = MagicMock()
         mock_request.app.state.kafka_producer = None

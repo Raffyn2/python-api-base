@@ -9,10 +9,7 @@ import re
 
 import pytest
 
-pytest.skip('Module cli.commands not implemented', allow_module_level=True)
-
-from hypothesis import given, settings
-from hypothesis import strategies as st
+pytest.skip("Module cli.commands not implemented", allow_module_level=True)
 
 from cli.commands.generate import (
     _generate_entity_content,
@@ -22,8 +19,8 @@ from cli.commands.generate import (
     to_pascal_case,
     to_snake_case,
 )
-from cli.constants import ALLOWED_FIELD_TYPES, MAX_ENTITY_NAME_LENGTH
-
+from cli.constants import MAX_ENTITY_NAME_LENGTH
+from hypothesis import given, settings, strategies as st
 
 # Strategy for valid entity names
 valid_entity_names = st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(
@@ -121,9 +118,7 @@ class TestGeneratedCodeImportOrdering:
     def _verify_import_ordering(self, content: str) -> None:
         """Verify imports are in correct order: stdlib, third-party, local."""
         lines = content.split("\n")
-        import_lines = [
-            line for line in lines if line.startswith(("import ", "from "))
-        ]
+        import_lines = [line for line in lines if line.startswith(("import ", "from "))]
 
         if not import_lines:
             return
@@ -178,9 +173,7 @@ class TestGeneratedCodeImportOrdering:
 
         # Verify ordering: all stdlib before third-party, all third-party before local
         if stdlib_imports and third_party_imports:
-            last_stdlib_idx = max(
-                import_lines.index(imp) for imp in stdlib_imports
-            )
+            last_stdlib_idx = max(import_lines.index(imp) for imp in stdlib_imports)
             first_third_party_idx = min(
                 import_lines.index(imp) for imp in third_party_imports
             )

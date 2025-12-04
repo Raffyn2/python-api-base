@@ -7,21 +7,21 @@ user targeting, and custom evaluation rules using Strategy pattern.
 **Validates: Requirements 10.1, 10.2, 10.3, Strategy pattern refactoring**
 """
 
+from .config import FlagConfig
 from .enums import FlagStatus, RolloutStrategy
 from .models import EvaluationContext
-from .config import FlagConfig
 from .service import FeatureFlagService
 from .strategies import (
-    EvaluationStrategy,
-    FlagEvaluationResult,
-    StrategyChain,
+    CustomRuleStrategy,
+    DefaultValueStrategy,
     DisabledStrategy,
     EnabledStrategy,
-    CustomRuleStrategy,
-    UserTargetingStrategy,
+    EvaluationStrategy,
+    FlagEvaluationResult,
     GroupTargetingStrategy,
     PercentageRolloutStrategy,
-    DefaultValueStrategy,
+    StrategyChain,
+    UserTargetingStrategy,
     create_default_strategy_chain,
 )
 

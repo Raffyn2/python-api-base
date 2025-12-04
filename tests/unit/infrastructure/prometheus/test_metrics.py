@@ -4,20 +4,21 @@
 **Requirement: R5 - Prometheus Metrics**
 """
 
-import pytest
 import asyncio
+
+import pytest
 from prometheus_client import CollectorRegistry
 
 from infrastructure.prometheus.config import PrometheusConfig
-from infrastructure.prometheus.registry import MetricsRegistry, set_registry
 from infrastructure.prometheus.metrics import (
+    count_exceptions,
     counter,
     gauge,
     histogram,
     summary,
     timer,
-    count_exceptions,
 )
+from infrastructure.prometheus.registry import MetricsRegistry, set_registry
 
 
 @pytest.fixture(autouse=True)

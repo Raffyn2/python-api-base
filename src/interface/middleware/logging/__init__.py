@@ -14,8 +14,8 @@ from interface.middleware.logging.request_logger import (
 )
 
 __all__ = [
+    "RequestLoggerMiddleware",
     "app_exception_handler",
     "create_problem_detail",
     "register_exception_handlers",
-    "RequestLoggerMiddleware",
 ]

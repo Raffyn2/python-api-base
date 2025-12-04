@@ -6,7 +6,7 @@ Uses PEP 695 type parameter syntax (Python 3.12+) for cleaner generic definition
 **Validates: Requirements 11.1, 11.2**
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 

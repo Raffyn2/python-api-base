@@ -83,7 +83,7 @@ class HttpClient[TRequest: BaseModel, TResponse: BaseModel]:
         self._circuit_breaker = CircuitBreaker(config.circuit_breaker)
         self._client: httpx.AsyncClient | None = None
 
-    async def __aenter__(self) -> "HttpClient[TRequest, TResponse]":
+    async def __aenter__(self) -> HttpClient[TRequest, TResponse]:
         """Async context manager entry."""
         await self.connect()
         return self
@@ -179,8 +179,8 @@ class HttpClient[TRequest: BaseModel, TResponse: BaseModel]:
         for attempt in range(policy.max_retries + 1):
             try:
                 return await self._execute(method, path, request, **kwargs)
-            except httpx.TimeoutException:
-                raise TimeoutError(request, self._config.timeout)
+            except httpx.TimeoutException as te:
+                raise TimeoutError(request, self._config.timeout) from te
             except httpx.HTTPStatusError as e:
                 if e.response.status_code in policy.retry_on_status:
                     last_error = e
@@ -197,7 +197,7 @@ class HttpClient[TRequest: BaseModel, TResponse: BaseModel]:
                     request=request,
                     status_code=e.response.status_code,
                     response_body=e.response.text,
-                )
+                ) from e
 
         # Should not reach here, but just in case
         if last_error:
@@ -253,7 +253,7 @@ class HttpClient[TRequest: BaseModel, TResponse: BaseModel]:
                 response_type=self._response_type,
                 raw_response=data,
                 validation_errors=errors,
-            )
+            ) from e
 
     @property
     def circuit_state(self) -> CircuitState:

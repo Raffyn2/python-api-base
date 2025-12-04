@@ -4,15 +4,13 @@
 **Validates: Requirements 2.1**
 """
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from application.services.multitenancy import (
     TenantContext,
     get_current_tenant,
     set_current_tenant,
 )
-
 
 # =============================================================================
 # Strategies
@@ -140,9 +138,7 @@ def test_nested_tenant_contexts(outer_tenant: str, inner_tenant: str) -> None:
 # =============================================================================
 
 
-@given(
-    tenant_ids_list=st.lists(tenant_ids(), min_size=2, max_size=5, unique=True)
-)
+@given(tenant_ids_list=st.lists(tenant_ids(), min_size=2, max_size=5, unique=True))
 @settings(max_examples=100)
 def test_tenant_contexts_are_isolated(tenant_ids_list: list[str]) -> None:
     """Property: different tenant contexts are isolated.

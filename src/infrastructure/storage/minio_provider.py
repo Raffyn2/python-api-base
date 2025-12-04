@@ -6,10 +6,8 @@
 Implements FileStorage protocol using MinIO client.
 """
 
-from datetime import timedelta
-from typing import Any
-
 from collections.abc import AsyncIterator
+from datetime import timedelta
 
 from core.base.patterns.result import Err, Ok, Result
 from infrastructure.minio import MinIOClient
@@ -55,7 +53,7 @@ class MinIOStorageProvider:
                 async for chunk in data:
                     chunks.append(chunk)
                 await self._client.upload_bytes(key, b"".join(chunks), content_type)
-            
+
             url = f"{self._client._config.endpoint}/{self._client._config.bucket}/{key}"
             return Ok(url)
         except Exception as e:

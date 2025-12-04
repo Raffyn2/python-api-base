@@ -7,7 +7,7 @@
 import logging
 import threading
 from collections.abc import Callable
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 from core.shared.utils.ids import generate_ulid

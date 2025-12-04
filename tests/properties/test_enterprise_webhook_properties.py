@@ -5,23 +5,21 @@
 """
 
 from datetime import UTC, datetime, timedelta
-import uuid
 
 import pytest
 
-pytest.skip('Module interface.webhooks not implemented', allow_module_level=True)
+pytest.skip("Module interface.webhooks not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 from pydantic import SecretStr
 
-from interface.webhooks.webhook.models import WebhookPayload, WebhookSubscription
+from interface.webhooks.webhook.models import WebhookSubscription
+from interface.webhooks.webhook.service import WebhookConfig, WebhookService
 from interface.webhooks.webhook.signature import (
     generate_signature_header,
     sign_payload,
     verify_signature,
 )
-from interface.webhooks.webhook.service import WebhookConfig, WebhookService
-
 
 # Strategies
 secrets = st.text(min_size=32, max_size=64).map(SecretStr)
@@ -63,10 +61,16 @@ class TestWebhookSignatureRoundTrip:
 
     @given(
         payload_data=st.dictionaries(
-            st.text(min_size=1, max_size=30, alphabet=st.characters(blacklist_categories=("Cs",))),
+            st.text(
+                min_size=1,
+                max_size=30,
+                alphabet=st.characters(blacklist_categories=("Cs",)),
+            ),
             st.one_of(
-                st.integers(min_value=-2**31, max_value=2**31),
-                st.text(max_size=100, alphabet=st.characters(blacklist_categories=("Cs",))),
+                st.integers(min_value=-(2**31), max_value=2**31),
+                st.text(
+                    max_size=100, alphabet=st.characters(blacklist_categories=("Cs",))
+                ),
                 st.booleans(),
                 st.floats(allow_nan=False, allow_infinity=False),
             ),
@@ -80,15 +84,15 @@ class TestWebhookSignatureRoundTrip:
         self, payload_data: dict, secret: SecretStr
     ) -> None:
         """**Property 17: Webhook Signature Round-Trip**
-        
+
         For any payload and secret, sign_payload followed by verify_signature
         with same parameters SHALL return True.
         """
         timestamp = datetime.now(UTC)
-        
+
         # Sign the payload
         signature = sign_payload(payload_data, secret, timestamp)
-        
+
         # Verify should succeed with same parameters
         is_valid = verify_signature(
             payload_data, signature, secret, timestamp, tolerance_seconds=300
@@ -109,17 +113,17 @@ class TestWebhookSignatureRoundTrip:
         self, payload_data: dict, secret: SecretStr
     ) -> None:
         """**Property 17: Webhook Signature Round-Trip (via headers)**
-        
+
         For any payload, generate_signature_header followed by verify_signature
         using extracted header values SHALL return True.
         """
         # Generate headers (includes signature and timestamp)
         headers = generate_signature_header(payload_data, secret)
-        
+
         # Extract values from headers
         signature = headers["X-Webhook-Signature"]
         timestamp = datetime.fromisoformat(headers["X-Webhook-Timestamp"])
-        
+
         # Verify should succeed
         is_valid = verify_signature(
             payload_data, signature, secret, timestamp, tolerance_seconds=300
@@ -146,12 +150,12 @@ class TestWebhookSignatureRoundTrip:
         self, nested_payload: dict, secret: SecretStr
     ) -> None:
         """**Property 17: Webhook Signature Round-Trip (nested payloads)**
-        
+
         For any nested payload structure, round-trip SHALL succeed.
         """
         timestamp = datetime.now(UTC)
         signature = sign_payload(nested_payload, secret, timestamp)
-        
+
         is_valid = verify_signature(
             nested_payload, signature, secret, timestamp, tolerance_seconds=300
         )
@@ -222,21 +226,27 @@ class TestWebhookTimestampTolerance:
     )
     @settings(max_examples=100)
     def test_timestamp_outside_tolerance_fails(
-        self, payload_data: dict, secret: SecretStr, tolerance: int, offset_factor: float
+        self,
+        payload_data: dict,
+        secret: SecretStr,
+        tolerance: int,
+        offset_factor: float,
     ) -> None:
         """**Property 18: Webhook Timestamp Tolerance**
-        
+
         For any signature with timestamp outside tolerance, verification SHALL return False.
         """
         # Create timestamp outside tolerance (past)
         offset_seconds = int(tolerance * offset_factor)
         old_timestamp = datetime.now(UTC) - timedelta(seconds=offset_seconds)
         signature = sign_payload(payload_data, secret, old_timestamp)
-        
+
         is_valid = verify_signature(
             payload_data, signature, secret, old_timestamp, tolerance_seconds=tolerance
         )
-        assert not is_valid, f"Should reject timestamp {offset_seconds}s old with {tolerance}s tolerance"
+        assert not is_valid, (
+            f"Should reject timestamp {offset_seconds}s old with {tolerance}s tolerance"
+        )
 
     @given(
         payload_data=st.dictionaries(
@@ -251,21 +261,31 @@ class TestWebhookTimestampTolerance:
     )
     @settings(max_examples=100)
     def test_timestamp_within_tolerance_succeeds(
-        self, payload_data: dict, secret: SecretStr, tolerance: int, offset_factor: float
+        self,
+        payload_data: dict,
+        secret: SecretStr,
+        tolerance: int,
+        offset_factor: float,
     ) -> None:
         """**Property 18: Webhook Timestamp Tolerance (within bounds)**
-        
+
         For any signature with timestamp within tolerance, verification SHALL return True.
         """
         # Create timestamp within tolerance
         offset_seconds = int(tolerance * offset_factor)
         recent_timestamp = datetime.now(UTC) - timedelta(seconds=offset_seconds)
         signature = sign_payload(payload_data, secret, recent_timestamp)
-        
+
         is_valid = verify_signature(
-            payload_data, signature, secret, recent_timestamp, tolerance_seconds=tolerance
+            payload_data,
+            signature,
+            secret,
+            recent_timestamp,
+            tolerance_seconds=tolerance,
         )
-        assert is_valid, f"Should accept timestamp {offset_seconds}s old with {tolerance}s tolerance"
+        assert is_valid, (
+            f"Should accept timestamp {offset_seconds}s old with {tolerance}s tolerance"
+        )
 
     @given(
         payload_data=st.dictionaries(
@@ -282,15 +302,19 @@ class TestWebhookTimestampTolerance:
         self, payload_data: dict, secret: SecretStr, tolerance: int
     ) -> None:
         """**Property 18: Webhook Timestamp Tolerance (future timestamps)**
-        
+
         For any signature with future timestamp outside tolerance, verification SHALL return False.
         """
         # Create timestamp in the future beyond tolerance
         future_timestamp = datetime.now(UTC) + timedelta(seconds=tolerance + 100)
         signature = sign_payload(payload_data, secret, future_timestamp)
-        
+
         is_valid = verify_signature(
-            payload_data, signature, secret, future_timestamp, tolerance_seconds=tolerance
+            payload_data,
+            signature,
+            secret,
+            future_timestamp,
+            tolerance_seconds=tolerance,
         )
         assert not is_valid, "Should reject future timestamp outside tolerance"
 
@@ -308,7 +332,7 @@ class TestWebhookTimestampTolerance:
         self, payload_data: dict, secret: SecretStr
     ) -> None:
         """**Property 18: Webhook Timestamp Tolerance (safely within boundary)**
-        
+
         Timestamp safely within tolerance (with margin for test execution) should be accepted.
         """
         tolerance = 300
@@ -316,11 +340,13 @@ class TestWebhookTimestampTolerance:
         safe_offset = int(tolerance * 0.95)
         safe_timestamp = datetime.now(UTC) - timedelta(seconds=safe_offset)
         signature = sign_payload(payload_data, secret, safe_timestamp)
-        
+
         is_valid = verify_signature(
             payload_data, signature, secret, safe_timestamp, tolerance_seconds=tolerance
         )
-        assert is_valid, f"Timestamp {safe_offset}s old should be accepted with {tolerance}s tolerance"
+        assert is_valid, (
+            f"Timestamp {safe_offset}s old should be accepted with {tolerance}s tolerance"
+        )
 
     @given(
         payload_data=st.dictionaries(
@@ -336,7 +362,7 @@ class TestWebhookTimestampTolerance:
         self, payload_data: dict, secret: SecretStr
     ) -> None:
         """**Property 18: Webhook Timestamp Tolerance (clearly past boundary)**
-        
+
         Timestamp clearly past tolerance boundary should be rejected.
         """
         tolerance = 300
@@ -344,11 +370,17 @@ class TestWebhookTimestampTolerance:
         past_offset = int(tolerance * 1.1)
         past_boundary_timestamp = datetime.now(UTC) - timedelta(seconds=past_offset)
         signature = sign_payload(payload_data, secret, past_boundary_timestamp)
-        
+
         is_valid = verify_signature(
-            payload_data, signature, secret, past_boundary_timestamp, tolerance_seconds=tolerance
+            payload_data,
+            signature,
+            secret,
+            past_boundary_timestamp,
+            tolerance_seconds=tolerance,
         )
-        assert not is_valid, f"Timestamp {past_offset}s old should be rejected with {tolerance}s tolerance"
+        assert not is_valid, (
+            f"Timestamp {past_offset}s old should be rejected with {tolerance}s tolerance"
+        )
 
     @given(
         payload_data=st.dictionaries(
@@ -371,8 +403,12 @@ class TestWebhookTimestampTolerance:
         assert sig1 == sig2
 
     @given(
-        payload1=st.dictionaries(st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=5),
-        payload2=st.dictionaries(st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=5),
+        payload1=st.dictionaries(
+            st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=5
+        ),
+        payload2=st.dictionaries(
+            st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=5
+        ),
         secret=secrets,
     )
     @settings(max_examples=50)

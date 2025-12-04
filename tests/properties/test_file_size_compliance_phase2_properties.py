@@ -7,9 +7,7 @@
 from pathlib import Path
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
-
+from hypothesis import given, settings, strategies as st
 
 MAX_LINES = 400
 SRC_DIR = Path("src")
@@ -92,7 +90,7 @@ def get_package_python_files(package_path: str) -> list[Path]:
     package = Path(package_path)
     if not package.exists():
         return []
-    
+
     files = []
     for py_file in package.rglob("*.py"):
         path_str = str(py_file)
@@ -134,15 +132,15 @@ class TestPublicAPIPreservationPhase2:
         **Validates: Requirements 5.1, 5.2, 5.3**
         """
         import importlib
-        
+
         # Convert module path to package path for existence check
         parts = module_name.split(".")
         package_path = Path("src") / "/".join(parts)
-        
+
         # Skip if package doesn't exist yet (not refactored)
         if not package_path.exists():
             pytest.skip(f"Package {module_name} not yet refactored")
-        
+
         # Try to import the module
         try:
             module = importlib.import_module(module_name)
@@ -159,13 +157,13 @@ class TestPublicAPIPreservationPhase2:
         **Validates: Requirements 5.1, 5.2, 5.3**
         """
         import importlib
-        
+
         parts = module_name.split(".")
         package_path = Path("src") / "/".join(parts)
-        
+
         if not package_path.exists():
             pytest.skip(f"Package {module_name} not yet refactored")
-        
+
         try:
             module = importlib.import_module(module_name)
             assert hasattr(module, "__all__"), (
@@ -186,29 +184,26 @@ class TestPublicAPIPreservationPhase2:
         **Validates: Requirements 5.1, 5.2, 5.3**
         """
         import importlib
-        
+
         parts = module_name.split(".")
         package_path = Path("src") / "/".join(parts)
-        
+
         if not package_path.exists():
             pytest.skip(f"Package {module_name} not yet refactored")
-        
+
         try:
             module = importlib.import_module(module_name)
             if not hasattr(module, "__all__"):
                 pytest.skip(f"Module {module_name} has no __all__")
-            
+
             missing = []
             for symbol in module.__all__:
                 if not hasattr(module, symbol):
                     missing.append(symbol)
-            
-            assert not missing, (
-                f"Module {module_name} missing exports: {missing}"
-            )
+
+            assert not missing, f"Module {module_name} missing exports: {missing}"
         except ImportError:
             pytest.skip(f"Module {module_name} not importable")
-
 
 
 class TestFileSizeCompliancePhase2:
@@ -226,21 +221,21 @@ class TestFileSizeCompliancePhase2:
         """
         violations = []
         packages_checked = 0
-        
+
         for package_path in REFACTORED_PACKAGES_PHASE2:
             package = Path(package_path)
             if not package.exists():
                 continue
-            
+
             packages_checked += 1
             for py_file in get_package_python_files(package_path):
                 line_count = count_lines(py_file)
                 if line_count > MAX_LINES:
                     violations.append((py_file, line_count))
-        
+
         if packages_checked == 0:
             pytest.skip("No Phase 2 packages refactored yet")
-        
+
         if violations:
             violation_msgs = [
                 f"  {path}: {lines} lines (+{lines - MAX_LINES})"
@@ -262,13 +257,13 @@ class TestFileSizeCompliancePhase2:
         package = Path(package_path)
         if not package.exists():
             pytest.skip(f"Package {package_path} not yet refactored")
-        
+
         violations = []
         for py_file in get_package_python_files(package_path):
             line_count = count_lines(py_file)
             if line_count > MAX_LINES:
                 violations.append((py_file, line_count))
-        
+
         assert not violations, (
             f"Files exceeding {MAX_LINES} lines in {package_path}: "
             + ", ".join(f"{p}:{c}" for p, c in violations)
@@ -282,26 +277,25 @@ class TestFileSizeCompliancePhase2:
         """
         packages_checked = 0
         single_module_packages = []
-        
+
         for package_path in REFACTORED_PACKAGES_PHASE2:
             package = Path(package_path)
             if not package.exists():
                 continue
-            
+
             packages_checked += 1
             py_files = list(package.glob("*.py"))
             # Should have more than just __init__.py
             if len(py_files) <= 1:
                 single_module_packages.append(package_path)
-        
+
         if packages_checked == 0:
             pytest.skip("No Phase 2 packages refactored yet")
-        
+
         assert not single_module_packages, (
-            f"Packages with only __init__.py (should have multiple modules): "
+            "Packages with only __init__.py (should have multiple modules): "
             + ", ".join(single_module_packages)
         )
-
 
 
 class TestNoCircularImportsPhase2:
@@ -321,18 +315,18 @@ class TestNoCircularImportsPhase2:
         """
         import importlib
         import sys
-        
+
         parts = module_name.split(".")
         package_path = Path("src") / "/".join(parts)
-        
+
         if not package_path.exists():
             pytest.skip(f"Package {module_name} not yet refactored")
-        
+
         # Clear any cached imports to ensure fresh import
         modules_to_clear = [k for k in sys.modules if k.startswith(module_name)]
         for mod in modules_to_clear:
             del sys.modules[mod]
-        
+
         try:
             module = importlib.import_module(module_name)
             assert module is not None
@@ -349,39 +343,38 @@ class TestNoCircularImportsPhase2:
         **Validates: Requirements 6.3**
         """
         import importlib
-        
+
         circular_imports = []
         packages_checked = 0
-        
+
         for package_path in REFACTORED_PACKAGES_PHASE2:
             package = Path(package_path)
             if not package.exists():
                 continue
-            
+
             packages_checked += 1
-            
+
             # Get all Python files in the package
             for py_file in package.glob("*.py"):
                 if py_file.name == "__init__.py":
                     continue
-                
+
                 # Convert file path to module path
                 module_name = py_file.stem
                 parts = package_path.replace("src/", "").replace("/", ".")
                 full_module = f"{parts}.{module_name}"
-                
+
                 try:
                     importlib.import_module(full_module)
                 except ImportError as e:
                     if "circular" in str(e).lower():
                         circular_imports.append((full_module, str(e)))
-        
+
         if packages_checked == 0:
             pytest.skip("No Phase 2 packages refactored yet")
-        
-        assert not circular_imports, (
-            f"Circular imports detected:\n"
-            + "\n".join(f"  {mod}: {err}" for mod, err in circular_imports)
+
+        assert not circular_imports, "Circular imports detected:\n" + "\n".join(
+            f"  {mod}: {err}" for mod, err in circular_imports
         )
 
     def test_cross_module_imports_work(self) -> None:
@@ -391,36 +384,33 @@ class TestNoCircularImportsPhase2:
         **Validates: Requirements 6.3**
         """
         import importlib
-        
+
         packages_checked = 0
         import_errors = []
-        
+
         for package_path in REFACTORED_PACKAGES_PHASE2:
             package = Path(package_path)
             if not package.exists():
                 continue
-            
+
             packages_checked += 1
-            
+
             # Import the main package (which should import all submodules)
             parts = package_path.replace("src/", "").replace("/", ".")
-            
+
             try:
                 module = importlib.import_module(parts)
                 # Verify __all__ exports are accessible
                 if hasattr(module, "__all__"):
                     for symbol in module.__all__:
                         if not hasattr(module, symbol):
-                            import_errors.append(
-                                (parts, f"Missing export: {symbol}")
-                            )
+                            import_errors.append((parts, f"Missing export: {symbol}"))
             except ImportError as e:
                 import_errors.append((parts, str(e)))
-        
+
         if packages_checked == 0:
             pytest.skip("No Phase 2 packages refactored yet")
-        
-        assert not import_errors, (
-            f"Import errors detected:\n"
-            + "\n".join(f"  {mod}: {err}" for mod, err in import_errors)
+
+        assert not import_errors, "Import errors detected:\n" + "\n".join(
+            f"  {mod}: {err}" for mod, err in import_errors
         )

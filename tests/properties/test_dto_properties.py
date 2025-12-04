@@ -5,14 +5,13 @@
 **Validates: Requirements 1.2, 1.5, 8.3**
 """
 
-
 import pytest
-pytest.skip('Module application.common.dto not implemented', allow_module_level=True)
 
-from datetime import datetime, timezone
+pytest.skip("Module application.common.dto not implemented", allow_module_level=True)
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from datetime import datetime
+
+from hypothesis import given, settings, strategies as st
 from pydantic import BaseModel
 
 from application.common.dto import ApiResponse, PaginatedResponse, ProblemDetail
@@ -31,8 +30,12 @@ class SampleItem(BaseModel):
 sample_item_strategy = st.builds(
     SampleItem,
     id=st.integers(min_value=1, max_value=10000),
-    name=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))),
-    value=st.floats(min_value=0, max_value=10000, allow_nan=False, allow_infinity=False),
+    name=st.text(
+        min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))
+    ),
+    value=st.floats(
+        min_value=0, max_value=10000, allow_nan=False, allow_infinity=False
+    ),
 )
 
 
@@ -64,14 +67,24 @@ class TestApiResponseSerialization:
         assert isinstance(serialized["message"], str)
         assert isinstance(serialized["status_code"], int)
         assert isinstance(serialized["timestamp"], datetime)
-        assert serialized["request_id"] is None or isinstance(serialized["request_id"], str)
+        assert serialized["request_id"] is None or isinstance(
+            serialized["request_id"], str
+        )
 
     @settings(max_examples=30)
     @given(
         item=sample_item_strategy,
-        message=st.text(min_size=1, max_size=100, alphabet=st.characters(whitelist_categories=("L", "N", "P"))),
+        message=st.text(
+            min_size=1,
+            max_size=100,
+            alphabet=st.characters(whitelist_categories=("L", "N", "P")),
+        ),
         status_code=st.integers(min_value=100, max_value=599),
-        request_id=st.text(min_size=1, max_size=36, alphabet=st.characters(whitelist_categories=("L", "N"))),
+        request_id=st.text(
+            min_size=1,
+            max_size=36,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
     )
     def test_api_response_preserves_custom_values(
         self, item: SampleItem, message: str, status_code: int, request_id: str
@@ -179,9 +192,18 @@ class TestProblemDetail:
 
     @settings(max_examples=30)
     @given(
-        title=st.text(min_size=1, max_size=100, alphabet=st.characters(whitelist_categories=("L", "N", "P"))),
+        title=st.text(
+            min_size=1,
+            max_size=100,
+            alphabet=st.characters(whitelist_categories=("L", "N", "P")),
+        ),
         status=st.integers(min_value=100, max_value=599),
-        detail=st.text(min_size=1, max_size=200, alphabet=st.characters(whitelist_categories=("L", "N", "P"))) | st.none(),
+        detail=st.text(
+            min_size=1,
+            max_size=200,
+            alphabet=st.characters(whitelist_categories=("L", "N", "P")),
+        )
+        | st.none(),
     )
     def test_problem_detail_format(
         self, title: str, status: int, detail: str | None

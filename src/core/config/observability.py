@@ -4,9 +4,10 @@
 **Refactored: 2025 - Extracted from settings.py for SRP compliance**
 """
 
+from typing import Self
+
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing_extensions import Self
 
 
 class ObservabilitySettings(BaseSettings):
@@ -164,12 +165,11 @@ class ObservabilitySettings(BaseSettings):
                 raise ValueError(msg)
 
         # Keycloak validation
-        if self.keycloak_enabled:
-            if not self.keycloak_client_secret:
-                msg = (
-                    "Keycloak client secret required when keycloak_enabled=True. "
-                    "Set OBSERVABILITY__KEYCLOAK_CLIENT_SECRET"
-                )
-                raise ValueError(msg)
+        if self.keycloak_enabled and not self.keycloak_client_secret:
+            msg = (
+                "Keycloak client secret required when keycloak_enabled=True. "
+                "Set OBSERVABILITY__KEYCLOAK_CLIENT_SECRET"
+            )
+            raise ValueError(msg)
 
         return self

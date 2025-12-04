@@ -13,18 +13,18 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Sequence
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from infrastructure.observability.elasticsearch_config import (
-    ElasticsearchConfig,
-    ECS_INDEX_TEMPLATE,
-)
 from infrastructure.observability.elasticsearch_buffer import (
-    LogBuffer,
-    FallbackWriter,
     BulkIndexer,
+    FallbackWriter,
+    LogBuffer,
+)
+from infrastructure.observability.elasticsearch_config import (
+    ECS_INDEX_TEMPLATE,
+    ElasticsearchConfig,
 )
 
 if TYPE_CHECKING:
@@ -85,9 +85,7 @@ class ElasticsearchHandler:
             batch_size=config.batch_size,
             flush_interval_seconds=config.flush_interval_seconds,
         )
-        self._fallback = FallbackWriter(
-            fallback_path or Path("logs/fallback.log")
-        )
+        self._fallback = FallbackWriter(fallback_path or Path("logs/fallback.log"))
         self._indexer = BulkIndexer(config.index_prefix)
         self._client: AsyncElasticsearch | None = None
         self._flush_task: asyncio.Task[None] | None = None
@@ -212,7 +210,7 @@ class ElasticsearchHandler:
             await self._client.close()
             self._client = None
 
-    async def __aenter__(self) -> "ElasticsearchHandler":
+    async def __aenter__(self) -> ElasticsearchHandler:
         """Async context manager entry."""
         return self
 

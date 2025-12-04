@@ -55,10 +55,7 @@ class NotificationService[TPayload]:
             return True
         if channel == "sms" and not prefs.sms_enabled:
             return True
-        if channel == "push" and not prefs.push_enabled:
-            return True
-
-        return False
+        return bool(channel == "push" and not prefs.push_enabled)
 
     def is_rate_limited(self, user_id: str) -> bool:
         """Check if user is rate limited."""

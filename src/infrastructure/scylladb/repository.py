@@ -2,12 +2,14 @@
 
 **Feature: observability-infrastructure**
 **Requirement: R4 - Generic ScyllaDB Repository**
+**Security: Uses prepared statements to prevent CQL injection (S608)
 """
 
 from __future__ import annotations
 
 import logging
-from datetime import datetime, UTC
+import re
+from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 from uuid import UUID
 
@@ -17,6 +19,27 @@ from infrastructure.scylladb.entity import ScyllaDBEntity
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=ScyllaDBEntity)
+
+# Regex for valid CQL identifiers (table/column names)
+_VALID_IDENTIFIER = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+
+def _validate_identifier(name: str, context: str = "identifier") -> str:
+    """Validate CQL identifier to prevent injection.
+
+    Args:
+        name: Identifier to validate
+        context: Context for error message
+
+    Returns:
+        Validated identifier
+
+    Raises:
+        ValueError: If identifier is invalid
+    """
+    if not name or not _VALID_IDENTIFIER.match(name):
+        raise ValueError(f"Invalid CQL {context}: {name!r}")
+    return name
 
 
 class ScyllaDBRepository(Generic[T]):
@@ -54,8 +77,26 @@ class ScyllaDBRepository(Generic[T]):
 
     @property
     def table_name(self) -> str:
-        """Get table name."""
-        return self._entity_class.table_name()
+        """Get validated table name."""
+        return _validate_identifier(self._entity_class.table_name(), "table name")
+
+    def _validate_columns(self, columns: list[str]) -> list[str]:
+        """Validate column names."""
+        return [_validate_identifier(col, "column name") for col in columns]
+
+    async def _get_prepared(self, key: str, query: str) -> Any:
+        """Get or create prepared statement.
+
+        Args:
+            key: Cache key for statement
+            query: CQL query to prepare
+
+        Returns:
+            PreparedStatement
+        """
+        if key not in self._prepared_statements:
+            self._prepared_statements[key] = await self._client.prepare(query)
+        return self._prepared_statements[key]
 
     # CRUD Operations
 
@@ -70,15 +111,18 @@ class ScyllaDBRepository(Generic[T]):
         """
         entity.updated_at = datetime.now(UTC)
         data = entity.to_dict()
-        columns = list(data.keys())
+        columns = self._validate_columns(list(data.keys()))
         placeholders = ", ".join(["%s"] * len(columns))
         cols_str = ", ".join(columns)
 
-        query = f"INSERT INTO {self.table_name} ({cols_str}) VALUES ({placeholders})"
-        await self._client.execute(query, tuple(data.values()))
+        stmt_key = f"insert_{self.table_name}"
+        # S608: False positive - table/column names validated via _validate_identifier
+        query = f"INSERT INTO {self.table_name} ({cols_str}) VALUES ({placeholders})"  # noqa: S608
+        prepared = await self._get_prepared(stmt_key, query)
+        await self._client.execute(prepared, tuple(data.values()))
 
         logger.debug(
-            f"Created entity in {self.table_name}", extra={"id": str(entity.id)}
+            "Created entity in %s", self.table_name, extra={"id": str(entity.id)}
         )
         return entity
 
@@ -91,11 +135,14 @@ class ScyllaDBRepository(Generic[T]):
         Returns:
             Entity or None if not found
         """
-        pk_cols = self._entity_class.primary_key()
+        pk_cols = self._validate_columns(self._entity_class.primary_key())
         where = " AND ".join(f"{col} = %s" for col in pk_cols)
 
-        query = f"SELECT * FROM {self.table_name} WHERE {where}"
-        rows = await self._client.execute(query, (id,))
+        stmt_key = f"get_{self.table_name}"
+        # S608: False positive - identifiers validated, uses prepared statement
+        query = f"SELECT * FROM {self.table_name} WHERE {where}"  # noqa: S608
+        prepared = await self._get_prepared(stmt_key, query)
+        rows = await self._client.execute(prepared, (id,))
 
         if not rows:
             return None
@@ -111,17 +158,16 @@ class ScyllaDBRepository(Generic[T]):
         Returns:
             Entity or None if not found
         """
-        where_parts = []
-        values = []
-
-        for col, val in key_values.items():
-            where_parts.append(f"{col} = %s")
-            values.append(val)
+        columns = self._validate_columns(list(key_values.keys()))
+        where_parts = [f"{col} = %s" for col in columns]
+        values = list(key_values.values())
 
         where = " AND ".join(where_parts)
-        query = f"SELECT * FROM {self.table_name} WHERE {where}"
-
-        rows = await self._client.execute(query, tuple(values))
+        stmt_key = f"get_by_keys_{self.table_name}_{'_'.join(columns)}"
+        # S608: False positive - identifiers validated, uses prepared statement
+        query = f"SELECT * FROM {self.table_name} WHERE {where}"  # noqa: S608
+        prepared = await self._get_prepared(stmt_key, query)
+        rows = await self._client.execute(prepared, tuple(values))
 
         if not rows:
             return None
@@ -141,27 +187,34 @@ class ScyllaDBRepository(Generic[T]):
         data = entity.to_dict()
 
         # Separate PK from other columns
-        pk_cols = set(
+        pk_cols_raw = (
             self._entity_class.primary_key() + self._entity_class.clustering_key()
         )
+        pk_cols = set(self._validate_columns(pk_cols_raw))
         update_cols = {k: v for k, v in data.items() if k not in pk_cols}
         pk_values = {k: v for k, v in data.items() if k in pk_cols}
 
+        # Validate update columns
+        validated_update_cols = self._validate_columns(list(update_cols.keys()))
+
         # Build SET clause
-        set_parts = [f"{col} = %s" for col in update_cols.keys()]
+        set_parts = [f"{col} = %s" for col in validated_update_cols]
         set_clause = ", ".join(set_parts)
 
         # Build WHERE clause
         where_parts = [f"{col} = %s" for col in pk_cols]
         where_clause = " AND ".join(where_parts)
 
-        query = f"UPDATE {self.table_name} SET {set_clause} WHERE {where_clause}"
+        stmt_key = f"update_{self.table_name}"
+        # S608: False positive - identifiers validated, uses prepared statement
+        query = f"UPDATE {self.table_name} SET {set_clause} WHERE {where_clause}"  # noqa: S608
+        prepared = await self._get_prepared(stmt_key, query)
         values = list(update_cols.values()) + [pk_values[col] for col in pk_cols]
 
-        await self._client.execute(query, tuple(values))
+        await self._client.execute(prepared, tuple(values))
 
         logger.debug(
-            f"Updated entity in {self.table_name}", extra={"id": str(entity.id)}
+            "Updated entity in %s", self.table_name, extra={"id": str(entity.id)}
         )
         return entity
 
@@ -174,13 +227,16 @@ class ScyllaDBRepository(Generic[T]):
         Returns:
             True if deleted
         """
-        pk_cols = self._entity_class.primary_key()
+        pk_cols = self._validate_columns(self._entity_class.primary_key())
         where = " AND ".join(f"{col} = %s" for col in pk_cols)
 
-        query = f"DELETE FROM {self.table_name} WHERE {where}"
-        await self._client.execute(query, (id,))
+        stmt_key = f"delete_{self.table_name}"
+        # S608: False positive - identifiers validated, uses prepared statement
+        query = f"DELETE FROM {self.table_name} WHERE {where}"  # noqa: S608
+        prepared = await self._get_prepared(stmt_key, query)
+        await self._client.execute(prepared, (id,))
 
-        logger.debug(f"Deleted entity from {self.table_name}", extra={"id": str(id)})
+        logger.debug("Deleted entity from %s", self.table_name, extra={"id": str(id)})
         return True
 
     async def delete_by_keys(self, **key_values: Any) -> bool:
@@ -192,17 +248,16 @@ class ScyllaDBRepository(Generic[T]):
         Returns:
             True if deleted
         """
-        where_parts = []
-        values = []
-
-        for col, val in key_values.items():
-            where_parts.append(f"{col} = %s")
-            values.append(val)
+        columns = self._validate_columns(list(key_values.keys()))
+        where_parts = [f"{col} = %s" for col in columns]
+        values = list(key_values.values())
 
         where = " AND ".join(where_parts)
-        query = f"DELETE FROM {self.table_name} WHERE {where}"
-
-        await self._client.execute(query, tuple(values))
+        stmt_key = f"delete_by_keys_{self.table_name}_{'_'.join(columns)}"
+        # S608: False positive - identifiers validated, uses prepared statement
+        query = f"DELETE FROM {self.table_name} WHERE {where}"  # noqa: S608
+        prepared = await self._get_prepared(stmt_key, query)
+        await self._client.execute(prepared, tuple(values))
         return True
 
     async def exists(self, id: UUID) -> bool:
@@ -228,8 +283,11 @@ class ScyllaDBRepository(Generic[T]):
         Returns:
             List of entities
         """
-        query = f"SELECT * FROM {self.table_name} LIMIT %s"
-        rows = await self._client.execute(query, (limit,))
+        stmt_key = f"find_all_{self.table_name}"
+        # S608: False positive - table name validated, uses prepared statement
+        query = f"SELECT * FROM {self.table_name} LIMIT %s"  # noqa: S608
+        prepared = await self._get_prepared(stmt_key, query)
+        rows = await self._client.execute(prepared, (limit,))
 
         return [self._entity_class.from_row(row) for row in rows]
 
@@ -251,30 +309,50 @@ class ScyllaDBRepository(Generic[T]):
         Returns:
             List of matching entities
         """
-        query = f"SELECT * FROM {self.table_name} WHERE {column} = %s LIMIT %s"
-        rows = await self._client.execute(query, (value, limit))
+        validated_col = _validate_identifier(column, "column name")
+        stmt_key = f"find_by_{self.table_name}_{validated_col}"
+        # S608: False positive - identifiers validated, uses prepared statement
+        query = f"SELECT * FROM {self.table_name} WHERE {validated_col} = %s LIMIT %s"  # noqa: S608
+        prepared = await self._get_prepared(stmt_key, query)
+        rows = await self._client.execute(prepared, (value, limit))
 
         return [self._entity_class.from_row(row) for row in rows]
 
     async def find_by_query(
         self,
-        where: str,
+        where_clause: str,
         values: tuple | None = None,
         limit: int = 100,
         allow_filtering: bool = False,
     ) -> list[T]:
         """Find entities by custom query.
 
+        WARNING: where_clause must use parameterized placeholders (%s).
+        Never interpolate user input directly into where_clause.
+
         Args:
-            where: WHERE clause (without WHERE keyword)
-            values: Parameter values
+            where_clause: WHERE clause with %s placeholders (without WHERE keyword)
+            values: Parameter values matching placeholders
             limit: Maximum results
             allow_filtering: Add ALLOW FILTERING clause
 
         Returns:
             List of matching entities
+
+        Raises:
+            ValueError: If where_clause appears to contain injection attempts
         """
-        query = f"SELECT * FROM {self.table_name} WHERE {where} LIMIT %s"
+        # Basic injection detection (not foolproof, but catches obvious cases)
+        dangerous_patterns = ["--", ";", "/*", "*/", "DROP", "TRUNCATE", "DELETE"]
+        upper_clause = where_clause.upper()
+        for pattern in dangerous_patterns:
+            if pattern in upper_clause:
+                raise ValueError(
+                    f"Potentially dangerous pattern in where_clause: {pattern}"
+                )
+
+        # S608: Caller must ensure where_clause uses parameterized placeholders
+        query = f"SELECT * FROM {self.table_name} WHERE {where_clause} LIMIT %s"  # noqa: S608
         if allow_filtering:
             query += " ALLOW FILTERING"
 
@@ -289,8 +367,11 @@ class ScyllaDBRepository(Generic[T]):
         Returns:
             Entity count
         """
-        query = f"SELECT COUNT(*) FROM {self.table_name}"
-        rows = await self._client.execute(query)
+        stmt_key = f"count_{self.table_name}"
+        # S608: False positive - table name validated, uses prepared statement
+        query = f"SELECT COUNT(*) FROM {self.table_name}"  # noqa: S608
+        prepared = await self._get_prepared(stmt_key, query)
+        rows = await self._client.execute(prepared)
 
         return rows[0].count if rows else 0
 
@@ -312,18 +393,19 @@ class ScyllaDBRepository(Generic[T]):
         for entity in entities:
             entity.updated_at = datetime.now(UTC)
             data = entity.to_dict()
-            columns = list(data.keys())
+            columns = self._validate_columns(list(data.keys()))
             placeholders = ", ".join(["%s"] * len(columns))
             cols_str = ", ".join(columns)
 
+            # S608: False positive - identifiers validated via _validate_columns
             query = (
-                f"INSERT INTO {self.table_name} ({cols_str}) VALUES ({placeholders})"
+                f"INSERT INTO {self.table_name} ({cols_str}) VALUES ({placeholders})"  # noqa: S608
             )
             statements.append((query, tuple(data.values())))
 
         await self._client.execute_batch(statements, batch_type="UNLOGGED")
 
-        logger.info(f"Bulk created {len(entities)} entities in {self.table_name}")
+        logger.info("Bulk created %d entities in %s", len(entities), self.table_name)
         return entities
 
     async def bulk_delete(self, ids: list[UUID]) -> int:
@@ -338,14 +420,15 @@ class ScyllaDBRepository(Generic[T]):
         if not ids:
             return 0
 
-        pk_cols = self._entity_class.primary_key()
+        pk_cols = self._validate_columns(self._entity_class.primary_key())
         where = " AND ".join(f"{col} = %s" for col in pk_cols)
-        query = f"DELETE FROM {self.table_name} WHERE {where}"
+        # S608: False positive - identifiers validated, parameterized query
+        query = f"DELETE FROM {self.table_name} WHERE {where}"  # noqa: S608
 
         statements = [(query, (id,)) for id in ids]
         await self._client.execute_batch(statements, batch_type="UNLOGGED")
 
-        logger.info(f"Bulk deleted {len(ids)} entities from {self.table_name}")
+        logger.info("Bulk deleted %d entities from %s", len(ids), self.table_name)
         return len(ids)
 
     # Table Management
@@ -361,10 +444,7 @@ class ScyllaDBRepository(Generic[T]):
         ck = self._entity_class.clustering_key()
 
         # Build primary key
-        if ck:
-            pk_def = f"({', '.join(pk)}), {', '.join(ck)}"
-        else:
-            pk_def = ", ".join(pk)
+        pk_def = f"({', '.join(pk)}), {', '.join(ck)}" if ck else ", ".join(pk)
 
         await self._client.create_table(
             table=self.table_name,

@@ -5,6 +5,7 @@
 """
 
 import importlib
+
 import pytest
 from hypothesis import given, settings, strategies as st
 
@@ -37,7 +38,9 @@ class TestCoreBaseImportIntegrity:
         "core.base.repository.memory",
     ]
 
-    @given(module_index=st.integers(min_value=0, max_value=len(CORE_BASE_SUBMODULES) - 1))
+    @given(
+        module_index=st.integers(min_value=0, max_value=len(CORE_BASE_SUBMODULES) - 1)
+    )
     @settings(max_examples=50, deadline=5000)
     def test_all_core_base_submodules_are_importable(self, module_index: int) -> None:
         """
@@ -48,7 +51,7 @@ class TestCoreBaseImportIntegrity:
         ModuleNotFoundError or ImportError.
         """
         module_name = self.CORE_BASE_SUBMODULES[module_index]
-        
+
         try:
             module = importlib.import_module(module_name)
             assert module is not None, f"Module {module_name} imported as None"
@@ -65,11 +68,11 @@ class TestCoreBaseExports:
         """
         **Feature: core-base-repository-fix**
         **Validates: Requirements 3.1**
-        
+
         Verify that core.base.repository exports IRepository.
         """
         from core.base.repository import IRepository
-        
+
         assert IRepository is not None
         assert hasattr(IRepository, "get_by_id")
         assert hasattr(IRepository, "get_all")
@@ -81,11 +84,11 @@ class TestCoreBaseExports:
         """
         **Feature: core-base-repository-fix**
         **Validates: Requirements 3.1**
-        
+
         Verify that core.base.repository exports InMemoryRepository.
         """
         from core.base.repository import InMemoryRepository
-        
+
         assert InMemoryRepository is not None
         # Verify it's a class that can be instantiated
         assert callable(InMemoryRepository)
@@ -94,11 +97,11 @@ class TestCoreBaseExports:
         """
         **Feature: core-base-repository-fix**
         **Validates: Requirements 3.2**
-        
+
         Verify that core.base.patterns.pagination exports CursorPage and CursorPagination.
         """
         from core.base.patterns.pagination import CursorPage, CursorPagination
-        
+
         assert CursorPage is not None
         assert CursorPagination is not None
 
@@ -106,11 +109,11 @@ class TestCoreBaseExports:
         """
         **Feature: core-base-repository-fix**
         **Validates: Requirements 3.2**
-        
+
         Verify that core.base.patterns.result exports Ok, Err, Result.
         """
-        from core.base.patterns.result import Ok, Err, Result
-        
+        from core.base.patterns.result import Err, Ok, Result
+
         assert Ok is not None
         assert Err is not None
         # Result is a type alias, verify it exists
@@ -120,17 +123,17 @@ class TestCoreBaseExports:
         """
         **Feature: core-base-repository-fix**
         **Validates: Requirements 3.1**
-        
+
         Verify that core.base.domain exports entity base classes.
         """
         from core.base.domain import (
-            BaseEntity,
-            AuditableEntity,
-            VersionedEntity,
             AggregateRoot,
+            AuditableEntity,
+            BaseEntity,
             BaseValueObject,
+            VersionedEntity,
         )
-        
+
         assert BaseEntity is not None
         assert AuditableEntity is not None
         assert VersionedEntity is not None
@@ -141,11 +144,11 @@ class TestCoreBaseExports:
         """
         **Feature: core-base-repository-fix**
         **Validates: Requirements 3.1**
-        
+
         Verify that core.base.cqrs exports BaseCommand and BaseQuery.
         """
         from core.base.cqrs import BaseCommand, BaseQuery
-        
+
         assert BaseCommand is not None
         assert BaseQuery is not None
 
@@ -153,18 +156,18 @@ class TestCoreBaseExports:
         """
         **Feature: core-base-repository-fix**
         **Validates: Requirements 3.1**
-        
+
         Verify that core.base.events exports DomainEvent and related classes.
         """
         from core.base.events import (
             DomainEvent,
             EntityCreatedEvent,
-            EntityUpdatedEvent,
             EntityDeletedEvent,
+            EntityUpdatedEvent,
             EventBus,
             IntegrationEvent,
         )
-        
+
         assert DomainEvent is not None
         assert EntityCreatedEvent is not None
         assert EntityUpdatedEvent is not None
@@ -176,17 +179,23 @@ class TestCoreBaseExports:
         """
         **Feature: core-base-repository-fix**
         **Validates: Requirements 1.3, 2.2**
-        
+
         Verify that the orphan base.py file has been deleted.
         """
         import os
-        
+
         base_py_path = os.path.join(
             os.path.dirname(__file__),
-            "..", "..", "src", "core", "base", "repository", "base.py"
+            "..",
+            "..",
+            "src",
+            "core",
+            "base",
+            "repository",
+            "base.py",
         )
         normalized_path = os.path.normpath(base_py_path)
-        
+
         assert not os.path.exists(normalized_path), (
             f"Orphan file {normalized_path} should have been deleted"
         )

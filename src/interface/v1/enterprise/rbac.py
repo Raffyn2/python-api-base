@@ -40,11 +40,11 @@ async def check_rbac_permission(request: RBACCheckRequest) -> RBACCheckResponse:
     try:
         resource = ExampleResource(request.resource)
         action = ExampleAction(request.action)
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid resource '{request.resource}' or action '{request.action}'",
-        )
+        ) from e
 
     permission = Permission[ExampleResource, ExampleAction](
         resource=resource,

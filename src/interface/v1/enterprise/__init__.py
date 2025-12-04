@@ -6,6 +6,7 @@
 
 from fastapi import APIRouter
 
+from .docs import router as docs_router
 from .models import (
     EmailTaskPayload,
     ExampleAction,
@@ -21,7 +22,6 @@ from .models import (
 from .ratelimit import router as ratelimit_router
 from .rbac import router as rbac_router
 from .tasks import router as tasks_router
-from .docs import router as docs_router
 
 # Main enterprise router aggregating all sub-routers
 router = APIRouter(prefix="/enterprise", tags=["Enterprise Examples"])
@@ -32,15 +32,15 @@ router.include_router(tasks_router)
 router.include_router(docs_router)
 
 __all__ = [
-    "router",
     "EmailTaskPayload",
     "ExampleAction",
     "ExampleResource",
     "ExampleUser",
-    "RateLimitCheckRequest",
-    "RateLimitCheckResponse",
     "RBACCheckRequest",
     "RBACCheckResponse",
+    "RateLimitCheckRequest",
+    "RateLimitCheckResponse",
     "TaskEnqueueRequest",
     "TaskEnqueueResponse",
+    "router",
 ]

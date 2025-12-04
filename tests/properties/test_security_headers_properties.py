@@ -4,20 +4,18 @@
 **Validates: Requirements 3.1, 3.2, 3.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 from dataclasses import dataclass, field
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
-from starlette.testclient import TestClient
 from fastapi import FastAPI
+from hypothesis import given, settings, strategies as st
+from starlette.testclient import TestClient
 
 from interface.api.middleware.security_headers import SecurityHeadersMiddleware
-
 
 # Strategy for CSP directives
 csp_directive_strategy = st.sampled_from([
@@ -68,20 +66,31 @@ class SecurityHeadersConfig:
     @classmethod
     def from_dict(cls, data: dict[str, str]) -> "SecurityHeadersConfig":
         """Deserialize config from dictionary."""
-        known_keys = {"csp", "permissions_policy", "x_frame_options",
-                      "x_content_type_options", "referrer_policy"}
+        known_keys = {
+            "csp",
+            "permissions_policy",
+            "x_frame_options",
+            "x_content_type_options",
+            "referrer_policy",
+        }
         custom = {k: v for k, v in data.items() if k not in known_keys}
         return cls(
             csp=data.get("csp", "default-src 'self'"),
-            permissions_policy=data.get("permissions_policy", "geolocation=(), microphone=(), camera=()"),
+            permissions_policy=data.get(
+                "permissions_policy", "geolocation=(), microphone=(), camera=()"
+            ),
             x_frame_options=data.get("x_frame_options", "DENY"),
             x_content_type_options=data.get("x_content_type_options", "nosniff"),
-            referrer_policy=data.get("referrer_policy", "strict-origin-when-cross-origin"),
+            referrer_policy=data.get(
+                "referrer_policy", "strict-origin-when-cross-origin"
+            ),
             custom_headers=custom,
         )
 
 
-def create_test_app(csp: str | None = None, permissions_policy: str | None = None) -> FastAPI:
+def create_test_app(
+    csp: str | None = None, permissions_policy: str | None = None
+) -> FastAPI:
     """Create a test FastAPI app with security headers middleware."""
     app = FastAPI()
 

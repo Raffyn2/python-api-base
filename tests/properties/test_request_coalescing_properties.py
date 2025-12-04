@@ -4,14 +4,13 @@
 **Validates: Requirements 6.1**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import asyncio
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.resilience.request_coalescing import (
     BatchCoalescer,
@@ -21,10 +20,10 @@ from infrastructure.resilience.request_coalescing import (
     RequestCoalescer,
 )
 
-
 # =============================================================================
 # Property Tests - Configuration
 # =============================================================================
+
 
 class TestCoalescingConfigProperties:
     """Property tests for coalescing configuration."""
@@ -77,6 +76,7 @@ class TestCoalescingConfigProperties:
 # =============================================================================
 # Property Tests - Key Generation
 # =============================================================================
+
 
 class TestKeyGenerationProperties:
     """Property tests for key generation."""
@@ -147,6 +147,7 @@ class TestKeyGenerationProperties:
 # Property Tests - Request Coalescing
 # =============================================================================
 
+
 class TestRequestCoalescerProperties:
     """Property tests for request coalescer."""
 
@@ -188,8 +189,7 @@ class TestRequestCoalescerProperties:
 
         # Start multiple concurrent requests
         tasks = [
-            asyncio.create_task(coalescer.execute("key1", fetch))
-            for _ in range(5)
+            asyncio.create_task(coalescer.execute("key1", fetch)) for _ in range(5)
         ]
 
         results = await asyncio.gather(*tasks)
@@ -313,6 +313,7 @@ class TestRequestCoalescerProperties:
 # Property Tests - Batch Coalescer
 # =============================================================================
 
+
 class TestBatchCoalescerProperties:
     """Property tests for batch coalescer."""
 
@@ -323,6 +324,7 @@ class TestBatchCoalescerProperties:
 
         **Validates: Requirements 6.1**
         """
+
         async def batch_fetch(keys: list[str]) -> dict[str, int]:
             return {k: len(k) for k in keys}
 
@@ -361,7 +363,11 @@ class TestBatchCoalescerProperties:
         assert len(batch_calls) == 1
         assert set(batch_calls[0]) == {"a", "bb", "ccc"}
 
-    @given(keys=st.lists(st.text(min_size=1, max_size=10), min_size=1, max_size=5, unique=True))
+    @given(
+        keys=st.lists(
+            st.text(min_size=1, max_size=10), min_size=1, max_size=5, unique=True
+        )
+    )
     @settings(max_examples=20)
     async def test_all_keys_resolved(self, keys: list[str]) -> None:
         """**Property 16: All keys are resolved**
@@ -370,6 +376,7 @@ class TestBatchCoalescerProperties:
 
         **Validates: Requirements 6.1**
         """
+
         async def batch_fetch(batch_keys: list[str]) -> dict[str, int]:
             return {k: len(k) for k in batch_keys}
 
@@ -385,6 +392,7 @@ class TestBatchCoalescerProperties:
 # =============================================================================
 # Property Tests - Coalescing Stats
 # =============================================================================
+
 
 class TestCoalescingStatsProperties:
     """Property tests for coalescing statistics."""

@@ -14,17 +14,17 @@ Tests verify that Specification composition follows:
 - Distributivity: A & (B | C) == (A & B) | (A & C)
 """
 
-import pytest
 from dataclasses import dataclass
+
+import pytest
 from hypothesis import given, strategies as st
 
 from src.domain.common.specification.specification import (
-    Specification,
-    PredicateSpecification,
-    spec,
     AndSpecification,
-    OrSpecification,
     NotSpecification,
+    OrSpecification,
+    Specification,
+    spec,
 )
 
 
@@ -460,7 +460,7 @@ class TestSpecificationEdgeCases:
     def test_deeply_nested_composition(self, person: Person) -> None:
         """Test deeply nested specification composition."""
         # Create deeply nested: (((A & B) | C) & D)
-        deeply_nested = (((is_adult() & is_active()) | has_high_score()) & is_senior())
+        deeply_nested = ((is_adult() & is_active()) | has_high_score()) & is_senior()
 
         # Should still evaluate correctly
         result = deeply_nested.is_satisfied_by(person)

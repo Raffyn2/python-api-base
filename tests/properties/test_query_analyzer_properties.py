@@ -4,38 +4,40 @@
 **Validates: Requirements 2.1, 9.1**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.observability.query_analyzer import (
     AnalyzerConfig,
     IndexSuggestion,
     OptimizationSuggestion,
-    QueryAnalysis,
     QueryAnalyzer,
     QueryMetrics,
     QueryType,
 )
 
-
 # =============================================================================
 # Strategies
 # =============================================================================
 
+
 @st.composite
 def table_name_strategy(draw: st.DrawFn) -> str:
     """Generate valid table names."""
-    return draw(st.text(min_size=3, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"))
+    return draw(
+        st.text(min_size=3, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_")
+    )
 
 
 @st.composite
 def column_name_strategy(draw: st.DrawFn) -> str:
     """Generate valid column names."""
-    return draw(st.text(min_size=2, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"))
+    return draw(
+        st.text(min_size=2, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_")
+    )
 
 
 @st.composite
@@ -62,6 +64,7 @@ def select_query_strategy(draw: st.DrawFn) -> str:
 # =============================================================================
 # Property Tests - Query Type Detection
 # =============================================================================
+
 
 class TestQueryTypeDetectionProperties:
     """Property tests for query type detection."""
@@ -131,6 +134,7 @@ class TestQueryTypeDetectionProperties:
 # Property Tests - Table Extraction
 # =============================================================================
 
+
 class TestTableExtractionProperties:
     """Property tests for table extraction."""
 
@@ -172,6 +176,7 @@ class TestTableExtractionProperties:
 # =============================================================================
 # Property Tests - Clause Detection
 # =============================================================================
+
 
 class TestClauseDetectionProperties:
     """Property tests for clause detection."""
@@ -241,6 +246,7 @@ class TestClauseDetectionProperties:
 # Property Tests - Optimization Suggestions
 # =============================================================================
 
+
 class TestOptimizationSuggestionProperties:
     """Property tests for optimization suggestions."""
 
@@ -294,6 +300,7 @@ class TestOptimizationSuggestionProperties:
 # Property Tests - Index Suggestions
 # =============================================================================
 
+
 class TestIndexSuggestionProperties:
     """Property tests for index suggestions."""
 
@@ -339,6 +346,7 @@ class TestIndexSuggestionProperties:
 # =============================================================================
 # Property Tests - Query Metrics
 # =============================================================================
+
 
 class TestQueryMetricsProperties:
     """Property tests for query metrics."""
@@ -396,6 +404,7 @@ class TestQueryMetricsProperties:
 # =============================================================================
 # Property Tests - Query Statistics
 # =============================================================================
+
 
 class TestQueryStatsProperties:
     """Property tests for query statistics."""
@@ -462,6 +471,7 @@ class TestQueryStatsProperties:
 # =============================================================================
 # Property Tests - Cost Estimation
 # =============================================================================
+
 
 class TestCostEstimationProperties:
     """Property tests for cost estimation."""

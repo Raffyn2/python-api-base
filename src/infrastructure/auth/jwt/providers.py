@@ -8,7 +8,7 @@ import logging
 from datetime import timedelta
 
 from .exceptions import InvalidKeyError
-from .jwks import generate_kid_from_public_key, extract_public_key_from_private
+from .jwks import extract_public_key_from_private, generate_kid_from_public_key
 from .protocols import BaseJWTProvider
 
 logger = logging.getLogger(__name__)
@@ -89,7 +89,7 @@ class RS256Provider(BaseJWTProvider):
         """
         if self._public_key:
             return generate_kid_from_public_key(self._public_key)
-        elif self._private_key:
+        if self._private_key:
             public_pem = extract_public_key_from_private(self._private_key)
             return generate_kid_from_public_key(public_pem)
         return ""
@@ -100,18 +100,16 @@ class RS256Provider(BaseJWTProvider):
         Raises:
             InvalidKeyError: If key format is invalid.
         """
-        if self._private_key:
-            if "-----BEGIN" not in self._private_key:
-                raise InvalidKeyError(
-                    "Invalid RSA private key format. Expected PEM format "
-                    "(must start with -----BEGIN)."
-                )
-        if self._public_key:
-            if "-----BEGIN" not in self._public_key:
-                raise InvalidKeyError(
-                    "Invalid RSA public key format. Expected PEM format "
-                    "(must start with -----BEGIN)."
-                )
+        if self._private_key and "-----BEGIN" not in self._private_key:
+            raise InvalidKeyError(
+                "Invalid RSA private key format. Expected PEM format "
+                "(must start with -----BEGIN)."
+            )
+        if self._public_key and "-----BEGIN" not in self._public_key:
+            raise InvalidKeyError(
+                "Invalid RSA public key format. Expected PEM format "
+                "(must start with -----BEGIN)."
+            )
 
     @property
     def algorithm(self) -> str:
@@ -225,7 +223,7 @@ class ES256Provider(BaseJWTProvider):
         """
         if self._public_key:
             return generate_kid_from_public_key(self._public_key)
-        elif self._private_key:
+        if self._private_key:
             public_pem = extract_public_key_from_private(self._private_key)
             return generate_kid_from_public_key(public_pem)
         return ""
@@ -236,18 +234,16 @@ class ES256Provider(BaseJWTProvider):
         Raises:
             InvalidKeyError: If key format is invalid.
         """
-        if self._private_key:
-            if "-----BEGIN" not in self._private_key:
-                raise InvalidKeyError(
-                    "Invalid ECDSA private key format. Expected PEM format "
-                    "(must start with -----BEGIN)."
-                )
-        if self._public_key:
-            if "-----BEGIN" not in self._public_key:
-                raise InvalidKeyError(
-                    "Invalid ECDSA public key format. Expected PEM format "
-                    "(must start with -----BEGIN)."
-                )
+        if self._private_key and "-----BEGIN" not in self._private_key:
+            raise InvalidKeyError(
+                "Invalid ECDSA private key format. Expected PEM format "
+                "(must start with -----BEGIN)."
+            )
+        if self._public_key and "-----BEGIN" not in self._public_key:
+            raise InvalidKeyError(
+                "Invalid ECDSA public key format. Expected PEM format "
+                "(must start with -----BEGIN)."
+            )
 
     @property
     def algorithm(self) -> str:

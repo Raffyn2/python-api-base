@@ -60,7 +60,7 @@ def create_metrics_endpoint(
 
 
 def setup_prometheus(
-    app: "FastAPI",
+    app: FastAPI,
     registry: MetricsRegistry | None = None,
     endpoint: str = "/metrics",
     include_in_schema: bool = False,

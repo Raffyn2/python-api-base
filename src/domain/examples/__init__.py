@@ -12,13 +12,13 @@ To disable for production, see: docs/example-system-deactivation.md
 # Item bounded context
 from domain.examples.item import (
     ItemExample,
+    ItemExampleActiveSpec,
     ItemExampleCreated,
     ItemExampleDeleted,
+    ItemExamplePriceRangeSpec,
     ItemExampleStatus,
     ItemExampleUpdated,
     Money,
-    ItemExampleActiveSpec,
-    ItemExamplePriceRangeSpec,
 )
 
 # Pedido bounded context

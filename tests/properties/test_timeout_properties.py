@@ -4,8 +4,8 @@
 **Validates: Requirements 6.4**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import asyncio
@@ -217,6 +217,7 @@ class TestTimeoutDecoratorProperties:
     @pytest.mark.anyio
     async def test_decorator_allows_fast_function(self) -> None:
         """Property: Decorator allows fast functions to complete."""
+
         @timeout_decorator(timeout_seconds=1.0)
         async def fast_func() -> str:
             return "done"
@@ -227,6 +228,7 @@ class TestTimeoutDecoratorProperties:
     @pytest.mark.anyio
     async def test_decorator_times_out_slow_function(self) -> None:
         """Property: Decorator times out slow functions."""
+
         @timeout_decorator(timeout_seconds=0.05)
         async def slow_func() -> str:
             await asyncio.sleep(1)

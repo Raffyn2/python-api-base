@@ -77,10 +77,7 @@ class TestInfrastructureErrorMessages:
 
     def test_infrastructure_error_with_details(self) -> None:
         """InfrastructureError should include details in string representation."""
-        error = InfrastructureError(
-            "Test error",
-            details={"key": "value", "count": 42}
-        )
+        error = InfrastructureError("Test error", details={"key": "value", "count": 42})
         error_str = str(error)
         assert "Test error" in error_str
         assert "key=value" in error_str
@@ -103,7 +100,7 @@ class TestInfrastructureErrorMessages:
             "Service unavailable",
             service_name="payment-api",
             retry_after=30,
-            details={"status_code": 503}
+            details={"status_code": 503},
         )
         assert error.service_name == "payment-api"
         assert error.retry_after == 30

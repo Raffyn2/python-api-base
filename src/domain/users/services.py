@@ -42,7 +42,12 @@ class UserDomainService:
 
     Example:
         ```python
-        from domain.users.services import UserDomainService, PasswordHasher, EmailValidator
+        from domain.users.services import (
+            UserDomainService,
+            PasswordHasher,
+            EmailValidator,
+        )
+
 
         # Using default implementations (basic validation)
         class Argon2PasswordHasher:
@@ -53,6 +58,7 @@ class UserDomainService:
             def verify(self, password: str, hashed: str) -> bool:
                 expected = f"$argon2id$hashed_{password}"
                 return hashed == expected
+
 
         hasher = Argon2PasswordHasher()
         service = UserDomainService(password_hasher=hasher)
@@ -97,10 +103,10 @@ class UserDomainService:
                 domain = email.split("@")[1] if "@" in email else ""
                 return domain in disposable_domains
 
+
         validator = CustomEmailValidator()
         service = UserDomainService(
-            password_hasher=Argon2PasswordHasher(),
-            email_validator=validator
+            password_hasher=Argon2PasswordHasher(), email_validator=validator
         )
 
         # Validate email with disposable check
@@ -116,6 +122,7 @@ class UserDomainService:
         from domain.users.aggregates import UserAggregate
         from domain.users.services import UserDomainService
 
+
         class RegisterUserUseCase:
             def __init__(self, user_domain_service: UserDomainService):
                 self._domain_service = user_domain_service
@@ -127,7 +134,9 @@ class UserDomainService:
                     raise ValueError(email_error)
 
                 # 2. Validate password strength
-                is_strong, password_errors = self._domain_service.validate_password_strength(password)
+                is_strong, password_errors = (
+                    self._domain_service.validate_password_strength(password)
+                )
                 if not is_strong:
                     raise ValueError(f"Weak password: {', '.join(password_errors)}")
 
@@ -139,7 +148,7 @@ class UserDomainService:
                     user_id="user-123",
                     email=email,
                     password_hash=password_hash,
-                    tenant_id="tenant-1"
+                    tenant_id="tenant-1",
                 )
 
                 return user

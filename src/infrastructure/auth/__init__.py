@@ -5,10 +5,10 @@
 
 from infrastructure.auth.jwt import (
     JWTService,
-    TokenPair,
-    TokenPayload,
     TokenExpiredError,
     TokenInvalidError,
+    TokenPair,
+    TokenPayload,
     TokenRevokedError,
 )
 from infrastructure.auth.token_store import (

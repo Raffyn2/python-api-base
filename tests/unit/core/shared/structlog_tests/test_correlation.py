@@ -4,15 +4,13 @@
 **Requirement: R1.2 - Correlation ID Propagation**
 """
 
-import pytest
-
 from core.shared.logging.correlation import (
+    bind_contextvars,
+    clear_contextvars,
+    clear_correlation_id,
     generate_correlation_id,
     get_correlation_id,
     set_correlation_id,
-    clear_correlation_id,
-    bind_contextvars,
-    clear_contextvars,
 )
 
 

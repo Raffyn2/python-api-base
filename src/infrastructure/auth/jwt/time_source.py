@@ -4,7 +4,7 @@
 **Validates: Requirements 9.2, 11.1**
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Protocol
 
 

@@ -4,8 +4,8 @@
 **Validates: Requirements 9.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 from datetime import datetime, timedelta
@@ -20,7 +20,6 @@ from core.shared.outbox import (
     OutboxService,
     OutboxStatus,
 )
-
 
 identifier_strategy = st.text(
     alphabet=st.sampled_from("abcdefghijklmnopqrstuvwxyz_"),

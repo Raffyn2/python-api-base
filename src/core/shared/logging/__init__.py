@@ -11,19 +11,19 @@ Provides:
 """
 
 from core.shared.logging.config import (
+    LogLevel,
     configure_logging,
     get_logger,
-    LogLevel,
 )
 from core.shared.logging.correlation import (
-    get_correlation_id,
-    set_correlation_id,
     bind_contextvars,
     clear_contextvars,
+    get_correlation_id,
+    set_correlation_id,
 )
 from core.shared.logging.redaction import (
-    RedactionProcessor,
     PII_PATTERNS,
+    RedactionProcessor,
 )
 
 __all__ = [

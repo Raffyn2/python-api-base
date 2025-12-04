@@ -26,7 +26,7 @@ class InMemorySearchProvider[TDocument]:
         results = []
         query_lower = query.query.lower()
 
-        for doc_id, doc in self._documents.items():
+        for doc in self._documents.values():
             doc_str = str(doc).lower()
             if query_lower in doc_str:
                 results.append(doc)

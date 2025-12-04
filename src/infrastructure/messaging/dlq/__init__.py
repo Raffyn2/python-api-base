@@ -1,5 +1,5 @@
 """Dead Letter Queue handling."""
 
-from infrastructure.messaging.dlq.handler import DLQHandler, DLQEntry
+from infrastructure.messaging.dlq.handler import DLQEntry, DLQHandler
 
-__all__ = ["DLQHandler", "DLQEntry"]
+__all__ = ["DLQEntry", "DLQHandler"]

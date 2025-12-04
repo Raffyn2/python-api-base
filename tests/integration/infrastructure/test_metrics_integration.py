@@ -8,13 +8,13 @@ import pytest
 from prometheus_client import CollectorRegistry
 
 from infrastructure.prometheus.config import PrometheusConfig
-from infrastructure.prometheus.registry import MetricsRegistry, set_registry
 from infrastructure.prometheus.metrics import counter, histogram
+from infrastructure.prometheus.registry import MetricsRegistry, set_registry
 
 
 class TestMetricsCollection:
     """Integration tests for metrics collection in use cases.
-    
+
     **Feature: infrastructure-modules-integration-analysis**
     **Validates: Requirements 4.4**
     """
@@ -30,7 +30,7 @@ class TestMetricsCollection:
 
     def test_counter_increments(self, setup_registry) -> None:
         """Test counter increments on function call.
-        
+
         **Validates: Requirements 4.4**
         """
         call_count = 0
@@ -51,7 +51,7 @@ class TestMetricsCollection:
     @pytest.mark.asyncio
     async def test_async_counter_increments(self, setup_registry) -> None:
         """Test async counter increments on function call.
-        
+
         **Validates: Requirements 4.4**
         """
         call_count = 0
@@ -71,7 +71,7 @@ class TestMetricsCollection:
 
     def test_histogram_records_duration(self, setup_registry) -> None:
         """Test histogram records function duration.
-        
+
         **Validates: Requirements 4.4**
         """
         import time
@@ -87,7 +87,7 @@ class TestMetricsCollection:
     @pytest.mark.asyncio
     async def test_async_histogram_records_duration(self, setup_registry) -> None:
         """Test async histogram records function duration.
-        
+
         **Validates: Requirements 4.4**
         """
         import asyncio
@@ -103,7 +103,7 @@ class TestMetricsCollection:
 
 class TestUseCaseMetrics:
     """Tests for use case metrics patterns.
-    
+
     **Feature: infrastructure-modules-integration-analysis**
     **Validates: Requirements 4.4**
     """
@@ -119,7 +119,7 @@ class TestUseCaseMetrics:
 
     def test_use_case_pattern(self, setup_registry) -> None:
         """Test metrics pattern for use cases.
-        
+
         **Validates: Requirements 4.4**
         """
 

@@ -4,15 +4,16 @@
 **Validates: Requirements 2.1, 2.5**
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from infrastructure.redis.circuit_breaker import CircuitBreaker, CircuitState
 
 
 class TestCircuitBreakerIntegration:
     """Integration tests for circuit breaker pattern.
-    
+
     **Feature: infrastructure-modules-integration-analysis**
     **Property 4: Circuit breaker protege contra falhas Redis**
     **Validates: Requirements 2.1**
@@ -28,11 +29,9 @@ class TestCircuitBreakerIntegration:
         )
 
     @pytest.mark.asyncio
-    async def test_circuit_opens_after_failures(
-        self, breaker: CircuitBreaker
-    ) -> None:
+    async def test_circuit_opens_after_failures(self, breaker: CircuitBreaker) -> None:
         """Test circuit opens after threshold failures.
-        
+
         **Property 4: Circuit breaker protege contra falhas Redis**
         **Validates: Requirements 2.1**
         """
@@ -48,7 +47,7 @@ class TestCircuitBreakerIntegration:
         self, breaker: CircuitBreaker
     ) -> None:
         """Test fallback is used when circuit is open.
-        
+
         **Validates: Requirements 2.1**
         """
         # Open the circuit
@@ -64,7 +63,7 @@ class TestCircuitBreakerIntegration:
         self, breaker: CircuitBreaker
     ) -> None:
         """Test circuit recovers after reset timeout.
-        
+
         **Validates: Requirements 2.1**
         """
         import asyncio
@@ -84,11 +83,9 @@ class TestCircuitBreakerIntegration:
         assert breaker.state == CircuitState.HALF_OPEN
 
     @pytest.mark.asyncio
-    async def test_circuit_closes_after_success(
-        self, breaker: CircuitBreaker
-    ) -> None:
+    async def test_circuit_closes_after_success(self, breaker: CircuitBreaker) -> None:
         """Test circuit closes after successful call in half-open.
-        
+
         **Validates: Requirements 2.1**
         """
         import asyncio
@@ -124,7 +121,7 @@ class TestRedisCacheOperations:
     @pytest.mark.asyncio
     async def test_cache_set_and_get(self, mock_redis_client) -> None:
         """Test cache set and get operations.
-        
+
         **Validates: Requirements 2.5**
         """
         # Set value
@@ -141,7 +138,7 @@ class TestRedisCacheOperations:
     @pytest.mark.asyncio
     async def test_cache_delete(self, mock_redis_client) -> None:
         """Test cache delete operation.
-        
+
         **Validates: Requirements 2.5**
         """
         result = await mock_redis_client.delete("test:key")
@@ -150,7 +147,7 @@ class TestRedisCacheOperations:
     @pytest.mark.asyncio
     async def test_cache_miss_returns_none(self, mock_redis_client) -> None:
         """Test cache miss returns None.
-        
+
         **Validates: Requirements 2.5**
         """
         mock_redis_client.get.return_value = None

@@ -67,32 +67,59 @@ class IPClientExtractor:
 
 
 class UserIdExtractor:
-    """Extract user ID from authenticated request."""
+    """Extract user ID from authenticated request.
 
-    def __init__(self, user_attr: str = "user") -> None:
+    Uses consistent client identification strategy:
+    - Authenticated: user identifier (id/user_id/sub/email)
+    - Anonymous: IP-based with stable prefix for rate limit consistency
+    """
+
+    def __init__(
+        self,
+        user_attr: str = "user",
+        require_auth: bool = False,
+    ) -> None:
         """Initialize extractor.
 
         Args:
             user_attr: Request state attribute containing user.
+            require_auth: If True, raises error for unauthenticated requests.
         """
         self._user_attr = user_attr
+        self._require_auth = require_auth
 
     async def extract(self, request: Request) -> str:
-        """Extract user ID from request state."""
-        user = getattr(request.state, self._user_attr, None)
-        if user is None:
-            # Fallback to IP if not authenticated
-            forwarded = request.headers.get("X-Forwarded-For")
-            if forwarded:
-                return f"anon:{forwarded.split(',')[0].strip()}"
-            return f"anon:{request.client.host if request.client else 'unknown'}"
+        """Extract user ID from request state.
 
-        # Try common user ID attributes
+        Returns consistent identifier for rate limiting:
+        - Authenticated users: "user:{id}"
+        - Anonymous users: "ip:{address}"
+
+        Raises:
+            ValueError: If require_auth=True and user not authenticated.
+        """
+        user = getattr(request.state, self._user_attr, None)
+
+        if user is None:
+            if self._require_auth:
+                raise ValueError("Authentication required for rate limiting")
+            # Consistent IP-based identification for anonymous users
+            return f"ip:{self._get_client_ip(request)}"
+
+        # Try common user ID attributes with consistent prefix
         for attr in ("id", "user_id", "sub", "email"):
             if hasattr(user, attr):
-                return str(getattr(user, attr))
+                return f"user:{getattr(user, attr)}"
 
-        return str(user)
+        return f"user:{user}"
+
+    @staticmethod
+    def _get_client_ip(request: Request) -> str:
+        """Extract client IP with proxy support."""
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+        return request.client.host if request.client else "unknown"
 
 
 class APIKeyExtractor:
@@ -312,6 +339,7 @@ def rate_limit[TClient](
         ```
     """
     from functools import wraps
+
     from fastapi import HTTPException
 
     _extractor = extractor or IPClientExtractor()

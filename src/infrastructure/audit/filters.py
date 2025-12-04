@@ -14,8 +14,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
-from infrastructure.audit.trail import AuditAction, AuditRecord
 from infrastructure.audit.storage import AuditStore
+from infrastructure.audit.trail import AuditAction, AuditRecord
 
 
 @dataclass
@@ -47,23 +47,23 @@ class AuditQuery[T]:
         self._limit = 100
         self._offset = 0
 
-    def for_entity(self, entity_type: str, entity_id: str) -> "AuditQuery[T]":
+    def for_entity(self, entity_type: str, entity_id: str) -> AuditQuery[T]:
         """Filter by entity."""
         self._filters.entity_type = entity_type
         self._filters.entity_id = entity_id
         return self
 
-    def by_user(self, user_id: str) -> "AuditQuery[T]":
+    def by_user(self, user_id: str) -> AuditQuery[T]:
         """Filter by user."""
         self._filters.user_id = user_id
         return self
 
-    def with_action(self, action: AuditAction) -> "AuditQuery[T]":
+    def with_action(self, action: AuditAction) -> AuditQuery[T]:
         """Filter by action."""
         self._filters.action = action
         return self
 
-    def with_correlation(self, correlation_id: str) -> "AuditQuery[T]":
+    def with_correlation(self, correlation_id: str) -> AuditQuery[T]:
         """Filter by correlation ID."""
         self._filters.correlation_id = correlation_id
         return self
@@ -72,18 +72,18 @@ class AuditQuery[T]:
         self,
         start: datetime,
         end: datetime,
-    ) -> "AuditQuery[T]":
+    ) -> AuditQuery[T]:
         """Filter by date range."""
         self._filters.start_date = start
         self._filters.end_date = end
         return self
 
-    def limit(self, count: int) -> "AuditQuery[T]":
+    def limit(self, count: int) -> AuditQuery[T]:
         """Set result limit."""
         self._limit = count
         return self
 
-    def offset(self, count: int) -> "AuditQuery[T]":
+    def offset(self, count: int) -> AuditQuery[T]:
         """Set result offset."""
         self._offset = count
         return self

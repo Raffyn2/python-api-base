@@ -7,17 +7,16 @@ Implements IMapper interface for entity-DTO transformations.
 """
 
 from collections.abc import Sequence
-from decimal import Decimal
 
-from domain.examples.item.entity import ItemExample, Money
-from application.examples.shared.dtos import MoneyDTO
-from application.examples.item.dtos import ItemExampleResponse
 from application.common.base.mapper import IMapper
+from application.examples.item.dtos import ItemExampleResponse
+from application.examples.shared.dtos import MoneyDTO
+from domain.examples.item.entity import ItemExample, Money
 
 
 class ItemExampleMapper(IMapper[ItemExample, ItemExampleResponse]):
     """Mapper for ItemExample entity to DTOs.
-    
+
     Implements IMapper interface for consistent mapping patterns.
     """
 

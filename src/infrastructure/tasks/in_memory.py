@@ -9,9 +9,9 @@ import logging
 import time
 from collections.abc import Sequence
 
-from infrastructure.tasks.task import Task, TaskResult, TaskStatus
 from infrastructure.tasks.protocols import TaskHandler
-from infrastructure.tasks.retry import RetryPolicy, DEFAULT_RETRY_POLICY
+from infrastructure.tasks.retry import DEFAULT_RETRY_POLICY, RetryPolicy
+from infrastructure.tasks.task import Task, TaskResult, TaskStatus
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ class InMemoryTaskQueue[TPayload, TResult]:
             if task and task.status == TaskStatus.PENDING:
                 return task
             return None
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return None
 
     async def get_task(self, task_id: str) -> Task[TPayload, TResult] | None:

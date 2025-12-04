@@ -1,11 +1,11 @@
 """Retry Queue Pattern with dead letter queue handling."""
 
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, UTC
-from enum import Enum
-from typing import Protocol, Any
-from collections.abc import Callable, Awaitable
 import asyncio
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from enum import Enum
+from typing import Any, Protocol
 
 
 class MessageStatus(Enum):
@@ -109,7 +109,7 @@ class RetryQueue[T]:
         delay = min(delay, self._config.max_delay_ms)
 
         jitter = delay * self._config.jitter_factor
-        delay += random.uniform(-jitter, jitter)
+        delay += random.uniform(-jitter, jitter)  # noqa: S311 - Jitter for load dist
 
         return int(max(0, delay))
 
@@ -231,13 +231,12 @@ class InMemoryQueueBackend[T]:
 
     async def dequeue(self, limit: int) -> list[QueueMessage[T]]:
         now = datetime.now(UTC)
-        ready = [
+        return [
             m
             for m in self._queue
             if m.status == MessageStatus.PENDING
             and (m.next_retry_at is None or m.next_retry_at <= now)
         ][:limit]
-        return ready
 
     async def update(self, message: QueueMessage[T]) -> None:
         for i, m in enumerate(self._queue):

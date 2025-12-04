@@ -4,8 +4,8 @@
 **Validates: Requirements 7.3**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import json
@@ -23,13 +23,11 @@ from infrastructure.observability.metrics_dashboard import (
     MetricPoint,
     MetricSeries,
     MetricType,
-    MetricsDashboard,
     TimeRange,
     Widget,
     create_metrics_dashboard,
     create_performance_dashboard,
 )
-
 
 # Strategies
 metric_name_strategy = st.text(
@@ -113,9 +111,7 @@ class TestMetricSeriesProperties:
         time_range=time_range_strategy,
     )
     @settings(max_examples=100)
-    def test_get_range_filters_by_time(
-        self, name: str, time_range: TimeRange
-    ) -> None:
+    def test_get_range_filters_by_time(self, name: str, time_range: TimeRange) -> None:
         """Property: get_range returns points within time range."""
         series = MetricSeries(name=name, metric_type=MetricType.GAUGE)
 
@@ -130,7 +126,6 @@ class TestMetricSeriesProperties:
         recent_points = series.get_range(time_range)
         assert len(recent_points) == 1
         assert recent_points[0].value == 2.0
-
 
 
 class TestWidgetProperties:
@@ -171,9 +166,7 @@ class TestDashboardProperties:
         title=st.text(min_size=1, max_size=50).filter(lambda x: x.strip()),
     )
     @settings(max_examples=100)
-    def test_dashboard_starts_empty(
-        self, dashboard_id: str, title: str
-    ) -> None:
+    def test_dashboard_starts_empty(self, dashboard_id: str, title: str) -> None:
         """Property: New dashboard starts with no widgets."""
         dashboard = Dashboard(id=dashboard_id, title=title)
         assert len(dashboard.widgets) == 0
@@ -233,9 +226,7 @@ class TestInMemoryMetricsStoreProperties:
     )
     @settings(max_examples=100)
     @pytest.mark.anyio
-    async def test_store_and_retrieve_metric(
-        self, name: str, value: float
-    ) -> None:
+    async def test_store_and_retrieve_metric(self, name: str, value: float) -> None:
         """Property: Stored metrics can be retrieved."""
         store = InMemoryMetricsStore()
         series = MetricSeries(
@@ -256,9 +247,7 @@ class TestInMemoryMetricsStoreProperties:
     )
     @settings(max_examples=50)
     @pytest.mark.anyio
-    async def test_list_metrics_returns_stored_names(
-        self, names: list[str]
-    ) -> None:
+    async def test_list_metrics_returns_stored_names(self, names: list[str]) -> None:
         """Property: list_metrics returns names of stored metrics."""
         store = InMemoryMetricsStore()
 
@@ -294,7 +283,6 @@ class TestInMemoryMetricsStoreProperties:
 
         series = store._metrics["test"]
         assert len(series.points) <= max_points
-
 
 
 class TestMetricsDashboardProperties:
@@ -400,8 +388,7 @@ class TestDashboardBuilderProperties:
         builder = DashboardBuilder("test", "Test Dashboard")
 
         result = (
-            builder
-            .add_line_chart("chart1", "Chart 1", ["metric1"])
+            builder.add_line_chart("chart1", "Chart 1", ["metric1"])
             .add_gauge("gauge1", "Gauge 1", "metric2")
             .add_bar_chart("bar1", "Bar 1", ["metric3"])
         )

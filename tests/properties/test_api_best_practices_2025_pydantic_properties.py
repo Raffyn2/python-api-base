@@ -12,23 +12,21 @@ import json
 from typing import Any
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from pydantic import BaseModel
 
 from core.shared.validation import (
+    ComputedFieldExample,
+    LowercaseStr,
+    OptimizedBaseModel,
+    StrippedStr,
     TypeAdapterCache,
+    UppercaseStr,
     get_type_adapter,
-    validate_json_fast,
     validate_bulk,
     validate_bulk_json,
-    OptimizedBaseModel,
-    ComputedFieldExample,
-    StrippedStr,
-    LowercaseStr,
-    UppercaseStr,
+    validate_json_fast,
 )
-
 
 # === Test Models ===
 
@@ -86,7 +84,7 @@ class TestTypeAdapterCaching:
         """
         adapter1 = get_type_adapter(SampleDTO)
         adapter2 = get_type_adapter(SampleDTO)
-        
+
         # Should be same cached instance
         assert adapter1 is adapter2
 
@@ -97,10 +95,10 @@ class TestTypeAdapterCaching:
         **Validates: Requirements 3.1**
         """
         cache = TypeAdapterCache(SampleDTO)
-        
+
         adapter1 = cache.adapter
         adapter2 = cache.adapter
-        
+
         assert adapter1 is adapter2
 
     def test_type_adapter_cache_list_reuses_adapter(self) -> None:
@@ -110,10 +108,10 @@ class TestTypeAdapterCaching:
         **Validates: Requirements 3.1**
         """
         cache = TypeAdapterCache(SampleDTO)
-        
+
         adapter1 = cache.list_adapter
         adapter2 = cache.list_adapter
-        
+
         assert adapter1 is adapter2
 
 
@@ -135,18 +133,16 @@ class TestJSONValidationPerformance:
         **Validates: Requirements 3.2**
         """
         json_bytes = json.dumps(data).encode()
-        
+
         result = validate_json_fast(SampleDTO, json_bytes)
-        
+
         assert result.name == data["name"]
         assert result.value == data["value"]
         assert result.active == data["active"]
 
     @settings(max_examples=50, deadline=None)
     @given(data=sample_dict_strategy)
-    def test_type_adapter_cache_json_round_trip(
-        self, data: dict[str, Any]
-    ) -> None:
+    def test_type_adapter_cache_json_round_trip(self, data: dict[str, Any]) -> None:
         """TypeAdapterCache.validate_json SHALL match dict validation.
 
         **Feature: api-best-practices-review-2025, Property 4**
@@ -154,10 +150,10 @@ class TestJSONValidationPerformance:
         """
         cache = TypeAdapterCache(SampleDTO)
         json_bytes = json.dumps(data).encode()
-        
+
         from_json = cache.validate_json(json_bytes)
         from_dict = cache.validate_python(data)
-        
+
         assert from_json.name == from_dict.name
         assert from_json.value == from_dict.value
         assert from_json.active == from_dict.active
@@ -171,11 +167,11 @@ class TestJSONValidationPerformance:
         **Validates: Requirements 3.2**
         """
         json_bytes = json.dumps(items).encode()
-        
+
         results = validate_bulk_json(SampleDTO, json_bytes)
-        
+
         assert len(results) == len(items)
-        for result, original in zip(results, items):
+        for result, original in zip(results, items, strict=False):
             assert result.name == original["name"]
             assert result.value == original["value"]
 
@@ -196,41 +192,39 @@ class TestJSONSerialization:
         **Validates: Requirements 3.3**
         """
         cache = TypeAdapterCache(SampleDTO)
-        
+
         # Create instance
         instance = cache.validate_python(data)
-        
+
         # Serialize to JSON
         json_bytes = cache.dump_json(instance)
-        
+
         # Parse back
         restored = cache.validate_json(json_bytes)
-        
+
         assert restored.name == instance.name
         assert restored.value == instance.value
         assert restored.active == instance.active
 
     @settings(max_examples=20, deadline=None)
     @given(items=st.lists(sample_dict_strategy, min_size=1, max_size=10))
-    def test_dump_json_list_round_trip(
-        self, items: list[dict[str, Any]]
-    ) -> None:
+    def test_dump_json_list_round_trip(self, items: list[dict[str, Any]]) -> None:
         """dump_json_list SHALL produce valid JSON array.
 
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 3.3**
         """
         cache = TypeAdapterCache(SampleDTO)
-        
+
         # Create instances
         instances = [cache.validate_python(item) for item in items]
-        
+
         # Serialize to JSON
         json_bytes = cache.dump_json_list(instances)
-        
+
         # Parse back
         restored = cache.validate_list_json(json_bytes)
-        
+
         assert len(restored) == len(instances)
 
 
@@ -243,16 +237,14 @@ class TestBulkValidation:
 
     @settings(max_examples=20, deadline=None)
     @given(items=st.lists(sample_dict_strategy, min_size=1, max_size=10))
-    def test_validate_bulk_all_valid(
-        self, items: list[dict[str, Any]]
-    ) -> None:
+    def test_validate_bulk_all_valid(self, items: list[dict[str, Any]]) -> None:
         """validate_bulk SHALL return all valid items.
 
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 3.4**
         """
         valid, errors = validate_bulk(SampleDTO, items)
-        
+
         assert len(valid) == len(items)
         assert len(errors) == 0
 
@@ -267,9 +259,9 @@ class TestBulkValidation:
             {"name": "Missing value"},  # Invalid - missing required field
             {"name": "Also Valid", "value": 200},
         ]
-        
+
         valid, errors = validate_bulk(SampleDTO, items)
-        
+
         assert len(valid) == 2
         assert len(errors) == 1
         assert errors[0][0] == 1  # Index of invalid item
@@ -307,7 +299,7 @@ class TestComputedField:
             price=price,
             quantity=quantity,
         )
-        
+
         assert model.full_name == f"{first_name} {last_name}"
         assert model.total == pytest.approx(price * quantity, rel=1e-9)
 
@@ -323,9 +315,9 @@ class TestComputedField:
             price=10.0,
             quantity=5,
         )
-        
+
         data = model.model_dump()
-        
+
         assert "full_name" in data
         assert data["full_name"] == "John Doe"
         assert "total" in data
@@ -345,9 +337,10 @@ class TestAnnotatedValidators:
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 3.4**
         """
+
         class TestModel(BaseModel):
             name: StrippedStr
-        
+
         model = TestModel(name="  hello world  ")
         assert model.name == "hello world"
 
@@ -357,9 +350,10 @@ class TestAnnotatedValidators:
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 3.4**
         """
+
         class TestModel(BaseModel):
             code: LowercaseStr
-        
+
         model = TestModel(code="HELLO")
         assert model.code == "hello"
 
@@ -369,9 +363,10 @@ class TestAnnotatedValidators:
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 3.4**
         """
+
         class TestModel(BaseModel):
             code: UppercaseStr
-        
+
         model = TestModel(code="hello")
         assert model.code == "HELLO"
 
@@ -389,13 +384,14 @@ class TestOptimizedBaseModel:
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 3.3**
         """
+
         class TestModel(OptimizedBaseModel):
             name: str
             value: int
-        
+
         model = TestModel(name="test", value=42)
         json_bytes = model.to_json_bytes()
-        
+
         assert isinstance(json_bytes, bytes)
         data = json.loads(json_bytes)
         assert data["name"] == "test"
@@ -407,12 +403,13 @@ class TestOptimizedBaseModel:
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 3.2**
         """
+
         class TestModel(OptimizedBaseModel):
             name: str
             value: int
-        
+
         json_bytes = b'{"name": "test", "value": 42}'
         model = TestModel.from_json_bytes(json_bytes)
-        
+
         assert model.name == "test"
         assert model.value == 42

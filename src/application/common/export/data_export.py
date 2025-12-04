@@ -10,7 +10,7 @@ import io
 import json
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol
 
@@ -183,12 +183,11 @@ class DataExporter[T]:
         """Export records in specified format."""
         if config.format == ExportFormat.JSON:
             return self.export_json(records, config)
-        elif config.format == ExportFormat.CSV:
+        if config.format == ExportFormat.CSV:
             return self.export_csv(records, config)
-        elif config.format == ExportFormat.JSONL:
+        if config.format == ExportFormat.JSONL:
             return self.export_jsonl(records, config)
-        else:
-            raise ValueError(f"Unsupported format: {config.format}")
+        raise ValueError(f"Unsupported format: {config.format}")
 
 
 class DataImporter[T]:
@@ -285,9 +284,8 @@ class DataImporter[T]:
         """Import records from specified format."""
         if format == ExportFormat.JSON:
             return self.import_json(content)
-        elif format == ExportFormat.CSV:
+        if format == ExportFormat.CSV:
             return self.import_csv(content)
-        elif format == ExportFormat.JSONL:
+        if format == ExportFormat.JSONL:
             return self.import_jsonl(content)
-        else:
-            raise ValueError(f"Unsupported format: {format}")
+        raise ValueError(f"Unsupported format: {format}")

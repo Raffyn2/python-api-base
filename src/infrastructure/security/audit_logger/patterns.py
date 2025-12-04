@@ -16,17 +16,25 @@ PII_PATTERNS = [
     (re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b"), "[CARD]"),
     (re.compile(r"\b\d{16}\b"), "[CARD]"),
     (
-        re.compile(r"password[\"']?\s*[:=]\s*[\"']?[^\"'\s]+", re.I),
+        re.compile(r"password[\"']?\s*[:=]\s*[\"']?[^\"'\s]+", re.IGNORECASE),
         "password=[REDACTED]",
     ),
-    (re.compile(r"secret[\"']?\s*[:=]\s*[\"']?[^\"'\s]+", re.I), "secret=[REDACTED]"),
-    (re.compile(r"token[\"']?\s*[:=]\s*[\"']?[^\"'\s]+", re.I), "token=[REDACTED]"),
     (
-        re.compile(r"api[_-]?key[\"']?\s*[:=]\s*[\"']?[^\"'\s]+", re.I),
+        re.compile(r"secret[\"']?\s*[:=]\s*[\"']?[^\"'\s]+", re.IGNORECASE),
+        "secret=[REDACTED]",
+    ),
+    (
+        re.compile(r"token[\"']?\s*[:=]\s*[\"']?[^\"'\s]+", re.IGNORECASE),
+        "token=[REDACTED]",
+    ),
+    (
+        re.compile(r"api[_-]?key[\"']?\s*[:=]\s*[\"']?[^\"'\s]+", re.IGNORECASE),
         "api_key=[REDACTED]",
     ),
     (
-        re.compile(r"Bearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+", re.I),
+        re.compile(
+            r"Bearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+", re.IGNORECASE
+        ),
         "Bearer [REDACTED]",
     ),
 ]

@@ -6,9 +6,8 @@
 Implements FileStorage protocol using in-memory storage.
 """
 
-from datetime import timedelta
 from collections.abc import AsyncIterator
-from typing import Any
+from datetime import timedelta
 
 from core.base.patterns.result import Err, Ok, Result
 
@@ -50,7 +49,7 @@ class InMemoryStorageProvider:
                 async for chunk in data:
                     chunks.append(chunk)
                 file_data = b"".join(chunks)
-            
+
             self._storage[key] = (file_data, content_type)
             return Ok(f"memory://{key}")
         except Exception as e:
@@ -67,7 +66,7 @@ class InMemoryStorageProvider:
         """
         if key not in self._storage:
             return Err(FileNotFoundError(f"Key not found: {key}"))
-        
+
         data, _ = self._storage[key]
         return Ok(data)
 
@@ -107,8 +106,10 @@ class InMemoryStorageProvider:
         """
         if key not in self._storage and operation == "GET":
             return Err(FileNotFoundError(f"Key not found: {key}"))
-        
-        return Ok(f"memory://{key}?signed=true&expires={int(expiration.total_seconds())}")
+
+        return Ok(
+            f"memory://{key}?signed=true&expires={int(expiration.total_seconds())}"
+        )
 
     def clear(self) -> None:
         """Clear all stored files."""

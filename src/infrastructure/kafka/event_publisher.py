@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
@@ -171,7 +171,6 @@ class NoOpEventPublisher(EventPublisher):
 
     async def publish(self, event: DomainEvent[Any], topic: str) -> None:
         """Do nothing - Kafka is disabled."""
-        pass
 
 
 # =============================================================================

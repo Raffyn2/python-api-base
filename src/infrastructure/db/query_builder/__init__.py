@@ -14,6 +14,11 @@ Key Generic Types:
 **Validates: Requirements 16.1, 16.2, 16.3, 16.4, 16.5**
 """
 
+from infrastructure.db.query_builder.builder import (
+    QueryBuilder,
+    QueryOptions,
+    QueryResult,
+)
 from infrastructure.db.query_builder.conditions import (
     ComparisonOperator,
     ConditionGroup,
@@ -23,11 +28,6 @@ from infrastructure.db.query_builder.conditions import (
     SortDirection,
 )
 from infrastructure.db.query_builder.field_accessor import FieldAccessor, field_
-from infrastructure.db.query_builder.builder import (
-    QueryBuilder,
-    QueryOptions,
-    QueryResult,
-)
 from infrastructure.db.query_builder.in_memory import InMemoryQueryBuilder
 
 __all__ = [

@@ -7,9 +7,7 @@
 from pathlib import Path
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
-
+from hypothesis import given, settings, strategies as st
 
 MAX_LINES = 400
 SRC_DIR = Path("src")
@@ -29,7 +27,7 @@ def get_all_python_files() -> list[Path]:
     """Get all Python files in src directory."""
     if not SRC_DIR.exists():
         return []
-    
+
     files = []
     for py_file in SRC_DIR.rglob("*.py"):
         path_str = str(py_file)
@@ -52,12 +50,12 @@ class TestFileSizeComplianceProperties:
         **Validates: Requirements 1.1, 1.3**
         """
         violations = []
-        
+
         for py_file in get_all_python_files():
             line_count = count_lines(py_file)
             if line_count > MAX_LINES:
                 violations.append((py_file, line_count))
-        
+
         if violations:
             violation_msgs = [
                 f"  {path}: {lines} lines (+{lines - MAX_LINES})"
@@ -81,11 +79,11 @@ class TestFileSizeComplianceProperties:
             "src/my_app/shared/advanced_specification",
             "src/my_app/shared/cloud_provider_filter",
         ]
-        
+
         for package_path in expected_packages:
             package = Path(package_path)
             assert package.exists(), f"Package {package_path} does not exist"
-            
+
             init_file = package / "__init__.py"
             assert init_file.exists(), f"Package {package_path} missing __init__.py"
 
@@ -100,12 +98,12 @@ class TestFileSizeComplianceProperties:
             "src/my_app/shared/saga",
             "src/my_app/shared/oauth2",
         ]
-        
+
         for package_path in packages_to_check:
             package = Path(package_path)
             if not package.exists():
                 continue
-            
+
             py_files = list(package.glob("*.py"))
             # Should have more than just __init__.py
             assert len(py_files) > 1, (
@@ -124,13 +122,13 @@ class TestFileSizeComplianceProperties:
         files = get_all_python_files()
         if not files:
             return
-        
+
         # Pick first file for determinism test
         test_file = files[0]
-        
+
         count1 = count_lines(test_file)
         count2 = count_lines(test_file)
-        
+
         assert count1 == count2, "Line counting should be deterministic"
 
 
@@ -154,7 +152,7 @@ class TestBackwardCompatibilityAfterRefactoring:
             Snapshot,
             SourcedEvent,
         )
-        
+
         assert Aggregate is not None
         assert SourcedEvent is not None
         assert EventStream is not None
@@ -178,7 +176,7 @@ class TestBackwardCompatibilityAfterRefactoring:
             StepResult,
             StepStatus,
         )
-        
+
         assert Saga is not None
         assert SagaBuilder is not None
         assert SagaContext is not None
@@ -204,7 +202,7 @@ class TestBackwardCompatibilityAfterRefactoring:
             OAuthUserInfo,
             StateStore,
         )
-        
+
         assert OAuthProvider is not None
         assert OAuthConfig is not None
         assert OAuthUserInfo is not None

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol
 from uuid import uuid4
@@ -57,7 +57,7 @@ class AuditEvent[TUser, TResource: Enum, TAction: Enum]:
         ip_address: str | None = None,
         user_agent: str | None = None,
         metadata: dict[str, Any] | None = None,
-    ) -> "AuditEvent[TU, TR, TA]":
+    ) -> AuditEvent[TU, TR, TA]:
         """Create new audit event.
 
         Args:

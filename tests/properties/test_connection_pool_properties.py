@@ -4,19 +4,17 @@
 **Validates: Requirements 1.1, 1.2, 2.2, 2.3**
 """
 
-import asyncio
-from datetime import datetime, timezone
-
 import pytest
 
-pytest.skip('Module infrastructure.connection_pool not implemented', allow_module_level=True)
+pytest.skip(
+    "Module infrastructure.connection_pool not implemented", allow_module_level=True
+)
 
 from hypothesis import given, settings, strategies as st
 
 from infrastructure.connection_pool import (
     BaseConnectionFactory,
     ConnectionPool,
-    ConnectionState,
     PoolConfig,
     PoolStats,
 )

@@ -12,9 +12,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from infrastructure.redis.config import RedisConfig
-from infrastructure.redis.circuit_breaker import CircuitBreaker
 from infrastructure.cache.providers import InMemoryCacheProvider
+from infrastructure.redis.circuit_breaker import CircuitBreaker
+from infrastructure.redis.config import RedisConfig
 
 logger = logging.getLogger(__name__)
 
@@ -159,9 +159,7 @@ class RedisConnection:
         return json.dumps(value, default=str)
 
     @staticmethod
-    def deserialize(
-        data: str | None, model: type[BaseModel] | None = None
-    ) -> Any:
+    def deserialize(data: str | None, model: type[BaseModel] | None = None) -> Any:
         """Deserialize JSON string to value.
 
         **Requirement: R1.6 - Pydantic model support**

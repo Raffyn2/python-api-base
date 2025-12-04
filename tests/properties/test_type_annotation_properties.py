@@ -5,12 +5,10 @@
 """
 
 import ast
-import inspect
 from pathlib import Path
 from typing import Any
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 
 def get_public_functions_from_module(module_path: Path) -> list[dict[str, Any]]:
@@ -139,8 +137,8 @@ class TestTypeAnnotationCompleteness:
             # Assert at least 90% compliance
             assert violation_rate < 0.10, (
                 f"Type annotation compliance is {(1 - violation_rate) * 100:.1f}% "
-                f"(expected >= 90%). Violations:\n" +
-                "\n".join(violations[:20])  # Show first 20
+                f"(expected >= 90%). Violations:\n"
+                + "\n".join(violations[:20])  # Show first 20
             )
 
     @settings(max_examples=50)
@@ -197,6 +195,4 @@ class TestTypeAnnotationCompleteness:
             except SyntaxError as e:
                 parse_errors.append(f"{file_path}: {e}")
 
-        assert len(parse_errors) == 0, (
-            f"AST parse errors:\n" + "\n".join(parse_errors)
-        )
+        assert len(parse_errors) == 0, "AST parse errors:\n" + "\n".join(parse_errors)

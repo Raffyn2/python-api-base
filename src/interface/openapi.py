@@ -39,7 +39,7 @@ OPENAPI_TAGS = [
 ]
 
 
-def custom_openapi(app: "FastAPI") -> dict:
+def custom_openapi(app: FastAPI) -> dict:
     """Generate custom OpenAPI schema with enhanced documentation.
 
     **Requirement: R5.3 - JSON Schema with examples and descriptions**
@@ -61,6 +61,21 @@ def custom_openapi(app: "FastAPI") -> dict:
         routes=app.routes,
         tags=OPENAPI_TAGS,
     )
+
+    # Add contact and license information
+    # **Improvement: P3-1 - Complete OpenAPI metadata**
+    openapi_schema["info"]["contact"] = {
+        "name": "API Support",
+        "url": "https://github.com/your-org/python-api-base/issues",
+        "email": "api-support@example.com",
+    }
+
+    openapi_schema["info"]["license"] = {
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    }
+
+    openapi_schema["info"]["termsOfService"] = "https://example.com/terms"
 
     # Add security schemes
     openapi_schema["components"]["securitySchemes"] = {
@@ -257,7 +272,7 @@ API endpoints are rate limited. Check `X-RateLimit-*` headers:
 """
 
 
-def setup_openapi(app: "FastAPI") -> None:
+def setup_openapi(app: FastAPI) -> None:
     """Setup custom OpenAPI schema for the application.
 
     **Requirement: R5.1 - Swagger UI endpoint**

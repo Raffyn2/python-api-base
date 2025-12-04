@@ -4,17 +4,17 @@
 **Validates: Requirements 5.1**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qs, urlparse
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.security.oauth2 import (
+    PROVIDER_CONFIGS,
     GitHubOAuthProvider,
     GoogleOAuthProvider,
     InMemoryStateStore,
@@ -23,30 +23,47 @@ from infrastructure.security.oauth2 import (
     OAuthState,
     OAuthTokenResponse,
     OAuthUserInfo,
-    PROVIDER_CONFIGS,
 )
-
 
 # =============================================================================
 # Strategies
 # =============================================================================
 
+
 @st.composite
 def oauth_config_strategy(draw: st.DrawFn) -> OAuthConfig:
     """Generate valid OAuth configurations."""
     provider = draw(st.sampled_from(list(OAuthProvider)))
-    client_id = draw(st.text(min_size=10, max_size=50, alphabet=st.characters(
-        whitelist_categories=("Lu", "Ll", "Nd"),
-    )))
-    client_secret = draw(st.text(min_size=20, max_size=100, alphabet=st.characters(
-        whitelist_categories=("Lu", "Ll", "Nd"),
-    )))
+    client_id = draw(
+        st.text(
+            min_size=10,
+            max_size=50,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"),
+            ),
+        )
+    )
+    client_secret = draw(
+        st.text(
+            min_size=20,
+            max_size=100,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"),
+            ),
+        )
+    )
     redirect_uri = f"https://example.com/callback/{draw(st.text(min_size=1, max_size=20, alphabet='abcdefghijklmnopqrstuvwxyz'))}"
-    scopes = tuple(draw(st.lists(
-        st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz:_"),
-        min_size=0,
-        max_size=5,
-    )))
+    scopes = tuple(
+        draw(
+            st.lists(
+                st.text(
+                    min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz:_"
+                ),
+                min_size=0,
+                max_size=5,
+            )
+        )
+    )
 
     defaults = PROVIDER_CONFIGS.get(provider, {})
 
@@ -56,7 +73,9 @@ def oauth_config_strategy(draw: st.DrawFn) -> OAuthConfig:
         client_secret=client_secret,
         redirect_uri=redirect_uri,
         scopes=scopes,
-        authorize_url=defaults.get("authorize_url", "https://auth.example.com/authorize"),
+        authorize_url=defaults.get(
+            "authorize_url", "https://auth.example.com/authorize"
+        ),
         token_url=defaults.get("token_url", "https://auth.example.com/token"),
         userinfo_url=defaults.get("userinfo_url", "https://auth.example.com/userinfo"),
         jwks_url=defaults.get("jwks_url"),
@@ -66,20 +85,34 @@ def oauth_config_strategy(draw: st.DrawFn) -> OAuthConfig:
 @st.composite
 def oauth_state_strategy(draw: st.DrawFn) -> OAuthState:
     """Generate valid OAuth states."""
-    state = draw(st.text(min_size=16, max_size=64, alphabet=st.characters(
-        whitelist_categories=("Lu", "Ll", "Nd"),
-    )))
-    nonce = draw(st.one_of(
-        st.none(),
-        st.text(min_size=16, max_size=64, alphabet=st.characters(
-            whitelist_categories=("Lu", "Ll", "Nd"),
-        )),
-    ))
-    redirect_to = draw(st.one_of(
-        st.none(),
-        st.just("/dashboard"),
-        st.just("/profile"),
-    ))
+    state = draw(
+        st.text(
+            min_size=16,
+            max_size=64,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"),
+            ),
+        )
+    )
+    nonce = draw(
+        st.one_of(
+            st.none(),
+            st.text(
+                min_size=16,
+                max_size=64,
+                alphabet=st.characters(
+                    whitelist_categories=("Lu", "Ll", "Nd"),
+                ),
+            ),
+        )
+    )
+    redirect_to = draw(
+        st.one_of(
+            st.none(),
+            st.just("/dashboard"),
+            st.just("/profile"),
+        )
+    )
 
     return OAuthState(
         state=state,
@@ -92,17 +125,31 @@ def oauth_state_strategy(draw: st.DrawFn) -> OAuthState:
 def oauth_token_response_strategy(draw: st.DrawFn) -> OAuthTokenResponse:
     """Generate valid OAuth token responses."""
     return OAuthTokenResponse(
-        access_token=draw(st.text(min_size=20, max_size=200, alphabet=st.characters(
-            whitelist_categories=("Lu", "Ll", "Nd"),
-        ))),
+        access_token=draw(
+            st.text(
+                min_size=20,
+                max_size=200,
+                alphabet=st.characters(
+                    whitelist_categories=("Lu", "Ll", "Nd"),
+                ),
+            )
+        ),
         token_type=draw(st.sampled_from(["Bearer", "bearer"])),
-        expires_in=draw(st.one_of(st.none(), st.integers(min_value=60, max_value=86400))),
-        refresh_token=draw(st.one_of(
-            st.none(),
-            st.text(min_size=20, max_size=200, alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"),
-            )),
-        )),
+        expires_in=draw(
+            st.one_of(st.none(), st.integers(min_value=60, max_value=86400))
+        ),
+        refresh_token=draw(
+            st.one_of(
+                st.none(),
+                st.text(
+                    min_size=20,
+                    max_size=200,
+                    alphabet=st.characters(
+                        whitelist_categories=("Lu", "Ll", "Nd"),
+                    ),
+                ),
+            )
+        ),
         scope=draw(st.one_of(st.none(), st.just("openid email profile"))),
         id_token=draw(st.one_of(st.none(), st.text(min_size=50, max_size=500))),
     )
@@ -112,9 +159,15 @@ def oauth_token_response_strategy(draw: st.DrawFn) -> OAuthTokenResponse:
 def oauth_user_info_strategy(draw: st.DrawFn) -> OAuthUserInfo:
     """Generate valid OAuth user info."""
     provider = draw(st.sampled_from(list(OAuthProvider)))
-    provider_user_id = draw(st.text(min_size=5, max_size=50, alphabet=st.characters(
-        whitelist_categories=("Lu", "Ll", "Nd"),
-    )))
+    provider_user_id = draw(
+        st.text(
+            min_size=5,
+            max_size=50,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"),
+            ),
+        )
+    )
 
     return OAuthUserInfo(
         provider=provider,
@@ -134,13 +187,20 @@ def oauth_user_info_strategy(draw: st.DrawFn) -> OAuthUserInfo:
 # Property Tests - Authorization URL Generation
 # =============================================================================
 
+
 class TestAuthorizationUrlProperties:
     """Property tests for authorization URL generation."""
 
     @given(
-        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
-        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
-        state=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_id=st.text(
+            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
+        client_secret=st.text(
+            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
+        state=st.text(
+            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
     )
     @settings(max_examples=100)
     def test_google_auth_url_contains_required_params(
@@ -175,10 +235,18 @@ class TestAuthorizationUrlProperties:
         assert params["state"][0] == state
 
     @given(
-        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
-        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
-        state=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
-        nonce=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_id=st.text(
+            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
+        client_secret=st.text(
+            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
+        state=st.text(
+            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
+        nonce=st.text(
+            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
     )
     @settings(max_examples=100)
     def test_auth_url_includes_nonce_when_provided(
@@ -209,9 +277,15 @@ class TestAuthorizationUrlProperties:
         assert params["nonce"][0] == nonce
 
     @given(
-        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
-        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
-        state=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_id=st.text(
+            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
+        client_secret=st.text(
+            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
+        state=st.text(
+            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
     )
     @settings(max_examples=100)
     def test_google_auth_url_uses_correct_endpoint(
@@ -240,9 +314,15 @@ class TestAuthorizationUrlProperties:
         assert "google" in parsed.netloc.lower()
 
     @given(
-        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
-        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
-        state=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_id=st.text(
+            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
+        client_secret=st.text(
+            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
+        state=st.text(
+            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
     )
     @settings(max_examples=100)
     def test_github_auth_url_uses_correct_endpoint(
@@ -275,6 +355,7 @@ class TestAuthorizationUrlProperties:
 # Property Tests - State Management
 # =============================================================================
 
+
 class TestOAuthStateProperties:
     """Property tests for OAuth state management."""
 
@@ -293,13 +374,15 @@ class TestOAuthStateProperties:
             state=oauth_state.state,
             nonce=oauth_state.nonce,
             redirect_to=oauth_state.redirect_to,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
 
         assert not fresh_state.is_expired(max_age_seconds=600)
 
     @given(
-        state_str=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        state_str=st.text(
+            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
         age_seconds=st.integers(min_value=601, max_value=3600),
     )
     @settings(max_examples=100)
@@ -311,7 +394,7 @@ class TestOAuthStateProperties:
 
         **Validates: Requirements 5.1**
         """
-        old_time = datetime.now(timezone.utc) - timedelta(seconds=age_seconds)
+        old_time = datetime.now(UTC) - timedelta(seconds=age_seconds)
         old_state = OAuthState(
             state=state_str,
             created_at=old_time,
@@ -320,11 +403,15 @@ class TestOAuthStateProperties:
         assert old_state.is_expired(max_age_seconds=600)
 
     @given(
-        state_str=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        state_str=st.text(
+            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
         max_age=st.integers(min_value=60, max_value=3600),
     )
     @settings(max_examples=100)
-    def test_state_expiration_respects_max_age(self, state_str: str, max_age: int) -> None:
+    def test_state_expiration_respects_max_age(
+        self, state_str: str, max_age: int
+    ) -> None:
         """**Property 7: State expiration respects configurable max_age**
 
         *For any* max_age value, a state created exactly at max_age boundary
@@ -332,7 +419,7 @@ class TestOAuthStateProperties:
 
         **Validates: Requirements 5.1**
         """
-        boundary_time = datetime.now(timezone.utc) - timedelta(seconds=max_age + 1)
+        boundary_time = datetime.now(UTC) - timedelta(seconds=max_age + 1)
         state = OAuthState(state=state_str, created_at=boundary_time)
 
         assert state.is_expired(max_age_seconds=max_age)
@@ -341,6 +428,7 @@ class TestOAuthStateProperties:
 # =============================================================================
 # Property Tests - State Store
 # =============================================================================
+
 
 class TestInMemoryStateStoreProperties:
     """Property tests for in-memory state store."""
@@ -385,7 +473,11 @@ class TestInMemoryStateStoreProperties:
 
     @given(
         states=st.lists(
-            st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+            st.text(
+                min_size=16,
+                max_size=32,
+                alphabet="abcdefghijklmnopqrstuvwxyz0123456789",
+            ),
             min_size=1,
             max_size=10,
             unique=True,
@@ -440,12 +532,12 @@ class TestInMemoryStateStoreProperties:
             fresh_ids.append(state_id)
             store._states[state_id] = OAuthState(
                 state=state_id,
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
 
         # Add expired states
         expired_ids = []
-        old_time = datetime.now(timezone.utc) - timedelta(seconds=max_age + 100)
+        old_time = datetime.now(UTC) - timedelta(seconds=max_age + 100)
         for i in range(expired_count):
             state_id = f"expired_{i}"
             expired_ids.append(state_id)
@@ -467,6 +559,7 @@ class TestInMemoryStateStoreProperties:
 # =============================================================================
 # Property Tests - User Info Normalization
 # =============================================================================
+
 
 class TestOAuthUserInfoProperties:
     """Property tests for OAuth user info normalization."""
@@ -509,6 +602,7 @@ class TestOAuthUserInfoProperties:
 # =============================================================================
 # Property Tests - Token Response
 # =============================================================================
+
 
 class TestOAuthTokenResponseProperties:
     """Property tests for OAuth token responses."""
@@ -555,12 +649,21 @@ class TestOAuthTokenResponseProperties:
 # Property Tests - Provider Configuration
 # =============================================================================
 
+
 class TestProviderConfigProperties:
     """Property tests for provider configurations."""
 
-    @given(provider=st.sampled_from([OAuthProvider.GOOGLE, OAuthProvider.GITHUB, OAuthProvider.AZURE_AD]))
+    @given(
+        provider=st.sampled_from([
+            OAuthProvider.GOOGLE,
+            OAuthProvider.GITHUB,
+            OAuthProvider.AZURE_AD,
+        ])
+    )
     @settings(max_examples=10)
-    def test_known_providers_have_default_configs(self, provider: OAuthProvider) -> None:
+    def test_known_providers_have_default_configs(
+        self, provider: OAuthProvider
+    ) -> None:
         """**Property 16: Known providers have default configurations**
 
         *For any* known OAuth provider (Google, GitHub, Azure AD),
@@ -578,8 +681,12 @@ class TestProviderConfigProperties:
         assert config["token_url"].startswith("https://")
 
     @given(
-        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
-        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_id=st.text(
+            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
+        client_secret=st.text(
+            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
     )
     @settings(max_examples=50)
     def test_google_provider_default_scopes(
@@ -606,8 +713,12 @@ class TestProviderConfigProperties:
         assert "profile" in provider._config.scopes
 
     @given(
-        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
-        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_id=st.text(
+            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
+        client_secret=st.text(
+            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
     )
     @settings(max_examples=50)
     def test_github_provider_default_scopes(
@@ -665,11 +776,11 @@ class TestOAuthStateExpirationProperties:
         **Feature: code-review-refactoring, Property 12: OAuth State Expiration**
         **Validates: Requirements 12.3**
         """
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
         from infrastructure.security.oauth2 import OAuthState
 
-        old_time = datetime.now(timezone.utc) - timedelta(seconds=max_age + 10)
+        old_time = datetime.now(UTC) - timedelta(seconds=max_age + 10)
         state = OAuthState(state="test-state", created_at=old_time)
 
         assert state.is_expired(max_age_seconds=max_age)
@@ -712,21 +823,17 @@ class TestOAuthBackwardCompatibility:
         **Validates: Requirements 1.2, 1.4**
         """
         from infrastructure.security.oauth2 import (
+            PROVIDER_CONFIGS,
             BaseOAuthProvider,
             GitHubOAuthProvider,
             GoogleOAuthProvider,
             InMemoryStateStore,
             OAuthConfig,
-            OAuthConfigError,
             OAuthError,
             OAuthProvider,
             OAuthState,
-            OAuthStateError,
-            OAuthTokenError,
             OAuthTokenResponse,
             OAuthUserInfo,
-            OAuthUserInfoError,
-            PROVIDER_CONFIGS,
             StateStore,
         )
 

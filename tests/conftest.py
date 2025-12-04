@@ -3,36 +3,38 @@
 **Feature: src-interface-improvements**
 **Validates: Requirements 1.1, 1.2, 1.3, 2.1, 2.5**
 """
+
 import importlib
 import sys
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 from uuid import uuid4
 
 import pytest
 
-_src = Path(__file__).resolve().parent.parent / 'src'
+_src = Path(__file__).resolve().parent.parent / "src"
 sys.path.insert(0, str(_src))
 
 # Register all src submodules as my_app.X
-_submodules = ['core', 'application', 'infrastructure', 'interface', 'domain', 'shared']
+_submodules = ["core", "application", "infrastructure", "interface", "domain", "shared"]
 
 for sub in _submodules:
     try:
         mod = importlib.import_module(sub)
-        sys.modules[f'my_app.{sub}'] = mod
+        sys.modules[f"my_app.{sub}"] = mod
     except ImportError:
         pass
 
 # Create my_app package
 import types
-my_app = types.ModuleType('my_app')
+
+my_app = types.ModuleType("my_app")
 my_app.__path__ = [str(_src)]
-my_app.__file__ = str(_src / '__init__.py')
+my_app.__file__ = str(_src / "__init__.py")
 for sub in _submodules:
-    if f'my_app.{sub}' in sys.modules:
-        setattr(my_app, sub, sys.modules[f'my_app.{sub}'])
-sys.modules['my_app'] = my_app
+    if f"my_app.{sub}" in sys.modules:
+        setattr(my_app, sub, sys.modules[f"my_app.{sub}"])
+sys.modules["my_app"] = my_app
 
 
 # =============================================================================
@@ -45,7 +47,7 @@ sys.modules['my_app'] = my_app
 @pytest.fixture
 def admin_headers() -> dict[str, str]:
     """Headers for authenticated requests with admin role.
-    
+
     **Feature: src-interface-improvements**
     **Validates: Requirements 1.3, 2.5**
     """
@@ -88,10 +90,11 @@ def tenant_headers() -> dict[str, str]:
 @pytest.fixture
 def item_data_factory() -> callable:
     """Factory for creating unique item test data.
-    
+
     **Feature: src-interface-improvements**
     **Validates: Requirements 1.2**
     """
+
     def _create_item_data(
         name: str = "Test Item",
         category: str = "electronics",
@@ -105,16 +108,18 @@ def item_data_factory() -> callable:
             "category": category,
             "tags": ["test", "automated"],
         }
+
     return _create_item_data
 
 
 @pytest.fixture
 def pedido_data_factory() -> callable:
     """Factory for creating unique pedido test data.
-    
+
     **Feature: src-interface-improvements**
     **Validates: Requirements 2.2**
     """
+
     def _create_pedido_data(
         customer_name: str = "Test Customer",
         shipping_address: str = "123 Test St",
@@ -126,4 +131,5 @@ def pedido_data_factory() -> callable:
             "shipping_address": shipping_address,
             "notes": "Automated test order",
         }
+
     return _create_pedido_data

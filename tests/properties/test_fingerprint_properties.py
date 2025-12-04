@@ -6,12 +6,14 @@
 
 import pytest
 
-pytest.skip('Module infrastructure.security.fingerprint not implemented', allow_module_level=True)
+pytest.skip(
+    "Module infrastructure.security.fingerprint not implemented",
+    allow_module_level=True,
+)
 
 from hypothesis import given, settings, strategies as st
 
 from infrastructure.security.fingerprint import (
-    Fingerprint,
     FingerprintComponent,
     FingerprintConfig,
     FingerprintGenerator,

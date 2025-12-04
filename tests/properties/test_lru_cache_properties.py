@@ -5,8 +5,7 @@
 """
 
 import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import assume, given, settings, strategies as st
 
 try:
     from infrastructure.cache.local_cache import LRUCache
@@ -14,7 +13,9 @@ except ImportError:
     pytest.skip("my_app modules not available", allow_module_level=True)
 
 
-key_strategy = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789")
+key_strategy = st.text(
+    min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+)
 value_strategy = st.one_of(st.integers(), st.text(max_size=100), st.booleans())
 
 
@@ -29,31 +30,31 @@ class TestLRUCacheEviction:
     def test_lru_evicts_oldest_when_full(self, max_size: int, keys: list[str]) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 8: LRU Cache Eviction Behavior**
-        
+
         For any LRU cache with max_size N, when N+1 items are inserted,
         the least recently used item SHALL be evicted.
         **Validates: Requirements 7.1**
         """
         assume(len(keys) > max_size)
-        
+
         cache = LRUCache(max_size=max_size)
-        
+
         # Insert max_size items
         for i, key in enumerate(keys[:max_size]):
             cache.set(key, f"value_{i}")
-        
+
         assert cache.size() == max_size
-        
+
         # Insert one more item
         extra_key = keys[max_size]
         cache.set(extra_key, "extra_value")
-        
+
         # Size should still be max_size
         assert cache.size() == max_size
-        
+
         # First key should be evicted (LRU)
         assert cache.get(keys[0]) is None
-        
+
         # New key should exist
         assert cache.get(extra_key) == "extra_value"
 
@@ -68,24 +69,24 @@ class TestLRUCacheEviction:
         **Validates: Requirements 7.1**
         """
         assume(len(keys) > max_size)
-        
+
         cache = LRUCache(max_size=max_size)
-        
+
         # Insert max_size items
         for i, key in enumerate(keys[:max_size]):
             cache.set(key, f"value_{i}")
-        
+
         # Access the first key (making it most recently used)
         first_key = keys[0]
         cache.get(first_key)
-        
+
         # Insert more items to trigger eviction
-        for key in keys[max_size:max_size + max_size]:
+        for key in keys[max_size : max_size + max_size]:
             cache.set(key, "new_value")
-        
+
         # First key should still exist (was accessed, so not LRU)
         # Only if we haven't inserted too many new items
-        if len(keys[max_size:max_size + max_size]) < max_size:
+        if len(keys[max_size : max_size + max_size]) < max_size:
             assert cache.get(first_key) is not None
 
     @settings(max_examples=100)
@@ -99,7 +100,7 @@ class TestLRUCacheEviction:
         **Validates: Requirements 7.1**
         """
         cache = LRUCache(max_size=max_size)
-        
+
         for i in range(num_items):
             cache.set(f"key_{i}", f"value_{i}")
             assert cache.size() <= max_size
@@ -125,6 +126,6 @@ class TestLRUCacheEviction:
         cache = LRUCache(max_size=100)
         cache.set(key, "value")
         assert cache.get(key) is not None
-        
+
         cache.delete(key)
         assert cache.get(key) is None

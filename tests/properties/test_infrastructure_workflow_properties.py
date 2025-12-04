@@ -28,6 +28,7 @@ class TestResilienceModuleExports:
             CircuitBreakerConfig,
             CircuitState,
         )
+
         assert CircuitBreaker is not None
         assert CircuitBreakerConfig is not None
         assert CircuitState is not None
@@ -43,11 +44,12 @@ class TestResilienceModuleExports:
         from infrastructure.resilience.bulkhead import (
             Bulkhead,
             BulkheadConfig,
-            BulkheadRejectedError,
             BulkheadRegistry,
+            BulkheadRejectedError,
             BulkheadState,
             BulkheadStats,
         )
+
         assert Bulkhead is not None
         assert BulkheadConfig is not None
         assert BulkheadRejectedError is not None
@@ -64,6 +66,7 @@ class TestResilienceModuleExports:
         **Validates: Requirements 1.3**
         """
         from infrastructure.resilience.timeout import Timeout, TimeoutConfig
+
         assert Timeout is not None
         assert TimeoutConfig is not None
 
@@ -76,6 +79,7 @@ class TestResilienceModuleExports:
         **Validates: Requirements 1.3**
         """
         from infrastructure.resilience.fallback import Fallback
+
         assert Fallback is not None
 
     def test_retry_pattern_module_exports(self) -> None:
@@ -87,11 +91,12 @@ class TestResilienceModuleExports:
         **Validates: Requirements 1.3**
         """
         from infrastructure.resilience.retry_pattern import (
+            BackoffStrategy,
+            ExponentialBackoff,
             Retry,
             RetryConfig,
-            ExponentialBackoff,
-            BackoffStrategy,
         )
+
         assert Retry is not None
         assert RetryConfig is not None
         assert ExponentialBackoff is not None
@@ -107,7 +112,11 @@ class TestStorageProviderImplementation:
 
     @pytest.mark.asyncio
     @given(
-        key=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))),
+        key=st.text(
+            min_size=1,
+            max_size=50,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
         data=st.binary(min_size=1, max_size=1000),
     )
     @settings(max_examples=100)
@@ -124,13 +133,13 @@ class TestStorageProviderImplementation:
         **Validates: Requirements 1.2**
         """
         from infrastructure.storage import InMemoryStorageProvider
-        
+
         provider = InMemoryStorageProvider()
-        
+
         # Upload
         upload_result = await provider.upload(key, data, "application/octet-stream")
         assert upload_result.is_ok()
-        
+
         # Download
         download_result = await provider.download(key)
         assert download_result.is_ok()
@@ -138,7 +147,11 @@ class TestStorageProviderImplementation:
 
     @pytest.mark.asyncio
     @given(
-        key=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))),
+        key=st.text(
+            min_size=1,
+            max_size=50,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
         data=st.binary(min_size=1, max_size=1000),
     )
     @settings(max_examples=100)
@@ -155,13 +168,13 @@ class TestStorageProviderImplementation:
         **Validates: Requirements 1.2**
         """
         from infrastructure.storage import InMemoryStorageProvider
-        
+
         provider = InMemoryStorageProvider()
-        
+
         # Upload
         await provider.upload(key, data, "application/octet-stream")
         assert await provider.exists(key)
-        
+
         # Delete
         delete_result = await provider.delete(key)
         assert delete_result.is_ok()
@@ -177,7 +190,7 @@ class TestStorageProviderImplementation:
         **Validates: Requirements 1.2**
         """
         from infrastructure.storage import InMemoryStorageProvider
-        
+
         provider = InMemoryStorageProvider()
         result = await provider.download("nonexistent-key")
         assert result.is_err()
@@ -199,12 +212,12 @@ class TestScyllaDBInitialization:
         **Validates: Requirements 1.1**
         """
         from core.config.observability import ObservabilitySettings
-        
+
         settings = ObservabilitySettings()
-        assert hasattr(settings, 'scylladb_enabled')
-        assert hasattr(settings, 'scylladb_hosts')
-        assert hasattr(settings, 'scylladb_port')
-        assert hasattr(settings, 'scylladb_keyspace')
+        assert hasattr(settings, "scylladb_enabled")
+        assert hasattr(settings, "scylladb_hosts")
+        assert hasattr(settings, "scylladb_port")
+        assert hasattr(settings, "scylladb_keyspace")
 
     def test_scylladb_initialization_in_main(self) -> None:
         """
@@ -215,8 +228,9 @@ class TestScyllaDBInitialization:
         **Validates: Requirements 1.1**
         """
         import inspect
+
         import main
-        
+
         source = inspect.getsource(main.lifespan)
         assert "scylladb_enabled" in source
         assert "ScyllaDBClient" in source
@@ -239,13 +253,13 @@ class TestRabbitMQInitialization:
         **Validates: Requirements 3.4**
         """
         from core.config.observability import ObservabilitySettings
-        
+
         settings = ObservabilitySettings()
-        assert hasattr(settings, 'rabbitmq_enabled')
-        assert hasattr(settings, 'rabbitmq_host')
-        assert hasattr(settings, 'rabbitmq_port')
-        assert hasattr(settings, 'rabbitmq_username')
-        assert hasattr(settings, 'rabbitmq_password')
+        assert hasattr(settings, "rabbitmq_enabled")
+        assert hasattr(settings, "rabbitmq_host")
+        assert hasattr(settings, "rabbitmq_port")
+        assert hasattr(settings, "rabbitmq_username")
+        assert hasattr(settings, "rabbitmq_password")
 
     def test_rabbitmq_initialization_in_main(self) -> None:
         """
@@ -256,12 +270,12 @@ class TestRabbitMQInitialization:
         **Validates: Requirements 3.4**
         """
         import inspect
+
         import main
-        
+
         source = inspect.getsource(main.lifespan)
         assert "rabbitmq_enabled" in source
         assert "app.state.rabbitmq" in source
-
 
 
 class TestRBACProtectionOnExamples:
@@ -281,9 +295,10 @@ class TestRBACProtectionOnExamples:
         """
         from interface.v1.examples.router import (
             get_current_user_optional,
-            require_write_permission,
             require_delete_permission,
+            require_write_permission,
         )
+
         assert get_current_user_optional is not None
         assert require_write_permission is not None
         assert require_delete_permission is not None
@@ -297,7 +312,7 @@ class TestRBACProtectionOnExamples:
         **Validates: Requirements 2.1**
         """
         from interface.v1.examples.router import get_current_user_optional
-        
+
         user = get_current_user_optional(
             x_user_id="test-user",
             x_user_roles="admin,user",
@@ -319,10 +334,10 @@ class TestRBACProtectionOnExamples:
             RBACUser,
             get_rbac_service,
         )
-        
+
         rbac = get_rbac_service()
         user = RBACUser(id="test", roles=["viewer"])
-        
+
         assert rbac.check_permission(user, Permission.READ)
         assert not rbac.check_permission(user, Permission.WRITE)
         assert not rbac.check_permission(user, Permission.DELETE)
@@ -340,10 +355,10 @@ class TestRBACProtectionOnExamples:
             RBACUser,
             get_rbac_service,
         )
-        
+
         rbac = get_rbac_service()
         user = RBACUser(id="test", roles=["user"])
-        
+
         assert rbac.check_permission(user, Permission.READ)
         assert rbac.check_permission(user, Permission.WRITE)
         assert not rbac.check_permission(user, Permission.DELETE)
@@ -361,10 +376,10 @@ class TestRBACProtectionOnExamples:
             RBACUser,
             get_rbac_service,
         )
-        
+
         rbac = get_rbac_service()
         user = RBACUser(id="test", roles=["admin"])
-        
+
         assert rbac.check_permission(user, Permission.READ)
         assert rbac.check_permission(user, Permission.WRITE)
         assert rbac.check_permission(user, Permission.DELETE)

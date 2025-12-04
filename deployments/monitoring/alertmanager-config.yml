@@ -1,0 +1,260 @@
+---
+# AlertManager Configuration for Database Query Performance Alerts
+#
+# **Feature: performance-monitoring-2025**
+# **Validates: Alert Routing and Notification**
+#
+# Usage:
+#   alertmanager --config.file=alertmanager-config.yml
+#
+# Reference:
+#   - Alert Rules: prometheus-alerts-database.yml
+#   - Documentation: https://prometheus.io/docs/alerting/latest/configuration/
+
+global:
+  # Global timeout for API calls
+  resolve_timeout: 5m
+
+  # SMTP configuration for email alerts
+  smtp_smarthost: 'smtp.example.com:587'
+  smtp_from: 'alerts@example.com'
+  smtp_auth_username: 'alerts@example.com'
+  smtp_auth_password: '${SMTP_PASSWORD}'  # Set via environment variable
+  smtp_require_tls: true
+
+# Templates for alert messages
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route configuration
+route:
+  # Default receiver for all alerts
+  receiver: 'team-database'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'component', 'severity']
+
+  # How long to wait before sending initial notification
+  group_wait: 30s
+
+  # How long to wait before sending notification about new alerts in same group
+  group_interval: 5m
+
+  # How long to wait before re-sending notification
+  repeat_interval: 4h
+
+  # Routes for specific alert types
+  routes:
+    # CRITICAL alerts - page on-call engineer
+    - match:
+        severity: critical
+      receiver: 'pagerduty'
+      continue: true  # Also send to other receivers
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 1h
+
+    # WARNING alerts - send to team channel
+    - match:
+        severity: warning
+      receiver: 'slack-database'
+      continue: true
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 12h
+
+    # INFO alerts - low priority notifications
+    - match:
+        severity: info
+      receiver: 'slack-database-info'
+      group_wait: 5m
+      group_interval: 30m
+      repeat_interval: 24h
+
+    # Performance-specific routing
+    - match:
+        category: performance
+      receiver: 'team-database-performance'
+      continue: true
+
+    # Observability issues - send to monitoring team
+    - match:
+        category: observability
+      receiver: 'team-monitoring'
+
+# Inhibition rules - suppress certain alerts when others are firing
+inhibit_rules:
+  # If critical slow query alert is firing, suppress warning
+  - source_match:
+      alertname: 'SlowQueryRateCritical'
+    target_match:
+      alertname: 'SlowQueryRateWarning'
+    equal: ['component']
+
+  # If critical latency alert is firing, suppress warning
+  - source_match:
+      alertname: 'QueryLatencyP99Critical'
+    target_match:
+      alertname: 'QueryLatencyP99Warning'
+    equal: ['component']
+
+  # If service is down, suppress query-related alerts
+  - source_match:
+      alertname: 'DatabaseMetricsNotReporting'
+    target_match_re:
+      alertname: '(SlowQuery|QueryLatency|QueryRate).*'
+    equal: ['component']
+
+  # If query rate dropped dramatically, suppress slow query alerts
+  # (no queries = no slow queries)
+  - source_match:
+      alertname: 'QueryRateDrop'
+    target_match_re:
+      alertname: 'SlowQuery.*'
+    equal: ['component']
+
+# Receiver configurations
+receivers:
+  # Default team receiver - email
+  - name: 'team-database'
+    email_configs:
+      - to: 'database-team@example.com'
+        headers:
+          Subject: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>{{ .GroupLabels.alertname }}</h2>
+          <p><strong>Severity:</strong> {{ .GroupLabels.severity }}</p>
+          <p><strong>Component:</strong> {{ .GroupLabels.component }}</p>
+
+          {{ range .Alerts }}
+          <hr>
+          <p><strong>Alert:</strong> {{ .Annotations.summary }}</p>
+          <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+          <p><strong>Dashboard:</strong> <a href="{{ .Annotations.dashboard }}">View Dashboard</a></p>
+          <p><strong>Runbook:</strong> <a href="{{ .Annotations.runbook }}">View Runbook</a></p>
+          <p><strong>Started:</strong> {{ .StartsAt }}</p>
+          {{ end }}
+
+  # PagerDuty for critical alerts
+  - name: 'pagerduty'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'  # Set via environment variable
+        description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        details:
+          severity: '{{ .GroupLabels.severity }}'
+          component: '{{ .GroupLabels.component }}'
+          dashboard: '{{ .CommonAnnotations.dashboard }}'
+          runbook: '{{ .CommonAnnotations.runbook }}'
+        client: 'Prometheus AlertManager'
+        client_url: 'https://prometheus.example.com'
+
+  # Slack for warning alerts
+  - name: 'slack-database'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'  # Set via environment variable
+        channel: '#database-alerts'
+        username: 'AlertManager'
+        icon_emoji: ':warning:'
+        title: '{{ .GroupLabels.alertname }}'
+        text: |
+          *Severity:* {{ .GroupLabels.severity }}
+          *Component:* {{ .GroupLabels.component }}
+
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+
+          *Actions:*
+          • <{{ .Annotations.dashboard }}|View Dashboard>
+          • <{{ .Annotations.runbook }}|View Runbook>
+          {{ end }}
+        color: '{{ if eq .GroupLabels.severity "critical" }}danger{{ else if eq .GroupLabels.severity "warning" }}warning{{ else }}good{{ end }}'
+        send_resolved: true
+
+  # Slack for info alerts
+  - name: 'slack-database-info'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#database-info'
+        username: 'AlertManager'
+        icon_emoji: ':information_source:'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ .CommonAnnotations.summary }}'
+        color: 'good'
+        send_resolved: true
+
+  # Performance-specific team
+  - name: 'team-database-performance'
+    email_configs:
+      - to: 'database-performance@example.com'
+        headers:
+          Subject: '[PERFORMANCE] {{ .GroupLabels.alertname }}'
+
+  # Monitoring team for observability issues
+  - name: 'team-monitoring'
+    email_configs:
+      - to: 'monitoring-team@example.com'
+        headers:
+          Subject: '[MONITORING] {{ .GroupLabels.alertname }}'
+
+---
+# Environment Variables Required:
+#
+# SMTP_PASSWORD         - SMTP authentication password
+# PAGERDUTY_SERVICE_KEY - PagerDuty integration key
+# SLACK_WEBHOOK_URL     - Slack incoming webhook URL
+#
+# Set these via:
+#   export SMTP_PASSWORD="your-password"
+#   export PAGERDUTY_SERVICE_KEY="your-key"
+#   export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+#
+# Or use a secrets management system (Vault, AWS Secrets Manager, etc.)
+
+---
+# Testing AlertManager Configuration:
+#
+# 1. Validate configuration:
+#    amtool check-config alertmanager-config.yml
+#
+# 2. Test routing:
+#    amtool config routes test --config.file=alertmanager-config.yml \
+#      --tree alertname=SlowQueryRateCritical severity=critical
+#
+# 3. Send test alert:
+#    amtool alert add alertname=TestAlert severity=warning \
+#      --alertmanager.url=http://localhost:9093
+
+---
+# Slack Message Template Example:
+#
+# Create file: /etc/alertmanager/templates/slack.tmpl
+#
+# {{ define "slack.title" }}
+# [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.alertname }}
+# {{ end }}
+#
+# {{ define "slack.text" }}
+# {{ range .Alerts }}
+# *Alert:* {{ .Annotations.summary }}
+# *Severity:* {{ .Labels.severity }}
+# *Description:* {{ .Annotations.description }}
+# *Runbook:* {{ .Annotations.runbook }}
+# {{ end }}
+# {{ end }}
+
+---
+# Integration with Prometheus:
+#
+# Add to prometheus.yml:
+#
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#             - 'alertmanager:9093'
+#       timeout: 10s
+#       api_version: v2
+#
+# rule_files:
+#   - 'prometheus-alerts-database.yml'

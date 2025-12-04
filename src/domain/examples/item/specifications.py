@@ -102,7 +102,9 @@ def premium_items(min_price: Decimal = Decimal("100.00")) -> Specification[ItemE
     )
 
 
-def clearance_items(max_price: Decimal = Decimal("20.00")) -> Specification[ItemExample]:
+def clearance_items(
+    max_price: Decimal = Decimal("20.00"),
+) -> Specification[ItemExample]:
     """Create composite spec for clearance items.
 
     Clearance items are:
@@ -161,14 +163,10 @@ def discountable_items(
         >>> discount_campaign_items = repository.find_all(discountable)
         >>> # Apply 15% discount to these items
     """
-    return (
-        ItemExampleAvailableSpec() & ItemExamplePriceRangeSpec(min_price, max_price)
-    )
+    return ItemExampleAvailableSpec() & ItemExamplePriceRangeSpec(min_price, max_price)
 
 
-def featured_items(
-    category: str, tag: str = "featured"
-) -> Specification[ItemExample]:
+def featured_items(category: str, tag: str = "featured") -> Specification[ItemExample]:
     """Create composite spec for featured items in a category.
 
     Featured items are:

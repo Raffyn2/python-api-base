@@ -4,20 +4,21 @@
 **Validates: Requirements 4.3**
 """
 
-import pytest
 from dataclasses import dataclass
 
+import pytest
+
+from infrastructure.rbac import RBAC, RoleRegistry
 from interface.v1.examples.permissions import (
-    ExampleResource,
-    ExampleAction,
-    ITEM_READ,
     ITEM_CREATE,
     ITEM_DELETE,
-    PEDIDO_READ,
+    ITEM_READ,
     PEDIDO_CONFIRM,
+    PEDIDO_READ,
+    ExampleAction,
+    ExampleResource,
     setup_example_roles,
 )
-from infrastructure.rbac import Permission, RoleRegistry, RBAC
 
 
 @dataclass
@@ -30,7 +31,7 @@ class TestUser:
 
 class TestExamplePermissions:
     """Tests for example permissions.
-    
+
     **Feature: infrastructure-modules-integration-analysis**
     **Validates: Requirements 4.3**
     """
@@ -57,7 +58,7 @@ class TestExamplePermissions:
 
 class TestExampleRoles:
     """Tests for example roles.
-    
+
     **Feature: infrastructure-modules-integration-analysis**
     **Validates: Requirements 4.3**
     """
@@ -76,7 +77,7 @@ class TestExampleRoles:
 
     def test_viewer_can_read_items(self, rbac: RBAC) -> None:
         """Test viewer role can read items.
-        
+
         **Validates: Requirements 4.3**
         """
         user = TestUser(id="user-1", roles=["example_viewer"])
@@ -84,7 +85,7 @@ class TestExampleRoles:
 
     def test_viewer_cannot_create_items(self, rbac: RBAC) -> None:
         """Test viewer role cannot create items.
-        
+
         **Validates: Requirements 4.3**
         """
         user = TestUser(id="user-1", roles=["example_viewer"])
@@ -92,7 +93,7 @@ class TestExampleRoles:
 
     def test_viewer_cannot_delete_items(self, rbac: RBAC) -> None:
         """Test viewer role cannot delete items.
-        
+
         **Validates: Requirements 4.3**
         """
         user = TestUser(id="user-1", roles=["example_viewer"])
@@ -100,7 +101,7 @@ class TestExampleRoles:
 
     def test_editor_can_create_items(self, rbac: RBAC) -> None:
         """Test editor role can create items.
-        
+
         **Validates: Requirements 4.3**
         """
         user = TestUser(id="user-1", roles=["example_editor"])
@@ -108,7 +109,7 @@ class TestExampleRoles:
 
     def test_editor_inherits_viewer(self, rbac: RBAC) -> None:
         """Test editor role inherits viewer permissions.
-        
+
         **Validates: Requirements 4.3**
         """
         user = TestUser(id="user-1", roles=["example_editor"])
@@ -116,7 +117,7 @@ class TestExampleRoles:
 
     def test_editor_cannot_delete_items(self, rbac: RBAC) -> None:
         """Test editor role cannot delete items.
-        
+
         **Validates: Requirements 4.3**
         """
         user = TestUser(id="user-1", roles=["example_editor"])
@@ -124,7 +125,7 @@ class TestExampleRoles:
 
     def test_admin_can_delete_items(self, rbac: RBAC) -> None:
         """Test admin role can delete items.
-        
+
         **Validates: Requirements 4.3**
         """
         user = TestUser(id="user-1", roles=["example_admin"])
@@ -132,7 +133,7 @@ class TestExampleRoles:
 
     def test_admin_inherits_all(self, rbac: RBAC) -> None:
         """Test admin role inherits all permissions.
-        
+
         **Validates: Requirements 4.3**
         """
         user = TestUser(id="user-1", roles=["example_admin"])

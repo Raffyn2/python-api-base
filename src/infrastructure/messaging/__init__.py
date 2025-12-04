@@ -2,6 +2,6 @@
 
 from infrastructure.messaging.brokers import KafkaBroker, RabbitMQBroker
 from infrastructure.messaging.consumers import BaseConsumer
-from infrastructure.messaging.dlq import DLQHandler, DLQEntry
+from infrastructure.messaging.dlq import DLQEntry, DLQHandler
 
-__all__ = ["KafkaBroker", "RabbitMQBroker", "BaseConsumer", "DLQHandler", "DLQEntry"]
+__all__ = ["BaseConsumer", "DLQEntry", "DLQHandler", "KafkaBroker", "RabbitMQBroker"]

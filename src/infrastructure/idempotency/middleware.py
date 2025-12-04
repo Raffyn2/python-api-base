@@ -7,15 +7,15 @@ Provides automatic idempotency handling for POST/PATCH requests.
 """
 
 import logging
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from .handler import IdempotencyHandler, IdempotencyConfig, compute_request_hash
-from .errors import IdempotencyKeyConflictError, IdempotencyKeyMissingError
+from .errors import IdempotencyKeyConflictError
+from .handler import IdempotencyConfig, IdempotencyHandler, compute_request_hash
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
             required_endpoints: Endpoints that require idempotency key.
             exclude_paths: Paths to exclude from idempotency handling.
             config: Configuration (if handler not provided).
-            
+
         Note:
             If handler is None, the middleware will try to get it from
             app.state.idempotency_handler on each request.
@@ -66,7 +66,12 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         self._handler = handler
         self._methods = methods or {"POST", "PATCH", "PUT"}
         self._required_endpoints = required_endpoints or set()
-        self._exclude_paths = exclude_paths or {"/health", "/metrics", "/docs", "/redoc"}
+        self._exclude_paths = exclude_paths or {
+            "/health",
+            "/metrics",
+            "/docs",
+            "/redoc",
+        }
         self._config = config or (handler._config if handler else IdempotencyConfig())
 
     def _get_handler(self, request: Request) -> IdempotencyHandler | None:
@@ -88,7 +93,7 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         # Check if idempotency applies
         if not self._should_handle(request):
             return await call_next(request)
-        
+
         # Get handler (may be None if Redis not available)
         handler = self._get_handler(request)
         if handler is None:
@@ -107,7 +112,7 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                         "type": "https://api.example.com/errors/idempotency-key-missing",
                         "title": "Idempotency Key Required",
                         "status": 400,
-                        "detail": f"Idempotency-Key header is required for this endpoint",
+                        "detail": "Idempotency-Key header is required for this endpoint",
                     },
                 )
             # Key not required and not provided - proceed normally

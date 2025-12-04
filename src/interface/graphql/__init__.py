@@ -22,6 +22,7 @@ from interface.graphql.resolvers import (
 try:
     from interface.graphql.router import router as graphql_router
     from interface.graphql.schema import schema as graphql_schema
+
     HAS_STRAWBERRY = True
 except ImportError:
     graphql_router = None

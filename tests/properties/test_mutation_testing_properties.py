@@ -4,33 +4,32 @@
 **Validates: Requirements 8.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
+
 import pytest
-from hypothesis import given, strategies as st, settings
-from datetime import datetime
+from hypothesis import given, settings, strategies as st
 
 from core.shared.mutation_testing import (
-    MutantStatus,
     MutantLocation,
-    Mutant,
-    MutationScore,
-    MutationReport,
-    MutationOperator,
+    MutantStatus,
     MutationConfig,
-    MutationScoreTracker,
+    MutationOperator,
+    MutationReport,
+    MutationScore,
     MutationTestRunner,
-    generate_mutant_id,
     create_mutant,
+    generate_mutant_id,
     get_mutmut_command,
 )
 
-
 # Strategies
 file_paths = st.text(
-    alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="/_-."),
+    alphabet=st.characters(
+        whitelist_categories=("L", "N"), whitelist_characters="/_-."
+    ),
     min_size=1,
     max_size=50,
 ).map(lambda s: s + ".py")
@@ -240,6 +239,7 @@ class TestMutationReport:
         report.add_mutant(mutant)
         json_str = report.to_json()
         import json
+
         parsed = json.loads(json_str)
         assert "total_score" in parsed
         assert "modules" in parsed
@@ -254,9 +254,7 @@ class TestMutationConfig:
         threshold=st.floats(min_value=0.0, max_value=1.0),
     )
     @settings(max_examples=100)
-    def test_valid_config(
-        self, timeout: float, workers: int, threshold: float
-    ) -> None:
+    def test_valid_config(self, timeout: float, workers: int, threshold: float) -> None:
         """Valid config produces no errors."""
         config = MutationConfig(
             timeout_multiplier=timeout,
@@ -378,7 +376,7 @@ class TestMutationTestRunner:
         """Threshold check works correctly."""
         config = MutationConfig(min_score_threshold=threshold)
         runner = MutationTestRunner(config)
-        
+
         # Create report with known score
         report = MutationReport()
         # Add 10 killed, 0 survived = 100% score
@@ -387,7 +385,7 @@ class TestMutationTestRunner:
                 "test.py", i, MutationOperator.AOR, "a", "b", MutantStatus.KILLED
             )
             report.add_mutant(mutant)
-        
+
         # 100% score should always meet threshold
         assert runner.check_threshold(report) is True
 
@@ -415,9 +413,7 @@ class TestMutationScoreInvariants:
 
     @given(killed=positive_ints, survived=positive_ints, skipped=positive_ints)
     @settings(max_examples=100)
-    def test_score_bounds(
-        self, killed: int, survived: int, skipped: int
-    ) -> None:
+    def test_score_bounds(self, killed: int, survived: int, skipped: int) -> None:
         """Score is always between 0 and 1."""
         score = MutationScore(
             module="test",
@@ -436,9 +432,7 @@ class TestMutationScoreInvariants:
         )
     )
     @settings(max_examples=100)
-    def test_report_score_bounds(
-        self, mutants: list[tuple[str, MutantStatus]]
-    ) -> None:
+    def test_report_score_bounds(self, mutants: list[tuple[str, MutantStatus]]) -> None:
         """Report score is always between 0 and 1."""
         report = MutationReport()
         for i, (file, status) in enumerate(mutants):

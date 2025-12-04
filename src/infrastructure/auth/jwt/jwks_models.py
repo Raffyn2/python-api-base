@@ -22,7 +22,7 @@ class JWK:
 
     **Feature: api-best-practices-review-2025**
     **Validates: Requirements 20.2**
-    
+
     Attributes:
         kty: Key type (RSA, EC).
         kid: Key ID.
@@ -81,7 +81,7 @@ class JWKSResponse:
 @dataclass
 class KeyEntry:
     """Internal key entry with metadata for rotation.
-    
+
     Attributes:
         kid: Key ID.
         public_key_pem: Public key in PEM format.
@@ -101,10 +101,10 @@ class KeyEntry:
 
 def base64url_encode(data: bytes) -> str:
     """Encode bytes to base64url without padding.
-    
+
     Args:
         data: Bytes to encode.
-        
+
     Returns:
         Base64url encoded string.
     """
@@ -113,10 +113,10 @@ def base64url_encode(data: bytes) -> str:
 
 def int_to_base64url(num: int) -> str:
     """Convert integer to base64url encoding.
-    
+
     Args:
         num: Integer to encode.
-        
+
     Returns:
         Base64url encoded string.
     """

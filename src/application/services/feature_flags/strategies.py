@@ -10,12 +10,12 @@ extensible and testable.
 import hashlib
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Protocol
 from collections.abc import Callable
+from typing import Any
 
-from .models import EvaluationContext
 from .config import FlagConfig
 from .enums import FlagStatus
+from .models import EvaluationContext
 
 logger = logging.getLogger(__name__)
 
@@ -266,7 +266,7 @@ class GroupTargetingStrategy(EvaluationStrategy):
             if matching:
                 return FlagEvaluationResult.match(
                     value=flag.enabled_value,
-                    reason=f"Group {list(matching)[0]} targeted",
+                    reason=f"Group {next(iter(matching))} targeted",
                 )
         return FlagEvaluationResult.no_match()
 
@@ -408,7 +408,9 @@ class StrategyChain:
             True if strategy was removed.
         """
         original_len = len(self._strategies)
-        self._strategies = [s for s in self._strategies if not isinstance(s, strategy_type)]
+        self._strategies = [
+            s for s in self._strategies if not isinstance(s, strategy_type)
+        ]
         return len(self._strategies) < original_len
 
     def evaluate(
@@ -473,12 +475,12 @@ def create_default_strategy_chain(seed: int = 0) -> StrategyChain:
     """
     return StrategyChain(
         strategies=[
-            DisabledStrategy(),           # Priority 0
-            EnabledStrategy(),            # Priority 1
-            CustomRuleStrategy(),         # Priority 5
-            UserTargetingStrategy(),      # Priority 10
-            GroupTargetingStrategy(),     # Priority 11
+            DisabledStrategy(),  # Priority 0
+            EnabledStrategy(),  # Priority 1
+            CustomRuleStrategy(),  # Priority 5
+            UserTargetingStrategy(),  # Priority 10
+            GroupTargetingStrategy(),  # Priority 11
             PercentageRolloutStrategy(seed),  # Priority 20
-            DefaultValueStrategy(),       # Priority 100 (fallback)
+            DefaultValueStrategy(),  # Priority 100 (fallback)
         ]
     )

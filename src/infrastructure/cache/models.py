@@ -5,7 +5,7 @@
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -40,7 +40,7 @@ class CacheEntry[T]:
         """Check if this entry has expired."""
         if self.expires_at is None:
             return False
-        return datetime.now() > self.expires_at
+        return datetime.now(UTC) > self.expires_at
 
 
 @dataclass(frozen=True, slots=True)

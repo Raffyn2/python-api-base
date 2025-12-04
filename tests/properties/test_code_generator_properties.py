@@ -4,19 +4,16 @@
 **Validates: Requirements 6.1, 6.4**
 """
 
-
 import pytest
-pytest.skip('Module generate_entity not implemented', allow_module_level=True)
 
-import re
-import tempfile
-from pathlib import Path
-
-from hypothesis import given, settings
-from hypothesis import strategies as st
+pytest.skip("Module generate_entity not implemented", allow_module_level=True)
 
 # Import generator functions
 import sys
+from pathlib import Path
+
+from hypothesis import given, settings, strategies as st
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
 
 from generate_entity import (
@@ -31,14 +28,45 @@ from generate_entity import (
     to_snake_case,
 )
 
-
 # Python reserved words to avoid (lowercase for comparison)
 PYTHON_KEYWORDS = {
-    "and", "as", "assert", "async", "await", "break", "class", "continue",
-    "def", "del", "elif", "else", "except", "finally", "for", "from",
-    "global", "if", "import", "in", "is", "lambda", "nonlocal", "not",
-    "or", "pass", "raise", "return", "try", "while", "with", "yield",
-    "true", "false", "none", "self", "cls",
+    "and",
+    "as",
+    "assert",
+    "async",
+    "await",
+    "break",
+    "class",
+    "continue",
+    "def",
+    "del",
+    "elif",
+    "else",
+    "except",
+    "finally",
+    "for",
+    "from",
+    "global",
+    "if",
+    "import",
+    "in",
+    "is",
+    "lambda",
+    "nonlocal",
+    "not",
+    "or",
+    "pass",
+    "raise",
+    "return",
+    "try",
+    "while",
+    "with",
+    "yield",
+    "true",
+    "false",
+    "none",
+    "self",
+    "cls",
 }
 
 # Strategy for valid entity names (ASCII lowercase only, no keywords)
@@ -57,7 +85,9 @@ field_name_strategy = st.text(
 ).filter(lambda x: x.lower() not in PYTHON_KEYWORDS and len(x) >= 3)
 
 field_strategy = st.tuples(field_name_strategy, field_type_strategy)
-fields_strategy = st.lists(field_strategy, min_size=0, max_size=5, unique_by=lambda x: x[0])
+fields_strategy = st.lists(
+    field_strategy, min_size=0, max_size=5, unique_by=lambda x: x[0]
+)
 
 
 class TestCodeGenerationCompleteness:
@@ -77,10 +107,10 @@ class TestCodeGenerationCompleteness:
         valid Python code for the entity file.
         """
         code = generate_entity(name, [])
-        
+
         # Should compile without syntax errors
         compile(code, f"{name}.py", "exec")
-        
+
         # Should contain required classes
         pascal_name = to_pascal_case(name)
         assert f"class {pascal_name}Base" in code
@@ -98,10 +128,10 @@ class TestCodeGenerationCompleteness:
         For any entity with fields, all field definitions SHALL be included.
         """
         code = generate_entity(name, fields)
-        
+
         # Should compile
         compile(code, f"{name}.py", "exec")
-        
+
         # All fields should be present
         for field_name, field_type in fields:
             assert field_name in code
@@ -113,10 +143,10 @@ class TestCodeGenerationCompleteness:
         For any entity name, the mapper generator SHALL produce valid Python.
         """
         code = generate_mapper(name)
-        
+
         # Should compile
         compile(code, f"{name}_mapper.py", "exec")
-        
+
         # Should contain mapper class
         pascal_name = to_pascal_case(name)
         assert f"class {pascal_name}Mapper" in code
@@ -128,10 +158,10 @@ class TestCodeGenerationCompleteness:
         For any entity name, the use case generator SHALL produce valid Python.
         """
         code = generate_use_case(name, with_cache=False)
-        
+
         # Should compile
         compile(code, f"{name}_use_case.py", "exec")
-        
+
         # Should contain use case class
         pascal_name = to_pascal_case(name)
         assert f"class {pascal_name}UseCase" in code
@@ -143,10 +173,10 @@ class TestCodeGenerationCompleteness:
         When --with-cache is specified, use case SHALL include @cached decorator.
         """
         code = generate_use_case(name, with_cache=True)
-        
+
         # Should compile
         compile(code, f"{name}_use_case.py", "exec")
-        
+
         # Should include caching
         assert "from core.shared.caching import cached" in code
         assert "@cached" in code
@@ -158,10 +188,10 @@ class TestCodeGenerationCompleteness:
         For any entity name, the routes generator SHALL produce valid Python.
         """
         code = generate_routes(name)
-        
+
         # Should compile
         compile(code, f"{name}s.py", "exec")
-        
+
         # Should contain router
         assert "GenericCRUDRouter" in code
         assert f"/{name}s" in code
@@ -173,10 +203,10 @@ class TestCodeGenerationCompleteness:
         For any entity name, the events generator SHALL produce valid Python.
         """
         code = generate_events(name)
-        
+
         # Should compile
         compile(code, f"{name}_events.py", "exec")
-        
+
         # Should contain event classes
         pascal_name = to_pascal_case(name)
         assert f"class {pascal_name}Created" in code
@@ -192,10 +222,10 @@ class TestCodeGenerationCompleteness:
         For any entity, the test generator SHALL produce valid Python test code.
         """
         code = generate_property_tests(name, fields)
-        
+
         # Should compile
         compile(code, f"test_{name}_properties.py", "exec")
-        
+
         # Should contain test class
         pascal_name = to_pascal_case(name)
         assert f"class Test{pascal_name}Properties" in code
@@ -217,9 +247,16 @@ class TestCodeGenerationCompleteness:
         routes_code = generate_routes(name)
         tests_code = generate_property_tests(name, [])
         events_code = generate_events(name)
-        
+
         # All should be non-empty and valid Python
-        for code in [entity_code, mapper_code, use_case_code, routes_code, tests_code, events_code]:
+        for code in [
+            entity_code,
+            mapper_code,
+            use_case_code,
+            routes_code,
+            tests_code,
+            events_code,
+        ]:
             assert len(code) > 0
             compile(code, "test.py", "exec")
 
@@ -232,10 +269,10 @@ class TestNameConversions:
     def test_snake_to_pascal_conversion(self, name: str) -> None:
         """Snake case names SHALL convert to PascalCase correctly."""
         pascal = to_pascal_case(name)
-        
+
         # Should start with uppercase
         assert pascal[0].isupper()
-        
+
         # Should not contain underscores
         assert "_" not in pascal
 
@@ -244,7 +281,7 @@ class TestNameConversions:
     def test_pascal_to_snake_conversion(self, name: str) -> None:
         """PascalCase names SHALL convert to snake_case correctly."""
         snake = to_snake_case(name)
-        
+
         # Should be lowercase
         assert snake == snake.lower()
 
@@ -253,7 +290,7 @@ class TestNameConversions:
         original = "my_entity_name"
         pascal = to_pascal_case(original)
         back = to_snake_case(pascal)
-        
+
         assert back == original
 
 
@@ -285,8 +322,8 @@ class TestFieldParsing:
         """Parsing formatted fields SHALL return original fields."""
         if not fields:
             return
-            
+
         fields_str = ",".join(f"{name}:{ftype}" for name, ftype in fields)
         result = parse_fields(fields_str)
-        
+
         assert result == fields

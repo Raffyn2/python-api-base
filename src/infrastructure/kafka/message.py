@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
@@ -75,7 +75,7 @@ class KafkaMessage(BaseModel, Generic[T]):
         """Get message metadata."""
         return self._metadata
 
-    def with_metadata(self, metadata: MessageMetadata) -> "KafkaMessage[T]":
+    def with_metadata(self, metadata: MessageMetadata) -> KafkaMessage[T]:
         """Set metadata and return self.
 
         Args:
@@ -122,7 +122,7 @@ class KafkaMessage(BaseModel, Generic[T]):
         value: bytes,
         key: bytes | None = None,
         headers: list[tuple[str, bytes]] | None = None,
-    ) -> "KafkaMessage[T]":
+    ) -> KafkaMessage[T]:
         """Deserialize message from Kafka.
 
         Args:

@@ -14,10 +14,10 @@ import asyncio
 import json
 import logging
 import random
-from typing import Any, TypeVar
 from collections.abc import Awaitable, Callable
+from typing import Any, TypeVar
 
-from .cache_models import JitterConfig, TTLPattern, CacheStats
+from .cache_models import CacheStats, JitterConfig, TTLPattern
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +40,7 @@ class RedisCacheWithJitter[T]:
         >>> cache = RedisCacheWithJitter[dict](redis_client)
         >>> await cache.set("user:123", user_data, ttl=300)  # 5 min with jitter
         >>> user = await cache.get_or_compute(
-        ...     "user:123",
-        ...     compute=lambda: fetch_user(123),
-        ...     ttl=300
+        ...     "user:123", compute=lambda: fetch_user(123), ttl=300
         ... )
     """
 
@@ -62,7 +60,7 @@ class RedisCacheWithJitter[T]:
             config: Jitter configuration.
             key_prefix: Prefix for all cache keys.
             default_ttl: Default TTL in seconds.
-            
+
         Note:
             Either redis_url or redis_client must be provided.
             If redis_client is provided, it takes precedence.
@@ -82,12 +80,12 @@ class RedisCacheWithJitter[T]:
         # Use external client if provided
         if self._external_client is not None:
             # Check if it's a RedisClient wrapper with a client property
-            if hasattr(self._external_client, '_client'):
+            if hasattr(self._external_client, "_client"):
                 self._connected = True
                 return self._external_client._client
             self._connected = True
             return self._external_client
-            
+
         if self._redis is not None and self._connected:
             return self._redis
 
@@ -133,7 +131,7 @@ class RedisCacheWithJitter[T]:
         Returns:
             TTL with jitter applied.
         """
-        jitter_percent = random.uniform(
+        jitter_percent = random.uniform(  # noqa: S311 - Jitter for cache stampede
             self._config.min_jitter_percent,
             self._config.max_jitter_percent,
         )
@@ -174,6 +172,7 @@ class RedisCacheWithJitter[T]:
     def _key_matches_pattern(self, key: str, pattern: str) -> bool:
         """Check if key matches pattern (simple glob matching)."""
         import fnmatch
+
         return fnmatch.fnmatch(key, pattern)
 
     async def get(self, key: str) -> T | None:
@@ -382,7 +381,7 @@ class RedisCacheWithJitter[T]:
             # Check if within early recompute window
             if remaining_ttl <= self._config.early_recompute_window:
                 # Probabilistic trigger to avoid all callers recomputing
-                return random.random() < self._config.early_recompute_probability
+                return random.random() < self._config.early_recompute_probability  # noqa: S311
 
             return False
         except Exception:
@@ -438,7 +437,7 @@ class RedisCacheWithJitter[T]:
 
     def _handle_task_exception(self, task: asyncio.Task[None]) -> None:
         """Handle exceptions from background tasks.
-        
+
         Prevents 'Task exception was never retrieved' warnings.
         """
         if task.cancelled():

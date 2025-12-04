@@ -4,25 +4,20 @@
 **Validates: Requirements 4.5**
 """
 
-
 import pytest
-pytest.skip('Module interface.api not implemented', allow_module_level=True)
+
+pytest.skip("Module interface.api not implemented", allow_module_level=True)
 
 import base64
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from interface.api.graphql.types import (
-    Connection,
     ConnectionArgs,
-    Edge,
-    PageInfo,
     connection_from_list,
     decode_cursor,
     encode_cursor,
 )
-
 
 # =============================================================================
 # Strategies
@@ -32,34 +27,40 @@ from interface.api.graphql.types import (
 @st.composite
 def cursor_values(draw: st.DrawFn) -> str | int:
     """Generate valid cursor values."""
-    return draw(st.one_of(
-        st.integers(min_value=0, max_value=10000),
-        st.text(
-            alphabet=st.characters(whitelist_categories=("L", "N")),
-            min_size=1,
-            max_size=50,
-        ),
-    ))
+    return draw(
+        st.one_of(
+            st.integers(min_value=0, max_value=10000),
+            st.text(
+                alphabet=st.characters(whitelist_categories=("L", "N")),
+                min_size=1,
+                max_size=50,
+            ),
+        )
+    )
 
 
 @st.composite
 def cursor_prefixes(draw: st.DrawFn) -> str:
     """Generate valid cursor prefixes."""
-    return draw(st.text(
-        alphabet=st.characters(whitelist_categories=("L",)),
-        min_size=1,
-        max_size=20,
-    ))
+    return draw(
+        st.text(
+            alphabet=st.characters(whitelist_categories=("L",)),
+            min_size=1,
+            max_size=20,
+        )
+    )
 
 
 @st.composite
 def item_lists(draw: st.DrawFn) -> list[str]:
     """Generate lists of items (using strings as simple items)."""
-    return draw(st.lists(
-        st.text(min_size=1, max_size=50),
-        min_size=0,
-        max_size=100,
-    ))
+    return draw(
+        st.lists(
+            st.text(min_size=1, max_size=50),
+            min_size=0,
+            max_size=100,
+        )
+    )
 
 
 @st.composite

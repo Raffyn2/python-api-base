@@ -14,9 +14,9 @@ Provides Kubernetes-compatible health probes:
 import asyncio
 import logging
 import time
+from collections.abc import Callable, Coroutine
 from enum import Enum
 from typing import Any
-from collections.abc import Callable, Coroutine
 
 from fastapi import APIRouter, Query, Request, Response
 from pydantic import BaseModel
@@ -131,7 +131,7 @@ async def _run_with_timeout(
             check_fn(*args, **kwargs),
             timeout=timeout,
         )
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return DependencyHealth(
             status=HealthStatus.UNHEALTHY,
             message=f"Health check timed out after {timeout}s",
@@ -287,9 +287,8 @@ async def startup(response: Response) -> dict[str, str | bool]:
     """
     if _startup_complete:
         return {"status": "ok", "startup_complete": True}
-    else:
-        response.status_code = 503
-        return {"status": "starting", "startup_complete": False}
+    response.status_code = 503
+    return {"status": "starting", "startup_complete": False}
 
 
 @router.get(

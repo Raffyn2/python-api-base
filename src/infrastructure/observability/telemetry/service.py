@@ -8,10 +8,11 @@
 import functools
 import logging
 import threading
+from collections.abc import Callable
 from contextvars import ContextVar
 from typing import Any, ParamSpec
-from collections.abc import Callable
-from .noop import _NoOpSpan, _NoOpTracer, _NoOpMeter, _NoOpCounter, _NoOpHistogram
+
+from .noop import _NoOpCounter, _NoOpHistogram, _NoOpMeter, _NoOpSpan, _NoOpTracer
 from .types import Attributes
 
 P = ParamSpec("P")
@@ -28,13 +29,13 @@ _current_span_id: ContextVar[str | None] = ContextVar("span_id", default=None)
 
 __all__ = [
     "TelemetryProvider",
-    "_NoOpSpan",
-    "_NoOpTracer",
-    "_NoOpMeter",
     "_NoOpCounter",
     "_NoOpHistogram",
-    "get_current_trace_id",
+    "_NoOpMeter",
+    "_NoOpSpan",
+    "_NoOpTracer",
     "get_current_span_id",
+    "get_current_trace_id",
     "get_telemetry",
     "init_telemetry",
     "traced",
@@ -287,7 +288,7 @@ def _update_trace_context() -> None:
         if ctx.is_valid:
             _current_trace_id.set(format(ctx.trace_id, "032x"))
             _current_span_id.set(format(ctx.span_id, "016x"))
-    except Exception:
+    except Exception:  # noqa: S110 - Optional telemetry, fail silently
         pass
 
 

@@ -4,8 +4,6 @@
 **Requirement: R3 - Generic Kafka Producer/Consumer**
 """
 
-import pytest
-
 from infrastructure.kafka.config import KafkaConfig
 
 

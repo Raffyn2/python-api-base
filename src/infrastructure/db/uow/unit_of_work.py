@@ -145,7 +145,6 @@ class AsyncResource[T]:
         Args:
             resource: The resource to release.
         """
-        pass
 
     async def __aenter__(self) -> T:
         """Enter the context and acquire the resource."""
@@ -244,7 +243,6 @@ class AsyncTimeout[T]:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit the context (no cleanup needed)."""
-        pass
 
 
 @asynccontextmanager

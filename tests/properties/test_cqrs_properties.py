@@ -9,10 +9,9 @@ from dataclasses import dataclass
 
 import pytest
 
-pytest.skip('Module core.shared.cqrs not implemented', allow_module_level=True)
+pytest.skip("Module core.shared.cqrs not implemented", allow_module_level=True)
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.shared.cqrs import (
     Command,
@@ -125,12 +124,14 @@ class TestCommandBusDispatch:
 
     @settings(max_examples=50)
     @given(
-        name=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))),
+        name=st.text(
+            min_size=1,
+            max_size=50,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
         price=st.floats(min_value=0.01, max_value=10000.0, allow_nan=False),
     )
-    def test_command_bus_passes_command_data(
-        self, name: str, price: float
-    ) -> None:
+    def test_command_bus_passes_command_data(self, name: str, price: float) -> None:
         """
         **Feature: advanced-reusability, Property 12: Command Bus Dispatch**
 
@@ -305,7 +306,13 @@ class TestQueryBusDispatch:
         asyncio.run(run_test())
 
     @settings(max_examples=50)
-    @given(item_id=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))))
+    @given(
+        item_id=st.text(
+            min_size=1,
+            max_size=50,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        )
+    )
     def test_query_bus_passes_query_data(self, item_id: str) -> None:
         """
         **Feature: advanced-reusability, Property 13: Query Bus Dispatch**

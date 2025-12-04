@@ -4,22 +4,28 @@
 **Validates: Requirements 4.1, 4.2, 4.3**
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 import pytest
-from hypothesis import given, settings, HealthCheck
-from hypothesis import strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 
-from application.users.commands.mapper import UserMapper
 from application.users.commands.dtos import UserDTO
+from application.users.commands.mapper import UserMapper
 from domain.users.aggregates import UserAggregate
-
 
 # Strategies for generating test data
 email_strategy = st.from_regex(r"[a-z]{3,10}@[a-z]{3,8}\.(com|org|net)", fullmatch=True)
-username_strategy = st.text(min_size=3, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_")
-display_name_strategy = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-user_id_strategy = st.text(min_size=10, max_size=26, alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ")
+username_strategy = st.text(
+    min_size=3, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_"
+)
+display_name_strategy = st.text(
+    min_size=1,
+    max_size=50,
+    alphabet="abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+)
+user_id_strategy = st.text(
+    min_size=10, max_size=26, alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+)
 datetime_strategy = st.datetimes(
     min_value=datetime(2020, 1, 1),
     max_value=datetime(2030, 12, 31),
@@ -54,7 +60,7 @@ class TestUserMapperRoundTrip:
     ) -> None:
         """
         **Feature: users-module-integration-fix, Property 1: Mapper Round-Trip Preserves Data**
-        
+
         For any UserAggregate, converting to DTO SHALL preserve all
         public fields that are part of the DTO contract.
         **Validates: Requirements 4.1, 4.2, 4.3**
@@ -70,10 +76,10 @@ class TestUserMapperRoundTrip:
             created_at=created_at,
             updated_at=updated_at,
         )
-        
+
         mapper = UserMapper()
         dto = mapper.to_dto(aggregate)
-        
+
         # Verify all fields are preserved
         assert dto.id == user_id
         assert dto.email == email
@@ -108,7 +114,7 @@ class TestUserMapperRoundTrip:
     ) -> None:
         """
         **Feature: users-module-integration-fix, Property 1: Mapper Round-Trip Preserves Data**
-        
+
         For any UserDTO, converting to aggregate SHALL preserve all
         fields that are part of the aggregate.
         **Validates: Requirements 4.1, 4.2, 4.3**
@@ -123,10 +129,10 @@ class TestUserMapperRoundTrip:
             created_at=created_at,
             updated_at=updated_at,
         )
-        
+
         mapper = UserMapper()
         aggregate = mapper.to_entity(dto)
-        
+
         # Verify all fields are preserved (except password_hash)
         assert aggregate.id == user_id
         assert aggregate.email == email
@@ -161,7 +167,7 @@ class TestUserMapperRoundTrip:
     ) -> None:
         """
         **Feature: users-module-integration-fix, Property 1: Mapper Round-Trip Preserves Data**
-        
+
         For any UserAggregate, converting to DTO and back SHALL produce
         an equivalent aggregate (excluding password_hash which is not in DTO).
         **Validates: Requirements 4.1, 4.2, 4.3**
@@ -177,11 +183,11 @@ class TestUserMapperRoundTrip:
             created_at=created_at,
             updated_at=updated_at,
         )
-        
+
         mapper = UserMapper()
         dto = mapper.to_dto(original)
         restored = mapper.to_entity(dto)
-        
+
         # Verify round-trip preserves all DTO-visible fields
         assert restored.id == original.id
         assert restored.email == original.email
@@ -198,7 +204,7 @@ class TestUserMapperRoundTrip:
         **Validates: Requirements 4.1**
         """
         mapper = UserMapper()
-        
+
         with pytest.raises(ValueError, match="cannot be None"):
             mapper.to_dto(None)
 
@@ -208,7 +214,7 @@ class TestUserMapperRoundTrip:
         **Validates: Requirements 4.2**
         """
         mapper = UserMapper()
-        
+
         with pytest.raises(ValueError, match="cannot be None"):
             mapper.to_entity(None)
 
@@ -218,7 +224,7 @@ class TestUserMapperRoundTrip:
         **Validates: Requirements 4.1**
         """
         mapper = UserMapper()
-        
+
         with pytest.raises(TypeError, match="Expected UserAggregate"):
             mapper.to_dto("not an aggregate")
 
@@ -228,6 +234,6 @@ class TestUserMapperRoundTrip:
         **Validates: Requirements 4.2**
         """
         mapper = UserMapper()
-        
+
         with pytest.raises(TypeError, match="Expected UserDTO"):
             mapper.to_entity("not a dto")

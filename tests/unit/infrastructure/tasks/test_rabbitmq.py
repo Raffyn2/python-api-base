@@ -4,21 +4,20 @@
 **Requirement: R3 - Generic Task Queue System**
 """
 
-import pytest
 import asyncio
 from datetime import timedelta
 
+import pytest
 from pydantic import BaseModel
 
 from infrastructure.tasks.rabbitmq import (
     RabbitMQConfig,
     RabbitMQTaskQueue,
     RabbitMQWorker,
-    TaskHandle,
     TaskError,
+    TaskHandle,
 )
 from infrastructure.tasks.task import TaskStatus
-
 
 # =============================================================================
 # Test Models

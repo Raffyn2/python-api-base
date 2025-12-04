@@ -1,0 +1,309 @@
+---
+# Prometheus Alert Rule Tests for Database Query Performance
+#
+# **Feature: performance-monitoring-2025**
+# **Validates: Alert Rules Configuration**
+#
+# Usage:
+#   promtool test rules prometheus-alerts-database-tests.yml
+#
+# Reference:
+#   - Alert Rules: prometheus-alerts-database.yml
+#   - Documentation: https://prometheus.io/docs/prometheus/latest/configuration/unit_testing_rules/
+
+rule_files:
+  - prometheus-alerts-database.yml
+
+evaluation_interval: 30s
+
+tests:
+  # =============================================================================
+  # SLOW QUERY RATE ALERTS TESTS
+  # =============================================================================
+
+  - interval: 1m
+    input_series:
+      # Normal scenario: 2% slow query rate
+      - series: 'db_queries_total{query_type="SELECT"}'
+        values: '0+100x15'  # 100 queries/interval for 15 intervals
+      - series: 'db_slow_queries_total{query_type="SELECT"}'
+        values: '0+2x15'    # 2 slow queries/interval
+
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: SlowQueryRateWarning
+        exp_alerts: []  # No alert - 2% is below 5% threshold
+
+      - eval_time: 5m
+        alertname: SlowQueryRateCritical
+        exp_alerts: []  # No alert - 2% is below 10% threshold
+
+  - interval: 1m
+    input_series:
+      # Warning scenario: 7% slow query rate
+      - series: 'db_queries_total{query_type="SELECT"}'
+        values: '0+100x15'
+      - series: 'db_slow_queries_total{query_type="SELECT"}'
+        values: '0+7x15'
+
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: SlowQueryRateWarning
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              component: database
+              category: performance
+            exp_annotations:
+              summary: "High slow query rate detected"
+
+      - eval_time: 11m
+        alertname: SlowQueryRateCritical
+        exp_alerts: []  # No critical alert - 7% is below 10%
+
+  - interval: 1m
+    input_series:
+      # Critical scenario: 15% slow query rate
+      - series: 'db_queries_total{query_type="SELECT"}'
+        values: '0+100x10'
+      - series: 'db_slow_queries_total{query_type="SELECT"}'
+        values: '0+15x10'
+
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: SlowQueryRateCritical
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              component: database
+              category: performance
+              pager: "true"
+            exp_annotations:
+              summary: "CRITICAL: Very high slow query rate"
+
+  # =============================================================================
+  # QUERY LATENCY ALERTS TESTS
+  # =============================================================================
+
+  - interval: 1m
+    input_series:
+      # Normal latency scenario: p99 = 200ms
+      - series: 'db_query_duration_seconds_bucket{query_type="SELECT",le="0.100"}'
+        values: '0+80x20'
+      - series: 'db_query_duration_seconds_bucket{query_type="SELECT",le="0.250"}'
+        values: '0+95x20'
+      - series: 'db_query_duration_seconds_bucket{query_type="SELECT",le="0.500"}'
+        values: '0+99x20'
+      - series: 'db_query_duration_seconds_bucket{query_type="SELECT",le="+Inf"}'
+        values: '0+100x20'
+
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: QueryLatencyP99Warning
+        exp_alerts: []  # No alert - p99 ~200ms is below 500ms threshold
+
+  - interval: 1m
+    input_series:
+      # Warning latency scenario: p99 = 600ms
+      - series: 'db_query_duration_seconds_bucket{query_type="SELECT",le="0.500"}'
+        values: '0+95x20'
+      - series: 'db_query_duration_seconds_bucket{query_type="SELECT",le="1.000"}'
+        values: '0+99x20'
+      - series: 'db_query_duration_seconds_bucket{query_type="SELECT",le="+Inf"}'
+        values: '0+100x20'
+
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: QueryLatencyP99Warning
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              component: database
+              category: performance
+            exp_annotations:
+              summary: "High query latency p99 detected"
+
+  # =============================================================================
+  # QUERY RATE ANOMALY TESTS
+  # =============================================================================
+
+  - interval: 1m
+    input_series:
+      # Spike scenario: 3x increase in query rate
+      - series: 'db_queries_total{query_type="SELECT"}'
+        values: '0+100x60 0+300x15'  # Normal 100qps for 1h, then spike to 300qps
+
+    alert_rule_test:
+      - eval_time: 70m
+        alertname: QueryRateSpike
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              component: database
+              category: traffic
+            exp_annotations:
+              summary: "Sudden spike in query rate"
+
+  - interval: 1m
+    input_series:
+      # Drop scenario: 60% decrease in query rate
+      - series: 'db_queries_total{query_type="SELECT"}'
+        values: '0+100x60 0+40x15'  # Normal 100qps for 1h, then drop to 40qps
+
+    alert_rule_test:
+      - eval_time: 70m
+        alertname: QueryRateDrop
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              component: database
+              category: traffic
+            exp_annotations:
+              summary: "Sudden drop in query rate"
+
+  # =============================================================================
+  # SLOW QUERY VOLUME TESTS
+  # =============================================================================
+
+  - interval: 1m
+    input_series:
+      # High slow query volume scenario
+      - series: 'db_slow_queries_total{query_type="SELECT"}'
+        values: '0+60x20'  # 1 slow query per second
+
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: HighSlowQueryVolume
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              component: database
+              category: performance
+            exp_annotations:
+              summary: "High volume of slow queries"
+
+  # =============================================================================
+  # QUERY TYPE SPECIFIC TESTS
+  # =============================================================================
+
+  - interval: 1m
+    input_series:
+      # Slow SELECT queries
+      - series: 'db_query_duration_seconds_bucket{query_type="SELECT",le="0.250"}'
+        values: '0+90x15'
+      - series: 'db_query_duration_seconds_bucket{query_type="SELECT",le="0.500"}'
+        values: '0+95x15'
+      - series: 'db_query_duration_seconds_bucket{query_type="SELECT",le="+Inf"}'
+        values: '0+100x15'
+
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: SelectQueryLatencyHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              component: database
+              category: performance
+              query_type: SELECT
+            exp_annotations:
+              summary: "High SELECT query latency detected"
+
+  # =============================================================================
+  # UNUSUAL DISTRIBUTION TESTS
+  # =============================================================================
+
+  - interval: 1m
+    input_series:
+      # Unusual distribution: 85% SELECT queries
+      - series: 'db_queries_total{query_type="SELECT"}'
+        values: '0+85x25'
+      - series: 'db_queries_total{query_type="INSERT"}'
+        values: '0+10x25'
+      - series: 'db_queries_total{query_type="UPDATE"}'
+        values: '0+5x25'
+
+    alert_rule_test:
+      - eval_time: 21m
+        alertname: UnusualQueryDistribution
+        exp_alerts:
+          - exp_labels:
+              severity: info
+              component: database
+              category: pattern
+              query_type: SELECT
+            exp_annotations:
+              summary: "Unusual query distribution - SELECT dominant"
+
+  # =============================================================================
+  # METRICS AVAILABILITY TESTS
+  # =============================================================================
+
+  - interval: 1m
+    input_series: []  # No metrics
+
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: DatabaseMetricsNotReporting
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              component: monitoring
+              category: observability
+            exp_annotations:
+              summary: "Database query metrics not reporting"
+
+  # =============================================================================
+  # EDGE CASES
+  # =============================================================================
+
+  - interval: 1m
+    input_series:
+      # Edge case: Very low query volume (1 qps)
+      - series: 'db_queries_total{query_type="SELECT"}'
+        values: '0+1x20'
+      - series: 'db_slow_queries_total{query_type="SELECT"}'
+        values: '0+0.5x20'  # 50% slow queries but low volume
+
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: SlowQueryRateWarning
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              component: database
+              category: performance
+        # Should still alert even with low volume - percentage matters
+
+  - interval: 1m
+    input_series:
+      # Edge case: Zero queries (system idle or broken)
+      - series: 'db_queries_total{query_type="SELECT"}'
+        values: '0+0x20'
+      - series: 'db_slow_queries_total{query_type="SELECT"}'
+        values: '0+0x20'
+
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: QueryRateDrop
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              component: database
+              category: traffic
+        # Should alert on complete drop to zero
+
+---
+# Test Execution Instructions:
+#
+# 1. Validate alert rules syntax:
+#    promtool check rules prometheus-alerts-database.yml
+#
+# 2. Run unit tests:
+#    promtool test rules prometheus-alerts-database-tests.yml
+#
+# 3. Expected output:
+#    Unit Testing:  prometheus-alerts-database-tests.yml
+#      SUCCESS
+#
+# 4. CI/CD Integration:
+#    Add to your CI pipeline to validate alerts before deployment

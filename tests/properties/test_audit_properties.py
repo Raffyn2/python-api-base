@@ -5,15 +5,17 @@
 """
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
-pytest.skip('Module infrastructure.audit.logger not implemented', allow_module_level=True)
+pytest.skip(
+    "Module infrastructure.audit.logger not implemented", allow_module_level=True
+)
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
+from core.shared.utils.ids import generate_ulid
 from infrastructure.audit.logger import (
     AuditAction,
     AuditEntry,
@@ -21,8 +23,6 @@ from infrastructure.audit.logger import (
     AuditResult,
     InMemoryAuditLogger,
 )
-from core.shared.utils.ids import generate_ulid
-
 
 # Strategy for user IDs
 user_id_strategy = st.text(
@@ -39,7 +39,12 @@ result_strategy = st.sampled_from(list(AuditResult))
 
 # Strategy for resource types
 resource_type_strategy = st.sampled_from([
-    "user", "item", "role", "session", "token", "config",
+    "user",
+    "item",
+    "role",
+    "session",
+    "token",
+    "config",
 ])
 
 # Strategy for IP addresses
@@ -53,7 +58,9 @@ ip_strategy = st.sampled_from([
 
 # Strategy for details dict
 details_strategy = st.dictionaries(
-    keys=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))),
+    keys=st.text(
+        min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))
+    ),
     values=st.one_of(st.text(max_size=100), st.integers(), st.booleans()),
     max_size=5,
 )
@@ -83,6 +90,7 @@ class TestAuditLogCreation:
         For any authentication action (login, logout, token refresh), an audit log
         entry SHALL be created with required fields.
         """
+
         async def run_test():
             logger = InMemoryAuditLogger()
 
@@ -126,6 +134,7 @@ class TestAuditLogCreation:
 
         Audit log SHALL capture IP address, user agent, and details.
         """
+
         async def run_test():
             logger = InMemoryAuditLogger()
 
@@ -206,6 +215,7 @@ class TestAuditLogFiltering:
 
         Filtering by action SHALL return only logs with that action.
         """
+
         async def run_test():
             logger = InMemoryAuditLogger()
 
@@ -242,10 +252,11 @@ class TestAuditLogFiltering:
 
         Filtering by date range SHALL return only logs within that range.
         """
+
         async def run_test():
             logger = InMemoryAuditLogger()
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             # Create entries
             await logger.log_action(
@@ -255,10 +266,12 @@ class TestAuditLogFiltering:
             )
 
             # Filter with date range
-            results = await logger.query(AuditFilters(
-                start_date=now - timedelta(hours=1),
-                end_date=now + timedelta(hours=1),
-            ))
+            results = await logger.query(
+                AuditFilters(
+                    start_date=now - timedelta(hours=1),
+                    end_date=now + timedelta(hours=1),
+                )
+            )
 
             # All results should be within range
             for entry in results:
@@ -274,6 +287,7 @@ class TestAuditLogFiltering:
 
         Pagination SHALL limit and offset results correctly.
         """
+
         async def run_test():
             logger = InMemoryAuditLogger()
 
@@ -327,7 +341,7 @@ class TestAuditLogSerializationRoundTrip:
         For any audit log entry, serializing then deserializing SHALL produce
         an equivalent entry.
         """
-        now = datetime.now(timezone.utc).replace(microsecond=0)
+        now = datetime.now(UTC).replace(microsecond=0)
         original = AuditEntry(
             id=generate_ulid(),
             timestamp=now,
@@ -375,7 +389,7 @@ class TestAuditLogSerializationRoundTrip:
 
         JSON serialization and deserialization SHALL preserve all data.
         """
-        now = datetime.now(timezone.utc).replace(microsecond=0)
+        now = datetime.now(UTC).replace(microsecond=0)
         original = AuditEntry(
             id=generate_ulid(),
             timestamp=now,
@@ -404,7 +418,7 @@ class TestAuditLogSerializationRoundTrip:
         """
         entry = AuditEntry(
             id="test-id",
-            timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
             user_id="user-123",
             action="login",
             resource_type="session",

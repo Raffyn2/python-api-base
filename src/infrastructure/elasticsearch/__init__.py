@@ -8,15 +8,15 @@ Provides type-safe Elasticsearch operations with PEP 695 generics.
 
 from infrastructure.elasticsearch.client import ElasticsearchClient
 from infrastructure.elasticsearch.config import ElasticsearchClientConfig
+from infrastructure.elasticsearch.document import (
+    DocumentMetadata,
+    ElasticsearchDocument,
+)
 from infrastructure.elasticsearch.repository import (
+    AggregationResult,
     ElasticsearchRepository,
     SearchQuery,
     SearchResult,
-    AggregationResult,
-)
-from infrastructure.elasticsearch.document import (
-    ElasticsearchDocument,
-    DocumentMetadata,
 )
 
 __all__ = [

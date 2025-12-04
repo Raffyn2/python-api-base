@@ -4,25 +4,23 @@
 **Validates: Requirements 5.1, 5.2, 5.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from fastapi import APIRouter, FastAPI
+from hypothesis import given, settings, strategies as st
 from starlette.testclient import TestClient
-from fastapi import FastAPI, APIRouter
 
 from interface.api.versioning import (
     APIVersion,
+    DeprecationHeaderMiddleware,
     VersionConfig,
     VersionedRouter,
-    DeprecationHeaderMiddleware,
 )
-
 
 # Strategy for version numbers
 version_strategy = st.sampled_from(list(APIVersion))
@@ -182,7 +180,7 @@ class TestDeprecatedVersionHeaders:
 
         Deprecated version with sunset date SHALL include Sunset header.
         """
-        sunset_date = datetime.now(timezone.utc) + timedelta(days=90)
+        sunset_date = datetime.now(UTC) + timedelta(days=90)
         configs = [
             VersionConfig(
                 version=APIVersion.V1,

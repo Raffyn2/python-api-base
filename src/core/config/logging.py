@@ -138,9 +138,9 @@ def redact_pii(
 
         if isinstance(value, dict):
             return {k: _redact_value(k, v) for k, v in value.items()}
-        elif isinstance(value, list):
+        if isinstance(value, list):
             return [_redact_value(str(i), v) for i, v in enumerate(value)]
-        elif isinstance(value, bytes):
+        if isinstance(value, bytes):
             # Don't log raw bytes, could contain sensitive data
             return "[BINARY DATA]"
 

@@ -7,15 +7,12 @@
 
 import pytest
 
-pytest.skip('Module application.mappers not implemented', allow_module_level=True)
+pytest.skip("Module application.mappers not implemented", allow_module_level=True)
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from application.mappers.item_mapper import ItemMapper
 from domain.entities.item import Item, ItemResponse
-from application.common.mapper import MapperError
-
 
 # Strategy for valid item data
 valid_names = st.text(min_size=1, max_size=255).filter(lambda x: x.strip())

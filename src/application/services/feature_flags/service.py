@@ -7,15 +7,17 @@ Refactored with Strategy pattern for extensible flag evaluation.
 """
 
 import logging
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
+
 from pydantic import BaseModel
+
+from .config import FlagConfig
 from .enums import FlagStatus
 from .models import EvaluationContext
-from .config import FlagConfig
 from .strategies import (
-    StrategyChain,
     CustomRuleStrategy,
+    StrategyChain,
     create_default_strategy_chain,
 )
 
@@ -65,7 +67,9 @@ class FeatureFlagService:
         """
         self._flags: dict[str, FlagConfig] = {}
         self._seed = seed or 0
-        self._strategy_chain = strategy_chain or create_default_strategy_chain(self._seed)
+        self._strategy_chain = strategy_chain or create_default_strategy_chain(
+            self._seed
+        )
 
     def register_flag(self, config: FlagConfig) -> None:
         """Register a feature flag.

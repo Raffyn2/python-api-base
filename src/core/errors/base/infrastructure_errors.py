@@ -52,8 +52,6 @@ class DatabaseError(InfrastructureError):
     query failures, and transaction issues.
     """
 
-    pass
-
 
 class ConnectionPoolError(DatabaseError):
     """Connection pool specific errors.
@@ -61,8 +59,6 @@ class ConnectionPoolError(DatabaseError):
     Raised when connection pool operations fail, such as exhausted
     connections or pool configuration issues.
     """
-
-    pass
 
 
 class TokenStoreError(InfrastructureError):
@@ -72,8 +68,6 @@ class TokenStoreError(InfrastructureError):
     retrieval, and revocation failures.
     """
 
-    pass
-
 
 class TokenValidationError(TokenStoreError):
     """Token validation errors.
@@ -81,8 +75,6 @@ class TokenValidationError(TokenStoreError):
     Raised when token validation fails due to invalid format,
     expiration, or revocation.
     """
-
-    pass
 
 
 class TelemetryError(InfrastructureError):
@@ -92,8 +84,6 @@ class TelemetryError(InfrastructureError):
     metric recording, and exporter issues.
     """
 
-    pass
-
 
 class AuditLogError(InfrastructureError):
     """Audit logging errors.
@@ -102,16 +92,12 @@ class AuditLogError(InfrastructureError):
     and query failures.
     """
 
-    pass
-
 
 class ConfigurationError(InfrastructureError):
     """Configuration errors.
 
     Raised when infrastructure configuration is invalid or missing.
     """
-
-    pass
 
 
 class ExternalServiceError(InfrastructureError):
@@ -150,5 +136,3 @@ class CacheError(InfrastructureError):
     Raised when cache operations fail, including Redis
     connection and operation failures.
     """
-
-    pass

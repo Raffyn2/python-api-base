@@ -9,7 +9,9 @@ from datetime import datetime, timedelta
 
 import pytest
 
-pytest.skip('Module infrastructure.distributed not implemented', allow_module_level=True)
+pytest.skip(
+    "Module infrastructure.distributed not implemented", allow_module_level=True
+)
 
 from hypothesis import given, settings, strategies as st
 
@@ -20,7 +22,6 @@ from infrastructure.distributed.distributed_lock import (
     LockManager,
     LockRenewalError,
 )
-
 
 identifier_strategy = st.text(
     alphabet=st.sampled_from("abcdefghijklmnopqrstuvwxyz_"),
@@ -121,7 +122,6 @@ class TestInMemoryDistributedLock:
         result = await lock.release(fake_info)
         assert result is False
         await lock.release(info)
-
 
     @pytest.mark.asyncio
     async def test_renew_extends_ttl(self):

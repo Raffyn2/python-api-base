@@ -5,7 +5,7 @@
 **Validates: Requirements 10.2**
 """
 
-from enum import IntEnum, Enum
+from enum import Enum, IntEnum
 
 
 class HttpStatus(IntEnum):
@@ -80,8 +80,8 @@ class ErrorMessages:
 
     # Authentication errors
     INVALID_CREDENTIALS = "Invalid credentials provided"
-    TOKEN_EXPIRED = "Authentication token has expired"
-    TOKEN_INVALID = "Invalid authentication token"
+    TOKEN_EXPIRED = "Authentication token has expired"  # noqa: S105 - Error message
+    TOKEN_INVALID = "Invalid authentication token"  # noqa: S105 - Error message
     UNAUTHORIZED = "Authentication required"
 
     # Authorization errors

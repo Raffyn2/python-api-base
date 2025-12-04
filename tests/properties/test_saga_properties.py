@@ -18,7 +18,6 @@ from infrastructure.db.saga import (
     StepStatus,
 )
 
-
 # =============================================================================
 # Test Helpers
 # =============================================================================
@@ -114,11 +113,11 @@ class TestSagaContextProperties:
         ctx.set(key, "value")
         assert ctx.has(key)
 
-    @given(st.dictionaries(st.text(min_size=1, max_size=20), st.integers(), max_size=10))
+    @given(
+        st.dictionaries(st.text(min_size=1, max_size=20), st.integers(), max_size=10)
+    )
     @settings(max_examples=100)
-    def test_context_clear_removes_all_results(
-        self, values: dict[str, int]
-    ) -> None:
+    def test_context_clear_removes_all_results(self, values: dict[str, int]) -> None:
         """Property: clear_results removes all stored values.
 
         **Feature: api-architecture-analysis, Property: Context clear**
@@ -246,9 +245,7 @@ class TestSagaExecutionProperties:
 
     @given(st.integers(min_value=1, max_value=10))
     @settings(max_examples=50)
-    async def test_context_data_available_to_all_steps(
-        self, num_steps: int
-    ) -> None:
+    async def test_context_data_available_to_all_steps(self, num_steps: int) -> None:
         """Property: Context data is available to all steps.
 
         **Feature: api-architecture-analysis, Property: Context sharing**
@@ -276,9 +273,7 @@ class TestSagaExecutionProperties:
 
     @given(st.integers(min_value=1, max_value=5))
     @settings(max_examples=50)
-    async def test_step_results_propagate_through_context(
-        self, num_steps: int
-    ) -> None:
+    async def test_step_results_propagate_through_context(self, num_steps: int) -> None:
         """Property: Step results are available to subsequent steps.
 
         **Feature: api-architecture-analysis, Property: Result propagation**
@@ -310,9 +305,7 @@ class TestSagaBuilderProperties:
 
     @given(st.text(min_size=1, max_size=50))
     @settings(max_examples=100)
-    async def test_builder_creates_saga_with_correct_name(
-        self, name: str
-    ) -> None:
+    async def test_builder_creates_saga_with_correct_name(self, name: str) -> None:
         """Property: Builder creates saga with specified name.
 
         **Feature: api-architecture-analysis, Property: Builder name**
@@ -491,7 +484,6 @@ class TestSagaOrchestratorProperties:
             await orchestrator.execute("unknown")
 
 
-
 # =============================================================================
 # Compensation Property Tests (Post-Refactoring)
 # =============================================================================
@@ -507,9 +499,7 @@ class TestSagaCompensationProperties:
 
     @given(st.integers(min_value=2, max_value=5))
     @settings(max_examples=50)
-    async def test_compensation_executes_in_reverse_order(
-        self, num_steps: int
-    ) -> None:
+    async def test_compensation_executes_in_reverse_order(self, num_steps: int) -> None:
         """Property: Compensation executes in reverse order of completion.
 
         **Feature: code-review-refactoring, Property 3: Saga Compensation Completeness**
@@ -616,9 +606,7 @@ class TestSagaCompensationProperties:
             tracker.compensated.append("success")
 
         saga = (
-            SagaBuilder(saga_name)
-            .step("success", success_action, compensation)
-            .build()
+            SagaBuilder(saga_name).step("success", success_action, compensation).build()
         )
 
         result = await saga.execute()
@@ -646,15 +634,12 @@ class TestSagaBackwardCompatibility:
         **Validates: Requirements 1.2, 1.4**
         """
         from infrastructure.db.saga import (
-            CompensationAction,
             Saga,
             SagaBuilder,
             SagaContext,
             SagaOrchestrator,
-            SagaResult,
             SagaStatus,
             SagaStep,
-            StepAction,
             StepResult,
             StepStatus,
         )

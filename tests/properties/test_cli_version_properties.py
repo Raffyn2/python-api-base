@@ -9,13 +9,11 @@ from unittest.mock import patch
 
 import pytest
 
-pytest.skip('Module cli.constants not implemented', allow_module_level=True)
-
-from hypothesis import given, settings
-from hypothesis import strategies as st
+pytest.skip("Module cli.constants not implemented", allow_module_level=True)
 
 from cli.constants import CLI_DEFAULT_VERSION, CLI_NAME
 from cli.main import get_version
+from hypothesis import given, settings, strategies as st
 
 
 class TestVersionFormatConsistency:
@@ -26,9 +24,7 @@ class TestVersionFormatConsistency:
     """
 
     # Semantic version pattern (simplified)
-    SEMVER_PATTERN = re.compile(
-        r"^\d+\.\d+\.\d+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$"
-    )
+    SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$")
 
     def test_default_version_format(self) -> None:
         """Default version follows expected format."""
@@ -45,9 +41,8 @@ class TestVersionFormatConsistency:
         """get_version returns valid semver format."""
         version = get_version()
         # Should match semver or end with -dev
-        is_valid = (
-            self.SEMVER_PATTERN.match(version) is not None
-            or version.endswith("-dev")
+        is_valid = self.SEMVER_PATTERN.match(version) is not None or version.endswith(
+            "-dev"
         )
         assert is_valid, f"Version '{version}' does not match expected format"
 

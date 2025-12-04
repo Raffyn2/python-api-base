@@ -4,10 +4,8 @@
 **Validates: Requirements 17.4**
 """
 
-import os
 import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 try:
     from core.config.settings import Settings, get_settings
@@ -16,7 +14,9 @@ except ImportError:
 
 
 # Strategy for environment variable values
-env_value_strategy = st.text(min_size=1, max_size=100, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_./:")
+env_value_strategy = st.text(
+    min_size=1, max_size=100, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_./:"
+)
 port_strategy = st.integers(min_value=1, max_value=65535)
 bool_strategy = st.sampled_from(["true", "false", "True", "False", "1", "0"])
 
@@ -25,21 +25,26 @@ class TestEnvironmentVariableCompatibility:
     """Property tests for environment variable backward compatibility."""
 
     @settings(max_examples=20)
-    @given(app_name=st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz_-"))
+    @given(
+        app_name=st.text(
+            min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz_-"
+        )
+    )
     def test_app_name_env_var(self, app_name: str, monkeypatch) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 16: Environment Variable Backward Compatibility**
-        
+
         For any APP_NAME environment variable, the Settings class SHALL accept
         and correctly interpret that variable.
         **Validates: Requirements 17.4**
         """
         monkeypatch.setenv("APP_NAME", app_name)
-        
+
         # Clear cached settings
         import my_app.core.config.settings as settings_module
+
         settings_module._settings = None
-        
+
         try:
             settings = Settings()
             assert settings.app_name == app_name
@@ -55,10 +60,11 @@ class TestEnvironmentVariableCompatibility:
         **Validates: Requirements 17.4**
         """
         monkeypatch.setenv("DEBUG", debug)
-        
+
         import my_app.core.config.settings as settings_module
+
         settings_module._settings = None
-        
+
         try:
             settings = Settings()
             expected = debug.lower() in ("true", "1")
@@ -74,10 +80,11 @@ class TestEnvironmentVariableCompatibility:
         **Validates: Requirements 17.4**
         """
         monkeypatch.setenv("PORT", str(port))
-        
+
         import my_app.core.config.settings as settings_module
+
         settings_module._settings = None
-        
+
         try:
             settings = Settings()
             # Port should be accessible if defined in settings
@@ -93,10 +100,11 @@ class TestEnvironmentVariableCompatibility:
         """
         test_url = "postgresql://user:pass@localhost:5432/testdb"
         monkeypatch.setenv("DATABASE_URL", test_url)
-        
+
         import my_app.core.config.settings as settings_module
+
         settings_module._settings = None
-        
+
         try:
             settings = Settings()
             if hasattr(settings, "database_url"):
@@ -111,10 +119,11 @@ class TestEnvironmentVariableCompatibility:
         """
         test_url = "redis://localhost:6379/0"
         monkeypatch.setenv("REDIS_URL", test_url)
-        
+
         import my_app.core.config.settings as settings_module
+
         settings_module._settings = None
-        
+
         try:
             settings = Settings()
             if hasattr(settings, "redis_url"):
@@ -129,10 +138,11 @@ class TestEnvironmentVariableCompatibility:
         """
         for level in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
             monkeypatch.setenv("LOG_LEVEL", level)
-            
+
             import my_app.core.config.settings as settings_module
+
             settings_module._settings = None
-            
+
             try:
                 settings = Settings()
                 if hasattr(settings, "log_level"):
@@ -148,10 +158,11 @@ class TestEnvironmentVariableCompatibility:
         monkeypatch.setenv("APP_NAME", "test_app")
         monkeypatch.setenv("DEBUG", "true")
         monkeypatch.setenv("LOG_LEVEL", "DEBUG")
-        
+
         import my_app.core.config.settings as settings_module
+
         settings_module._settings = None
-        
+
         try:
             settings = Settings()
             assert settings.app_name == "test_app"

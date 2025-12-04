@@ -6,15 +6,18 @@
 
 import pytest
 
-pytest.skip('Module infrastructure.security.audit_trail not implemented', allow_module_level=True)
+pytest.skip(
+    "Module infrastructure.security.audit_trail not implemented",
+    allow_module_level=True,
+)
 
-from hypothesis import given, strategies as st, settings
-from datetime import datetime
 from dataclasses import dataclass
 
+from hypothesis import given, settings, strategies as st
+
 from infrastructure.security.audit_trail import (
-    AuditService,
     AuditAction,
+    AuditService,
     DiffCalculator,
     InMemoryAuditBackend,
 )
@@ -23,6 +26,7 @@ from infrastructure.security.audit_trail import (
 @dataclass
 class AuditEntity:
     """Entity for audit testing."""
+
     id: str
     name: str
     value: int
@@ -36,14 +40,11 @@ class TestDiffCalculatorProperties:
             st.text(min_size=1, max_size=10),
             st.one_of(st.text(max_size=20), st.integers(), st.booleans()),
             min_size=0,
-            max_size=10
+            max_size=10,
         )
     )
     @settings(max_examples=100)
-    def test_diff_from_none_captures_all_fields(
-        self,
-        after: dict[str, object]
-    ) -> None:
+    def test_diff_from_none_captures_all_fields(self, after: dict[str, object]) -> None:
         """Diff from None captures all fields as changes."""
         changes = DiffCalculator.compute_diff(None, after)
         changed_fields = {c.field_name for c in changes}
@@ -54,14 +55,11 @@ class TestDiffCalculatorProperties:
             st.text(min_size=1, max_size=10),
             st.one_of(st.text(max_size=20), st.integers(), st.booleans()),
             min_size=0,
-            max_size=10
+            max_size=10,
         )
     )
     @settings(max_examples=100)
-    def test_diff_to_none_captures_all_fields(
-        self,
-        before: dict[str, object]
-    ) -> None:
+    def test_diff_to_none_captures_all_fields(self, before: dict[str, object]) -> None:
         """Diff to None captures all fields as changes."""
         changes = DiffCalculator.compute_diff(before, None)
         changed_fields = {c.field_name for c in changes}
@@ -69,10 +67,7 @@ class TestDiffCalculatorProperties:
 
     @given(
         st.dictionaries(
-            st.text(min_size=1, max_size=10),
-            st.integers(),
-            min_size=1,
-            max_size=10
+            st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=10
         )
     )
     @settings(max_examples=100)
@@ -83,23 +78,15 @@ class TestDiffCalculatorProperties:
 
     @given(
         st.dictionaries(
-            st.text(min_size=1, max_size=10),
-            st.integers(),
-            min_size=1,
-            max_size=5
+            st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=5
         ),
         st.dictionaries(
-            st.text(min_size=1, max_size=10),
-            st.integers(),
-            min_size=1,
-            max_size=5
-        )
+            st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=5
+        ),
     )
     @settings(max_examples=50)
     def test_apply_diff_reconstructs_state(
-        self,
-        before: dict[str, int],
-        after: dict[str, int]
+        self, before: dict[str, int], after: dict[str, int]
     ) -> None:
         """Applying diff to before produces after."""
         changes = DiffCalculator.compute_diff(before, after)
@@ -118,16 +105,12 @@ class TestAuditServiceProperties:
         st.text(min_size=1, max_size=20),
         st.text(min_size=1, max_size=20),
         st.text(min_size=1, max_size=50),
-        st.integers()
+        st.integers(),
     )
     @settings(max_examples=50)
     @pytest.mark.asyncio
     async def test_create_logs_all_fields(
-        self,
-        entity_type: str,
-        entity_id: str,
-        name: str,
-        value: int
+        self, entity_type: str, entity_id: str, name: str, value: int
     ) -> None:
         """Create action logs all entity fields."""
         backend = InMemoryAuditBackend()
@@ -140,16 +123,11 @@ class TestAuditServiceProperties:
         assert entry.after_snapshot is not None
         assert entry.before_snapshot is None
 
-    @given(
-        st.text(min_size=1, max_size=20),
-        st.text(min_size=1, max_size=20)
-    )
+    @given(st.text(min_size=1, max_size=20), st.text(min_size=1, max_size=20))
     @settings(max_examples=50)
     @pytest.mark.asyncio
     async def test_history_returns_all_entries(
-        self,
-        entity_type: str,
-        entity_id: str
+        self, entity_type: str, entity_id: str
     ) -> None:
         """History returns all entries for entity."""
         backend = InMemoryAuditBackend()

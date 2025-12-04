@@ -1,13 +1,8 @@
 """multitenancy models."""
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    pass
-
 # Import at runtime to avoid circular dependency
 from contextvars import ContextVar
+from dataclasses import dataclass
 
 # Context variable for current tenant
 _current_tenant: ContextVar[str | None] = ContextVar("current_tenant", default=None)

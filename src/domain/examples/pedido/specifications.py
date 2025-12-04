@@ -133,7 +133,7 @@ def bulk_orders(min_items: int = 10) -> Specification[PedidoExample]:
 
 
 def processable_high_value_orders(
-    min_value: Decimal = Decimal("500.00")
+    min_value: Decimal = Decimal("500.00"),
 ) -> Specification[PedidoExample]:
     """Create composite spec for high-value orders ready for processing.
 
@@ -167,7 +167,9 @@ def multi_tenant_query(
         # For other statuses, create inline spec
         from core.base.patterns.specification import spec as create_spec
 
-        status_spec = create_spec(lambda p: p.status == status, f"status_{status.value}")
+        status_spec = create_spec(
+            lambda p: p.status == status, f"status_{status.value}"
+        )
 
     return PedidoTenantSpec(tenant_id) & status_spec
 
@@ -201,8 +203,7 @@ def customer_high_value_orders(
 
     Example:
         >>> customer_premium = customer_high_value_orders(
-        ...     "customer-456",
-        ...     Decimal("1000.00")
+        ...     "customer-456", Decimal("1000.00")
         ... )
         >>> premium_orders = repository.find_all(customer_premium)
         >>> total_value = sum(order.total.amount for order in premium_orders)

@@ -10,7 +10,6 @@ import sys
 from typing import Annotated, Final
 
 import typer
-
 from scripts.cli.exceptions import CLIError, CLITimeoutError, ValidationError
 from scripts.cli.runner import run_pytest
 from scripts.cli.validators import validate_markers, validate_path
@@ -141,7 +140,9 @@ def coverage() -> None:
         exit_code = run_pytest(args)
 
         if exit_code == 0:
-            typer.secho("✓ Coverage report generated in htmlcov/", fg=typer.colors.GREEN)
+            typer.secho(
+                "✓ Coverage report generated in htmlcov/", fg=typer.colors.GREEN
+            )
         raise typer.Exit(code=exit_code)
     except CLIError as e:
         _handle_cli_error(e)

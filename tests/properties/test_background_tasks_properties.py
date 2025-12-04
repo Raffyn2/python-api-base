@@ -4,14 +4,16 @@
 **Validates: Requirements 6.2, 9.4**
 """
 
-
 import pytest
-pytest.skip('Module infrastructure.tasks.background_tasks not implemented', allow_module_level=True)
+
+pytest.skip(
+    "Module infrastructure.tasks.background_tasks not implemented",
+    allow_module_level=True,
+)
 
 import asyncio
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.tasks.background_tasks import (
     BackgroundTaskQueue,
@@ -22,10 +24,10 @@ from infrastructure.tasks.background_tasks import (
     TaskStatus,
 )
 
-
 # =============================================================================
 # Property Tests - Task Configuration
 # =============================================================================
+
 
 class TestTaskConfigProperties:
     """Property tests for task configuration."""
@@ -82,6 +84,7 @@ class TestTaskConfigProperties:
 # =============================================================================
 # Property Tests - Task Queue
 # =============================================================================
+
 
 class TestBackgroundTaskQueueProperties:
     """Property tests for background task queue."""
@@ -215,6 +218,7 @@ class TestBackgroundTaskQueueProperties:
 # Property Tests - Task Priorities
 # =============================================================================
 
+
 class TestTaskPriorityProperties:
     """Property tests for task priorities."""
 
@@ -262,6 +266,7 @@ class TestTaskPriorityProperties:
 # =============================================================================
 # Property Tests - Task Retries
 # =============================================================================
+
 
 class TestTaskRetryProperties:
     """Property tests for task retries."""
@@ -333,6 +338,7 @@ class TestTaskRetryProperties:
 # Property Tests - Queue Statistics
 # =============================================================================
 
+
 class TestQueueStatsProperties:
     """Property tests for queue statistics."""
 
@@ -400,6 +406,7 @@ class TestQueueStatsProperties:
 # =============================================================================
 # Property Tests - Task Result
 # =============================================================================
+
 
 class TestTaskResultProperties:
     """Property tests for task results."""
@@ -627,7 +634,8 @@ class TestDeprecationWarningProperties:
 
             # Filter for asyncio-related deprecation warnings
             asyncio_warnings = [
-                w for w in caught_warnings
+                w
+                for w in caught_warnings
                 if issubclass(w.category, DeprecationWarning)
                 and "asyncio" in str(w.message).lower()
             ]
@@ -664,7 +672,8 @@ class TestDeprecationWarningProperties:
 
             # Check for get_event_loop deprecation warnings
             event_loop_warnings = [
-                w for w in caught_warnings
+                w
+                for w in caught_warnings
                 if issubclass(w.category, DeprecationWarning)
                 and "get_event_loop" in str(w.message)
             ]

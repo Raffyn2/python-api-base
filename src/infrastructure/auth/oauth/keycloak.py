@@ -14,14 +14,14 @@ import httpx
 from pydantic import BaseModel
 
 from infrastructure.auth.oauth.provider import (
-    OAuthProvider,
-    OAuthConfig,
     AuthResult,
-    TokenPair,
     Credentials,
-    PasswordCredentials,
-    OAuth2Credentials,
     InvalidTokenError,
+    OAuth2Credentials,
+    OAuthConfig,
+    OAuthProvider,
+    PasswordCredentials,
+    TokenPair,
 )
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ class KeycloakProvider[TUser: BaseModel, TClaims: BaseModel](
                 server_url="https://keycloak.example.com",
                 realm="myrealm",
                 client_id="myapp",
-                client_secret="secret",
+                client_secret=os.environ["KEYCLOAK_CLIENT_SECRET"],  # noqa: S105
             ),
             user_type=User,
             claims_type=Claims,
@@ -152,13 +152,12 @@ class KeycloakProvider[TUser: BaseModel, TClaims: BaseModel](
         try:
             if isinstance(credentials, PasswordCredentials):
                 return await self._password_flow(credentials)
-            elif isinstance(credentials, OAuth2Credentials):
+            if isinstance(credentials, OAuth2Credentials):
                 return await self._auth_code_flow(credentials)
-            else:
-                return AuthResult.fail(
-                    "unsupported_grant_type",
-                    "Credentials type not supported",
-                )
+            return AuthResult.fail(
+                "unsupported_grant_type",
+                "Credentials type not supported",
+            )
         except httpx.HTTPError as e:
             logger.error(f"Keycloak auth error: {e}")
             return AuthResult.fail("server_error", str(e))
@@ -246,11 +245,11 @@ class KeycloakProvider[TUser: BaseModel, TClaims: BaseModel](
         )
 
         if response.status_code != 200:
-            raise InvalidTokenError()
+            raise InvalidTokenError
 
         data = response.json()
         if not data.get("active", False):
-            raise InvalidTokenError()
+            raise InvalidTokenError
 
         return await self._get_user_info(token)
 
@@ -284,7 +283,7 @@ class KeycloakProvider[TUser: BaseModel, TClaims: BaseModel](
             decoded = jwt.decode(token, options={"verify_signature": False})
             return self._parse_claims(decoded)
         except jwt.PyJWTError as e:
-            raise InvalidTokenError(f"Failed to decode token: {e}")
+            raise InvalidTokenError(f"Failed to decode token: {e}") from e
 
     async def revoke(self, token: str) -> bool:
         """Revoke token."""

@@ -8,7 +8,6 @@ import logging
 from typing import Annotated, Final
 
 import typer
-
 from scripts.cli.exceptions import CLIError, CLITimeoutError, ValidationError
 from scripts.cli.runner import run_alembic
 from scripts.cli.validators import (

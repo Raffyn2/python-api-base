@@ -4,17 +4,18 @@
 **Validates: Requirements 1.2, 1.3**
 """
 
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock
-from datetime import datetime, UTC
 
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
-from application.users.commands import CreateUserCommand, UpdateUserCommand, DeleteUserCommand
+from application.users.commands import (
+    CreateUserCommand,
+    DeleteUserCommand,
+    UpdateUserCommand,
+)
+from application.users.commands.dtos import CreateUserDTO, UserDTO
 from application.users.queries import GetUserByIdQuery, ListUsersQuery
-from application.users.commands.dtos import CreateUserDTO, UpdateUserDTO, UserDTO
-from core.base.patterns.result import Ok, Err
 
 
 class TestUsersRouterCQRS:
@@ -33,7 +34,7 @@ class TestUsersRouterCQRS:
     def test_create_user_command_structure(self) -> None:
         """
         **Feature: users-module-integration-fix, Property 2: Command Dispatch Preserves User Data**
-        
+
         Test that CreateUserCommand has correct structure.
         **Validates: Requirements 1.2**
         """
@@ -43,7 +44,7 @@ class TestUsersRouterCQRS:
             username="testuser",
             display_name="Test User",
         )
-        
+
         assert command.email == "test@example.com"
         assert command.password == "SecurePass123!"
         assert command.username == "testuser"
@@ -56,7 +57,7 @@ class TestUsersRouterCQRS:
             username="newusername",
             display_name="New Display Name",
         )
-        
+
         assert command.user_id == "user-123"
         assert command.username == "newusername"
         assert command.display_name == "New Display Name"
@@ -67,7 +68,7 @@ class TestUsersRouterCQRS:
             user_id="user-123",
             reason="User requested deletion",
         )
-        
+
         assert command.user_id == "user-123"
         assert command.reason == "User requested deletion"
 
@@ -77,7 +78,7 @@ class TestUsersRouterCQRS:
         **Validates: Requirements 1.3**
         """
         query = GetUserByIdQuery(user_id="user-123")
-        
+
         assert query.user_id == "user-123"
         assert query.get_cache_key() == "user:user-123"
 
@@ -91,7 +92,7 @@ class TestUsersRouterCQRS:
             page_size=50,
             include_inactive=True,
         )
-        
+
         assert query.page == 2
         assert query.page_size == 50
         assert query.include_inactive is True
@@ -100,7 +101,7 @@ class TestUsersRouterCQRS:
     def test_list_users_query_defaults(self) -> None:
         """Test ListUsersQuery default values."""
         query = ListUsersQuery()
-        
+
         assert query.page == 1
         assert query.page_size == 20
         assert query.include_inactive is False
@@ -117,7 +118,7 @@ class TestCreateUserDTO:
             username="testuser",
             display_name="Test User",
         )
-        
+
         assert dto.email == "test@example.com"
         assert dto.password == "SecurePass123!"
 
@@ -127,7 +128,7 @@ class TestCreateUserDTO:
             email="TEST@EXAMPLE.COM",
             password="SecurePass123!",
         )
-        
+
         assert dto.email == "test@example.com"
 
     def test_invalid_email_raises_error(self) -> None:
@@ -163,7 +164,7 @@ class TestUserDTO:
             created_at=now,
             updated_at=now,
         )
-        
+
         assert dto.id == "user-123"
         assert dto.email == "test@example.com"
         assert dto.username == "testuser"

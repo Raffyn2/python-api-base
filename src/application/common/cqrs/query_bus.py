@@ -11,8 +11,8 @@ This module provides:
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 from .exceptions import HandlerNotFoundError
 

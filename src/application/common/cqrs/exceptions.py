@@ -8,8 +8,6 @@
 class CQRSError(Exception):
     """Base exception for CQRS errors."""
 
-    pass
-
 
 class HandlerNotFoundError(CQRSError):
     """Raised when no handler is registered for a command/query type."""
@@ -29,5 +27,3 @@ class HandlerAlreadyRegisteredError(CQRSError):
 
 class MiddlewareError(CQRSError):
     """Raised when middleware execution fails."""
-
-    pass

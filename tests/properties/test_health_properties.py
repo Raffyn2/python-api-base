@@ -4,18 +4,16 @@
 **Validates: Requirements 7.2, 7.3**
 """
 
-
 import pytest
-pytest.skip('Module interface.api not implemented', allow_module_level=True)
+
+pytest.skip("Module interface.api not implemented", allow_module_level=True)
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from interface.api.routes.health import (
-    DEFAULT_HEALTH_CHECK_TIMEOUT,
     DependencyHealth,
     HealthResponse,
     HealthStatus,
@@ -44,7 +42,11 @@ class TestHealthCheckDependencyVerification:
         mock_db = MagicMock()
         mock_session = AsyncMock()
         mock_session.execute = AsyncMock()
-        mock_db.session = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_session), __aexit__=AsyncMock()))
+        mock_db.session = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_session), __aexit__=AsyncMock()
+            )
+        )
         mock_request.app.state.db = mock_db
 
         async def run_test():
@@ -64,11 +66,11 @@ class TestHealthCheckDependencyVerification:
         # Mock request with failing database
         mock_request = MagicMock()
         mock_db = MagicMock()
-        
+
         # Create a context manager that raises on execute
         async def failing_session():
             raise Exception("Connection refused")
-        
+
         mock_db.session = MagicMock(side_effect=Exception("Connection refused"))
         mock_request.app.state.db = mock_db
 
@@ -275,9 +277,14 @@ class TestHealthStatusDetermination:
             expected = HealthStatus.HEALTHY
 
         # Verify the logic
-        if db_status == HealthStatus.UNHEALTHY or redis_status == HealthStatus.UNHEALTHY:
+        if (
+            db_status == HealthStatus.UNHEALTHY
+            or redis_status == HealthStatus.UNHEALTHY
+        ):
             assert expected == HealthStatus.UNHEALTHY
-        elif db_status == HealthStatus.DEGRADED or redis_status == HealthStatus.DEGRADED:
+        elif (
+            db_status == HealthStatus.DEGRADED or redis_status == HealthStatus.DEGRADED
+        ):
             assert expected == HealthStatus.DEGRADED
         else:
             assert expected == HealthStatus.HEALTHY

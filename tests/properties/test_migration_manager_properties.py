@@ -5,31 +5,23 @@
 """
 
 import pytest
-from hypothesis import given, strategies as st, settings
-from datetime import datetime
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.db.migration_manager import (
+    InMemoryMigrationBackend,
     Migration,
     MigrationManager,
-    MigrationStatus,
     SchemaDiff,
-    InMemoryMigrationBackend,
 )
 
 
 @st.composite
 def migration_strategy(draw: st.DrawFn) -> Migration:
     """Generate valid migrations."""
-    version = draw(st.text(
-        alphabet="0123456789",
-        min_size=14,
-        max_size=14
-    ))
-    name = draw(st.text(
-        alphabet="abcdefghijklmnopqrstuvwxyz_",
-        min_size=3,
-        max_size=30
-    ))
+    version = draw(st.text(alphabet="0123456789", min_size=14, max_size=14))
+    name = draw(
+        st.text(alphabet="abcdefghijklmnopqrstuvwxyz_", min_size=3, max_size=30)
+    )
     up_sql = draw(st.text(min_size=1, max_size=100))
     down_sql = draw(st.text(min_size=1, max_size=100))
     return Migration(version=version, name=name, up_sql=up_sql, down_sql=down_sql)
@@ -46,20 +38,26 @@ class TestMigrationProperties:
             version=migration.version,
             name=migration.name,
             up_sql=migration.up_sql,
-            down_sql=migration.down_sql
+            down_sql=migration.down_sql,
         )
         m2 = Migration(
             version=migration.version,
             name=migration.name,
             up_sql=migration.up_sql,
-            down_sql=migration.down_sql
+            down_sql=migration.down_sql,
         )
         assert m1.checksum == m2.checksum
 
-    @given(st.lists(migration_strategy(), min_size=0, max_size=5, unique_by=lambda m: m.version))
+    @given(
+        st.lists(
+            migration_strategy(), min_size=0, max_size=5, unique_by=lambda m: m.version
+        )
+    )
     @settings(max_examples=50)
     @pytest.mark.asyncio
-    async def test_pending_migrations_correct(self, migrations: list[Migration]) -> None:
+    async def test_pending_migrations_correct(
+        self, migrations: list[Migration]
+    ) -> None:
         """Pending migrations excludes applied ones."""
         backend = InMemoryMigrationBackend()
         manager = MigrationManager(backend)
@@ -77,20 +75,18 @@ class TestMigrationProperties:
             st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=10),
             st.lists(st.text(min_size=1, max_size=20), min_size=0, max_size=5),
             min_size=0,
-            max_size=5
+            max_size=5,
         ),
         st.dictionaries(
             st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=10),
             st.lists(st.text(min_size=1, max_size=20), min_size=0, max_size=5),
             min_size=0,
-            max_size=5
-        )
+            max_size=5,
+        ),
     )
     @settings(max_examples=50)
     def test_schema_diff_detects_changes(
-        self,
-        current: dict[str, list[str]],
-        target: dict[str, list[str]]
+        self, current: dict[str, list[str]], target: dict[str, list[str]]
     ) -> None:
         """Schema diff correctly identifies changes."""
         manager = MigrationManager(InMemoryMigrationBackend())

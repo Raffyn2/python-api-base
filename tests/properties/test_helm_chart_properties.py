@@ -8,7 +8,6 @@ import json
 import re
 from pathlib import Path
 
-import pytest
 import yaml
 from hypothesis import given, settings, strategies as st
 
@@ -42,8 +41,8 @@ def load_template(name: str) -> str:
 class TestDependencyVersionConstraint:
     """
     **Feature: helm-chart-code-review, Property 7: Dependency Version Constraint**
-    
-    *For any* dependency declared in Chart.yaml, the version field 
+
+    *For any* dependency declared in Chart.yaml, the version field
     SHALL NOT contain wildcard patterns (x.x.x).
     **Validates: Requirements 6.3**
     """
@@ -52,9 +51,9 @@ class TestDependencyVersionConstraint:
         """Verify no dependency uses wildcard version patterns."""
         chart = load_chart_yaml()
         dependencies = chart.get("dependencies", [])
-        
+
         wildcard_pattern = re.compile(r"\d+\.x\.x|\d+\.\d+\.x|x\.\d+\.\d+")
-        
+
         for dep in dependencies:
             version = dep.get("version", "")
             assert not wildcard_pattern.match(version), (
@@ -66,9 +65,9 @@ class TestDependencyVersionConstraint:
         """Verify all dependencies have semantic version format."""
         chart = load_chart_yaml()
         dependencies = chart.get("dependencies", [])
-        
+
         semver_pattern = re.compile(r"^\d+\.\d+\.\d+$")
-        
+
         for dep in dependencies:
             version = dep.get("version", "")
             assert semver_pattern.match(version), (
@@ -80,8 +79,8 @@ class TestDependencyVersionConstraint:
 class TestYamlRoundTripConsistency:
     """
     **Feature: helm-chart-code-review, Property 8: YAML Round-Trip Consistency**
-    
-    *For any* rendered template output, parsing the YAML and re-serializing 
+
+    *For any* rendered template output, parsing the YAML and re-serializing
     SHALL produce semantically equivalent output.
     **Validates: Requirements 6.5**
     """
@@ -91,14 +90,14 @@ class TestYamlRoundTripConsistency:
     def test_yaml_round_trip(self, filename: str):
         """Verify YAML files can be parsed and re-serialized consistently."""
         file_path = HELM_CHART_PATH / filename
-        
+
         with open(file_path) as f:
             original_content = f.read()
-        
+
         parsed = yaml.safe_load(original_content)
         reserialized = yaml.dump(parsed, default_flow_style=False)
         reparsed = yaml.safe_load(reserialized)
-        
+
         assert parsed == reparsed, (
             f"YAML round-trip failed for {filename}. "
             "Parsed content differs after re-serialization."
@@ -108,8 +107,8 @@ class TestYamlRoundTripConsistency:
 class TestValuesJsonRoundTrip:
     """
     **Feature: helm-chart-code-review, Property 9: Values JSON Round-Trip**
-    
-    *For any* values.yaml configuration, serializing to JSON and deserializing 
+
+    *For any* values.yaml configuration, serializing to JSON and deserializing
     back SHALL produce an equivalent configuration object.
     **Validates: Requirements 6.4**
     """
@@ -117,10 +116,10 @@ class TestValuesJsonRoundTrip:
     def test_values_json_round_trip(self):
         """Verify values.yaml can be converted to JSON and back."""
         values = load_values_yaml()
-        
+
         json_str = json.dumps(values)
         reparsed = json.loads(json_str)
-        
+
         assert values == reparsed, (
             "Values JSON round-trip failed. "
             "Configuration differs after JSON serialization."
@@ -131,19 +130,19 @@ class TestValuesJsonRoundTrip:
     def test_replica_count_json_round_trip(self, replica_count: int):
         """Verify numeric values survive JSON round-trip."""
         values = {"replicaCount": replica_count}
-        
+
         json_str = json.dumps(values)
         reparsed = json.loads(json_str)
-        
+
         assert values["replicaCount"] == reparsed["replicaCount"]
 
 
 class TestResourceGenerationConsistency:
     """
     **Feature: helm-chart-code-review, Property 1: Resource Generation Consistency**
-    
-    *For any* valid values configuration, when the chart is rendered, 
-    all enabled resources SHALL produce valid Kubernetes manifests 
+
+    *For any* valid values configuration, when the chart is rendered,
+    all enabled resources SHALL produce valid Kubernetes manifests
     with consistent naming using the fullname helper.
     **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5, 1.6**
     """
@@ -160,7 +159,7 @@ class TestResourceGenerationConsistency:
             "pdb.yaml",
             "networkpolicy.yaml",
         ]
-        
+
         for template_name in template_files:
             content = load_template(template_name)
             if content:
@@ -185,7 +184,7 @@ class TestResourceGenerationConsistency:
             "secret.yaml",
             "serviceaccount.yaml",
         ]
-        
+
         for template_name in template_files:
             content = load_template(template_name)
             if content:
@@ -197,9 +196,9 @@ class TestResourceGenerationConsistency:
 class TestSecurityConfigurationCompleteness:
     """
     **Feature: helm-chart-code-review, Property 2: Security Configuration Completeness**
-    
-    *For any* rendered Deployment, the container securityContext SHALL contain 
-    runAsNonRoot=true, readOnlyRootFilesystem=true, allowPrivilegeEscalation=false, 
+
+    *For any* rendered Deployment, the container securityContext SHALL contain
+    runAsNonRoot=true, readOnlyRootFilesystem=true, allowPrivilegeEscalation=false,
     AND resources.limits and resources.requests SHALL be defined.
     **Validates: Requirements 2.2, 2.3**
     """
@@ -208,7 +207,7 @@ class TestSecurityConfigurationCompleteness:
         """Verify security context values are properly configured."""
         values = load_values_yaml()
         security_context = values.get("securityContext", {})
-        
+
         assert security_context.get("runAsNonRoot") is True, (
             "securityContext.runAsNonRoot must be true"
         )
@@ -223,18 +222,20 @@ class TestSecurityConfigurationCompleteness:
         """Verify resource limits and requests are defined."""
         values = load_values_yaml()
         resources = values.get("resources", {})
-        
+
         assert "limits" in resources, "resources.limits must be defined"
         assert "requests" in resources, "resources.requests must be defined"
         assert "cpu" in resources["limits"], "resources.limits.cpu must be defined"
-        assert "memory" in resources["limits"], "resources.limits.memory must be defined"
+        assert "memory" in resources["limits"], (
+            "resources.limits.memory must be defined"
+        )
 
 
 class TestLabelConsistency:
     """
     **Feature: helm-chart-code-review, Property 3: Label Consistency**
-    
-    *For any* rendered Kubernetes resource, the metadata.labels SHALL contain 
+
+    *For any* rendered Kubernetes resource, the metadata.labels SHALL contain
     all standard Kubernetes labels.
     **Validates: Requirements 4.1, 4.2**
     """
@@ -242,7 +243,7 @@ class TestLabelConsistency:
     def test_helpers_define_standard_labels(self):
         """Verify _helpers.tpl defines standard Kubernetes labels."""
         helpers_content = load_template("_helpers.tpl")
-        
+
         required_labels = [
             "app.kubernetes.io/name",
             "app.kubernetes.io/instance",
@@ -250,7 +251,7 @@ class TestLabelConsistency:
             "app.kubernetes.io/managed-by",
             "helm.sh/chart",
         ]
-        
+
         for label in required_labels:
             assert label in helpers_content, (
                 f"_helpers.tpl must define standard label: {label}"
@@ -260,8 +261,8 @@ class TestLabelConsistency:
 class TestConditionalResourceCreation:
     """
     **Feature: helm-chart-code-review, Property 4: Conditional Resource Creation**
-    
-    *For any* conditional resource (Ingress, HPA, NetworkPolicy, ServiceMonitor, RBAC), 
+
+    *For any* conditional resource (Ingress, HPA, NetworkPolicy, ServiceMonitor, RBAC),
     the resource SHALL be created if and only if its corresponding enabled flag is true.
     **Validates: Requirements 1.4, 1.5, 2.1, 2.4, 2.5, 5.1**
     """
@@ -294,8 +295,8 @@ class TestConditionalResourceCreation:
 class TestPdbConfigurationValidity:
     """
     **Feature: helm-chart-code-review, Property 5: PDB Configuration Validity**
-    
-    *For any* PodDisruptionBudget configuration, exactly one of minAvailable 
+
+    *For any* PodDisruptionBudget configuration, exactly one of minAvailable
     or maxUnavailable SHALL be set, never both.
     **Validates: Requirements 3.1**
     """
@@ -314,8 +315,8 @@ class TestPdbConfigurationValidity:
 class TestProbeConfigurationPropagation:
     """
     **Feature: helm-chart-code-review, Property 6: Probe Configuration Propagation**
-    
-    *For any* liveness or readiness probe values, the rendered Deployment 
+
+    *For any* liveness or readiness probe values, the rendered Deployment
     SHALL contain probes with the exact configured parameters.
     **Validates: Requirements 3.3**
     """
@@ -323,7 +324,7 @@ class TestProbeConfigurationPropagation:
     def test_deployment_uses_probe_values(self):
         """Verify deployment template uses probe values from values.yaml."""
         content = load_template("deployment.yaml")
-        
+
         assert ".Values.livenessProbe" in content, (
             "deployment.yaml must use .Values.livenessProbe"
         )
@@ -334,10 +335,10 @@ class TestProbeConfigurationPropagation:
     def test_values_define_probes(self):
         """Verify values.yaml defines probe configurations."""
         values = load_values_yaml()
-        
+
         assert "livenessProbe" in values, "values.yaml must define livenessProbe"
         assert "readinessProbe" in values, "values.yaml must define readinessProbe"
-        
+
         liveness = values["livenessProbe"]
         assert "httpGet" in liveness or "exec" in liveness or "tcpSocket" in liveness, (
             "livenessProbe must define a probe type"

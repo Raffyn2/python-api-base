@@ -10,12 +10,12 @@ Combined fault tolerance patterns: retry and circuit breaker.
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from application.common.middleware.retry import RetryMiddleware, RetryConfig
 from application.common.middleware.circuit_breaker import (
-    CircuitBreakerMiddleware,
     CircuitBreakerConfig,
+    CircuitBreakerMiddleware,
     CircuitState,
 )
+from application.common.middleware.retry import RetryConfig, RetryMiddleware
 
 
 class ResilienceMiddleware:

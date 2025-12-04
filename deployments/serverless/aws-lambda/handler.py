@@ -97,15 +97,13 @@ class LambdaAdapter:
         Returns:
             API Gateway response
         """
-        from starlette.testclient import TestClient
 
         # Detect event version
         version = event.get("version", "1.0")
 
         if version == "2.0":
             return await self._handle_v2(event, context)
-        else:
-            return await self._handle_v1(event, context)
+        return await self._handle_v1(event, context)
 
     async def _handle_v1(
         self,

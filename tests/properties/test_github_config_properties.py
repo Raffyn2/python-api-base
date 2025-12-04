@@ -8,19 +8,18 @@ Tests correctness properties defined in design.md
 from __future__ import annotations
 
 import pytest
-pytest.skip('Module scripts.validate_github_config not implemented', allow_module_level=True)
+
+pytest.skip(
+    "Module scripts.validate_github_config not implemented", allow_module_level=True
+)
 
 from pathlib import Path
 from typing import Any
 
 import yaml
-from hypothesis import given, settings
-from hypothesis import strategies as st
-
+from hypothesis import given, settings, strategies as st
 from scripts.validate_github_config import (
-    extract_action_references,
     has_unsafe_branch_reference,
-    parse_yaml_file,
     validate_action_pinning,
     validate_job_timeouts,
     validate_yaml_syntax,

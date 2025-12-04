@@ -4,9 +4,9 @@
 **Validates: Requirements 4.4**
 """
 
-
 import pytest
-pytest.skip('Module core.shared.i18n not implemented', allow_module_level=True)
+
+pytest.skip("Module core.shared.i18n not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -19,7 +19,6 @@ from core.shared.i18n import (
     get_best_locale,
     parse_accept_language,
 )
-
 
 identifier_strategy = st.text(
     alphabet=st.sampled_from("abcdefghijklmnopqrstuvwxyz._"),
@@ -202,23 +201,17 @@ class TestGetBestLocale:
 
     def test_exact_match(self):
         """Should return exact match."""
-        result = get_best_locale(
-            "pt-BR", [Locale.EN_US, Locale.PT_BR], Locale.EN_US
-        )
+        result = get_best_locale("pt-BR", [Locale.EN_US, Locale.PT_BR], Locale.EN_US)
         assert result == Locale.PT_BR
 
     def test_language_match(self):
         """Should match by language if exact not available."""
-        result = get_best_locale(
-            "en-GB", [Locale.EN_US, Locale.PT_BR], Locale.PT_BR
-        )
+        result = get_best_locale("en-GB", [Locale.EN_US, Locale.PT_BR], Locale.PT_BR)
         assert result == Locale.EN_US
 
     def test_default_fallback(self):
         """Should return default if no match."""
-        result = get_best_locale(
-            "ja-JP", [Locale.EN_US, Locale.PT_BR], Locale.EN_US
-        )
+        result = get_best_locale("ja-JP", [Locale.EN_US, Locale.PT_BR], Locale.EN_US)
         assert result == Locale.EN_US
 
 

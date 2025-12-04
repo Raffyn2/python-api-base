@@ -10,17 +10,17 @@ Tests verify that the decorator:
 - Handles cache failures gracefully
 """
 
-import pytest
 from typing import Any
+
+import pytest
 from pydantic import BaseModel
 
-from src.infrastructure.cache.repository import (
-    cached_repository,
-    RepositoryCacheConfig,
-    invalidate_repository_cache,
-)
-from src.infrastructure.cache.providers import InMemoryCacheProvider
 from src.core.base.repository.interface import IRepository
+from src.infrastructure.cache.providers import InMemoryCacheProvider
+from src.infrastructure.cache.repository import (
+    RepositoryCacheConfig,
+    cached_repository,
+)
 
 
 # Test models
@@ -155,7 +155,9 @@ class TestRepositoryCacheDecorator:
     async def test_get_by_id_caches_result(self, cached_repo: UserRepository) -> None:
         """Test that get_by_id caches the result."""
         # Create a user
-        user = await cached_repo.create(CreateUser(email="test@example.com", name="Test"))
+        user = await cached_repo.create(
+            CreateUser(email="test@example.com", name="Test")
+        )
 
         # First call - cache miss
         result1 = await cached_repo.get_by_id(user.id)
@@ -187,7 +189,9 @@ class TestRepositoryCacheDecorator:
     @pytest.mark.asyncio
     async def test_exists_caches_result(self, cached_repo: UserRepository) -> None:
         """Test that exists caches the result."""
-        user = await cached_repo.create(CreateUser(email="test@example.com", name="Test"))
+        user = await cached_repo.create(
+            CreateUser(email="test@example.com", name="Test")
+        )
 
         # First call - cache miss
         exists1 = await cached_repo.exists(user.id)
@@ -203,7 +207,9 @@ class TestRepositoryCacheDecorator:
     async def test_create_invalidates_cache(self, cached_repo: UserRepository) -> None:
         """Test that create invalidates all cached entries."""
         # Create first user and cache get_all
-        user1 = await cached_repo.create(CreateUser(email="user1@example.com", name="User 1"))
+        user1 = await cached_repo.create(
+            CreateUser(email="user1@example.com", name="User 1")
+        )
         users1, _ = await cached_repo.get_all()
         assert len(users1) == 1
         assert cached_repo._call_counts["get_all"] == 1
@@ -213,7 +219,9 @@ class TestRepositoryCacheDecorator:
         assert cached_repo._call_counts["get_all"] == 1  # Still 1
 
         # Create second user - should invalidate cache
-        user2 = await cached_repo.create(CreateUser(email="user2@example.com", name="User 2"))
+        user2 = await cached_repo.create(
+            CreateUser(email="user2@example.com", name="User 2")
+        )
 
         # Call get_all again - should hit database (cache invalidated)
         users3, _ = await cached_repo.get_all()
@@ -223,7 +231,9 @@ class TestRepositoryCacheDecorator:
     @pytest.mark.asyncio
     async def test_update_invalidates_cache(self, cached_repo: UserRepository) -> None:
         """Test that update invalidates cached entries."""
-        user = await cached_repo.create(CreateUser(email="test@example.com", name="Test"))
+        user = await cached_repo.create(
+            CreateUser(email="test@example.com", name="Test")
+        )
 
         # Get user - caches it
         result1 = await cached_repo.get_by_id(user.id)
@@ -242,7 +252,9 @@ class TestRepositoryCacheDecorator:
     @pytest.mark.asyncio
     async def test_delete_invalidates_cache(self, cached_repo: UserRepository) -> None:
         """Test that delete invalidates cached entries."""
-        user = await cached_repo.create(CreateUser(email="test@example.com", name="Test"))
+        user = await cached_repo.create(
+            CreateUser(email="test@example.com", name="Test")
+        )
 
         # Get user - caches it
         result1 = await cached_repo.get_by_id(user.id)
@@ -320,7 +332,9 @@ class TestRepositoryCacheDecorator:
     ) -> None:
         """Test that pattern matching works correctly."""
         # Manually set cache entries
-        await cache_provider.set("repo:User:get_by_id:123", {"id": "123", "name": "Test"})
+        await cache_provider.set(
+            "repo:User:get_by_id:123", {"id": "123", "name": "Test"}
+        )
         await cache_provider.set("repo:User:get_all:_", [{"id": "123"}])
         await cache_provider.set("repo:Order:get_by_id:456", {"id": "456"})
 
@@ -341,7 +355,9 @@ class TestRepositoryCacheDecorator:
         self, cache_provider: InMemoryCacheProvider, cached_repo: UserRepository
     ) -> None:
         """Test manual cache invalidation helper."""
-        user = await cached_repo.create(CreateUser(email="test@example.com", name="Test"))
+        user = await cached_repo.create(
+            CreateUser(email="test@example.com", name="Test")
+        )
 
         # Reset call counts after create (which invalidates cache)
         cached_repo._call_counts["get_by_id"] = 0
@@ -375,7 +391,9 @@ class TestRepositoryCacheDecorator:
 
         # Get again - should hit database (cache invalidated)
         _ = await cached_repo.get_by_id(user.id)
-        print(f"get_by_id count after second call: {cached_repo._call_counts['get_by_id']}")
+        print(
+            f"get_by_id count after second call: {cached_repo._call_counts['get_by_id']}"
+        )
         assert cached_repo._call_counts["get_by_id"] == 2
 
     @pytest.mark.asyncio
@@ -383,7 +401,9 @@ class TestRepositoryCacheDecorator:
         self, cached_repo: UserRepository
     ) -> None:
         """Test that different methods have isolated cache keys."""
-        user = await cached_repo.create(CreateUser(email="test@example.com", name="Test"))
+        user = await cached_repo.create(
+            CreateUser(email="test@example.com", name="Test")
+        )
 
         # Cache get_by_id
         _ = await cached_repo.get_by_id(user.id)
@@ -402,7 +422,9 @@ class TestRepositoryCacheDecorator:
         assert cached_repo._call_counts["get_by_id"] == 1  # Still 1
 
     @pytest.mark.asyncio
-    async def test_create_many_invalidates_cache(self, cached_repo: UserRepository) -> None:
+    async def test_create_many_invalidates_cache(
+        self, cached_repo: UserRepository
+    ) -> None:
         """Test that create_many invalidates cache."""
         # Cache get_all
         users1, _ = await cached_repo.get_all()
@@ -410,12 +432,10 @@ class TestRepositoryCacheDecorator:
         assert cached_repo._call_counts["get_all"] == 1
 
         # Create many users - should invalidate cache
-        await cached_repo.create_many(
-            [
-                CreateUser(email="user1@example.com", name="User 1"),
-                CreateUser(email="user2@example.com", name="User 2"),
-            ]
-        )
+        await cached_repo.create_many([
+            CreateUser(email="user1@example.com", name="User 1"),
+            CreateUser(email="user2@example.com", name="User 2"),
+        ])
 
         # Get all again - should hit database (cache invalidated)
         users2, _ = await cached_repo.get_all()

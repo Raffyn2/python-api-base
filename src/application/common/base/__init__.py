@@ -8,8 +8,6 @@ Provides foundational abstractions:
 """
 
 from application.common.base.dto import ApiResponse, PaginatedResponse, ProblemDetail
-from application.common.base.mapper import IMapper, Mapper
-from application.common.base.use_case import BaseUseCase
 from application.common.base.exceptions import (
     ApplicationError,
     ConflictError,
@@ -18,6 +16,8 @@ from application.common.base.exceptions import (
     UnauthorizedError,
     ValidationError,
 )
+from application.common.base.mapper import IMapper, Mapper
+from application.common.base.use_case import BaseUseCase
 
 __all__ = [
     # DTOs

@@ -5,7 +5,7 @@
 """
 
 import pytest
-from hypothesis import given, settings, strategies as st, HealthCheck
+from hypothesis import HealthCheck, given, settings, strategies as st
 from pydantic import BaseModel
 
 
@@ -23,7 +23,8 @@ class TestKafkaMessageRoundTrip:
             min_size=1,
             max_size=3,
         ),
-        key=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz") | st.none(),
+        key=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz")
+        | st.none(),
         headers=st.dictionaries(
             st.text(min_size=1, max_size=10, alphabet="abcdefghijklmnopqrstuvwxyz"),
             st.text(max_size=20),
@@ -98,15 +99,15 @@ class TestKafkaMessageRoundTrip:
         )
 
         serialized = message.serialize_headers()
-        
+
         # Verify all headers are present
         assert len(serialized) == len(headers)
-        
+
         # Deserialize and verify
         deserialized_headers = {}
         for k, v in serialized:
             deserialized_headers[k] = v.decode("utf-8")
-        
+
         assert deserialized_headers == headers
 
 
@@ -127,9 +128,9 @@ class TestEventPublisher:
         **Validates: Requirements 3.4**
         """
         from infrastructure.kafka.event_publisher import (
-            NoOpEventPublisher,
             DomainEvent,
             ItemCreatedEvent,
+            NoOpEventPublisher,
         )
 
         publisher = NoOpEventPublisher()
@@ -159,9 +160,9 @@ class TestEventPublisher:
         **Validates: Requirements 3.4**
         """
         from infrastructure.kafka.event_publisher import (
-            KafkaEventPublisher,
             DomainEvent,
             ItemDeletedEvent,
+            KafkaEventPublisher,
         )
 
         publisher = KafkaEventPublisher(producer=None)
@@ -179,9 +180,13 @@ class TestEventPublisher:
         await publisher.publish(event, "items-events")
 
     @given(
-        entity_id=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        entity_id=st.text(
+            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
+        ),
         name=st.text(min_size=1, max_size=50),
-        sku=st.text(min_size=1, max_size=20, alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"),
+        sku=st.text(
+            min_size=1, max_size=20, alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        ),
         quantity=st.integers(min_value=0, max_value=10000),
     )
     @settings(max_examples=50)
@@ -226,11 +231,12 @@ class TestCreateEventPublisher:
 
     def test_creates_kafka_publisher_when_producer_available(self) -> None:
         """Factory creates KafkaEventPublisher when producer is provided."""
-        from infrastructure.kafka.event_publisher import (
-            create_event_publisher,
-            KafkaEventPublisher,
-        )
         from unittest.mock import MagicMock
+
+        from infrastructure.kafka.event_publisher import (
+            KafkaEventPublisher,
+            create_event_publisher,
+        )
 
         mock_producer = MagicMock()
         publisher = create_event_publisher(mock_producer)
@@ -240,8 +246,8 @@ class TestCreateEventPublisher:
     def test_creates_noop_publisher_when_producer_none(self) -> None:
         """Factory creates NoOpEventPublisher when producer is None."""
         from infrastructure.kafka.event_publisher import (
-            create_event_publisher,
             NoOpEventPublisher,
+            create_event_publisher,
         )
 
         publisher = create_event_publisher(None)
@@ -254,11 +260,17 @@ class TestKafkaConfig:
 
     @given(
         bootstrap_servers=st.lists(
-            st.text(min_size=5, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789:.-"),
+            st.text(
+                min_size=5,
+                max_size=30,
+                alphabet="abcdefghijklmnopqrstuvwxyz0123456789:.-",
+            ),
             min_size=1,
             max_size=3,
         ),
-        client_id=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-"),
+        client_id=st.text(
+            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-"
+        ),
     )
     @settings(max_examples=30)
     def test_config_to_producer_config_preserves_servers(

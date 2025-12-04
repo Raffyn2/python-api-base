@@ -10,7 +10,7 @@ import base64
 import secrets
 import warnings
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol
 
@@ -217,8 +217,7 @@ class FieldEncryptor:
 
         aesgcm = AESGCM(key)
         try:
-            plaintext = aesgcm.decrypt(encrypted.nonce, ciphertext_with_tag, None)
-            return plaintext
+            return aesgcm.decrypt(encrypted.nonce, ciphertext_with_tag, None)
         except Exception as e:
             if "tag" in str(e).lower() or "authentication" in str(e).lower():
                 raise AuthenticationError(

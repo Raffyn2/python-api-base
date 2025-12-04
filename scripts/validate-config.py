@@ -22,7 +22,6 @@ import sys
 import tomllib
 from configparser import ConfigParser
 from pathlib import Path
-from typing import Any
 
 try:
     import typer
@@ -60,6 +59,7 @@ REQUIRED_ENV_VARS = [
     "SECURITY__SECRET_KEY",
     "REDIS__URL",
 ]
+
 
 # Validation results
 class ValidationResult:
@@ -191,7 +191,7 @@ def fix_env_file(result: ValidationResult) -> bool:
 
             for i, line in enumerate(lines):
                 if line.strip().startswith("SECURITY__SECRET_KEY="):
-                    value = line.split("=", 1)[1].strip().strip('"\'')
+                    value = line.split("=", 1)[1].strip().strip("\"'")
                     weak_values = [
                         "changeme",
                         "CHANGE_ME",
@@ -259,11 +259,13 @@ def validate_env_file(result: ValidationResult) -> None:
         result.add_warning(f".env has empty required variables: {', '.join(empty)}")
 
     if not missing and not empty:
-        console.print(f"  [OK] All {len(REQUIRED_ENV_VARS)} required variables configured")
+        console.print(
+            f"  [OK] All {len(REQUIRED_ENV_VARS)} required variables configured"
+        )
 
     # Security check: SECURITY__SECRET_KEY length
     if "SECURITY__SECRET_KEY" in env_vars:
-        secret_key = env_vars["SECURITY__SECRET_KEY"].strip('"\'')
+        secret_key = env_vars["SECURITY__SECRET_KEY"].strip("\"'")
         if len(secret_key) < 32:
             result.add_error(
                 f"SECURITY__SECRET_KEY too short ({len(secret_key)} chars, min 32)"
@@ -426,9 +428,7 @@ def validate_secrets_baseline(result: ValidationResult) -> None:
         missing = [k for k in required_keys if k not in data]
 
         if missing:
-            result.add_error(
-                f".secrets.baseline missing keys: {', '.join(missing)}"
-            )
+            result.add_error(f".secrets.baseline missing keys: {', '.join(missing)}")
         else:
             console.print("  [OK] All required keys present")
 
@@ -453,9 +453,7 @@ def validate_secrets_baseline(result: ValidationResult) -> None:
         if "results" in data:
             total_secrets = sum(len(secrets) for secrets in data["results"].values())
             if total_secrets > 0:
-                result.add_info(
-                    f"{total_secrets} known false positives in baseline"
-                )
+                result.add_info(f"{total_secrets} known false positives in baseline")
 
     except json.JSONDecodeError as e:
         result.add_error(f".secrets.baseline syntax error: {e}")
@@ -598,7 +596,9 @@ def validate_makefile(result: ValidationResult) -> None:
 
 def validate_env_vars_documentation(result: ValidationResult) -> None:
     """Validate environment variables documentation is complete."""
-    console.print("\n[bold blue] Validating Environment Variables Documentation[/bold blue]")
+    console.print(
+        "\n[bold blue] Validating Environment Variables Documentation[/bold blue]"
+    )
 
     docs_path = PROJECT_ROOT / "docs" / "environment-variables.md"
     if not docs_path.exists():
@@ -763,7 +763,12 @@ def validate_dependencies(result: ValidationResult) -> None:
 
         for dep in deps:
             # Check if dependency has version constraint
-            if ">=" not in dep and "==" not in dep and "~=" not in dep and "<" not in dep:
+            if (
+                ">=" not in dep
+                and "==" not in dep
+                and "~=" not in dep
+                and "<" not in dep
+            ):
                 # Extract package name
                 pkg_name = dep.split("[")[0].strip()
                 unpinned.append(pkg_name)
@@ -774,7 +779,9 @@ def validate_dependencies(result: ValidationResult) -> None:
                 + (f" and {len(unpinned) - 5} more" if len(unpinned) > 5 else "")
             )
         else:
-            console.print(f"  [OK] All {len(deps)} dependencies have version constraints")
+            console.print(
+                f"  [OK] All {len(deps)} dependencies have version constraints"
+            )
 
     except Exception as e:
         result.add_warning(f"Could not validate dependencies: {e}")
@@ -790,7 +797,9 @@ def validate_github_workflows(result: ValidationResult) -> None:
         return
 
     result.validations_run += 1
-    workflow_files = list(workflows_dir.glob("*.yml")) + list(workflows_dir.glob("*.yaml"))
+    workflow_files = list(workflows_dir.glob("*.yml")) + list(
+        workflows_dir.glob("*.yaml")
+    )
 
     if not workflow_files:
         result.add_warning("No workflow files found in .github/workflows")
@@ -873,7 +882,9 @@ def print_summary(result: ValidationResult, strict: bool) -> None:
     if result.has_errors():
         console.print("[bold red][FAIL] Validation FAILED[/bold red]")
     elif strict and result.has_warnings():
-        console.print("[bold yellow][WARN]  Validation FAILED (strict mode)[/bold yellow]")
+        console.print(
+            "[bold yellow][WARN]  Validation FAILED (strict mode)[/bold yellow]"
+        )
     else:
         console.print("[bold green][OK] Validation PASSED[/bold green]")
     console.print("=" * 70 + "\n")
@@ -927,9 +938,7 @@ def main(
     print_summary(result, strict)
 
     # Exit with appropriate code
-    if result.has_errors():
-        sys.exit(1)
-    elif strict and result.has_warnings():
+    if result.has_errors() or (strict and result.has_warnings()):
         sys.exit(1)
     else:
         sys.exit(0)

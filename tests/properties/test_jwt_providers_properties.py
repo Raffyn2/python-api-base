@@ -5,11 +5,10 @@
 **Validates: Requirements 1.2, 1.3**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
-from datetime import timedelta
 
 import pytest
 from cryptography.hazmat.primitives import serialization
@@ -37,10 +36,14 @@ def generate_rsa_key_pair() -> tuple[str, str]:
         encryption_algorithm=serialization.NoEncryption(),
     ).decode("utf-8")
 
-    public_pem = private_key.public_key().public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
-    ).decode("utf-8")
+    public_pem = (
+        private_key.public_key()
+        .public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        .decode("utf-8")
+    )
 
     return private_pem, public_pem
 
@@ -54,10 +57,14 @@ def generate_ec_key_pair() -> tuple[str, str]:
         encryption_algorithm=serialization.NoEncryption(),
     ).decode("utf-8")
 
-    public_pem = private_key.public_key().public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
-    ).decode("utf-8")
+    public_pem = (
+        private_key.public_key()
+        .public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        .decode("utf-8")
+    )
 
     return private_pem, public_pem
 
@@ -69,7 +76,9 @@ EC_PRIVATE_KEY, EC_PUBLIC_KEY = generate_ec_key_pair()
 
 # Strategy for valid JWT payload claims
 jwt_payload_strategy = st.fixed_dictionaries({
-    "sub": st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))),
+    "sub": st.text(
+        min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))
+    ),
     "jti": st.uuids().map(str),
 }).filter(lambda x: len(x["sub"]) > 0)
 

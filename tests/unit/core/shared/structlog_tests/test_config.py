@@ -4,13 +4,10 @@
 **Requirement: R1.1 - Structlog Configuration**
 """
 
-import pytest
-import structlog
-
 from core.shared.logging.config import (
+    LogLevel,
     configure_logging,
     get_logger,
-    LogLevel,
 )
 
 

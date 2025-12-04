@@ -8,7 +8,7 @@ import asyncio
 
 import pytest
 
-pytest.skip('Module interface.api not implemented', allow_module_level=True)
+pytest.skip("Module interface.api not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -24,7 +24,6 @@ from interface.api.api_composition import (
     compose_parallel,
     compose_sequential,
 )
-
 
 # Strategies
 strategy_type = st.sampled_from(list(ExecutionStrategy))
@@ -145,7 +144,6 @@ class TestCompositionResultProperties:
         assert composition.get("nonexistent") is None
 
 
-
 class TestAPIComposerProperties:
     """Property tests for APIComposer."""
 
@@ -253,6 +251,7 @@ class TestAPIComposerProperties:
         composer = APIComposer[int](strategy=ExecutionStrategy.PARALLEL)
 
         for i in range(call_count):
+
             async def make_call(idx: int = i) -> int:
                 return idx
 
@@ -272,12 +271,7 @@ class TestCompositionBuilderProperties:
         async def dummy() -> int:
             return 1
 
-        result = (
-            builder
-            .parallel()
-            .timeout(30.0)
-            .add("test", dummy)
-        )
+        result = builder.parallel().timeout(30.0).add("test", dummy)
 
         assert result is builder
 

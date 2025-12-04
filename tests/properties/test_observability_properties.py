@@ -6,15 +6,14 @@
 
 import asyncio
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.observability.telemetry import (
     TelemetryProvider,
-    _NoOpSpan,
-    _NoOpTracer,
     _current_span_id,
     _current_trace_id,
+    _NoOpSpan,
+    _NoOpTracer,
     get_current_span_id,
     get_current_trace_id,
     get_telemetry,
@@ -84,7 +83,11 @@ class TestTraceSpanCreation:
 
     @settings(max_examples=50)
     @given(
-        service_name=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))),
+        service_name=st.text(
+            min_size=1,
+            max_size=50,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
         service_version=st.from_regex(r"[0-9]+\.[0-9]+\.[0-9]+", fullmatch=True),
     )
     def test_telemetry_provider_accepts_valid_config(
@@ -174,7 +177,11 @@ class TestTraceSpanCreation:
 
     @settings(max_examples=30)
     @given(
-        span_name=st.text(min_size=1, max_size=100, alphabet=st.characters(whitelist_categories=("L", "N", "P"))),
+        span_name=st.text(
+            min_size=1,
+            max_size=100,
+            alphabet=st.characters(whitelist_categories=("L", "N", "P")),
+        ),
     )
     def test_traced_decorator_accepts_any_span_name(self, span_name: str) -> None:
         """
@@ -217,9 +224,7 @@ class TestLogTraceCorrelation:
         trace_id=st.text(min_size=32, max_size=32, alphabet="0123456789abcdef"),
         span_id=st.text(min_size=16, max_size=16, alphabet="0123456789abcdef"),
     )
-    def test_trace_context_vars_can_be_set(
-        self, trace_id: str, span_id: str
-    ) -> None:
+    def test_trace_context_vars_can_be_set(self, trace_id: str, span_id: str) -> None:
         """
         **Feature: advanced-reusability, Property 11: Log Trace Correlation**
 

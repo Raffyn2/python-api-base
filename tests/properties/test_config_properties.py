@@ -8,12 +8,16 @@ import os
 from unittest.mock import patch
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from pydantic import ValidationError
 
 try:
-    from core.config.settings import SecuritySettings, Settings, DatabaseSettings, ObservabilitySettings
+    from core.config.settings import (
+        DatabaseSettings,
+        ObservabilitySettings,
+        SecuritySettings,
+        Settings,
+    )
 except ImportError:
     from core.config import SecuritySettings, Settings
 
@@ -47,7 +51,11 @@ class TestConfigValidation:
 
     @settings(max_examples=20)
     @given(
-        secret_key=st.text(min_size=32, max_size=64, alphabet=st.characters(whitelist_categories=("L", "N"))),
+        secret_key=st.text(
+            min_size=32,
+            max_size=64,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
     )
     def test_valid_secret_key_passes_validation(self, secret_key: str) -> None:
         """
@@ -65,7 +73,7 @@ class TestConfigValidation:
     def test_valid_log_levels_pass_validation(self, log_level: str) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 1: Configuration Loading from Environment**
-        
+
         For any valid log level, ObservabilitySettings SHALL accept the value.
         **Validates: Requirements 1.1**
         """
@@ -82,9 +90,9 @@ class TestConfigValidation:
 
     @settings(max_examples=10)
     @given(
-        log_level=st.text(min_size=1, max_size=10, alphabet=st.characters(whitelist_categories=("L",))).filter(
-            lambda x: x not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-        ),
+        log_level=st.text(
+            min_size=1, max_size=10, alphabet=st.characters(whitelist_categories=("L",))
+        ).filter(lambda x: x not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
     )
     def test_invalid_log_levels_fail_validation(self, log_level: str) -> None:
         """

@@ -8,17 +8,16 @@ Commands represent intentions to change the system state.
 
 from abc import ABC
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
 try:
     from core.shared.utils.time import utc_now
 except ImportError:
-    from datetime import timezone
 
     def utc_now() -> datetime:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
 
 @dataclass(frozen=True)

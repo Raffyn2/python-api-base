@@ -122,9 +122,9 @@ class InMemoryQueryBuilder[T: BaseModel](QueryBuilder[T]):
 
         if group.operator == LogicalOperator.AND:
             return all(results)
-        elif group.operator == LogicalOperator.OR:
+        if group.operator == LogicalOperator.OR:
             return any(results)
-        elif group.operator == LogicalOperator.NOT:
+        if group.operator == LogicalOperator.NOT:
             return not all(results)
         return True
 

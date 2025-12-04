@@ -11,18 +11,15 @@ Tests mathematical properties of the Result monad:
 """
 
 import pytest
-from hypothesis import given, strategies as st, assume, settings
+from hypothesis import assume, given, settings, strategies as st
 
 from core.base.patterns.result import (
-    Ok,
     Err,
+    Ok,
     Result,
-    ok,
-    err,
     collect_results,
     result_from_dict,
 )
-
 
 # =============================================================================
 # Strategies
@@ -49,8 +46,7 @@ def result_either(draw, value_strategy=st.integers(), error_strategy=st.text()):
     is_ok = draw(st.booleans())
     if is_ok:
         return draw(result_ok(value_strategy))
-    else:
-        return draw(result_err(error_strategy))
+    return draw(result_err(error_strategy))
 
 
 # =============================================================================

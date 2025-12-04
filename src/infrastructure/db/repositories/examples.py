@@ -12,7 +12,7 @@ Demonstrates:
 
 import logging
 
-from sqlalchemy import select, and_, false
+from sqlalchemy import and_, false, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 

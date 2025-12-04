@@ -16,7 +16,7 @@ class RateLimitAlgorithm(Enum):
 
     SLIDING_WINDOW = "sliding_window"
     FIXED_WINDOW = "fixed_window"
-    TOKEN_BUCKET = "token_bucket"
+    TOKEN_BUCKET = "token_bucket"  # noqa: S105 - Enum value, not password
     LEAKY_BUCKET = "leaky_bucket"
 
 

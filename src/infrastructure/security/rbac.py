@@ -6,11 +6,11 @@
 
 import logging
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import wraps
 from typing import Any, Protocol, runtime_checkable
-from collections.abc import Callable
 
 from core.errors import AuthorizationError
 

@@ -12,15 +12,19 @@ Demonstrates:
 import logging
 from typing import Any
 
-from core.base.patterns.result import Result, Ok, Err
-from domain.examples.pedido.entity import PedidoExample
 from application.examples.pedido.dtos import (
+    AddItemRequest,
     PedidoExampleCreate,
     PedidoExampleResponse,
-    AddItemRequest,
 )
 from application.examples.pedido.mapper import PedidoExampleMapper
-from application.examples.shared.errors import UseCaseError, NotFoundError, ValidationError
+from application.examples.shared.errors import (
+    NotFoundError,
+    UseCaseError,
+    ValidationError,
+)
+from core.base.patterns.result import Err, Ok, Result
+from domain.examples.pedido.entity import PedidoExample
 
 logger = logging.getLogger(__name__)
 

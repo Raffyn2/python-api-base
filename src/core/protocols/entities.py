@@ -8,7 +8,8 @@ Feature: file-size-compliance-phase2
 """
 
 from typing import Protocol, runtime_checkable
-from .base import Identifiable, Timestamped, SoftDeletable
+
+from .base import Identifiable, SoftDeletable, Timestamped
 
 
 @runtime_checkable
@@ -21,8 +22,6 @@ class Entity(Identifiable, Protocol):
     Example:
         T = TypeVar("T", bound=Entity)
     """
-
-    pass
 
 
 @runtime_checkable
@@ -42,8 +41,6 @@ class TrackedEntity(Identifiable, Timestamped, Protocol):
                 ...
     """
 
-    pass
-
 
 @runtime_checkable
 class DeletableEntity(Identifiable, SoftDeletable, Protocol):
@@ -56,8 +53,6 @@ class DeletableEntity(Identifiable, SoftDeletable, Protocol):
     Example:
         T = TypeVar("T", bound=DeletableEntity)
     """
-
-    pass
 
 
 @runtime_checkable
@@ -77,8 +72,6 @@ class FullEntity(Identifiable, Timestamped, SoftDeletable, Protocol):
                 return [e for e in self._storage if not e.is_deleted]
     """
 
-    pass
-
 
 @runtime_checkable
 class Auditable(Identifiable, Timestamped, Protocol):
@@ -87,8 +80,6 @@ class Auditable(Identifiable, Timestamped, Protocol):
     Combines: Identifiable + Timestamped
     Alias for TrackedEntity, semantically indicates audit trail support.
     """
-
-    pass
 
 
 @runtime_checkable
@@ -117,5 +108,3 @@ class VersionedEntity(Identifiable, Timestamped, Versionable, Protocol):
                 raise ConcurrencyError("Version mismatch")
             ...
     """
-
-    pass

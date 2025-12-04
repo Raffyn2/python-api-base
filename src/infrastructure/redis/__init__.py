@@ -10,13 +10,13 @@ Provides enterprise-grade Redis client with:
 **Requirement: R1 - Redis Distributed Cache**
 """
 
-from infrastructure.redis.client import RedisClient
-from infrastructure.redis.config import RedisConfig
 from infrastructure.redis.circuit_breaker import (
     CircuitBreaker,
-    CircuitState,
     CircuitOpenError,
+    CircuitState,
 )
+from infrastructure.redis.client import RedisClient
+from infrastructure.redis.config import RedisConfig
 from infrastructure.redis.invalidation import (
     CacheInvalidator,
     InvalidationEvent,
@@ -25,13 +25,13 @@ from infrastructure.redis.invalidation import (
 )
 
 __all__ = [
-    "RedisClient",
-    "RedisConfig",
-    "CircuitBreaker",
-    "CircuitState",
-    "CircuitOpenError",
     "CacheInvalidator",
+    "CircuitBreaker",
+    "CircuitOpenError",
+    "CircuitState",
     "InvalidationEvent",
     "InvalidationStrategy",
     "PatternInvalidation",
+    "RedisClient",
+    "RedisConfig",
 ]

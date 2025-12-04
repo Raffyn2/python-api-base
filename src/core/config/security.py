@@ -63,14 +63,19 @@ class SecuritySettings(BaseSettings):
 
     @field_validator("cors_origins")
     @classmethod
-    def warn_wildcard_cors(cls, v: list[str]) -> list[str]:
-        """Warn about wildcard CORS in production."""
+    def validate_cors_origins(cls, v: list[str]) -> list[str]:
+        """Validate CORS origins - block wildcard in production."""
         if "*" in v:
             env = os.getenv("ENVIRONMENT", "").lower()
             if env == "production":
-                logger.warning(
-                    "SECURITY WARNING: Wildcard CORS origin '*' detected in production."
+                raise ValueError(
+                    "SECURITY: Wildcard CORS origin '*' is not allowed in production. "
+                    "Specify explicit allowed origins."
                 )
+            logger.warning(
+                "Wildcard CORS origin '*' detected. "
+                "This will be blocked in production environment."
+            )
         return v
 
     @field_validator("rate_limit")

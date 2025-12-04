@@ -19,7 +19,7 @@ class TestItemEndpoints:
     async def test_create_item_returns_201(self, test_client: AsyncClient) -> None:
         """
         **Feature: generic-fastapi-crud, Property 11: Endpoint POST Returns 201 with Entity**
-        
+
         POST request SHALL return status 201 with created entity.
         """
         response = await test_client.post(
@@ -31,7 +31,7 @@ class TestItemEndpoints:
                 "tax": 4.00,
             },
         )
-        
+
         assert response.status_code == 201
         data = response.json()
         assert "data" in data
@@ -42,11 +42,11 @@ class TestItemEndpoints:
     async def test_list_items_returns_paginated(self, test_client: AsyncClient) -> None:
         """
         **Feature: generic-fastapi-crud, Property 12: Endpoint GET List Returns Paginated Response**
-        
+
         GET list request SHALL return paginated response structure.
         """
         response = await test_client.get("/api/v1/items?page=1&size=10")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "items" in data
@@ -62,7 +62,7 @@ class TestItemEndpoints:
     ) -> None:
         """
         **Feature: generic-fastapi-crud, Property 13: Endpoint GET Detail Returns Entity or 404**
-        
+
         GET detail request SHALL return 404 if entity not found.
         """
         response = await test_client.get("/api/v1/items/nonexistent-id")
@@ -83,7 +83,7 @@ class TestItemEndpoints:
     ) -> None:
         """
         **Feature: generic-fastapi-crud, Property 14: Endpoint DELETE Returns 204 or 404**
-        
+
         DELETE request SHALL return 404 if entity not found.
         """
         response = await test_client.delete("/api/v1/items/nonexistent-id")
@@ -105,12 +105,10 @@ class TestItemEndpoints:
         )
         assert response.status_code == 422
 
-    async def test_list_with_pagination_params(
-        self, test_client: AsyncClient
-    ) -> None:
+    async def test_list_with_pagination_params(self, test_client: AsyncClient) -> None:
         """Test list endpoint accepts pagination parameters."""
         response = await test_client.get("/api/v1/items?page=2&size=5")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["page"] == 2
@@ -118,9 +116,7 @@ class TestItemEndpoints:
 
     async def test_list_with_sorting_params(self, test_client: AsyncClient) -> None:
         """Test list endpoint accepts sorting parameters."""
-        response = await test_client.get(
-            "/api/v1/items?sort_by=name&sort_order=asc"
-        )
+        response = await test_client.get("/api/v1/items?sort_by=name&sort_order=asc")
         assert response.status_code == 200
 
     async def test_create_returns_computed_field(
@@ -131,7 +127,7 @@ class TestItemEndpoints:
             "/api/v1/items",
             json={"name": "Tax Item", "price": 100.00, "tax": 10.00},
         )
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["data"]["price_with_tax"] == 110.00

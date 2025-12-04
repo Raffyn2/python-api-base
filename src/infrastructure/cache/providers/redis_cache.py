@@ -1,8 +1,8 @@
 """Redis-based distributed cache."""
 
 import logging
-from typing import Any
 from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

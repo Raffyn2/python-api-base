@@ -11,9 +11,16 @@ import logging
 from datetime import timedelta
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel, Field
 
+from core.config import (
+    MAX_STORAGE_LIST_KEYS,
+    PRESIGNED_URL_EXPIRE_SECONDS,
+    STORAGE_TTL_DEFAULT_SECONDS,
+    STORAGE_TTL_MAX_SECONDS,
+    STORAGE_TTL_MIN_SECONDS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +39,12 @@ class CacheSetRequest(BaseModel):
     value: dict[str, Any] = Field(
         ..., examples=[{"name": "John", "email": "john@example.com"}]
     )
-    ttl: int | None = Field(default=3600, ge=1, le=86400, description="TTL in seconds")
+    ttl: int | None = Field(
+        default=STORAGE_TTL_DEFAULT_SECONDS,
+        ge=STORAGE_TTL_MIN_SECONDS,
+        le=STORAGE_TTL_MAX_SECONDS,
+        description="TTL in seconds",
+    )
 
 
 class CacheResponse(BaseModel):
@@ -322,7 +334,7 @@ async def storage_download(
 )
 async def storage_presigned_url(
     key: str,
-    expires_in: int = 3600,
+    expires_in: int = PRESIGNED_URL_EXPIRE_SECONDS,
     minio=Depends(get_minio),
 ) -> PresignedUrlResponse:
     """Generate presigned URL for file.
@@ -376,7 +388,7 @@ async def storage_delete(
 )
 async def storage_list(
     prefix: str = "",
-    max_keys: int = 100,
+    max_keys: int = MAX_STORAGE_LIST_KEYS,
     minio=Depends(get_minio),
 ) -> dict[str, Any]:
     """List files in storage.
@@ -445,7 +457,7 @@ async def kafka_publish(
         )
     except Exception as e:
         logger.error(f"Kafka publish failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Kafka publish failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Kafka publish failed: {e}") from e
 
 
 @router.get(

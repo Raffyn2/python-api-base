@@ -6,7 +6,7 @@
 
 import pytest
 
-pytest.skip('Module interface.api not implemented', allow_module_level=True)
+pytest.skip("Module interface.api not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -26,7 +26,6 @@ from interface.api.bff import (
     create_default_bff_config,
     detect_client,
 )
-
 
 # Strategies
 client_type_strategy = st.sampled_from(list(ClientType))
@@ -103,9 +102,7 @@ class TestClientInfoProperties:
         info = ClientInfo.from_headers(headers)
         assert info.client_type == ClientType.MOBILE
 
-    @given(
-        platform=st.sampled_from(["android", "ios", "windows", "macos", "linux"])
-    )
+    @given(platform=st.sampled_from(["android", "ios", "windows", "macos", "linux"]))
     @settings(max_examples=50)
     def test_platform_detection(self, platform: str) -> None:
         """Property: Platform is detected from user agent."""
@@ -132,9 +129,7 @@ class TestFieldConfigProperties:
         )
     )
     @settings(max_examples=100)
-    def test_empty_config_returns_all_fields(
-        self, data: dict[str, int]
-    ) -> None:
+    def test_empty_config_returns_all_fields(self, data: dict[str, int]) -> None:
         """Property: Empty config returns all fields unchanged."""
         config = FieldConfig()
         result = config.apply(data)
@@ -170,9 +165,7 @@ class TestFieldConfigProperties:
         )
     )
     @settings(max_examples=100)
-    def test_include_keeps_only_specified_fields(
-        self, data: dict[str, int]
-    ) -> None:
+    def test_include_keeps_only_specified_fields(self, data: dict[str, int]) -> None:
         """Property: Include keeps only specified fields."""
         if not data:
             return
@@ -193,7 +186,6 @@ class TestFieldConfigProperties:
         assert "new_name" in result
         assert "old_name" not in result
         assert result["new_name"] == 42
-
 
 
 class TestBFFConfigProperties:
@@ -241,9 +233,7 @@ class TestTransformerProperties:
         )
     )
     @settings(max_examples=100)
-    def test_identity_transformer_preserves_data(
-        self, data: dict[str, int]
-    ) -> None:
+    def test_identity_transformer_preserves_data(self, data: dict[str, int]) -> None:
         """Property: IdentityTransformer returns data unchanged."""
         transformer = IdentityTransformer[dict[str, int]]()
         client_info = ClientInfo(client_type=ClientType.WEB)
@@ -394,8 +384,7 @@ class TestBFFConfigBuilderProperties:
         """Property: Builder methods return builder for chaining."""
         builder = BFFConfigBuilder()
         result = (
-            builder
-            .for_mobile(max_list_size=20)
+            builder.for_mobile(max_list_size=20)
             .for_web(max_list_size=50)
             .for_desktop(max_list_size=100)
             .for_api(max_list_size=1000)
@@ -429,9 +418,7 @@ class TestConvenienceFunctions:
 
     @given(headers=headers_strategy)
     @settings(max_examples=100)
-    def test_detect_client_returns_client_info(
-        self, headers: dict[str, str]
-    ) -> None:
+    def test_detect_client_returns_client_info(self, headers: dict[str, str]) -> None:
         """Property: detect_client returns ClientInfo."""
         info = detect_client(headers)
         assert isinstance(info, ClientInfo)

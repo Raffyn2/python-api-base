@@ -7,10 +7,10 @@
 from dataclasses import dataclass
 from typing import Any
 
-from core.base.cqrs.query import BaseQuery
-from core.base.patterns.result import Result, Ok, Err
 from application.common.cqrs.handlers import QueryHandler
-from domain.users.repositories import IUserRepository, IUserReadRepository
+from core.base.cqrs.query import BaseQuery
+from core.base.patterns.result import Err, Ok, Result
+from domain.users.repositories import IUserReadRepository, IUserRepository
 
 
 @dataclass(frozen=True, kw_only=True)

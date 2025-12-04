@@ -7,10 +7,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from elasticsearch import AsyncElasticsearch
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -132,9 +129,9 @@ class SearchOperations:
                 scroll_id = result.get("_scroll_id")
 
         finally:
-            # Clear scroll
+            # Clear scroll - best effort cleanup
             if scroll_id:
                 try:
                     await client.clear_scroll(scroll_id=scroll_id)
-                except Exception:
+                except Exception:  # noqa: S110 - Best effort cleanup
                     pass

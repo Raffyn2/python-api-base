@@ -14,8 +14,6 @@ class DatabaseError(InfrastructureError):
     query errors, or constraint violations.
     """
 
-    pass
-
 
 class ConnectionPoolError(DatabaseError):
     """Connection pool error.
@@ -23,5 +21,3 @@ class ConnectionPoolError(DatabaseError):
     Raised when connection pool operations fail, such as
     pool exhaustion or connection acquisition timeout.
     """
-
-    pass

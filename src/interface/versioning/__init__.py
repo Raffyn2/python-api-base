@@ -20,8 +20,8 @@ __all__ = [
     "BaseResponseTransformer",
     "ResponseTransformer",
     "VersionConfig",
-    "VersionedRouter",
     "VersionFormat",
     "VersionRouter",
+    "VersionedRouter",
     "deprecated",
 ]

@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from core.base.patterns.result import Result, Ok, Err
+from core.base.patterns.result import Err, Ok, Result
 from domain.users.repositories import IUserRepository
 from domain.users.services import UserDomainService
 
@@ -72,8 +72,10 @@ class EmailUniquenessValidator(CommandValidator["CreateUserCommand"]):
         >>> validator = EmailUniquenessValidator(user_repository)
         >>> result = await validator.validate(command)
         >>> match result:
-        ...     case Ok(_): print("Email is unique")
-        ...     case Err(error): print(f"Duplicate email: {error}")
+        ...     case Ok(_):
+        ...         print("Email is unique")
+        ...     case Err(error):
+        ...         print(f"Duplicate email: {error}")
     """
 
     def __init__(self, repository: IUserRepository) -> None:
@@ -225,12 +227,12 @@ class CompositeUserValidator(CommandValidator["CreateUserCommand"]):
         >>> validator = CompositeUserValidator(
         ...     EmailUniquenessValidator(repository),
         ...     EmailFormatValidator(service),
-        ...     PasswordStrengthValidator(service)
+        ...     PasswordStrengthValidator(service),
         ... )
         >>> result = await validator.validate(command)
     """
 
-    def __init__(self, *validators: CommandValidator["CreateUserCommand"]) -> None:
+    def __init__(self, *validators: CommandValidator[CreateUserCommand]) -> None:
         """Initialize composite validator.
 
         Args:

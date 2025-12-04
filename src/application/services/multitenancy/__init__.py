@@ -12,6 +12,10 @@ Structure:
 **Validates: Requirements 7.1, 7.2, 7.3**
 """
 
+from .middleware import (
+    TenantMiddleware,
+    require_tenant,
+)
 from .models import (
     TenantContext,
     get_current_tenant,
@@ -20,10 +24,6 @@ from .models import (
 from .repository import (
     TenantAware,
     TenantRepository,
-)
-from .middleware import (
-    TenantMiddleware,
-    require_tenant,
 )
 
 __all__ = [

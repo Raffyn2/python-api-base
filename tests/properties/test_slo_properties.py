@@ -4,8 +4,8 @@
 **Validates: Requirements 7.3**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 from datetime import datetime, timedelta
@@ -17,14 +17,12 @@ from infrastructure.observability.slo import (
     InMemoryMetricsStore,
     SLOConfig,
     SLOMetric,
-    SLOMonitor,
     SLOResult,
     SLOStatus,
     SLOTarget,
     SLOType,
     create_slo_monitor,
 )
-
 
 # Strategies
 slo_type_strategy = st.sampled_from(list(SLOType))
@@ -39,7 +37,9 @@ class TestSLOTargetProperties:
         target_value=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
     )
     @settings(max_examples=100)
-    def test_warning_threshold_defaults_to_95_percent(self, target_value: float) -> None:
+    def test_warning_threshold_defaults_to_95_percent(
+        self, target_value: float
+    ) -> None:
         """Property: Warning threshold defaults to 95% of target."""
         target = SLOTarget(
             name="test",
@@ -76,7 +76,9 @@ class TestSLOResultProperties:
     @settings(max_examples=100)
     def test_healthy_status_is_healthy(self, current_value: float) -> None:
         """Property: HEALTHY status means is_healthy is True."""
-        target = SLOTarget(name="test", slo_type=SLOType.AVAILABILITY, target_value=0.99)
+        target = SLOTarget(
+            name="test", slo_type=SLOType.AVAILABILITY, target_value=0.99
+        )
         result = SLOResult(
             target=target,
             current_value=current_value,
@@ -95,7 +97,9 @@ class TestSLOResultProperties:
     @settings(max_examples=100)
     def test_critical_status_is_violated(self, current_value: float) -> None:
         """Property: CRITICAL status means is_violated is True."""
-        target = SLOTarget(name="test", slo_type=SLOType.AVAILABILITY, target_value=0.99)
+        target = SLOTarget(
+            name="test", slo_type=SLOType.AVAILABILITY, target_value=0.99
+        )
         result = SLOResult(
             target=target,
             current_value=current_value,
@@ -144,16 +148,20 @@ class TestInMemoryMetricsStoreProperties:
         store = InMemoryMetricsStore()
 
         # Record different types
-        await store.record(SLOMetric(
-            slo_type=SLOType.AVAILABILITY,
-            value=value,
-            timestamp=datetime.now(),
-        ))
-        await store.record(SLOMetric(
-            slo_type=SLOType.ERROR_RATE,
-            value=value,
-            timestamp=datetime.now(),
-        ))
+        await store.record(
+            SLOMetric(
+                slo_type=SLOType.AVAILABILITY,
+                value=value,
+                timestamp=datetime.now(),
+            )
+        )
+        await store.record(
+            SLOMetric(
+                slo_type=SLOType.ERROR_RATE,
+                value=value,
+                timestamp=datetime.now(),
+            )
+        )
 
         since = datetime.now() - timedelta(minutes=1)
         availability_metrics = await store.get_metrics(SLOType.AVAILABILITY, since)
@@ -170,11 +178,13 @@ class TestInMemoryMetricsStoreProperties:
 
         # Record more than max_size
         for i in range(max_size + 5):
-            await store.record(SLOMetric(
-                slo_type=SLOType.AVAILABILITY,
-                value=float(i),
-                timestamp=datetime.now(),
-            ))
+            await store.record(
+                SLOMetric(
+                    slo_type=SLOType.AVAILABILITY,
+                    value=float(i),
+                    timestamp=datetime.now(),
+                )
+            )
 
         since = datetime.now() - timedelta(hours=1)
         metrics = await store.get_metrics(SLOType.AVAILABILITY, since)
@@ -206,7 +216,10 @@ class TestSLOMonitorProperties:
         if result.samples > 0:
             expected = sum(1 for a in availability if a) / len(availability)
             # Allow some tolerance due to timing
-            assert abs(result.current_value - expected) < 0.1 or result.status == SLOStatus.UNKNOWN
+            assert (
+                abs(result.current_value - expected) < 0.1
+                or result.status == SLOStatus.UNKNOWN
+            )
 
     @given(
         latencies=st.lists(
@@ -253,7 +266,10 @@ class TestSLOMonitorProperties:
 
         if result.samples > 0:
             expected = sum(1 for e in errors if e) / len(errors)
-            assert abs(result.current_value - expected) < 0.1 or result.status == SLOStatus.UNKNOWN
+            assert (
+                abs(result.current_value - expected) < 0.1
+                or result.status == SLOStatus.UNKNOWN
+            )
 
     @pytest.mark.anyio
     async def test_check_all_slos_returns_all_targets(self) -> None:

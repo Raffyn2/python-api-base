@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Annotated, Final
 
 import typer
-
 from scripts.cli.exceptions import CLIError, InvalidFieldError, ValidationError
 from scripts.cli.validators import validate_entity_name, validate_field_definition
 
@@ -82,8 +81,12 @@ def _generate_entity_content(name: str, fields: list[tuple[str, str]]) -> str:
         ]
         update_fields = "\n    ".join(update_lines)
     else:
-        field_defs = 'name: str = SQLField(min_length=1, max_length=255, description="Name")'
-        update_fields = "name: str | None = SQLField(default=None, min_length=1, max_length=255)"
+        field_defs = (
+            'name: str = SQLField(min_length=1, max_length=255, description="Name")'
+        )
+        update_fields = (
+            "name: str | None = SQLField(default=None, min_length=1, max_length=255)"
+        )
 
     # PEP8 import ordering: stdlib, third-party, local
     return f'''"""{pascal_name} domain entity."""
@@ -308,7 +311,9 @@ def entity(
         base_path
         / "domain"
         / "entities"
-        / f"{validated_name}.py": _generate_entity_content(validated_name, parsed_fields),
+        / f"{validated_name}.py": _generate_entity_content(
+            validated_name, parsed_fields
+        ),
         base_path
         / "application"
         / "mappers"
@@ -346,5 +351,7 @@ def entity(
         typer.echo(f"\n✓ Entity '{pascal_name}' scaffolding complete!")
         typer.echo("\nNext steps:")
         typer.echo("  1. Add router to main.py")
-        typer.echo(f"  2. Create migration: api-cli db revision -m 'add {validated_name}s'")
+        typer.echo(
+            f"  2. Create migration: api-cli db revision -m 'add {validated_name}s'"
+        )
         typer.echo("  3. Configure repository in DI container (see TODO comments)")

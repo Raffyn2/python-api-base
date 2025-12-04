@@ -1,6 +1,7 @@
 """auth service."""
 
 from pydantic import BaseModel, Field
+
 from core.config import get_settings
 from infrastructure.auth import (
     InMemoryTokenStore,

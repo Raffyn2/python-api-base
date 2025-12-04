@@ -4,9 +4,9 @@
 **Validates: Requirements 6.2**
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domain.users.aggregates import UserAggregate
@@ -16,10 +16,9 @@ from infrastructure.db.models.users_models import UserModel
 try:
     from core.shared.utils.time import utc_now
 except ImportError:
-    from datetime import timezone
 
     def utc_now() -> datetime:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
 
 class SQLAlchemyUserRepository(IUserRepository):

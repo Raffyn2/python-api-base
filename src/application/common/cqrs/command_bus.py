@@ -12,10 +12,11 @@ This module provides:
 
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable
 from typing import Any
-from collections.abc import Callable, Awaitable
 
 from core.base.patterns.result import Ok, Result
+
 from .exceptions import HandlerNotFoundError
 
 logger = logging.getLogger(__name__)

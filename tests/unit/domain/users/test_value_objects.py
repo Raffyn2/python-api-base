@@ -17,9 +17,9 @@ from hypothesis import given, strategies as st
 from src.domain.users.value_objects import (
     Email,
     PasswordHash,
+    PhoneNumber,
     UserId,
     Username,
-    PhoneNumber,
 )
 
 
@@ -114,7 +114,8 @@ class TestUsername:
 
         for invalid in invalid_usernames:
             with pytest.raises(
-                ValueError, match="can only contain letters, numbers, underscores, and hyphens"
+                ValueError,
+                match="can only contain letters, numbers, underscores, and hyphens",
             ):
                 Username(value=invalid)
 

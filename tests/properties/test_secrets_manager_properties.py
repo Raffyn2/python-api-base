@@ -4,14 +4,12 @@
 **Validates: Requirements 5.1, 5.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
-from datetime import datetime, timedelta, timezone
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.security.secrets_manager import (
     InMemorySecretCache,
@@ -24,19 +22,23 @@ from infrastructure.security.secrets_manager import (
     SecretValue,
 )
 
-
 # =============================================================================
 # Strategies
 # =============================================================================
 
+
 @st.composite
 def secret_name_strategy(draw: st.DrawFn) -> str:
     """Generate valid secret names."""
-    return draw(st.text(
-        min_size=3,
-        max_size=50,
-        alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-/"),
-    ))
+    return draw(
+        st.text(
+            min_size=3,
+            max_size=50,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-/"
+            ),
+        )
+    )
 
 
 @st.composite
@@ -48,17 +50,20 @@ def secret_string_value_strategy(draw: st.DrawFn) -> str:
 @st.composite
 def secret_json_value_strategy(draw: st.DrawFn) -> dict:
     """Generate secret JSON values."""
-    return draw(st.fixed_dictionaries({
-        "username": st.text(min_size=1, max_size=50),
-        "password": st.text(min_size=8, max_size=100),
-        "host": st.just("localhost"),
-        "port": st.integers(min_value=1, max_value=65535),
-    }))
+    return draw(
+        st.fixed_dictionaries({
+            "username": st.text(min_size=1, max_size=50),
+            "password": st.text(min_size=8, max_size=100),
+            "host": st.just("localhost"),
+            "port": st.integers(min_value=1, max_value=65535),
+        })
+    )
 
 
 # =============================================================================
 # Property Tests - Secret Cache
 # =============================================================================
+
 
 class TestInMemorySecretCacheProperties:
     """Property tests for in-memory secret cache."""
@@ -146,6 +151,7 @@ class TestInMemorySecretCacheProperties:
 # =============================================================================
 # Property Tests - Local Secrets Provider
 # =============================================================================
+
 
 class TestLocalSecretsProviderProperties:
     """Property tests for local secrets provider."""
@@ -289,6 +295,7 @@ class TestLocalSecretsProviderProperties:
 # Property Tests - Secrets Manager
 # =============================================================================
 
+
 class TestSecretsManagerProperties:
     """Property tests for secrets manager."""
 
@@ -418,6 +425,7 @@ class TestSecretsManagerProperties:
 # Property Tests - Secret Metadata
 # =============================================================================
 
+
 class TestSecretMetadataProperties:
     """Property tests for secret metadata."""
 
@@ -462,6 +470,7 @@ class TestSecretMetadataProperties:
 # =============================================================================
 # Property Tests - Rotation Config
 # =============================================================================
+
 
 class TestRotationConfigProperties:
     """Property tests for rotation configuration."""

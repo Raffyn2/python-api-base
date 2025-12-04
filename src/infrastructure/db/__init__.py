@@ -6,8 +6,8 @@ from infrastructure.db.uow import SQLAlchemyUnitOfWork
 
 __all__ = [
     "Base",
+    "SQLAlchemyUnitOfWork",
+    "SQLAlchemyUserRepository",
     "UserModel",
     "UserReadModel",
-    "SQLAlchemyUserRepository",
-    "SQLAlchemyUnitOfWork",
 ]

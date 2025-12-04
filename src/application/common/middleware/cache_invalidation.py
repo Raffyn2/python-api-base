@@ -7,7 +7,9 @@ query cache consistency with domain state changes.
 **Validates: Cache consistency requirements**
 
 Example:
-    >>> from application.common.middleware.cache_invalidation import CacheInvalidationStrategy
+    >>> from application.common.middleware.cache_invalidation import (
+    ...     CacheInvalidationStrategy,
+    ... )
     >>> from application.common.cqrs.event_bus import EventBus
     >>>
     >>> # Setup
@@ -26,7 +28,7 @@ Example:
 """
 
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -73,13 +75,15 @@ class CacheInvalidationStrategy(ABC):
         >>> class UserCacheInvalidation(CacheInvalidationStrategy):
         ...     def __init__(self, cache: QueryCache):
         ...         super().__init__(cache)
-        ...         self.add_rule(InvalidationRule(
-        ...             event_type=UserUpdatedEvent,
-        ...             patterns=[
-        ...                 "query_cache:GetUserQuery:*",
-        ...                 "query_cache:ListUsersQuery:*"
-        ...             ]
-        ...         ))
+        ...         self.add_rule(
+        ...             InvalidationRule(
+        ...                 event_type=UserUpdatedEvent,
+        ...                 patterns=[
+        ...                     "query_cache:GetUserQuery:*",
+        ...                     "query_cache:ListUsersQuery:*",
+        ...                 ],
+        ...             )
+        ...         )
     """
 
     def __init__(self, cache: QueryCache) -> None:
@@ -179,11 +183,11 @@ class UserCacheInvalidationStrategy(CacheInvalidationStrategy):
         # Import domain events (lazy to avoid circular imports)
         try:
             from domain.users.events import (
-                UserRegisteredEvent,
-                UserEmailChangedEvent,
-                UserDeletedEvent,
                 UserActivatedEvent,
                 UserDeactivatedEvent,
+                UserDeletedEvent,
+                UserEmailChangedEvent,
+                UserRegisteredEvent,
             )
 
             # User created - invalidate lists
@@ -277,23 +281,7 @@ class ItemCacheInvalidationStrategy(CacheInvalidationStrategy):
             cache: Query cache to invalidate.
         """
         super().__init__(cache)
-
-        try:
-            # Import will depend on your Item domain events
-            # This is a template - adjust based on actual events
-            pass
-            # from domain.items.events import ItemCreatedEvent, ItemUpdatedEvent
-            #
-            # self.add_rule(InvalidationRule(
-            #     event_type=ItemCreatedEvent,
-            #     patterns=[
-            #         "query_cache:ListItemsQuery:*",
-            #         "query_cache:GetAvailableItemsQuery:*"
-            #     ]
-            # ))
-
-        except ImportError:
-            logger.debug("Item domain events not available for cache invalidation")
+        # Configure invalidation rules based on domain events as needed
 
 
 # =============================================================================
@@ -410,8 +398,8 @@ class CacheInvalidationMiddleware:
         ...     cache,
         ...     invalidation_map={
         ...         CreateUserCommand: ["query_cache:ListUsersQuery:*"],
-        ...         UpdateUserCommand: ["query_cache:GetUserQuery:*"]
-        ...     }
+        ...         UpdateUserCommand: ["query_cache:GetUserQuery:*"],
+        ...     },
         ... )
         >>> command_bus.add_middleware(invalidation_mw)
     """

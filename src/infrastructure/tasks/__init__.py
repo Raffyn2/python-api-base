@@ -14,24 +14,12 @@ Key Generic Types:
 **Validates: Requirements 23.1, 23.2, 23.3, 23.4, 23.5**
 """
 
-from infrastructure.tasks.task import (
-    Task,
-    TaskPriority,
-    TaskStatus,
-    TaskResult,
-)
+from infrastructure.tasks.in_memory import InMemoryTaskQueue
 from infrastructure.tasks.protocols import (
     TaskHandler,
     TaskQueue,
     TaskScheduler,
 )
-from infrastructure.tasks.retry import (
-    RetryPolicy,
-    ExponentialBackoff,
-    FixedDelay,
-    NoRetry,
-)
-from infrastructure.tasks.in_memory import InMemoryTaskQueue
 from infrastructure.tasks.rabbitmq import (
     RabbitMQConfig,
     RabbitMQRpcClient,
@@ -39,6 +27,18 @@ from infrastructure.tasks.rabbitmq import (
     RabbitMQWorker,
     TaskError,
     TaskHandle,
+)
+from infrastructure.tasks.retry import (
+    ExponentialBackoff,
+    FixedDelay,
+    NoRetry,
+    RetryPolicy,
+)
+from infrastructure.tasks.task import (
+    Task,
+    TaskPriority,
+    TaskResult,
+    TaskStatus,
 )
 
 __all__ = [

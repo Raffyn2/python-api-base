@@ -4,25 +4,23 @@
 **Validates: Requirements 9.1, 9.3, 9.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from interface.api.middleware.request_logger import (
-    RequestLogEntry,
-    ResponseLogEntry,
-    mask_sensitive_value,
-    mask_dict,
-    sanitize_headers,
+    MASK_VALUE,
     SENSITIVE_FIELDS,
     SENSITIVE_HEADERS,
-    MASK_VALUE,
+    RequestLogEntry,
+    ResponseLogEntry,
+    mask_dict,
+    mask_sensitive_value,
+    sanitize_headers,
 )
-
 
 # Strategy for HTTP methods
 method_strategy = st.sampled_from(["GET", "POST", "PUT", "PATCH", "DELETE"])
@@ -53,7 +51,12 @@ sensitive_header_strategy = st.sampled_from(list(SENSITIVE_HEADERS))
 
 # Strategy for non-sensitive field names
 safe_field_strategy = st.sampled_from([
-    "name", "email", "id", "created_at", "status", "count",
+    "name",
+    "email",
+    "id",
+    "created_at",
+    "status",
+    "count",
 ])
 
 
@@ -309,7 +312,10 @@ class TestRequestIDCorrelation:
         )
 
         assert request_entry.request_id == response_entry.request_id
-        assert request_entry.to_dict()["request_id"] == response_entry.to_dict()["request_id"]
+        assert (
+            request_entry.to_dict()["request_id"]
+            == response_entry.to_dict()["request_id"]
+        )
 
     @settings(max_examples=50, deadline=None)
     @given(

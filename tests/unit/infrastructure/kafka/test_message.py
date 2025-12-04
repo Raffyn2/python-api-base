@@ -4,8 +4,7 @@
 **Requirement: R3 - Generic Kafka Producer/Consumer**
 """
 
-import pytest
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from pydantic import BaseModel
 

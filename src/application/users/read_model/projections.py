@@ -14,13 +14,13 @@ from typing import Any, Protocol
 
 from core.base.events.domain_event import DomainEvent
 from domain.users.events import (
-    UserRegisteredEvent,
     UserDeactivatedEvent,
     UserEmailChangedEvent,
     UserEmailVerifiedEvent,
     UserLoggedInEvent,
     UserProfileUpdatedEvent,
     UserReactivatedEvent,
+    UserRegisteredEvent,
 )
 
 logger = logging.getLogger(__name__)

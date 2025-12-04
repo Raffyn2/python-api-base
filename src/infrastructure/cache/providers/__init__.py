@@ -10,16 +10,16 @@ Provides cache backends:
 - RedisCacheWithJitter: Redis cache with TTL jitter and stampede prevention
 """
 
-from infrastructure.cache.providers.memory import InMemoryCacheProvider
-from infrastructure.cache.providers.redis import RedisCacheProvider
-from infrastructure.cache.providers.local import LRUCache
-from infrastructure.cache.providers.redis_cache import RedisCache, RedisConfig
-from infrastructure.cache.providers.redis_jitter import RedisCacheWithJitter
 from infrastructure.cache.providers.cache_models import (
+    CacheStats,
     JitterConfig,
     TTLPattern,
-    CacheStats,
 )
+from infrastructure.cache.providers.local import LRUCache
+from infrastructure.cache.providers.memory import InMemoryCacheProvider
+from infrastructure.cache.providers.redis import RedisCacheProvider
+from infrastructure.cache.providers.redis_cache import RedisCache, RedisConfig
+from infrastructure.cache.providers.redis_jitter import RedisCacheWithJitter
 
 __all__ = [
     "InMemoryCacheProvider",

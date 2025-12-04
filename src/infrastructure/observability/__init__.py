@@ -16,15 +16,11 @@ from infrastructure.observability.correlation_id import (
     CorrelationContextManager,
     CorrelationService,
     add_correlation_context,
-    get_correlation_id,
-    set_correlation_id,
-    get_request_id,
-    set_request_id,
     clear_context,
-)
-from infrastructure.observability.logging_middleware import (
-    LoggingMiddleware,
-    create_logging_middleware,
+    get_correlation_id,
+    get_request_id,
+    set_correlation_id,
+    set_request_id,
 )
 from infrastructure.observability.elasticsearch_handler import (
     ElasticsearchConfig,
@@ -32,8 +28,12 @@ from infrastructure.observability.elasticsearch_handler import (
     ElasticsearchLogProcessor,
     create_elasticsearch_handler,
 )
-from infrastructure.observability.middleware import TracingMiddleware
+from infrastructure.observability.logging_middleware import (
+    LoggingMiddleware,
+    create_logging_middleware,
+)
 from infrastructure.observability.metrics import CacheMetrics
+from infrastructure.observability.middleware import TracingMiddleware
 
 __all__ = [
     # Correlation

@@ -4,8 +4,8 @@
 """
 
 from application.users.commands.create_user import CreateUserCommand, CreateUserHandler
-from application.users.commands.update_user import UpdateUserCommand, UpdateUserHandler
 from application.users.commands.delete_user import DeleteUserCommand, DeleteUserHandler
+from application.users.commands.update_user import UpdateUserCommand, UpdateUserHandler
 
 __all__ = [
     "CreateUserCommand",

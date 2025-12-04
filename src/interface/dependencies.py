@@ -11,8 +11,8 @@ from typing import Annotated
 
 from fastapi import Depends, Query, Request
 
-from core.config.settings import Settings, get_settings
 from application.common.cqrs import CommandBus, QueryBus
+from core.config.settings import Settings, get_settings
 from infrastructure.di.app_container import Container, create_container
 
 # Container singleton (immutable after creation)

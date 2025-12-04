@@ -8,11 +8,11 @@ Provides standardized error responses following RFC 7807.
 
 from __future__ import annotations
 
-from datetime import datetime, UTC
-from typing import Any
+from datetime import UTC, datetime
 from http import HTTPStatus
+from typing import Any
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ValidationErrorDetail(BaseModel):

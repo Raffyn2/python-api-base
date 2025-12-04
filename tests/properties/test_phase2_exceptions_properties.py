@@ -4,8 +4,8 @@
 **Validates: Requirements 2.3, 6.2, 13.1, 15.3**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import pytest

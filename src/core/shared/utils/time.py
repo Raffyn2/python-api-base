@@ -5,10 +5,10 @@ Provides timezone-aware datetime operations with UTC as the standard.
 **Feature: core-utils**
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 # UTC timezone constant
-UTC = timezone.utc
+UTC = UTC
 
 
 def utc_now() -> datetime:

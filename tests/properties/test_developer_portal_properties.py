@@ -6,53 +6,43 @@
 
 import pytest
 
-pytest.skip('Module interface.api not implemented', allow_module_level=True)
+pytest.skip("Module interface.api not implemented", allow_module_level=True)
 
-from hypothesis import given, strategies as st, settings
+from hypothesis import given, settings, strategies as st
 
 from interface.api.developer_portal import (
-    DeveloperPortal,
-    SubscriptionTier,
     TIER_LIMITS,
-    InMemoryDeveloperStore,
+    DeveloperPortal,
     InMemoryAPIKeyStore,
+    InMemoryDeveloperStore,
+    SubscriptionTier,
 )
 
 
 class InMemoryUsageStore:
     """In-memory usage store for testing."""
 
-    async def record(self, developer_id: str, endpoint: str, success: bool, latency_ms: float) -> None:
+    async def record(
+        self, developer_id: str, endpoint: str, success: bool, latency_ms: float
+    ) -> None:
         pass
 
     async def get_stats(self, developer_id: str, start, end):
         from interface.api.developer_portal import UsageStats
-        return UsageStats(
-            developer_id=developer_id,
-            period_start=start,
-            period_end=end
-        )
+
+        return UsageStats(developer_id=developer_id, period_start=start, period_end=end)
 
 
 class TestDeveloperPortalProperties:
     """Property tests for developer portal."""
 
-    @given(
-        st.emails(),
-        st.text(min_size=1, max_size=50)
-    )
+    @given(st.emails(), st.text(min_size=1, max_size=50))
     @settings(max_examples=50)
     @pytest.mark.asyncio
-    async def test_register_creates_developer(
-        self,
-        email: str,
-        name: str
-    ) -> None:
+    async def test_register_creates_developer(self, email: str, name: str) -> None:
         """Registration creates developer with correct data."""
         portal = DeveloperPortal(
-            InMemoryDeveloperStore(),
-            InMemoryAPIKeyStore(),
-            InMemoryUsageStore()
+            InMemoryDeveloperStore(), InMemoryAPIKeyStore(), InMemoryUsageStore()
         )
 
         developer = await portal.register_developer(email, name)
@@ -67,9 +57,7 @@ class TestDeveloperPortalProperties:
     async def test_duplicate_email_rejected(self, email: str) -> None:
         """Duplicate email registration is rejected."""
         portal = DeveloperPortal(
-            InMemoryDeveloperStore(),
-            InMemoryAPIKeyStore(),
-            InMemoryUsageStore()
+            InMemoryDeveloperStore(), InMemoryAPIKeyStore(), InMemoryUsageStore()
         )
 
         await portal.register_developer(email, "Test User")
@@ -77,18 +65,13 @@ class TestDeveloperPortalProperties:
         with pytest.raises(ValueError, match="already registered"):
             await portal.register_developer(email, "Another User")
 
-    @given(
-        st.emails(),
-        st.text(min_size=1, max_size=20)
-    )
+    @given(st.emails(), st.text(min_size=1, max_size=20))
     @settings(max_examples=50)
     @pytest.mark.asyncio
     async def test_api_key_creation(self, email: str, key_name: str) -> None:
         """API key creation returns valid key."""
         portal = DeveloperPortal(
-            InMemoryDeveloperStore(),
-            InMemoryAPIKeyStore(),
-            InMemoryUsageStore()
+            InMemoryDeveloperStore(), InMemoryAPIKeyStore(), InMemoryUsageStore()
         )
 
         developer = await portal.register_developer(email, "Test")
@@ -104,9 +87,7 @@ class TestDeveloperPortalProperties:
     async def test_api_key_validation(self, email: str) -> None:
         """Created API key can be validated."""
         portal = DeveloperPortal(
-            InMemoryDeveloperStore(),
-            InMemoryAPIKeyStore(),
-            InMemoryUsageStore()
+            InMemoryDeveloperStore(), InMemoryAPIKeyStore(), InMemoryUsageStore()
         )
 
         developer = await portal.register_developer(email, "Test")
@@ -122,9 +103,7 @@ class TestDeveloperPortalProperties:
     async def test_invalid_key_rejected(self, email: str) -> None:
         """Invalid API key is rejected."""
         portal = DeveloperPortal(
-            InMemoryDeveloperStore(),
-            InMemoryAPIKeyStore(),
-            InMemoryUsageStore()
+            InMemoryDeveloperStore(), InMemoryAPIKeyStore(), InMemoryUsageStore()
         )
 
         validated = await portal.validate_api_key("sk_invalid_key")
@@ -136,9 +115,7 @@ class TestDeveloperPortalProperties:
     async def test_revoked_key_invalid(self, email: str) -> None:
         """Revoked API key becomes invalid."""
         portal = DeveloperPortal(
-            InMemoryDeveloperStore(),
-            InMemoryAPIKeyStore(),
-            InMemoryUsageStore()
+            InMemoryDeveloperStore(), InMemoryAPIKeyStore(), InMemoryUsageStore()
         )
 
         developer = await portal.register_developer(email, "Test")
@@ -149,18 +126,13 @@ class TestDeveloperPortalProperties:
         validated = await portal.validate_api_key(raw_key)
         assert validated is None
 
-    @given(
-        st.emails(),
-        st.sampled_from(list(SubscriptionTier))
-    )
+    @given(st.emails(), st.sampled_from(list(SubscriptionTier)))
     @settings(max_examples=30)
     @pytest.mark.asyncio
     async def test_tier_upgrade(self, email: str, new_tier: SubscriptionTier) -> None:
         """Tier upgrade updates developer."""
         portal = DeveloperPortal(
-            InMemoryDeveloperStore(),
-            InMemoryAPIKeyStore(),
-            InMemoryUsageStore()
+            InMemoryDeveloperStore(), InMemoryAPIKeyStore(), InMemoryUsageStore()
         )
 
         developer = await portal.register_developer(email, "Test")
@@ -187,7 +159,7 @@ class TestTierLimitsProperties:
             SubscriptionTier.FREE,
             SubscriptionTier.STARTER,
             SubscriptionTier.PROFESSIONAL,
-            SubscriptionTier.ENTERPRISE
+            SubscriptionTier.ENTERPRISE,
         ]
 
         for i in range(len(tiers) - 1):

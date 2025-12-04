@@ -9,8 +9,7 @@ import string
 from unittest.mock import patch
 
 import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import assume, given, settings, strategies as st
 from pydantic import ValidationError
 
 from core.config import (
@@ -27,7 +26,11 @@ class TestSecretKeyEntropyValidation:
     **Validates: Requirements 1.1**
     """
 
-    @given(st.text(min_size=32, max_size=128, alphabet=string.ascii_letters + string.digits))
+    @given(
+        st.text(
+            min_size=32, max_size=128, alphabet=string.ascii_letters + string.digits
+        )
+    )
     @settings(max_examples=100)
     def test_valid_secret_keys_accepted(self, secret: str):
         """For any secret key >= 32 chars, validation SHALL pass."""
@@ -37,7 +40,9 @@ class TestSecretKeyEntropyValidation:
             settings_obj = SecuritySettings()
             assert len(settings_obj.secret_key.get_secret_value()) >= 32
 
-    @given(st.text(min_size=1, max_size=31, alphabet=string.ascii_letters + string.digits))
+    @given(
+        st.text(min_size=1, max_size=31, alphabet=string.ascii_letters + string.digits)
+    )
     @settings(max_examples=100)
     def test_short_secret_keys_rejected(self, secret: str):
         """For any secret key < 32 chars, validation SHALL raise ValueError."""
@@ -102,10 +107,13 @@ class TestRateLimitValidation:
         """For any valid rate limit format, validation SHALL pass."""
         rate_limit = f"{number}/{unit}"
 
-        with patch.dict(os.environ, {
-            "SECURITY__SECRET_KEY": "a" * 32,
-            "SECURITY__RATE_LIMIT": rate_limit,
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "SECURITY__SECRET_KEY": "a" * 32,
+                "SECURITY__RATE_LIMIT": rate_limit,
+            },
+        ):
             settings_obj = SecuritySettings()
             assert settings_obj.rate_limit == rate_limit
 
@@ -120,10 +128,13 @@ class TestRateLimitValidation:
         ]
 
         for invalid_rate in invalid_rates:
-            with patch.dict(os.environ, {
-                "SECURITY__SECRET_KEY": "a" * 32,
-                "SECURITY__RATE_LIMIT": invalid_rate,
-            }):
+            with patch.dict(
+                os.environ,
+                {
+                    "SECURITY__SECRET_KEY": "a" * 32,
+                    "SECURITY__RATE_LIMIT": invalid_rate,
+                },
+            ):
                 with pytest.raises(ValidationError):
                     SecuritySettings()
 

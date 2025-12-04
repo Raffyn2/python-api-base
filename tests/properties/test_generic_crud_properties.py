@@ -8,16 +8,12 @@ import json
 
 import pytest
 
-pytest.skip('Module interface.api not implemented', allow_module_level=True)
+pytest.skip("Module interface.api not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
 from interface.api.generic_crud.endpoints import (
-    EndpointConfig,
-    FilterParams,
-    GenericEndpoints,
     PaginationParams,
-    SortParams,
 )
 from interface.api.generic_crud.repository import FilterCondition, FilterOperator
 
@@ -31,9 +27,7 @@ class TestFilterFieldValidation:
 
     def test_parse_valid_filter(self) -> None:
         """Valid filter JSON should be parsed correctly."""
-        filters_str = json.dumps([
-            {"field": "name", "operator": "eq", "value": "test"}
-        ])
+        filters_str = json.dumps([{"field": "name", "operator": "eq", "value": "test"}])
 
         # Create a mock endpoints instance to test parsing
         # Note: In real implementation, this would be tested via API
@@ -152,9 +146,19 @@ class TestFilterOperators:
     def test_all_operators_defined(self) -> None:
         """All expected operators should be defined."""
         expected_operators = [
-            "eq", "ne", "gt", "gte", "lt", "lte",
-            "in", "not_in", "like", "ilike",
-            "is_null", "is_not_null", "between"
+            "eq",
+            "ne",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "in",
+            "not_in",
+            "like",
+            "ilike",
+            "is_null",
+            "is_not_null",
+            "between",
         ]
         for op in expected_operators:
             assert hasattr(FilterOperator, op.upper())

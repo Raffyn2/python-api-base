@@ -6,9 +6,9 @@
 
 from dataclasses import dataclass
 
-from core.base.cqrs.command import BaseCommand
-from core.base.patterns.result import Result, Ok, Err
 from application.common.cqrs.handlers import CommandHandler
+from core.base.cqrs.command import BaseCommand
+from core.base.patterns.result import Err, Ok, Result
 from domain.users.aggregates import UserAggregate
 from domain.users.repositories import IUserRepository
 

@@ -7,10 +7,10 @@ from datetime import timedelta
 
 from infrastructure.ratelimit import InMemoryRateLimiter, RateLimit, RateLimitConfig
 from infrastructure.rbac import (
+    RBAC,
     AuditLogger,
     InMemoryAuditSink,
     Permission,
-    RBAC,
     RoleRegistry,
 )
 from infrastructure.tasks import RabbitMQConfig, RabbitMQTaskQueue

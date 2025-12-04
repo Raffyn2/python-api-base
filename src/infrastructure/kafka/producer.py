@@ -15,11 +15,11 @@ from infrastructure.kafka.message import KafkaMessage, MessageMetadata
 
 # Re-export transactional components for backward compatibility
 from infrastructure.kafka.transaction import (
-    TransactionState,
-    TransactionResult,
-    TransactionError,
     TransactionalKafkaProducer,
     TransactionContext,
+    TransactionError,
+    TransactionResult,
+    TransactionState,
 )
 
 if TYPE_CHECKING:
@@ -232,9 +232,9 @@ class KafkaProducer(Generic[T]):
 
 __all__ = [
     "KafkaProducer",
-    "TransactionState",
-    "TransactionResult",
-    "TransactionError",
-    "TransactionalKafkaProducer",
     "TransactionContext",
+    "TransactionError",
+    "TransactionResult",
+    "TransactionState",
+    "TransactionalKafkaProducer",
 ]

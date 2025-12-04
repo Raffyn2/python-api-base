@@ -10,14 +10,17 @@ Tests correctness properties of cloud provider blocking including:
 **Validates: Requirements 5.3**
 """
 
-
 import pytest
-pytest.skip('Module infrastructure.security.cloud_provider_filter not implemented', allow_module_level=True)
+
+pytest.skip(
+    "Module infrastructure.security.cloud_provider_filter not implemented",
+    allow_module_level=True,
+)
 
 import asyncio
+from datetime import UTC
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.security.cloud_provider_filter import (
     CloudProvider,
@@ -29,7 +32,6 @@ from infrastructure.security.cloud_provider_filter import (
     InMemoryCloudRangeProvider,
 )
 
-
 # Strategies
 provider_strategy = st.sampled_from([
     p for p in CloudProvider if p != CloudProvider.UNKNOWN
@@ -37,27 +39,46 @@ provider_strategy = st.sampled_from([
 
 # Sample IPs from known cloud ranges
 aws_ip_strategy = st.sampled_from([
-    "3.5.140.2", "13.52.0.1", "52.94.76.1", "54.239.28.85",
+    "3.5.140.2",
+    "13.52.0.1",
+    "52.94.76.1",
+    "54.239.28.85",
 ])
 
 gcp_ip_strategy = st.sampled_from([
-    "34.102.136.180", "104.196.0.1", "130.211.0.1", "142.250.0.1",
+    "34.102.136.180",
+    "104.196.0.1",
+    "130.211.0.1",
+    "142.250.0.1",
 ])
 
 azure_ip_strategy = st.sampled_from([
-    "13.64.0.1", "20.42.0.1", "40.64.0.1", "51.140.0.1",
+    "13.64.0.1",
+    "20.42.0.1",
+    "40.64.0.1",
+    "51.140.0.1",
 ])
 
 digitalocean_ip_strategy = st.sampled_from([
-    "64.225.0.1", "134.209.0.1", "138.68.0.1", "159.65.0.1",
+    "64.225.0.1",
+    "134.209.0.1",
+    "138.68.0.1",
+    "159.65.0.1",
 ])
 
 cloudflare_ip_strategy = st.sampled_from([
-    "104.16.0.1", "104.24.0.1", "172.64.0.1", "173.245.48.1",
+    "104.16.0.1",
+    "104.24.0.1",
+    "172.64.0.1",
+    "173.245.48.1",
 ])
 
 non_cloud_ip_strategy = st.sampled_from([
-    "192.168.1.1", "10.0.0.1", "8.8.8.8", "1.1.1.1", "208.67.222.222",
+    "192.168.1.1",
+    "10.0.0.1",
+    "8.8.8.8",
+    "1.1.1.1",
+    "208.67.222.222",
 ])
 
 
@@ -306,11 +327,7 @@ class TestCloudProviderFilterBuilder:
         *For any* provider, builder configures it correctly.
         **Validates: Requirements 5.3**
         """
-        filter = (
-            CloudProviderFilterBuilder()
-            .block_providers(provider)
-            .build()
-        )
+        filter = CloudProviderFilterBuilder().block_providers(provider).build()
 
         assert provider in filter.config.blocked_providers
 
@@ -431,17 +448,20 @@ class TestIPv6Support:
 
         # They should be different types
         from ipaddress import IPv4Network, IPv6Network
+
         assert all(isinstance(r, IPv4Network) for r in ipv4_ranges)
         assert all(isinstance(r, IPv6Network) for r in ipv6_ranges)
 
-    @given(invalid_ip=st.sampled_from([
-        "not-an-ip",
-        "256.256.256.256",
-        "::gggg",
-        "",
-        "1.2.3",
-        "1.2.3.4.5",
-    ]))
+    @given(
+        invalid_ip=st.sampled_from([
+            "not-an-ip",
+            "256.256.256.256",
+            "::gggg",
+            "",
+            "1.2.3",
+            "1.2.3.4.5",
+        ])
+    )
     @settings(max_examples=20)
     def test_invalid_ip_graceful_handling(self, invalid_ip: str) -> None:
         """**Feature: shared-modules-refactoring, Property 19: Invalid IP Graceful Handling**
@@ -471,7 +491,9 @@ class TestExternalRangeSource:
         For any CloudIPRangeProvider initialized with external sources,
         the provider SHALL contain ranges from both default and external sources.
         """
-        from infrastructure.security.cloud_provider_filter.ranges import UpdatableCloudRangeProvider
+        from infrastructure.security.cloud_provider_filter.ranges import (
+            UpdatableCloudRangeProvider,
+        )
 
         provider = UpdatableCloudRangeProvider()
 
@@ -484,7 +506,9 @@ class TestExternalRangeSource:
 
         # Should now have both default and custom ranges
         updated_ranges = provider.get_ranges(CloudProvider.AWS)
-        assert len(updated_ranges) > len(aws_ranges) or "100.0.0.0/8" in [str(r) for r in updated_ranges]
+        assert len(updated_ranges) > len(aws_ranges) or "100.0.0.0/8" in [
+            str(r) for r in updated_ranges
+        ]
 
     def test_range_merge_without_duplicates(self) -> None:
         """**Feature: shared-modules-refactoring, Property 12: Range Merge Without Duplicates**
@@ -504,6 +528,7 @@ class TestExternalRangeSource:
 
         # Count occurrences of the specific range
         from ipaddress import ip_network
+
         target = ip_network("100.0.0.0/8")
         count = sum(1 for r in ranges if r == target)
 
@@ -518,16 +543,20 @@ class TestExternalRangeSource:
         provider = InMemoryCloudRangeProvider()
 
         # Merge with duplicates
-        provider.merge_ranges(CloudProvider.GCP, [
-            "200.0.0.0/8",
-            "200.0.0.0/8",
-            "201.0.0.0/8",
-            "201.0.0.0/8",
-        ])
+        provider.merge_ranges(
+            CloudProvider.GCP,
+            [
+                "200.0.0.0/8",
+                "200.0.0.0/8",
+                "201.0.0.0/8",
+                "201.0.0.0/8",
+            ],
+        )
 
         ranges = provider.get_ranges(CloudProvider.GCP)
 
         from ipaddress import ip_network
+
         range_200 = ip_network("200.0.0.0/8")
         range_201 = ip_network("201.0.0.0/8")
 
@@ -540,7 +569,10 @@ class TestExternalRangeSource:
     def test_staleness_detection(self) -> None:
         """Test that staleness is properly detected."""
         from datetime import timedelta
-        from infrastructure.security.cloud_provider_filter.ranges import InMemoryCloudRangeProvider
+
+        from infrastructure.security.cloud_provider_filter.ranges import (
+            InMemoryCloudRangeProvider,
+        )
 
         provider = InMemoryCloudRangeProvider()
 
@@ -548,8 +580,9 @@ class TestExternalRangeSource:
         assert not provider.is_stale(max_age=timedelta(hours=24))
 
         # Manually set old timestamp
-        from datetime import datetime, timezone
-        provider._last_update = datetime.now(timezone.utc) - timedelta(hours=25)
+        from datetime import datetime
+
+        provider._last_update = datetime.now(UTC) - timedelta(hours=25)
 
         # Now should be stale
         assert provider.is_stale(max_age=timedelta(hours=24))

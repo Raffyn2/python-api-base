@@ -3,36 +3,36 @@
 **Feature: application-common-integration**
 """
 
+from application.examples.pedido.commands import (
+    AddItemToPedidoCommand,
+    CancelPedidoCommand,
+    ConfirmPedidoCommand,
+    CreatePedidoCommand,
+)
 from application.examples.pedido.dtos import (
-    PedidoExampleCreate,
-    PedidoExampleUpdate,
-    PedidoExampleResponse,
-    PedidoItemResponse,
     AddItemRequest,
-    ConfirmPedidoRequest,
     CancelPedidoRequest,
+    ConfirmPedidoRequest,
+    PedidoExampleCreate,
+    PedidoExampleResponse,
+    PedidoExampleUpdate,
+    PedidoItemResponse,
     UpdateStatusRequest,
 )
-from application.examples.pedido.mapper import PedidoExampleMapper, PedidoItemMapper
-from application.examples.pedido.use_case import PedidoExampleUseCase
-from application.examples.pedido.commands import (
-    CreatePedidoCommand,
-    AddItemToPedidoCommand,
-    ConfirmPedidoCommand,
-    CancelPedidoCommand,
+from application.examples.pedido.handlers import (
+    AddItemToPedidoCommandHandler,
+    CancelPedidoCommandHandler,
+    ConfirmPedidoCommandHandler,
+    CreatePedidoCommandHandler,
+    GetPedidoQueryHandler,
+    ListPedidosQueryHandler,
 )
+from application.examples.pedido.mapper import PedidoExampleMapper, PedidoItemMapper
 from application.examples.pedido.queries import (
     GetPedidoQuery,
     ListPedidosQuery,
 )
-from application.examples.pedido.handlers import (
-    CreatePedidoCommandHandler,
-    AddItemToPedidoCommandHandler,
-    ConfirmPedidoCommandHandler,
-    CancelPedidoCommandHandler,
-    GetPedidoQueryHandler,
-    ListPedidosQueryHandler,
-)
+from application.examples.pedido.use_case import PedidoExampleUseCase
 
 __all__ = [
     # DTOs

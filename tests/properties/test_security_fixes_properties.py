@@ -6,12 +6,13 @@
 from __future__ import annotations
 
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import asyncio
 import re
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from hypothesis import given, settings, strategies as st
@@ -19,7 +20,6 @@ from hypothesis import given, settings, strategies as st
 from core.errors.exceptions import AuthenticationError, DecryptionError
 from infrastructure.security.field_encryption import (
     EncryptedValue,
-    EncryptionAlgorithm,
     FieldEncryptor,
     InMemoryKeyProvider,
 )
@@ -61,7 +61,6 @@ class TestEncryptionRoundTrip:
 
         asyncio.get_event_loop().run_until_complete(run_test())
 
-
     @given(plaintext=st.binary(min_size=1, max_size=1000))
     @settings(max_examples=50)
     def test_tampered_ciphertext_fails_authentication(self, plaintext: bytes) -> None:
@@ -72,9 +71,13 @@ class TestEncryptionRoundTrip:
             encrypted = await encryptor.encrypt(plaintext)
 
             # Tamper with ciphertext
-            tampered_ciphertext = bytes(
-                [b ^ 0xFF for b in encrypted.ciphertext[:min(10, len(encrypted.ciphertext))]]
-            ) + encrypted.ciphertext[10:]
+            tampered_ciphertext = (
+                bytes([
+                    b ^ 0xFF
+                    for b in encrypted.ciphertext[: min(10, len(encrypted.ciphertext))]
+                ])
+                + encrypted.ciphertext[10:]
+            )
 
             tampered = EncryptedValue(
                 ciphertext=tampered_ciphertext,
@@ -141,17 +144,18 @@ class TestEncryptionRoundTrip:
         asyncio.get_event_loop().run_until_complete(run_test())
 
 
-
 # **Feature: shared-modules-security-fixes, Property 2: Bcrypt Hash Uniqueness**
 # **Validates: Requirements 2.1, 2.3**
 class TestBcryptHashUniqueness:
     """Property tests for bcrypt hash uniqueness."""
 
-    @given(api_key=st.text(
-        min_size=10,
-        max_size=50,
-        alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
-    ))
+    @given(
+        api_key=st.text(
+            min_size=10,
+            max_size=50,
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-",
+        )
+    )
     @settings(max_examples=10, deadline=None)
     def test_same_key_produces_different_hashes(self, api_key: str) -> None:
         """Hashing same key multiple times produces different hashes (unique salts)."""
@@ -168,11 +172,13 @@ class TestBcryptHashUniqueness:
         assert service._verify_key(api_key, hash1)
         assert service._verify_key(api_key, hash2)
 
-    @given(api_key=st.text(
-        min_size=10,
-        max_size=50,
-        alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
-    ))
+    @given(
+        api_key=st.text(
+            min_size=10,
+            max_size=50,
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-",
+        )
+    )
     @settings(max_examples=10, deadline=None)
     def test_bcrypt_hash_format(self, api_key: str) -> None:
         """Bcrypt hash has correct format with cost factor >= 12."""
@@ -195,11 +201,13 @@ class TestBcryptHashUniqueness:
 class TestHashMigrationCompatibility:
     """Property tests for hash format migration."""
 
-    @given(api_key=st.text(
-        min_size=10,
-        max_size=50,
-        alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
-    ))
+    @given(
+        api_key=st.text(
+            min_size=10,
+            max_size=50,
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-",
+        )
+    )
     @settings(max_examples=20, deadline=None)
     def test_legacy_sha256_verification(self, api_key: str) -> None:
         """Legacy SHA256 hashes can still be verified."""
@@ -215,11 +223,13 @@ class TestHashMigrationCompatibility:
         wrong_key = api_key + "_wrong"
         assert not service._verify_key(wrong_key, legacy_hash)
 
-    @given(api_key=st.text(
-        min_size=10,
-        max_size=50,
-        alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
-    ))
+    @given(
+        api_key=st.text(
+            min_size=10,
+            max_size=50,
+            alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-",
+        )
+    )
     @settings(max_examples=10, deadline=None)
     def test_both_formats_work(self, api_key: str) -> None:
         """Both bcrypt and SHA256 formats verify correctly."""
@@ -240,13 +250,12 @@ class TestHashMigrationCompatibility:
         assert not service._verify_key(wrong_key, sha256_hash)
 
 
-
 # **Feature: shared-modules-security-fixes, Property 4: Timestamp Timezone Awareness**
 # **Validates: Requirements 3.1, 3.2, 3.3**
 class TestTimestampTimezoneAwareness:
     """Property tests for timezone-aware timestamps."""
 
-    @given(st.datetimes(timezones=st.just(timezone.utc)))
+    @given(st.datetimes(timezones=st.just(UTC)))
     @settings(max_examples=100)
     def test_utc_now_is_timezone_aware(self, _: datetime) -> None:
         """utc_now() returns timezone-aware datetime."""
@@ -255,7 +264,9 @@ class TestTimestampTimezoneAwareness:
         result = utc_now()
         assert result.tzinfo is not None
 
-    @given(dt=st.datetimes(min_value=datetime(2000, 1, 1), max_value=datetime(2100, 1, 1)))
+    @given(
+        dt=st.datetimes(min_value=datetime(2000, 1, 1), max_value=datetime(2100, 1, 1))
+    )
     @settings(max_examples=100)
     def test_ensure_utc_makes_naive_datetime_aware(self, dt: datetime) -> None:
         """ensure_utc() makes naive datetimes timezone-aware."""
@@ -266,13 +277,15 @@ class TestTimestampTimezoneAwareness:
         result = ensure_utc(naive_dt)
 
         assert result.tzinfo is not None
-        assert result.tzinfo == timezone.utc
+        assert result.tzinfo == UTC
 
-    @given(dt=st.datetimes(
-        min_value=datetime(2000, 1, 1),
-        max_value=datetime(2100, 1, 1),
-        timezones=st.just(timezone.utc)
-    ))
+    @given(
+        dt=st.datetimes(
+            min_value=datetime(2000, 1, 1),
+            max_value=datetime(2100, 1, 1),
+            timezones=st.just(UTC),
+        )
+    )
     @settings(max_examples=100)
     def test_iso8601_serialization_includes_timezone(self, dt: datetime) -> None:
         """to_iso8601() includes timezone information."""
@@ -284,15 +297,17 @@ class TestTimestampTimezoneAwareness:
         assert result is not None
         assert "+" in result or "Z" in result or "-" in result[-6:]
 
-    @given(dt=st.datetimes(
-        min_value=datetime(2000, 1, 1),
-        max_value=datetime(2100, 1, 1),
-        timezones=st.just(timezone.utc)
-    ))
+    @given(
+        dt=st.datetimes(
+            min_value=datetime(2000, 1, 1),
+            max_value=datetime(2100, 1, 1),
+            timezones=st.just(UTC),
+        )
+    )
     @settings(max_examples=100)
     def test_iso8601_round_trip(self, dt: datetime) -> None:
         """ISO 8601 serialization/deserialization preserves datetime."""
-        from core.shared.utils.datetime import to_iso8601, from_iso8601
+        from core.shared.utils.datetime import from_iso8601, to_iso8601
 
         serialized = to_iso8601(dt)
         deserialized = from_iso8601(serialized)
@@ -300,7 +315,6 @@ class TestTimestampTimezoneAwareness:
         assert deserialized is not None
         # Compare timestamps (may have microsecond differences)
         assert abs((deserialized - dt).total_seconds()) < 1
-
 
 
 # **Feature: shared-modules-security-fixes, Property 5: Glob-to-Regex Safe Conversion**
@@ -311,11 +325,15 @@ class TestGlobToRegexSafeConversion:
     # Regex special characters that should be escaped
     REGEX_SPECIAL_CHARS = r"\.^$+{}[]|()"
 
-    @given(filename=st.text(
-        min_size=1,
-        max_size=50,
-        alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="._-")
-    ))
+    @given(
+        filename=st.text(
+            min_size=1,
+            max_size=50,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="._-"
+            ),
+        )
+    )
     @settings(max_examples=100)
     def test_glob_matches_literal_filename(self, filename: str) -> None:
         """Glob pattern without wildcards matches exact filename."""
@@ -326,18 +344,32 @@ class TestGlobToRegexSafeConversion:
         assert not match_glob(filename, filename + "x")
 
     @given(
-        prefix=st.text(min_size=0, max_size=20, alphabet=st.characters(
-            whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-        )),
-        suffix=st.text(min_size=1, max_size=10, alphabet=st.characters(
-            whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-        )),
-        middle=st.text(min_size=0, max_size=20, alphabet=st.characters(
-            whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-        ))
+        prefix=st.text(
+            min_size=0,
+            max_size=20,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
+            ),
+        ),
+        suffix=st.text(
+            min_size=1,
+            max_size=10,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
+            ),
+        ),
+        middle=st.text(
+            min_size=0,
+            max_size=20,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
+            ),
+        ),
     )
     @settings(max_examples=100)
-    def test_glob_star_matches_any_middle(self, prefix: str, suffix: str, middle: str) -> None:
+    def test_glob_star_matches_any_middle(
+        self, prefix: str, suffix: str, middle: str
+    ) -> None:
         """Glob * wildcard matches any characters in the middle."""
         from core.shared.utils.safe_pattern import match_glob
 
@@ -350,7 +382,7 @@ class TestGlobToRegexSafeConversion:
     @settings(max_examples=50)
     def test_regex_special_chars_are_escaped(self, special_char: str) -> None:
         """Regex special characters in glob are properly escaped."""
-        from core.shared.utils.safe_pattern import glob_to_regex, match_glob
+        from core.shared.utils.safe_pattern import match_glob
 
         # Pattern with special char should match literally
         pattern = f"file{special_char}name"
@@ -363,12 +395,16 @@ class TestGlobToRegexSafeConversion:
         assert not match_glob(pattern, "filename")
 
     @given(
-        base=st.text(min_size=1, max_size=20, alphabet=st.characters(
-            whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-        )),
-        ext=st.text(min_size=1, max_size=5, alphabet=st.characters(
-            whitelist_categories=("Ll",)
-        ))
+        base=st.text(
+            min_size=1,
+            max_size=20,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
+            ),
+        ),
+        ext=st.text(
+            min_size=1, max_size=5, alphabet=st.characters(whitelist_categories=("Ll",))
+        ),
     )
     @settings(max_examples=100)
     def test_glob_extension_pattern(self, base: str, ext: str) -> None:
@@ -395,7 +431,6 @@ class TestGlobToRegexSafeConversion:
         assert compiled is not None
 
 
-
 # **Feature: shared-modules-security-fixes, Property 6: Circuit Breaker Registry Thread Safety**
 # **Validates: Requirements 5.1, 5.3**
 class TestCircuitBreakerRegistryThreadSafety:
@@ -404,16 +439,24 @@ class TestCircuitBreakerRegistryThreadSafety:
     def setup_method(self) -> None:
         """Reset registry before each test."""
         from core.shared.circuit_breaker import reset_circuit_breaker_registry
+
         reset_circuit_breaker_registry()
 
     def teardown_method(self) -> None:
         """Reset registry after each test."""
         from core.shared.circuit_breaker import reset_circuit_breaker_registry
+
         reset_circuit_breaker_registry()
 
-    @given(name=st.text(min_size=1, max_size=50, alphabet=st.characters(
-        whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-    )))
+    @given(
+        name=st.text(
+            min_size=1,
+            max_size=50,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
+            ),
+        )
+    )
     @settings(max_examples=50)
     def test_same_name_returns_same_instance(self, name: str) -> None:
         """Getting same name multiple times returns same instance."""
@@ -421,6 +464,7 @@ class TestCircuitBreakerRegistryThreadSafety:
             get_circuit_breaker,
             reset_circuit_breaker_registry,
         )
+
         reset_circuit_breaker_registry()
 
         cb1 = get_circuit_breaker(name)
@@ -428,14 +472,20 @@ class TestCircuitBreakerRegistryThreadSafety:
 
         assert cb1 is cb2
 
-    @given(names=st.lists(
-        st.text(min_size=1, max_size=20, alphabet=st.characters(
-            whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-        )),
-        min_size=1,
-        max_size=10,
-        unique=True
-    ))
+    @given(
+        names=st.lists(
+            st.text(
+                min_size=1,
+                max_size=20,
+                alphabet=st.characters(
+                    whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
+                ),
+            ),
+            min_size=1,
+            max_size=10,
+            unique=True,
+        )
+    )
     @settings(max_examples=50)
     def test_different_names_return_different_instances(self, names: list[str]) -> None:
         """Different names return different instances."""
@@ -443,6 +493,7 @@ class TestCircuitBreakerRegistryThreadSafety:
             get_circuit_breaker,
             reset_circuit_breaker_registry,
         )
+
         reset_circuit_breaker_registry()
 
         breakers = [get_circuit_breaker(name) for name in names]
@@ -459,6 +510,7 @@ class TestCircuitBreakerRegistryThreadSafety:
             get_circuit_breaker,
             reset_circuit_breaker_registry,
         )
+
         reset_circuit_breaker_registry()
 
         results: list[object] = []
@@ -494,10 +546,11 @@ class TestCircuitBreakerRegistryThreadSafety:
     def test_reset_clears_registry(self) -> None:
         """Reset clears all circuit breakers."""
         from core.shared.circuit_breaker import (
-            get_circuit_breaker,
             get_all_circuit_breakers,
+            get_circuit_breaker,
             reset_circuit_breaker_registry,
         )
+
         reset_circuit_breaker_registry()
 
         # Add some breakers
@@ -513,19 +566,26 @@ class TestCircuitBreakerRegistryThreadSafety:
         assert len(get_all_circuit_breakers()) == 0
 
 
-
 # **Feature: shared-modules-security-fixes, Property 7: Context Token Safe Reset**
 # **Validates: Requirements 6.1, 6.3**
 class TestContextTokenSafeReset:
     """Property tests for safe context token reset."""
 
     @given(
-        correlation_id=st.text(min_size=10, max_size=50, alphabet=st.characters(
-            whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-        )),
-        request_id=st.text(min_size=10, max_size=50, alphabet=st.characters(
-            whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-        ))
+        correlation_id=st.text(
+            min_size=10,
+            max_size=50,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
+            ),
+        ),
+        request_id=st.text(
+            min_size=10,
+            max_size=50,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
+            ),
+        ),
     )
     @settings(max_examples=50)
     def test_context_manager_sets_and_restores_context(
@@ -535,9 +595,9 @@ class TestContextTokenSafeReset:
         from core.shared.correlation import (
             CorrelationContext,
             CorrelationContextManager,
+            clear_context,
             get_correlation_id,
             get_request_id,
-            clear_context,
         )
 
         clear_context()
@@ -587,11 +647,10 @@ class TestContextTokenSafeReset:
         from core.shared.correlation import (
             CorrelationContext,
             CorrelationContextManager,
-            get_correlation_id,
-            get_span_id,
+            IdFormat,
             clear_context,
             generate_id,
-            IdFormat,
+            get_correlation_id,
         )
 
         clear_context()

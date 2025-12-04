@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from datetime import timezone
+from datetime import UTC
 from decimal import Decimal
 
 import pytest
@@ -28,9 +28,9 @@ class TestEntityTimestampsTimezoneAware:
         )
 
         assert audit_log.timestamp.tzinfo is not None
-        assert audit_log.timestamp.tzinfo == timezone.utc
+        assert audit_log.timestamp.tzinfo == UTC
         assert audit_log.created_at.tzinfo is not None
-        assert audit_log.created_at.tzinfo == timezone.utc
+        assert audit_log.created_at.tzinfo == UTC
 
     def test_item_timestamps_are_timezone_aware(self) -> None:
         """Item timestamp fields have UTC timezone."""
@@ -42,9 +42,9 @@ class TestEntityTimestampsTimezoneAware:
         )
 
         assert item.created_at.tzinfo is not None
-        assert item.created_at.tzinfo == timezone.utc
+        assert item.created_at.tzinfo == UTC
         assert item.updated_at.tzinfo is not None
-        assert item.updated_at.tzinfo == timezone.utc
+        assert item.updated_at.tzinfo == UTC
 
     def test_role_timestamps_are_timezone_aware(self) -> None:
         """RoleDB timestamp fields have UTC timezone."""
@@ -53,9 +53,9 @@ class TestEntityTimestampsTimezoneAware:
         role = RoleDB(name="test_role")
 
         assert role.created_at.tzinfo is not None
-        assert role.created_at.tzinfo == timezone.utc
+        assert role.created_at.tzinfo == UTC
         assert role.updated_at.tzinfo is not None
-        assert role.updated_at.tzinfo == timezone.utc
+        assert role.updated_at.tzinfo == UTC
 
     def test_user_role_timestamp_is_timezone_aware(self) -> None:
         """UserRoleDB assigned_at field has UTC timezone."""
@@ -67,7 +67,7 @@ class TestEntityTimestampsTimezoneAware:
         )
 
         assert user_role.assigned_at.tzinfo is not None
-        assert user_role.assigned_at.tzinfo == timezone.utc
+        assert user_role.assigned_at.tzinfo == UTC
 
     @given(
         name=st.text(min_size=1, max_size=100),
@@ -81,7 +81,7 @@ class TestEntityTimestampsTimezoneAware:
         from domain.entities.item import Item
 
         item = Item(name=name, price=price)
-        
+
         # Serialize to ISO format
         created_iso = item.created_at.isoformat()
         updated_iso = item.updated_at.isoformat()
@@ -107,9 +107,7 @@ class TestValueObjectEquality:
         currency=st.sampled_from(["USD", "EUR", "GBP", "BRL"]),
     )
     @settings(max_examples=100)
-    def test_money_equality_by_attributes(
-        self, amount: Decimal, currency: str
-    ) -> None:
+    def test_money_equality_by_attributes(self, amount: Decimal, currency: str) -> None:
         """Two Money objects with same attributes are equal."""
         from domain.value_objects.money import Money
 

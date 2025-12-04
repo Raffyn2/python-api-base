@@ -4,14 +4,13 @@
 **Validates: Requirements 6.1, 6.2**
 """
 
-
 import pytest
-pytest.skip('Module infrastructure.testing not implemented', allow_module_level=True)
+
+pytest.skip("Module infrastructure.testing not implemented", allow_module_level=True)
 
 import asyncio
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.testing.chaos import (
     ChaosEngine,
@@ -26,10 +25,10 @@ from infrastructure.testing.chaos import (
     create_timeout_fault,
 )
 
-
 # =============================================================================
 # Property Tests - Fault Configuration
 # =============================================================================
+
 
 class TestFaultConfigProperties:
     """Property tests for fault configuration."""
@@ -90,6 +89,7 @@ class TestFaultConfigProperties:
 # Property Tests - Chaos Engine
 # =============================================================================
 
+
 class TestChaosEngineProperties:
     """Property tests for chaos engine."""
 
@@ -136,10 +136,7 @@ class TestChaosEngineProperties:
         )
 
         # Run many trials
-        injections = sum(
-            1 for _ in range(100)
-            if engine.should_inject(config)
-        )
+        injections = sum(1 for _ in range(100) if engine.should_inject(config))
 
         # Should be roughly proportional to probability
         # Allow wide margin for randomness
@@ -203,6 +200,7 @@ class TestChaosEngineProperties:
 # =============================================================================
 # Property Tests - Fault Injection
 # =============================================================================
+
 
 class TestFaultInjectionProperties:
     """Property tests for fault injection."""
@@ -278,6 +276,7 @@ class TestFaultInjectionProperties:
 # Property Tests - Endpoint Filtering
 # =============================================================================
 
+
 class TestEndpointFilteringProperties:
     """Property tests for endpoint filtering."""
 
@@ -326,6 +325,7 @@ class TestEndpointFilteringProperties:
 # =============================================================================
 # Property Tests - Statistics
 # =============================================================================
+
 
 class TestChaosStatsProperties:
     """Property tests for chaos statistics."""
@@ -404,6 +404,7 @@ class TestChaosStatsProperties:
 # Property Tests - Factory Functions
 # =============================================================================
 
+
 class TestFactoryFunctionsProperties:
     """Property tests for factory functions."""
 
@@ -453,6 +454,7 @@ class TestFactoryFunctionsProperties:
 # =============================================================================
 # Property Tests - Experiment Runner
 # =============================================================================
+
 
 class TestExperimentRunnerProperties:
     """Property tests for experiment runner."""

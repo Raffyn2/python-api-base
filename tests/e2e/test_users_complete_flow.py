@@ -4,9 +4,10 @@
 **Validates: Requirements Complete user flow through API**
 """
 
+from collections.abc import Generator
+
 import pytest
 from fastapi.testclient import TestClient
-from typing import Generator
 
 from main import app
 
@@ -41,7 +42,9 @@ class TestCompleteUserLifecycle:
         create_response = client.post("/api/v1/users", json=create_payload)
 
         # Validate creation
-        assert create_response.status_code == 201, f"Create failed: {create_response.text}"
+        assert create_response.status_code == 201, (
+            f"Create failed: {create_response.text}"
+        )
         created_user = create_response.json()
         assert created_user["email"] == "e2e.test@example.com"
         assert created_user["username"] == "e2euser"
@@ -86,7 +89,9 @@ class TestCompleteUserLifecycle:
         update_response = client.patch(f"/api/v1/users/{user_id}", json=update_payload)
 
         # Validate update
-        assert update_response.status_code == 200, f"Update failed: {update_response.text}"
+        assert update_response.status_code == 200, (
+            f"Update failed: {update_response.text}"
+        )
         updated_user = update_response.json()
         assert updated_user["id"] == user_id
         assert updated_user["username"] == "e2e_updated"
@@ -110,7 +115,9 @@ class TestCompleteUserLifecycle:
         delete_response = client.delete(f"/api/v1/users/{user_id}")
 
         # Validate deletion
-        assert delete_response.status_code == 204, f"Delete failed: {delete_response.text}"
+        assert delete_response.status_code == 204, (
+            f"Delete failed: {delete_response.text}"
+        )
 
         # ========================================
         # STEP 7: VERIFY USER IS DELETED

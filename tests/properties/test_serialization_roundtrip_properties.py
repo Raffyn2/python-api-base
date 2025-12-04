@@ -4,27 +4,30 @@
 **Validates: Requirements 18.1, 18.2, 18.3**
 """
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, UTC
-from uuid import uuid4
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 try:
-    from core.base.domain_event import DomainEvent
+    from application.users.dto import CreateUserDTO, UserDTO
     from core.base.command import BaseCommand
+    from core.base.domain_event import DomainEvent
     from core.base.query import BaseQuery
-    from application.users.dto import UserDTO, CreateUserDTO
-    from domain.users.events import UserRegisteredEvent, UserDeactivatedEvent
-    from core.shared.utils.serialization import serialize, deserialize
+    from core.shared.utils.serialization import deserialize, serialize
+    from domain.users.events import UserDeactivatedEvent, UserRegisteredEvent
 except ImportError:
     pytest.skip("my_app modules not available", allow_module_level=True)
 
 
 # Strategies
-user_id_strategy = st.text(min_size=10, max_size=26, alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ")
+user_id_strategy = st.text(
+    min_size=10, max_size=26, alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+)
 email_strategy = st.emails()
-username_strategy = st.text(min_size=3, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_")
+username_strategy = st.text(
+    min_size=3, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_"
+)
 reason_strategy = st.text(min_size=1, max_size=200)
 
 
@@ -36,13 +39,13 @@ class TestDomainEventSerialization:
     def test_user_registered_event_roundtrip(self, user_id: str, email: str) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 17: Serialization Round-Trip for All Types**
-        
+
         For any UserRegisteredEvent, serializing to JSON and deserializing back
         SHALL produce an equivalent event.
         **Validates: Requirements 18.1**
         """
         event = UserRegisteredEvent(user_id=user_id, email=email)
-        
+
         # Serialize to dict
         event_dict = {
             "event_id": str(event.event_id),
@@ -51,7 +54,7 @@ class TestDomainEventSerialization:
             "email": event.email,
             "event_type": event.event_type,
         }
-        
+
         # Verify fields preserved
         assert event_dict["user_id"] == user_id
         assert event_dict["email"] == email
@@ -65,7 +68,7 @@ class TestDomainEventSerialization:
         **Validates: Requirements 18.1**
         """
         event = UserDeactivatedEvent(user_id=user_id, reason=reason)
-        
+
         event_dict = {
             "event_id": str(event.event_id),
             "occurred_at": event.occurred_at.isoformat(),
@@ -73,7 +76,7 @@ class TestDomainEventSerialization:
             "reason": event.reason,
             "event_type": event.event_type,
         }
-        
+
         assert event_dict["user_id"] == user_id
         assert event_dict["reason"] == reason
         assert event_dict["event_type"] == "user.deactivated"
@@ -113,13 +116,13 @@ class TestDTOSerialization:
             created_at=now,
             updated_at=now,
         )
-        
+
         # Serialize to dict
         dto_dict = dto.model_dump()
-        
+
         # Deserialize back
         restored = UserDTO.model_validate(dto_dict)
-        
+
         assert restored.id == dto.id
         assert restored.email == dto.email
         assert restored.username == dto.username
@@ -147,10 +150,10 @@ class TestDTOSerialization:
             username=username,
             password=password,
         )
-        
+
         dto_dict = dto.model_dump()
         restored = CreateUserDTO.model_validate(dto_dict)
-        
+
         assert restored.email == dto.email
         assert restored.username == dto.username
         assert restored.password == dto.password
@@ -181,12 +184,13 @@ class TestCommandQuerySerialization:
             "username": username,
             "password": password,
         }
-        
+
         # Simulate serialization for message bus transport
         import json
+
         serialized = json.dumps(command_data)
         deserialized = json.loads(serialized)
-        
+
         assert deserialized["email"] == email
         assert deserialized["username"] == username
         assert deserialized["password"] == password
@@ -201,11 +205,12 @@ class TestCommandQuerySerialization:
         query_data = {
             "user_id": user_id,
         }
-        
+
         import json
+
         serialized = json.dumps(query_data)
         deserialized = json.loads(serialized)
-        
+
         assert deserialized["user_id"] == user_id
 
 
@@ -215,7 +220,9 @@ class TestGenericSerialization:
     @settings(max_examples=50)
     @given(
         data=st.dictionaries(
-            keys=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"),
+            keys=st.text(
+                min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"
+            ),
             values=st.one_of(
                 st.text(max_size=100),
                 st.integers(),
@@ -232,10 +239,10 @@ class TestGenericSerialization:
         **Validates: Requirements 18.1, 18.2, 18.3**
         """
         import json
-        
+
         serialized = json.dumps(data)
         deserialized = json.loads(serialized)
-        
+
         assert deserialized == data
 
     @settings(max_examples=30)
@@ -255,8 +262,8 @@ class TestGenericSerialization:
         **Validates: Requirements 18.1, 18.2, 18.3**
         """
         import json
-        
+
         serialized = json.dumps(items)
         deserialized = json.loads(serialized)
-        
+
         assert deserialized == items

@@ -14,17 +14,21 @@ Demonstrates:
 """
 
 import logging
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from core.base.patterns.result import Result, Ok, Err
-from domain.examples.item.entity import ItemExample, Money
 from application.examples.item.dtos import (
     ItemExampleCreate,
-    ItemExampleUpdate,
     ItemExampleResponse,
+    ItemExampleUpdate,
 )
 from application.examples.item.mapper import ItemExampleMapper
-from application.examples.shared.errors import UseCaseError, NotFoundError, ValidationError
+from application.examples.shared.errors import (
+    NotFoundError,
+    UseCaseError,
+    ValidationError,
+)
+from core.base.patterns.result import Err, Ok, Result
+from domain.examples.item.entity import ItemExample, Money
 
 if TYPE_CHECKING:
     from infrastructure.kafka.event_publisher import EventPublisher

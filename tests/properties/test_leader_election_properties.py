@@ -4,15 +4,15 @@
 **Validates: Requirements 6.4**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import asyncio
 from datetime import datetime, timedelta
 
 import pytest
-from hypothesis import given, settings, strategies as st
+from hypothesis import strategies as st
 
 from infrastructure.distributed.leader_election import (
     InMemoryLeaderElectionBackend,
@@ -20,7 +20,6 @@ from infrastructure.distributed.leader_election import (
     LeaderInfo,
     LeaderState,
 )
-
 
 identifier_strategy = st.text(
     alphabet=st.sampled_from("abcdefghijklmnopqrstuvwxyz_"),

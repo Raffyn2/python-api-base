@@ -4,11 +4,9 @@
 **Validates: Requirements 10.2, 11.1**
 """
 
-import ast
 import re
 from pathlib import Path
 
-import pytest
 from hypothesis import given, settings, strategies as st
 from pydantic import SecretStr
 
@@ -140,9 +138,7 @@ class TestSecretStrNonDisclosure:
         secret2=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=50)
-    def test_secretstr_equality_uses_value(
-        self, secret1: str, secret2: str
-    ) -> None:
+    def test_secretstr_equality_uses_value(self, secret1: str, secret2: str) -> None:
         """SecretStr equality compares actual values."""
         s1 = SecretStr(secret1)
         s2 = SecretStr(secret2)
@@ -174,10 +170,10 @@ class TestNoHardcodedSecrets:
 
         # Exclude test files and example values
         exclude_patterns = [
-            r'test_',
-            r'example',
-            r'placeholder',
-            r'SecretStr\(',
+            r"test_",
+            r"example",
+            r"placeholder",
+            r"SecretStr\(",
         ]
 
         violations = []

@@ -156,7 +156,7 @@ class InMemoryCacheProvider[T]:
         full_pattern = self._make_key(pattern)
         async with self._lock:
             keys_to_delete = [
-                k for k in self._cache.keys() if fnmatch.fnmatch(k, full_pattern)
+                k for k in self._cache if fnmatch.fnmatch(k, full_pattern)
             ]
             for key in keys_to_delete:
                 del self._cache[key]
@@ -221,7 +221,7 @@ class InMemoryCacheProvider[T]:
                     del self._cache[key]
                     deleted_count += 1
 
-            for other_tag, keys in self._tag_index.items():
+            for keys in self._tag_index.values():
                 keys.discard(key)
 
             return deleted_count

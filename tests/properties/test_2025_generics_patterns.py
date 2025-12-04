@@ -5,31 +5,32 @@
 """
 
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 import pytest
 
-pytest.skip('Module core.base.result not implemented', allow_module_level=True)
+pytest.skip("Module core.base.result not implemented", allow_module_level=True)
 
-from hypothesis import given, strategies as st, settings, assume
+from hypothesis import given, settings, strategies as st
 from pydantic import BaseModel, Field, computed_field
 
-from core.base.result import Ok, Err, Result, result_from_dict, collect_results
-from domain.common.specification import (
-    Specification, PredicateSpecification, spec,
-    AndSpecification, OrSpecification, NotSpecification,
-)
+from core.base.result import Err, Ok, Result, collect_results, result_from_dict
 from core.shared.utils.pagination import (
-    encode_cursor, decode_cursor,
-    OffsetPaginationParams, OffsetPaginationResult,
-    CursorPaginationParams, CursorPaginationResult,
+    OffsetPaginationParams,
+    OffsetPaginationResult,
+    decode_cursor,
+    encode_cursor,
     paginate_list,
+)
+from domain.common.specification import (
+    spec,
 )
 
 
 # Local DTO definitions for testing (mirrors application._shared.dto)
 class ApiResponse[T](BaseModel):
     """Generic API response wrapper."""
+
     data: T
     message: str = Field(default="Success")
     status_code: int = Field(default=200)
@@ -39,6 +40,7 @@ class ApiResponse[T](BaseModel):
 
 class PaginatedResponse[T](BaseModel):
     """Generic paginated response."""
+
     items: list[T] = Field(default_factory=list)
     total: int = Field(ge=0, default=0)
     page: int = Field(ge=1, default=1)
@@ -66,9 +68,10 @@ class PaginatedResponse[T](BaseModel):
 # Result Pattern Tests
 # =============================================================================
 
+
 class TestResultRoundTrip:
     """Property tests for Result pattern round-trip.
-    
+
     **Feature: 2025-generics-clean-code-review, Property 5: Result Pattern Round-Trip**
     **Validates: Requirements 5.5, 13.1**
     """
@@ -126,16 +129,18 @@ class TestResultRoundTrip:
 # Specification Composition Tests
 # =============================================================================
 
+
 @dataclass
 class TestEntity:
     """Test entity for specification tests."""
+
     value: int
     name: str
 
 
 class TestSpecificationComposition:
     """Property tests for Specification composition.
-    
+
     **Feature: 2025-generics-clean-code-review, Property 6: Specification Composition**
     **Validates: Requirements 6.2**
     """
@@ -188,10 +193,10 @@ class TestSpecificationComposition:
         spec_a = spec(lambda e: e.value >= min(a, b, c), "ge_min")
         spec_b = spec(lambda e: e.value <= max(a, b, c), "le_max")
         spec_c = spec(lambda e: True, "always_true")
-        
+
         left = (spec_a & spec_b) & spec_c
         right = spec_a & (spec_b & spec_c)
-        
+
         assert left.is_satisfied_by(entity) == right.is_satisfied_by(entity)
 
 
@@ -199,9 +204,10 @@ class TestSpecificationComposition:
 # Pagination Tests
 # =============================================================================
 
+
 class TestPaginationCursor:
     """Property tests for Pagination cursor.
-    
+
     **Feature: 2025-generics-clean-code-review, Property 14: Pagination Cursor Preservation**
     **Validates: Requirements 13.5**
     """
@@ -221,7 +227,7 @@ class TestPaginationCursor:
         total = len(items)
         size = 10
         expected_pages = (total + size - 1) // size if total > 0 else 0
-        
+
         result = OffsetPaginationResult(
             items=items[:size],
             total=total,
@@ -230,7 +236,9 @@ class TestPaginationCursor:
         )
         assert result.pages == expected_pages
 
-    @given(st.integers(min_value=1, max_value=10), st.integers(min_value=1, max_value=20))
+    @given(
+        st.integers(min_value=1, max_value=10), st.integers(min_value=1, max_value=20)
+    )
     @settings(max_examples=100)
     def test_offset_pagination_has_next(self, page: int, total_pages: int) -> None:
         """has_next is true when page < pages."""
@@ -268,9 +276,10 @@ class TestPaginationCursor:
 # DTO Response Tests
 # =============================================================================
 
+
 class TestDTOConsistency:
     """Property tests for DTO consistency.
-    
+
     **Feature: 2025-generics-clean-code-review, Property 9: DTO Response Consistency**
     **Validates: Requirements 9.1, 9.2**
     """
@@ -295,21 +304,23 @@ class TestDTOConsistency:
             page=1,
             size=len(items) if items else 10,
         )
-        
+
         # pages calculation
         if total == 0:
             assert response.pages == 0
         else:
             expected_pages = (total + response.size - 1) // response.size
             assert response.pages == expected_pages
-        
+
         # has_next
         assert response.has_next == (response.page < response.pages)
-        
+
         # has_previous
         assert response.has_previous == (response.page > 1)
 
-    @given(st.integers(min_value=1, max_value=5), st.integers(min_value=1, max_value=100))
+    @given(
+        st.integers(min_value=1, max_value=5), st.integers(min_value=1, max_value=100)
+    )
     @settings(max_examples=100)
     def test_paginated_response_navigation(self, page: int, total: int) -> None:
         """PaginatedResponse navigation flags are consistent."""
@@ -320,11 +331,11 @@ class TestDTOConsistency:
             page=page,
             size=size,
         )
-        
+
         # If on first page, no previous
         if page == 1:
             assert not response.has_previous
-        
+
         # If on last page, no next
         if page >= response.pages:
             assert not response.has_next

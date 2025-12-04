@@ -47,7 +47,7 @@ class InboxEntry:
         message_type: str,
         payload: dict[str, Any],
         idempotency_key: str | None = None,
-    ) -> "InboxEntry":
+    ) -> InboxEntry:
         """Create a new inbox entry."""
         return cls(
             message_id=message_id,

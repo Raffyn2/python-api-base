@@ -14,7 +14,7 @@ Security features:
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol
 
@@ -111,27 +111,28 @@ class JWTValidator:
     def __init__(
         self,
         secret_or_key: str,
-        algorithm: str = "HS256",
+        algorithm: str = "RS256",
         issuer: str | None = None,
         audience: str | None = None,
         clock_skew_seconds: int = 30,
         revocation_store: TokenRevocationStore | None = None,
-        require_secure_algorithm: bool = False,
+        require_secure_algorithm: bool = True,
         production_mode: bool = False,
     ) -> None:
         """Initialize JWT validator.
 
         **Feature: api-base-score-100, Task 1.2: Update JWTValidator for asymmetric algorithms**
         **Validates: Requirements 1.1, 1.4**
+        **Refactored: 2025 - Default to RS256 for security best practices**
 
         Args:
             secret_or_key: Secret key or public key for verification.
-            algorithm: Expected algorithm (RS256, ES256, HS256).
+            algorithm: Expected algorithm (RS256, ES256, HS256). Defaults to RS256.
             issuer: Expected issuer claim.
             audience: Expected audience claim.
             clock_skew_seconds: Allowed clock skew for expiration.
             revocation_store: Optional token revocation store.
-            require_secure_algorithm: If True, reject HS256.
+            require_secure_algorithm: If True, reject HS256. Defaults to True.
             production_mode: If True and using HS256, logs security warning.
         """
         self._secret_or_key = secret_or_key

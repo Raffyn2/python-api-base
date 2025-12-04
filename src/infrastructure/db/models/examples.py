@@ -13,8 +13,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Column, JSON, Text
+from sqlalchemy import JSON, Column, Text
+from sqlmodel import Field, Relationship, SQLModel
 
 from core.shared.utils.datetime import utc_now
 

@@ -1,11 +1,11 @@
 """Database Migration Manager with rollback support."""
 
+import hashlib
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Protocol
-from collections.abc import Callable, Awaitable
-import hashlib
 
 
 class MigrationStatus(Enum):
@@ -141,10 +141,9 @@ class MigrationManager:
     def get_pending_migrations(self, applied: list[Migration]) -> list[Migration]:
         """Get migrations that haven't been applied."""
         applied_versions = {m.version for m in applied}
-        pending = [
+        return [
             m for v, m in sorted(self._migrations.items()) if v not in applied_versions
         ]
-        return pending
 
     async def migrate(self, target_version: str | None = None) -> list[MigrationResult]:
         """Apply pending migrations up to target version."""

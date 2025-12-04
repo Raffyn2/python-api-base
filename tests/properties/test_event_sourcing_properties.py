@@ -4,7 +4,6 @@
 **Validates: Requirements 5.1, 5.2, 6.1, 6.2, 6.3**
 """
 
-import asyncio
 from dataclasses import dataclass
 
 import pytest
@@ -95,9 +94,7 @@ class TestSnapshotHashIntegrity:
     """
 
     @settings(max_examples=100)
-    @given(
-        values=st.lists(st.text(min_size=1, max_size=50), min_size=0, max_size=10)
-    )
+    @given(values=st.lists(st.text(min_size=1, max_size=50), min_size=0, max_size=10))
     def test_snapshot_hash_computed_correctly(self, values: list[str]) -> None:
         """Snapshot hash should match computed hash of state."""
         aggregate = TestAggregate("test-1")
@@ -113,9 +110,7 @@ class TestSnapshotHashIntegrity:
         assert snapshot.validate_hash()
 
     @settings(max_examples=100)
-    @given(
-        values=st.lists(st.text(min_size=1, max_size=50), min_size=1, max_size=10)
-    )
+    @given(values=st.lists(st.text(min_size=1, max_size=50), min_size=1, max_size=10))
     def test_corrupted_hash_detected(self, values: list[str]) -> None:
         """Corrupted hash should be detected."""
         aggregate = TestAggregate("test-1")

@@ -4,8 +4,9 @@
 **Requirement: R5 - Generic Rate Limiter**
 """
 
-import pytest
 from datetime import timedelta
+
+import pytest
 
 from infrastructure.ratelimit.config import RateLimit, RateLimitConfig
 from infrastructure.ratelimit.limiter import (
@@ -46,7 +47,7 @@ class TestRateLimitResult:
 
     def test_allowed_result(self) -> None:
         """Test allowed result properties."""
-        from datetime import datetime, UTC
+        from datetime import UTC, datetime
 
         result = RateLimitResult[str](
             client="user_123",
@@ -62,7 +63,7 @@ class TestRateLimitResult:
 
     def test_denied_result(self) -> None:
         """Test denied result with retry_after."""
-        from datetime import datetime, UTC
+        from datetime import UTC, datetime
 
         result = RateLimitResult[str](
             client="user_123",
@@ -78,7 +79,7 @@ class TestRateLimitResult:
 
     def test_headers(self) -> None:
         """Test rate limit headers generation."""
-        from datetime import datetime, UTC
+        from datetime import UTC, datetime
 
         result = RateLimitResult[str](
             client="user_123",

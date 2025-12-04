@@ -4,14 +4,12 @@
 **Requirement: R2 - Generic Elasticsearch Client**
 """
 
-import pytest
-
+from infrastructure.elasticsearch.document import ElasticsearchDocument
 from infrastructure.elasticsearch.repository import (
+    AggregationResult,
     SearchQuery,
     SearchResult,
-    AggregationResult,
 )
-from infrastructure.elasticsearch.document import ElasticsearchDocument
 
 
 class SampleDocument(ElasticsearchDocument):
@@ -63,9 +61,7 @@ class TestSearchQuery:
 
     def test_build_with_sort(self) -> None:
         """Test building with sort."""
-        query = SearchQuery(
-            sort=[{"created_at": {"order": "desc"}}]
-        )
+        query = SearchQuery(sort=[{"created_at": {"order": "desc"}}])
         body = query.build()
 
         assert "sort" in body
@@ -73,22 +69,14 @@ class TestSearchQuery:
 
     def test_build_with_source(self) -> None:
         """Test building with source filter."""
-        query = SearchQuery(
-            source=["name", "email"]
-        )
+        query = SearchQuery(source=["name", "email"])
         body = query.build()
 
         assert body["_source"] == ["name", "email"]
 
     def test_build_with_aggs(self) -> None:
         """Test building with aggregations."""
-        query = SearchQuery(
-            aggs={
-                "status_count": {
-                    "terms": {"field": "status"}
-                }
-            }
-        )
+        query = SearchQuery(aggs={"status_count": {"terms": {"field": "status"}}})
         body = query.build()
 
         assert "aggs" in body
@@ -96,11 +84,7 @@ class TestSearchQuery:
 
     def test_build_with_highlight(self) -> None:
         """Test building with highlight."""
-        query = SearchQuery(
-            highlight={
-                "fields": {"content": {}}
-            }
-        )
+        query = SearchQuery(highlight={"fields": {"content": {}}})
         body = query.build()
 
         assert "highlight" in body
@@ -174,9 +158,7 @@ class TestAggregationResult:
 
     def test_metric_aggregation(self) -> None:
         """Test metric aggregation result."""
-        agg_response = {
-            "value": 42.5
-        }
+        agg_response = {"value": 42.5}
 
         result = AggregationResult.from_response("avg_age", agg_response)
 

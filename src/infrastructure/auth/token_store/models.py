@@ -5,7 +5,7 @@ Validates: Requirements 3.1, 5.1, 5.2, 5.3
 """
 
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 

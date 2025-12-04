@@ -115,9 +115,7 @@ class SQLAlchemyUserReadRepository:
             stmt = stmt.where(UserModel.is_active)
 
         result = await self._session.execute(stmt)
-        count = result.scalar_one()
-
-        return count
+        return result.scalar_one()
 
     def _to_dict(self, model: UserModel) -> dict[str, Any]:
         """Convert database model to dictionary.

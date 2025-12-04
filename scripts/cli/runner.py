@@ -35,9 +35,7 @@ def run_alembic(args: list[str], timeout: int = DEFAULT_TIMEOUT) -> int:
         )
         return result.returncode
     except subprocess.TimeoutExpired as e:
-        raise CLITimeoutError(
-            f"Alembic command timed out after {timeout}s"
-        ) from e
+        raise CLITimeoutError(f"Alembic command timed out after {timeout}s") from e
 
 
 def run_pytest(args: list[str], timeout: int = DEFAULT_TIMEOUT) -> int:
@@ -63,6 +61,4 @@ def run_pytest(args: list[str], timeout: int = DEFAULT_TIMEOUT) -> int:
         )
         return result.returncode
     except subprocess.TimeoutExpired as e:
-        raise CLITimeoutError(
-            f"Pytest command timed out after {timeout}s"
-        ) from e
+        raise CLITimeoutError(f"Pytest command timed out after {timeout}s") from e

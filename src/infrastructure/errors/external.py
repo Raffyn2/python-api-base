@@ -47,8 +47,6 @@ class CacheError(InfrastructureError):
     Raised when cache operations fail.
     """
 
-    pass
-
 
 class MessagingError(InfrastructureError):
     """Messaging/queue error.
@@ -56,13 +54,9 @@ class MessagingError(InfrastructureError):
     Raised when messaging operations fail.
     """
 
-    pass
-
 
 class StorageError(InfrastructureError):
     """Storage operation error.
 
     Raised when file storage operations fail.
     """
-
-    pass

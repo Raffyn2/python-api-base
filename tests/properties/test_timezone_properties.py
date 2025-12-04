@@ -4,11 +4,11 @@
 **Validates: Requirements 4.4**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from hypothesis import given, settings, strategies as st
@@ -26,7 +26,6 @@ from core.shared.timezone import (
     parse_datetime,
     to_utc,
 )
-
 
 tz_strategy = st.sampled_from([tz.value for tz in CommonTimezone])
 datetime_strategy = st.datetimes(
@@ -79,9 +78,7 @@ class TestConvertTimezone:
 
     @given(dt=datetime_strategy, from_tz=tz_strategy, to_tz=tz_strategy)
     @settings(max_examples=50)
-    def test_round_trip_preserves_instant(
-        self, dt: datetime, from_tz: str, to_tz: str
-    ):
+    def test_round_trip_preserves_instant(self, dt: datetime, from_tz: str, to_tz: str):
         """Converting back and forth should preserve the instant."""
         converted = convert_timezone(dt, from_tz, to_tz)
         back = convert_timezone(converted, to_tz, from_tz)
@@ -104,13 +101,13 @@ class TestToUtc:
     def test_result_is_utc(self, dt: datetime, tz: str):
         """Result should be in UTC."""
         result = to_utc(dt, tz)
-        assert result.tzinfo == timezone.utc
+        assert result.tzinfo == UTC
 
     def test_naive_datetime_with_source_tz(self):
         """Should handle naive datetime with source timezone."""
         dt = datetime(2024, 1, 15, 12, 0, 0)
         result = to_utc(dt, "America/New_York")
-        assert result.tzinfo == timezone.utc
+        assert result.tzinfo == UTC
 
 
 class TestFromUtc:
@@ -120,7 +117,7 @@ class TestFromUtc:
     @settings(max_examples=50)
     def test_result_has_target_timezone(self, dt: datetime, tz: str):
         """Result should have target timezone."""
-        utc_dt = dt.replace(tzinfo=timezone.utc)
+        utc_dt = dt.replace(tzinfo=UTC)
         result = from_utc(utc_dt, tz)
         assert result.tzinfo is not None
 
@@ -141,7 +138,7 @@ class TestFormatDatetime:
 
     def test_default_format(self):
         """Should format with default format."""
-        dt = datetime(2024, 1, 15, 12, 30, 45, tzinfo=timezone.utc)
+        dt = datetime(2024, 1, 15, 12, 30, 45, tzinfo=UTC)
         result = format_datetime(dt)
         assert "2024-01-15" in result
         assert "12:30:45" in result
@@ -150,7 +147,7 @@ class TestFormatDatetime:
     @settings(max_examples=50)
     def test_with_timezone_conversion(self, dt: datetime, tz: str):
         """Should convert to timezone before formatting."""
-        utc_dt = dt.replace(tzinfo=timezone.utc)
+        utc_dt = dt.replace(tzinfo=UTC)
         result = format_datetime(utc_dt, tz=tz)
         assert isinstance(result, str)
 
@@ -209,7 +206,7 @@ class TestTimezoneService:
         """Should convert datetime to user's timezone."""
         service = TimezoneService()
         service.set_user_timezone("user1", "America/New_York")
-        utc_dt = datetime(2024, 1, 15, 17, 0, 0, tzinfo=timezone.utc)
+        utc_dt = datetime(2024, 1, 15, 17, 0, 0, tzinfo=UTC)
         result = service.convert_for_user(utc_dt, "user1")
         assert result.hour == 12  # EST is UTC-5
 

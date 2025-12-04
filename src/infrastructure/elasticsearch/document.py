@@ -8,7 +8,7 @@ Provides base document types for Elasticsearch operations.
 
 from __future__ import annotations
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -74,15 +74,14 @@ class ElasticsearchDocument(BaseModel):
         Returns:
             Dictionary representation of document
         """
-        data = self.model_dump(
+        return self.model_dump(
             mode="json",
             exclude_none=exclude_none,
             exclude={"_metadata"},
         )
-        return data
 
     @classmethod
-    def from_hit(cls, hit: dict[str, Any]) -> "ElasticsearchDocument":
+    def from_hit(cls, hit: dict[str, Any]) -> ElasticsearchDocument:
         """Create document from Elasticsearch hit.
 
         Args:
@@ -105,7 +104,7 @@ class ElasticsearchDocument(BaseModel):
 
         return doc
 
-    def with_metadata(self, metadata: DocumentMetadata) -> "ElasticsearchDocument":
+    def with_metadata(self, metadata: DocumentMetadata) -> ElasticsearchDocument:
         """Return a copy with updated metadata.
 
         Args:

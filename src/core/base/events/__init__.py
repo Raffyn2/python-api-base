@@ -8,8 +8,8 @@ Provides event-driven patterns:
 from core.base.events.domain_event import (
     DomainEvent,
     EntityCreatedEvent,
-    EntityUpdatedEvent,
     EntityDeletedEvent,
+    EntityUpdatedEvent,
     EventBus,
 )
 from core.base.events.integration_event import IntegrationEvent

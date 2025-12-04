@@ -4,11 +4,11 @@
 **Part of: Core API (permanent)**
 """
 
-from datetime import datetime, UTC
-from uuid import uuid4
 import logging
+from datetime import UTC, datetime
+from uuid import uuid4
 
-from sqlalchemy import select, and_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infrastructure.db.models.rbac_models import RoleModel, UserRoleModel

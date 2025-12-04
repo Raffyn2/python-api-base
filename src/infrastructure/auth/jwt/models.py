@@ -5,7 +5,7 @@
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -27,7 +27,7 @@ class TokenPayload:
     iat: datetime
     jti: str
     scopes: tuple[str, ...] = field(default_factory=tuple)
-    token_type: str = "access"
+    token_type: str = "access"  # noqa: S105 - Token type, not password
 
     def to_dict(self) -> dict[str, Any]:
         """Convert payload to dictionary for JWT encoding."""
@@ -80,7 +80,7 @@ class TokenPair:
 
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"  # noqa: S105 - Token type, not password
     expires_in: int = 1800
 
     def to_dict(self) -> dict[str, Any]:

@@ -5,18 +5,17 @@
 """
 
 import asyncio
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any
 import uuid
+from dataclasses import dataclass
+from datetime import datetime
 
 import pytest
 from hypothesis import given, settings, strategies as st
 
 from infrastructure.db.event_sourcing.aggregate import Aggregate
 from infrastructure.db.event_sourcing.events import SourcedEvent
-from infrastructure.db.event_sourcing.store import InMemoryEventStore
 from infrastructure.db.event_sourcing.exceptions import ConcurrencyError
+from infrastructure.db.event_sourcing.store import InMemoryEventStore
 
 
 # Test event types
@@ -96,7 +95,10 @@ class TestEventSourcingRoundTrip:
     **Validates: Requirements 2.1, 2.2**
     """
 
-    @given(aggregate_id=aggregate_ids, increments=st.lists(amounts, min_size=1, max_size=10))
+    @given(
+        aggregate_id=aggregate_ids,
+        increments=st.lists(amounts, min_size=1, max_size=10),
+    )
     @settings(max_examples=50)
     def test_save_and_load_preserves_state(
         self, aggregate_id: str, increments: list[int]
@@ -104,7 +106,9 @@ class TestEventSourcingRoundTrip:
         """For any aggregate, saving and loading preserves state."""
 
         async def run_test() -> None:
-            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = InMemoryEventStore()
+            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = (
+                InMemoryEventStore()
+            )
 
             # Create and modify aggregate
             aggregate = CounterAggregate(aggregate_id)
@@ -125,7 +129,10 @@ class TestEventSourcingRoundTrip:
 
         asyncio.run(run_test())
 
-    @given(aggregate_id=aggregate_ids, ops=st.lists(st.tuples(st.booleans(), amounts), min_size=1, max_size=15))
+    @given(
+        aggregate_id=aggregate_ids,
+        ops=st.lists(st.tuples(st.booleans(), amounts), min_size=1, max_size=15),
+    )
     @settings(max_examples=50)
     def test_mixed_operations_round_trip(
         self, aggregate_id: str, ops: list[tuple[bool, int]]
@@ -133,7 +140,9 @@ class TestEventSourcingRoundTrip:
         """Mixed increment/decrement operations round-trip correctly."""
 
         async def run_test() -> None:
-            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = InMemoryEventStore()
+            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = (
+                InMemoryEventStore()
+            )
 
             aggregate = CounterAggregate(aggregate_id)
             expected_count = 0
@@ -159,7 +168,9 @@ class TestEventOrdering:
     **Validates: Requirements 2.2**
     """
 
-    @given(aggregate_id=aggregate_ids, amounts=st.lists(amounts, min_size=2, max_size=10))
+    @given(
+        aggregate_id=aggregate_ids, amounts=st.lists(amounts, min_size=2, max_size=10)
+    )
     @settings(max_examples=50)
     def test_events_applied_in_order(
         self, aggregate_id: str, amounts: list[int]
@@ -167,7 +178,9 @@ class TestEventOrdering:
         """Events are replayed in the same order they were raised."""
 
         async def run_test() -> None:
-            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = InMemoryEventStore()
+            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = (
+                InMemoryEventStore()
+            )
 
             aggregate = CounterAggregate(aggregate_id)
             for amount in amounts:
@@ -179,7 +192,9 @@ class TestEventOrdering:
             events = await store.get_events(aggregate_id)
             assert len(events) == len(amounts)
 
-            for i, (event, expected_amount) in enumerate(zip(events, amounts)):
+            for i, (event, expected_amount) in enumerate(
+                zip(events, amounts, strict=False)
+            ):
                 assert event.version == i + 1
                 assert isinstance(event, CounterIncremented)
                 assert event.amount == expected_amount
@@ -200,7 +215,9 @@ class TestOptimisticLocking:
         """Concurrent modifications to same version are detected."""
 
         async def run_test() -> None:
-            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = InMemoryEventStore()
+            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = (
+                InMemoryEventStore()
+            )
 
             # Create initial aggregate
             aggregate1 = CounterAggregate(aggregate_id)
@@ -233,7 +250,9 @@ class TestOptimisticLocking:
         """Save with correct expected version succeeds."""
 
         async def run_test() -> None:
-            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = InMemoryEventStore()
+            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = (
+                InMemoryEventStore()
+            )
 
             aggregate = CounterAggregate(aggregate_id)
             aggregate.increment(amount)
@@ -269,7 +288,9 @@ class TestSnapshotConsistency:
         """Replaying from snapshot produces same state as full replay."""
 
         async def run_test() -> None:
-            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = InMemoryEventStore()
+            store: InMemoryEventStore[CounterAggregate, SourcedEvent] = (
+                InMemoryEventStore()
+            )
 
             # Create aggregate with all events
             aggregate = CounterAggregate(aggregate_id)
@@ -317,7 +338,9 @@ class TestAggregateProperties:
         assert aggregate.version == initial_version + 1
         assert len(aggregate.uncommitted_events) == 1
 
-    @given(aggregate_id=aggregate_ids, amounts=st.lists(amounts, min_size=1, max_size=10))
+    @given(
+        aggregate_id=aggregate_ids, amounts=st.lists(amounts, min_size=1, max_size=10)
+    )
     @settings(max_examples=50)
     def test_clear_uncommitted_events(
         self, aggregate_id: str, amounts: list[int]

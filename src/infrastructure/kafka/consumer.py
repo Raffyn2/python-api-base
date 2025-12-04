@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator, Callable, Awaitable
-from datetime import datetime, UTC
+from collections.abc import AsyncIterator, Awaitable, Callable
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar
 
 from infrastructure.kafka.config import KafkaConfig
@@ -180,7 +180,7 @@ class KafkaConsumer(Generic[T]):
 
         records = await self._consumer.getmany(timeout_ms=timeout_ms, max_records=1)
 
-        for topic_partition, partition_records in records.items():
+        for partition_records in records.values():
             if partition_records:
                 return self._deserialize_record(partition_records[0])
 
@@ -209,7 +209,7 @@ class KafkaConsumer(Generic[T]):
         )
 
         messages = []
-        for topic_partition, partition_records in records.items():
+        for partition_records in records.values():
             for record in partition_records:
                 try:
                     message = self._deserialize_record(record)

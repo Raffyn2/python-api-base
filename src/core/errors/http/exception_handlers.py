@@ -10,15 +10,15 @@ import logging
 from typing import TYPE_CHECKING
 
 from fastapi import Request
-from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError as PydanticValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from core.errors.http.problem_details import (
+    PROBLEM_JSON_MEDIA_TYPE,
     ProblemDetail,
     ValidationErrorDetail,
-    PROBLEM_JSON_MEDIA_TYPE,
 )
 
 if TYPE_CHECKING:
@@ -231,7 +231,7 @@ async def generic_exception_handler(
     return _create_problem_response(problem)
 
 
-def setup_exception_handlers(app: "FastAPI") -> None:
+def setup_exception_handlers(app: FastAPI) -> None:
     """Register all RFC 7807 exception handlers.
 
     Args:

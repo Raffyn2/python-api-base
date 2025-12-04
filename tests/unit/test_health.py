@@ -4,6 +4,7 @@
 """
 
 import pytest
+
 pytest.skip("Module application.examples.dtos not implemented", allow_module_level=True)
 from fastapi.testclient import TestClient
 
@@ -78,13 +79,11 @@ class TestHealthEndpointRouting:
         # Returns 200 (healthy/degraded) or 503 (unhealthy)
         assert response.status_code in [200, 503]
 
-    def test_health_endpoints_not_under_api_prefix(
-        self, client: TestClient
-    ) -> None:
+    def test_health_endpoints_not_under_api_prefix(self, client: TestClient) -> None:
         """Health endpoints SHALL NOT be under /api/v1 prefix."""
         # These should 404
         response_live = client.get("/api/v1/health/live")
         response_ready = client.get("/api/v1/health/ready")
-        
+
         assert response_live.status_code == 404
         assert response_ready.status_code == 404

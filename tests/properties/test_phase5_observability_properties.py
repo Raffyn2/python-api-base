@@ -16,17 +16,11 @@ Properties covered:
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import re
-from datetime import datetime, UTC
-from typing import Any
-from uuid import uuid4
 
-import pytest
-from hypothesis import given, settings, strategies as st, assume
-
+from hypothesis import given, settings, strategies as st
 
 # === Strategies ===
 
@@ -34,7 +28,9 @@ from hypothesis import given, settings, strategies as st, assume
 correlation_id_st = st.text(
     min_size=16,
     max_size=64,
-    alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="-_"),
+    alphabet=st.characters(
+        whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="-_"
+    ),
 )
 
 # Strategy for log messages
@@ -68,9 +64,9 @@ class TestCorrelationIDPropagation:
     def test_correlation_id_set_and_get(self, correlation_id: str) -> None:
         """Correlation ID can be set and retrieved correctly."""
         from infrastructure.observability.correlation_id import (
-            set_correlation_id,
-            get_correlation_id,
             clear_context,
+            get_correlation_id,
+            set_correlation_id,
         )
 
         clear_context()
@@ -95,11 +91,11 @@ class TestCorrelationIDPropagation:
     ) -> None:
         """Different context variables are independent."""
         from infrastructure.observability.correlation_id import (
-            set_correlation_id,
-            get_correlation_id,
-            set_request_id,
-            get_request_id,
             clear_context,
+            get_correlation_id,
+            get_request_id,
+            set_correlation_id,
+            set_request_id,
         )
 
         clear_context()
@@ -120,13 +116,13 @@ class TestCorrelationIDPropagation:
     def test_clear_context_resets_all(self, correlation_id: str) -> None:
         """clear_context resets all context variables."""
         from infrastructure.observability.correlation_id import (
-            set_correlation_id,
-            get_correlation_id,
-            set_request_id,
-            get_request_id,
-            set_span_id,
-            get_span_id,
             clear_context,
+            get_correlation_id,
+            get_request_id,
+            get_span_id,
+            set_correlation_id,
+            set_request_id,
+            set_span_id,
         )
 
         # Set values
@@ -154,7 +150,7 @@ class TestCorrelationIDUniqueness:
     @settings(max_examples=30)
     def test_generated_ids_are_unique(self, format_type: str) -> None:
         """Generated IDs are unique."""
-        from infrastructure.observability.correlation_id import generate_id, IdFormat
+        from infrastructure.observability.correlation_id import IdFormat, generate_id
 
         format_map = {
             "uuid4": IdFormat.UUID4,
@@ -173,14 +169,14 @@ class TestCorrelationIDUniqueness:
     @settings(max_examples=20)
     def test_batch_generation_unique(self, count: int) -> None:
         """Batch generated IDs are all unique."""
-        from infrastructure.observability.correlation_id import generate_id, IdFormat
+        from infrastructure.observability.correlation_id import IdFormat, generate_id
 
         ids = [generate_id(IdFormat.UUID4_HEX) for _ in range(count)]
         assert len(set(ids)) == count
 
     def test_id_format_lengths(self) -> None:
         """Generated IDs have expected lengths."""
-        from infrastructure.observability.correlation_id import generate_id, IdFormat
+        from infrastructure.observability.correlation_id import IdFormat, generate_id
 
         uuid4_id = generate_id(IdFormat.UUID4)
         assert len(uuid4_id) == 36  # UUID with dashes
@@ -249,7 +245,15 @@ class TestLogEntryStructure:
         parsed = json.loads(formatted)
 
         # Check required fields
-        required_fields = ["timestamp", "level", "logger", "message", "module", "function", "line"]
+        required_fields = [
+            "timestamp",
+            "level",
+            "logger",
+            "message",
+            "module",
+            "function",
+            "line",
+        ]
         for field in required_fields:
             assert field in parsed, f"Missing required field: {field}"
 
@@ -305,9 +309,7 @@ class TestSensitiveDataRedaction:
         value=sensitive_value_st,
     )
     @settings(max_examples=50)
-    def test_sensitive_field_detection(
-        self, field_name: str, value: str
-    ) -> None:
+    def test_sensitive_field_detection(self, field_name: str, value: str) -> None:
         """Sensitive field names are detected correctly."""
         # These fields should be considered sensitive
         sensitive_fields = {
@@ -377,7 +379,9 @@ class TestHealthCheckAccuracy:
             assert any(not v for v in dependencies.values())
 
     @given(
-        component_name=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz_"),
+        component_name=st.text(
+            min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz_"
+        ),
         is_healthy=st.booleans(),
         latency_ms=st.floats(min_value=0.1, max_value=5000.0),
     )
@@ -482,9 +486,9 @@ class TestTraceContextPropagation:
     def test_parent_span_propagation(self, parent_span_id: str) -> None:
         """Parent span ID is correctly propagated."""
         from infrastructure.observability.correlation_id import (
-            set_parent_span_id,
-            get_parent_span_id,
             clear_context,
+            get_parent_span_id,
+            set_parent_span_id,
         )
 
         clear_context()

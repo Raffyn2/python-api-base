@@ -8,11 +8,12 @@ slow requests with configurable per-endpoint timeouts.
 """
 
 import asyncio
+import builtins
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
 from typing import Any
-from collections.abc import Awaitable, Callable
 
 
 class TimeoutAction(Enum):
@@ -99,15 +100,15 @@ class TimeoutMiddleware[RequestT, ResponseT]:
             response = await asyncio.wait_for(handler(), timeout=timeout)
             elapsed = asyncio.get_event_loop().time() - start_time
             return TimeoutResult.ok(response, elapsed)
-        except asyncio.TimeoutError:
+        except builtins.TimeoutError as te:
             elapsed = asyncio.get_event_loop().time() - start_time
             if self._config.action == TimeoutAction.RAISE:
                 raise TimeoutError(
                     f"Request to {endpoint} timed out after {timeout}s",
                     timeout=timeout,
                     endpoint=endpoint,
-                )
-            elif self._config.action == TimeoutAction.RETURN_DEFAULT:
+                ) from te
+            if self._config.action == TimeoutAction.RETURN_DEFAULT:
                 return TimeoutResult(
                     success=True,
                     response=self._config.default_response,
@@ -212,12 +213,12 @@ def timeout_decorator[ResponseT](
                     func(*args, **kwargs),
                     timeout=timeout_seconds,
                 )
-            except asyncio.TimeoutError:
+            except builtins.TimeoutError as te:
                 if action == TimeoutAction.RAISE:
                     raise TimeoutError(
                         f"Function {func.__name__} timed out after {timeout_seconds}s",
                         timeout=timeout_seconds,
-                    )
+                    ) from te
                 raise
 
         return wrapper

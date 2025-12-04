@@ -11,16 +11,12 @@ from __future__ import annotations
 
 import json
 import re
-import secrets
 import string
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any
 
 import pytest
-from hypothesis import given, settings, assume, Phase
-from hypothesis import strategies as st
+from hypothesis import Phase, assume, given, settings, strategies as st
 
 # Configure Hypothesis for CI
 settings.register_profile(
@@ -51,14 +47,13 @@ status_code_strategy = st.integers(min_value=400, max_value=599)
 # Password strategies
 password_strategy = st.text(min_size=1, max_size=128)
 valid_password_strategy = st.text(
-    min_size=12, max_size=64,
-    alphabet=string.ascii_letters + string.digits + "!@#$%^&*"
+    min_size=12, max_size=64, alphabet=string.ascii_letters + string.digits + "!@#$%^&*"
 ).filter(
     lambda p: (
-        any(c.isupper() for c in p) and
-        any(c.islower() for c in p) and
-        any(c.isdigit() for c in p) and
-        any(c in "!@#$%^&*" for c in p)
+        any(c.isupper() for c in p)
+        and any(c.islower() for c in p)
+        and any(c.isdigit() for c in p)
+        and any(c in "!@#$%^&*" for c in p)
     )
 )
 
@@ -73,13 +68,16 @@ amount_strategy = st.decimals(
 )
 
 # Secret key strategies
-secret_key_strategy = st.text(min_size=32, max_size=64, alphabet=string.ascii_letters + string.digits)
+secret_key_strategy = st.text(
+    min_size=32, max_size=64, alphabet=string.ascii_letters + string.digits
+)
 short_secret_strategy = st.text(min_size=1, max_size=31, alphabet=string.ascii_letters)
 
 
 # =============================================================================
 # Property 1: JWT Algorithm Restriction
 # =============================================================================
+
 
 class TestJWTAlgorithmRestriction:
     """
@@ -94,7 +92,7 @@ class TestJWTAlgorithmRestriction:
         # Simulate algorithm check
         is_none_algorithm = algorithm.lower() == "none"
         assert is_none_algorithm, "None algorithm should be detected"
-        
+
         # The actual implementation should reject this
         should_reject = algorithm.lower() == "none"
         assert should_reject
@@ -103,6 +101,7 @@ class TestJWTAlgorithmRestriction:
 # =============================================================================
 # Property 3: Secret Key Minimum Length
 # =============================================================================
+
 
 class TestSecretKeyMinimumLength:
     """
@@ -129,6 +128,7 @@ class TestSecretKeyMinimumLength:
 # Property 4: Exception Response Structure
 # =============================================================================
 
+
 class TestExceptionResponseStructure:
     """
     **Feature: comprehensive-code-review-2025, Property 4: Exception Response Structure**
@@ -146,17 +146,17 @@ class TestExceptionResponseStructure:
     ):
         """For any exception, response SHALL contain required fields."""
         assume(len(message) > 0 and len(error_code) > 0)
-        
+
         from core.exceptions import AppException
-        
+
         exc = AppException(
             message=message,
             error_code=error_code,
             status_code=status_code,
         )
-        
+
         result = exc.to_dict()
-        
+
         # Required fields
         assert "message" in result
         assert "error_code" in result
@@ -168,6 +168,7 @@ class TestExceptionResponseStructure:
 # =============================================================================
 # Property 5: Exception Chain Preservation
 # =============================================================================
+
 
 class TestExceptionChainPreservation:
     """
@@ -183,13 +184,13 @@ class TestExceptionChainPreservation:
     def test_cause_preserved(self, outer_msg: str, inner_msg: str):
         """For any chained exception, __cause__ SHALL be preserved."""
         assume(len(outer_msg) > 0 and len(inner_msg) > 0)
-        
+
         from core.exceptions import AppException
-        
+
         inner = AppException(message=inner_msg, error_code="INNER")
         outer = AppException(message=outer_msg, error_code="OUTER")
         outer.__cause__ = inner
-        
+
         assert outer.__cause__ is inner
         assert outer.__cause__.message == inner_msg
 
@@ -197,6 +198,7 @@ class TestExceptionChainPreservation:
 # =============================================================================
 # Property 6: ULID Format Validation
 # =============================================================================
+
 
 class TestULIDFormatValidation:
     """
@@ -209,7 +211,7 @@ class TestULIDFormatValidation:
     def test_valid_ulid_accepted(self, ulid: str):
         """For any valid ULID, EntityId SHALL accept it."""
         from domain.value_objects import EntityId
-        
+
         entity_id = EntityId(ulid)
         assert entity_id.value == ulid.upper()
 
@@ -218,7 +220,7 @@ class TestULIDFormatValidation:
     def test_invalid_ulid_rejected(self, invalid: str):
         """For any invalid ULID, EntityId SHALL reject it."""
         from domain.value_objects import EntityId
-        
+
         with pytest.raises(ValueError):
             EntityId(invalid)
 
@@ -226,6 +228,7 @@ class TestULIDFormatValidation:
 # =============================================================================
 # Property 7: Value Object Equality
 # =============================================================================
+
 
 class TestValueObjectEquality:
     """
@@ -238,10 +241,10 @@ class TestValueObjectEquality:
     def test_equal_values_equal_objects(self, ulid: str):
         """For any two EntityIds with same value, they SHALL be equal."""
         from domain.value_objects import EntityId
-        
+
         id1 = EntityId(ulid)
         id2 = EntityId(ulid)
-        
+
         assert id1 == id2
         assert hash(id1) == hash(id2)
 
@@ -249,6 +252,7 @@ class TestValueObjectEquality:
 # =============================================================================
 # Property 8: Monetary Calculation Precision
 # =============================================================================
+
 
 class TestMonetaryCalculationPrecision:
     """
@@ -267,11 +271,11 @@ class TestMonetaryCalculationPrecision:
     ):
         """For any monetary addition, precision SHALL be maintained."""
         from domain.value_objects import Money
-        
+
         m1 = Money(amount1, currency)
         m2 = Money(amount2, currency)
         result = m1 + m2
-        
+
         # Result should be Decimal with 2 decimal places
         assert isinstance(result.amount, Decimal)
         assert result.amount == (m1.amount + m2.amount).quantize(Decimal("0.01"))
@@ -280,6 +284,7 @@ class TestMonetaryCalculationPrecision:
 # =============================================================================
 # Property 9: Mapper Round-Trip Consistency
 # =============================================================================
+
 
 class TestMapperRoundTripConsistency:
     """
@@ -295,18 +300,19 @@ class TestMapperRoundTripConsistency:
     def test_entity_dto_roundtrip(self, name: str, description: str):
         """For any entity, mapping to DTO and back SHALL produce equivalent entity."""
         assume(len(name) > 0)
-        
+
         # Simulate round-trip
         original = {"name": name, "description": description}
         dto = {"name": original["name"], "description": original["description"]}
         restored = {"name": dto["name"], "description": dto["description"]}
-        
+
         assert original == restored
 
 
 # =============================================================================
 # Property 10: Validation Error Collection
 # =============================================================================
+
 
 class TestValidationErrorCollection:
     """
@@ -326,12 +332,12 @@ class TestValidationErrorCollection:
     def test_all_errors_collected(self, errors: dict):
         """For any input with multiple errors, all SHALL be collected."""
         assume(len(errors) >= 2)
-        
+
         from core.exceptions import ValidationError
-        
+
         exc = ValidationError(errors=errors)
         result = exc.to_dict()
-        
+
         # All errors should be present
         assert len(result["details"]["errors"]) == len(errors)
 
@@ -339,6 +345,7 @@ class TestValidationErrorCollection:
 # =============================================================================
 # Property 11: Pagination Correctness
 # =============================================================================
+
 
 class TestPaginationCorrectness:
     """
@@ -352,13 +359,11 @@ class TestPaginationCorrectness:
         limit=st.integers(min_value=1, max_value=100),
     )
     @settings(max_examples=100)
-    def test_pagination_returns_correct_subset(
-        self, total: int, skip: int, limit: int
-    ):
+    def test_pagination_returns_correct_subset(self, total: int, skip: int, limit: int):
         """For any pagination params, result SHALL contain at most limit items."""
         items = list(range(total))
-        result = items[skip:skip + limit]
-        
+        result = items[skip : skip + limit]
+
         assert len(result) <= limit
         if skip < total:
             expected_len = min(limit, total - skip)
@@ -368,6 +373,7 @@ class TestPaginationCorrectness:
 # =============================================================================
 # Property 12: Soft Delete Exclusion
 # =============================================================================
+
 
 class TestSoftDeleteExclusion:
     """
@@ -389,7 +395,7 @@ class TestSoftDeleteExclusion:
     def test_soft_deleted_excluded(self, items: list):
         """For any soft-deleted entity, queries SHALL exclude it."""
         active_items = [i for i in items if not i["is_deleted"]]
-        
+
         # Verify no deleted items in result
         for item in active_items:
             assert not item["is_deleted"]
@@ -398,6 +404,7 @@ class TestSoftDeleteExclusion:
 # =============================================================================
 # Property 13: Rate Limit Response Format
 # =============================================================================
+
 
 class TestRateLimitResponseFormat:
     """
@@ -410,10 +417,10 @@ class TestRateLimitResponseFormat:
     def test_rate_limit_response_format(self, retry_after: int):
         """For any rate-limited request, response SHALL include Retry-After."""
         from core.exceptions import RateLimitExceededError
-        
+
         exc = RateLimitExceededError(retry_after=retry_after)
         result = exc.to_dict()
-        
+
         assert result["status_code"] == 429
         assert result["details"]["retry_after"] == retry_after
 
@@ -421,6 +428,7 @@ class TestRateLimitResponseFormat:
 # =============================================================================
 # Property 14: RBAC Permission Aggregation
 # =============================================================================
+
 
 class TestRBACPermissionAggregation:
     """
@@ -430,7 +438,9 @@ class TestRBACPermissionAggregation:
 
     @given(
         st.lists(
-            st.frozensets(st.text(min_size=1, max_size=20, alphabet=string.ascii_lowercase)),
+            st.frozensets(
+                st.text(min_size=1, max_size=20, alphabet=string.ascii_lowercase)
+            ),
             min_size=1,
             max_size=5,
         )
@@ -442,7 +452,7 @@ class TestRBACPermissionAggregation:
         all_permissions: set[str] = set()
         for perms in role_permissions:
             all_permissions.update(perms)
-        
+
         # Verify union
         for perms in role_permissions:
             for perm in perms:
@@ -452,6 +462,7 @@ class TestRBACPermissionAggregation:
 # =============================================================================
 # Property 15: Password Complexity Validation
 # =============================================================================
+
 
 class TestPasswordComplexityValidation:
     """
@@ -464,12 +475,12 @@ class TestPasswordComplexityValidation:
     def test_short_passwords_rejected(self, password: str):
         """For any password < 12 chars, validation SHALL fail."""
         assume(len(password) < 12)
-        
+
         from core.auth.password_policy import PasswordValidator
-        
+
         validator = PasswordValidator()
         result = validator.validate(password)
-        
+
         assert not result.valid
         assert any("12 characters" in e for e in result.errors)
 
@@ -477,6 +488,7 @@ class TestPasswordComplexityValidation:
 # =============================================================================
 # Property 16: Common Password Rejection
 # =============================================================================
+
 
 class TestCommonPasswordRejection:
     """
@@ -489,16 +501,17 @@ class TestCommonPasswordRejection:
     def test_common_passwords_rejected(self, password: str):
         """For any common password, validation SHALL fail."""
         from core.auth.password_policy import PasswordValidator
-        
+
         validator = PasswordValidator()
         result = validator.validate(password)
-        
+
         assert not result.valid
 
 
 # =============================================================================
 # Property 17: Argon2id Hash Format
 # =============================================================================
+
 
 class TestArgon2idHashFormat:
     """
@@ -511,9 +524,9 @@ class TestArgon2idHashFormat:
     def test_hash_uses_argon2id(self, password: str):
         """For any password hash, algorithm SHALL be Argon2id."""
         from core.shared.utils.password import hash_password
-        
+
         hashed = hash_password(password)
-        
+
         # Argon2id hashes start with $argon2id$
         assert hashed.startswith("$argon2id$")
 
@@ -521,6 +534,7 @@ class TestArgon2idHashFormat:
 # =============================================================================
 # Property 18: Credential Redaction in Logs
 # =============================================================================
+
 
 class TestCredentialRedactionInLogs:
     """
@@ -537,12 +551,12 @@ class TestCredentialRedactionInLogs:
     def test_url_credentials_redacted(self, user: str, password: str, host: str):
         """For any URL with credentials, password SHALL be redacted."""
         assume(len(user) > 0 and len(password) > 0 and len(host) > 0)
-        
+
         from core.config import redact_url_credentials
-        
+
         url = f"postgresql://{user}:{password}@{host}/db"
         redacted = redact_url_credentials(url)
-        
+
         assert password not in redacted
         assert "[REDACTED]" in redacted
 
@@ -550,6 +564,7 @@ class TestCredentialRedactionInLogs:
 # =============================================================================
 # Property 19: SecretStr String Representation
 # =============================================================================
+
 
 class TestSecretStrStringRepresentation:
     """
@@ -562,11 +577,11 @@ class TestSecretStrStringRepresentation:
     def test_secret_not_in_repr(self, secret: str):
         """For any SecretStr, repr SHALL not expose the value."""
         from pydantic import SecretStr
-        
+
         secret_str = SecretStr(secret)
         repr_str = repr(secret_str)
         str_str = str(secret_str)
-        
+
         assert secret not in repr_str
         assert secret not in str_str
 
@@ -574,6 +589,7 @@ class TestSecretStrStringRepresentation:
 # =============================================================================
 # Property 20: Audit Log Structure
 # =============================================================================
+
 
 class TestAuditLogStructure:
     """
@@ -593,16 +609,16 @@ class TestAuditLogStructure:
     ):
         """For any audit event, log SHALL contain required fields."""
         assume(len(user_id) > 0 and len(action) > 0 and len(resource) > 0)
-        
+
         # Simulate audit log entry
         log_entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "user_id": user_id,
             "action": action,
             "resource": resource,
             "outcome": outcome,
         }
-        
+
         assert "timestamp" in log_entry
         assert "user_id" in log_entry
         assert "action" in log_entry
@@ -613,6 +629,7 @@ class TestAuditLogStructure:
 # =============================================================================
 # Property 21: PII Masking
 # =============================================================================
+
 
 class TestPIIMasking:
     """
@@ -629,7 +646,7 @@ class TestPIIMasking:
         """For any PII data, values SHALL be masked in logs."""
         # Email masking pattern
         email_pattern = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
-        
+
         # Mask email
         masked_email = email_pattern.sub("[EMAIL_REDACTED]", email)
         assert "@" not in masked_email or masked_email == "[EMAIL_REDACTED]"
@@ -638,6 +655,7 @@ class TestPIIMasking:
 # =============================================================================
 # Property 22: HTTP Security Headers Presence
 # =============================================================================
+
 
 class TestHTTPSecurityHeadersPresence:
     """
@@ -653,7 +671,7 @@ class TestHTTPSecurityHeadersPresence:
             "X-Frame-Options": "DENY",
             "Referrer-Policy": "strict-origin-when-cross-origin",
         }
-        
+
         for header, value in required_headers.items():
             assert header is not None
             assert value is not None
@@ -662,6 +680,7 @@ class TestHTTPSecurityHeadersPresence:
 # =============================================================================
 # Property 23: Error Information Non-Disclosure
 # =============================================================================
+
 
 class TestErrorInformationNonDisclosure:
     """
@@ -679,17 +698,18 @@ class TestErrorInformationNonDisclosure:
             "error_code": "INTERNAL_ERROR",
             "status_code": 500,
         }
-        
+
         # Stack trace indicators should not be present
         response_str = json.dumps(sanitized_response)
         assert "Traceback" not in response_str
-        assert "File \"" not in response_str
+        assert 'File "' not in response_str
         assert internal_error not in response_str
 
 
 # =============================================================================
 # Property 24: Request Size Limit Enforcement
 # =============================================================================
+
 
 class TestRequestSizeLimitEnforcement:
     """
@@ -702,7 +722,7 @@ class TestRequestSizeLimitEnforcement:
     def test_oversized_requests_rejected(self, size: int):
         """For any request > 10MB, response SHALL be 413."""
         max_size = 10 * 1024 * 1024  # 10MB
-        
+
         should_reject = size > max_size
         assert should_reject
 
@@ -710,6 +730,7 @@ class TestRequestSizeLimitEnforcement:
 # =============================================================================
 # Property 25: JSON Nesting Depth Limit
 # =============================================================================
+
 
 class TestJSONNestingDepthLimit:
     """
@@ -722,7 +743,7 @@ class TestJSONNestingDepthLimit:
     def test_deep_nesting_rejected(self, depth: int):
         """For any JSON with depth > 32, request SHALL be rejected."""
         max_depth = 32
-        
+
         should_reject = depth > max_depth
         assert should_reject
 
@@ -730,6 +751,7 @@ class TestJSONNestingDepthLimit:
 # =============================================================================
 # Property 26: Lifecycle Hook Execution Order
 # =============================================================================
+
 
 class TestLifecycleHookExecutionOrder:
     """
@@ -744,7 +766,7 @@ class TestLifecycleHookExecutionOrder:
         execution_order = []
         for hook_id in hook_ids:
             execution_order.append(hook_id)
-        
+
         assert execution_order == hook_ids
 
     @given(st.lists(st.integers(min_value=1, max_value=100), min_size=2, max_size=10))
@@ -752,13 +774,14 @@ class TestLifecycleHookExecutionOrder:
     def test_shutdown_order_reversed(self, hook_ids: list):
         """For any hooks, shutdown SHALL execute in reverse order."""
         shutdown_order = list(reversed(hook_ids))
-        
+
         assert shutdown_order == list(reversed(hook_ids))
 
 
 # =============================================================================
 # Property 27: Lifecycle Hook Error Aggregation
 # =============================================================================
+
 
 class TestLifecycleHookErrorAggregation:
     """
@@ -778,12 +801,12 @@ class TestLifecycleHookErrorAggregation:
         """For any failing hook, remaining hooks SHALL still execute."""
         executed = []
         errors = []
-        
+
         for hook_id, should_fail in hooks:
             executed.append(hook_id)
             if should_fail:
                 errors.append(f"Hook {hook_id} failed")
-        
+
         # All hooks should have executed
         assert len(executed) == len(hooks)
 
@@ -791,6 +814,7 @@ class TestLifecycleHookErrorAggregation:
 # =============================================================================
 # Property 28: Singleton Thread Safety
 # =============================================================================
+
 
 class TestSingletonThreadSafety:
     """
@@ -801,10 +825,10 @@ class TestSingletonThreadSafety:
     def test_singleton_returns_same_instance(self):
         """For any concurrent access, singleton SHALL return same instance."""
         from core.auth.password_policy import get_password_validator
-        
+
         instance1 = get_password_validator()
         instance2 = get_password_validator()
-        
+
         assert instance1 is instance2
 
 
@@ -812,32 +836,36 @@ class TestSingletonThreadSafety:
 # Property 29: Idempotency Key Behavior
 # =============================================================================
 
+
 class TestIdempotencyKeyBehavior:
     """
     **Feature: comprehensive-code-review-2025, Property 29: Idempotency Key Behavior**
     **Validates: Requirements 41.2**
     """
 
-    @given(st.text(min_size=16, max_size=64, alphabet=string.ascii_letters + string.digits))
+    @given(
+        st.text(min_size=16, max_size=64, alphabet=string.ascii_letters + string.digits)
+    )
     @settings(max_examples=100)
     def test_duplicate_key_returns_cached(self, idempotency_key: str):
         """For any duplicate idempotency key, cached response SHALL be returned."""
         # Simulate cache
         cache: dict[str, dict] = {}
-        
+
         # First request
         response1 = {"result": "created", "id": 123}
         cache[idempotency_key] = response1
-        
+
         # Second request with same key
         response2 = cache.get(idempotency_key)
-        
+
         assert response2 == response1
 
 
 # =============================================================================
 # Property 30: Circuit Breaker State Transitions
 # =============================================================================
+
 
 class TestCircuitBreakerStateTransitions:
     """
@@ -848,14 +876,14 @@ class TestCircuitBreakerStateTransitions:
     def test_state_transitions(self):
         """Circuit breaker SHALL follow correct state transitions."""
         states = ["closed", "open", "half_open"]
-        
+
         # Valid transitions
         valid_transitions = {
             "closed": ["open"],
             "open": ["half_open"],
             "half_open": ["closed", "open"],
         }
-        
+
         for state in states:
             assert state in valid_transitions
             assert len(valid_transitions[state]) > 0

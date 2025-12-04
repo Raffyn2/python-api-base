@@ -4,12 +4,11 @@
 **Validates: Requirements 16.4**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.shared.utils.pagination import (
     OffsetPaginationParams,

@@ -14,7 +14,7 @@ from core.base.cqrs.command import BaseCommand
 @dataclass(frozen=True, kw_only=True)
 class CreateItemCommand(BaseCommand):
     """Command to create a new ItemExample."""
-    
+
     name: str
     sku: str
     price_amount: Decimal
@@ -30,7 +30,7 @@ class CreateItemCommand(BaseCommand):
 @dataclass(frozen=True, kw_only=True)
 class UpdateItemCommand(BaseCommand):
     """Command to update an existing ItemExample."""
-    
+
     item_id: str
     name: str | None = None
     description: str | None = None
@@ -46,6 +46,6 @@ class UpdateItemCommand(BaseCommand):
 @dataclass(frozen=True, kw_only=True)
 class DeleteItemCommand(BaseCommand):
     """Command to soft-delete an ItemExample."""
-    
+
     item_id: str
     deleted_by: str = "system"

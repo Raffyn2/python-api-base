@@ -4,13 +4,13 @@
 """
 
 from domain.users.aggregates import UserAggregate
-from domain.users.value_objects import Email, PasswordHash, UserId, Username
 from domain.users.events import (
-    UserRegisteredEvent,
     UserDeactivatedEvent,
     UserEmailChangedEvent,
+    UserRegisteredEvent,
 )
 from domain.users.repositories import IUserRepository
+from domain.users.value_objects import Email, PasswordHash, UserId, Username
 
 __all__ = [
     "Email",

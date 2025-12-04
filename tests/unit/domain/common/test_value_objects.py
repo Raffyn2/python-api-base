@@ -12,15 +12,15 @@ Tests verify:
 - Edge cases and boundaries
 """
 
-import pytest
 from decimal import Decimal
+
+import pytest
 from hypothesis import given, strategies as st
 
 from src.domain.common.value_objects.value_objects import (
     Money,
     Percentage,
     Slug,
-    CurrencyCode,
 )
 
 
@@ -256,9 +256,7 @@ class TestSlug:
             min_size=1,
             max_size=100,
         ).filter(
-            lambda s: not s.startswith("-")
-            and not s.endswith("-")
-            and "--" not in s
+            lambda s: not s.startswith("-") and not s.endswith("-") and "--" not in s
         )
     )
     def test_property_valid_slugs_always_accepted(self, slug_str: str) -> None:

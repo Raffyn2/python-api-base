@@ -12,11 +12,11 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.fastapi import GraphQLRouter
 
-from infrastructure.db.session import get_async_session
 from infrastructure.db.repositories.examples import (
     ItemExampleRepository,
     PedidoExampleRepository,
 )
+from infrastructure.db.session import get_async_session
 from interface.graphql.schema import schema
 
 

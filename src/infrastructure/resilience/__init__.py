@@ -8,6 +8,10 @@ from .patterns import (
     BackoffStrategy,
     Bulkhead,
     BulkheadConfig,
+    BulkheadRegistry,
+    BulkheadRejectedError,
+    BulkheadState,
+    BulkheadStats,
     CircuitBreaker,
     CircuitBreakerConfig,
     CircuitState,
@@ -17,12 +21,17 @@ from .patterns import (
     RetryConfig,
     Timeout,
     TimeoutConfig,
+    bulkhead,
 )
 
 __all__ = [
     "BackoffStrategy",
     "Bulkhead",
     "BulkheadConfig",
+    "BulkheadRegistry",
+    "BulkheadRejectedError",
+    "BulkheadState",
+    "BulkheadStats",
     "CircuitBreaker",
     "CircuitBreakerConfig",
     "CircuitState",
@@ -32,4 +41,5 @@ __all__ = [
     "RetryConfig",
     "Timeout",
     "TimeoutConfig",
+    "bulkhead",
 ]

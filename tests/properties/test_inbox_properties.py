@@ -17,7 +17,6 @@ from infrastructure.messaging.inbox import (
     MockMessageHandler,
 )
 
-
 identifier_strategy = st.text(
     alphabet=st.sampled_from("abcdefghijklmnopqrstuvwxyz0123456789_"),
     min_size=1,
@@ -33,9 +32,7 @@ class TestInboxEntry:
         message_type=identifier_strategy,
     )
     @settings(max_examples=50)
-    def test_create_generates_idempotency_key(
-        self, message_id: str, message_type: str
-    ):
+    def test_create_generates_idempotency_key(self, message_id: str, message_type: str):
         """create should generate idempotency key."""
         entry = InboxEntry.create(
             message_id=message_id,

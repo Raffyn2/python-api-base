@@ -4,8 +4,8 @@
 **Validates: Requirements 4.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import json
@@ -22,7 +22,6 @@ from interface.api.jsonrpc import (
     JSONRPCServer,
     MethodDescriptor,
 )
-
 
 identifier_strategy = st.text(
     alphabet=st.sampled_from("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"),
@@ -278,7 +277,9 @@ class TestJSONRPCServer:
             return a + b
 
         server.register_method("add", add)
-        json_request = '{"jsonrpc": "2.0", "method": "add", "params": {"a": 1, "b": 2}, "id": 1}'
+        json_request = (
+            '{"jsonrpc": "2.0", "method": "add", "params": {"a": 1, "b": 2}, "id": 1}'
+        )
         json_response = await server.handle_json(json_request)
         response = json.loads(json_response)
         assert response["result"] == 3

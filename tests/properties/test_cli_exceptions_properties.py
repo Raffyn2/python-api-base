@@ -6,10 +6,7 @@
 
 import pytest
 
-pytest.skip('Module cli.constants not implemented', allow_module_level=True)
-
-from hypothesis import given, settings
-from hypothesis import strategies as st
+pytest.skip("Module cli.constants not implemented", allow_module_level=True)
 
 from cli.constants import EXIT_ERROR, EXIT_TIMEOUT
 from cli.exceptions import (
@@ -25,6 +22,7 @@ from cli.exceptions import (
     PytestError,
     ValidationError,
 )
+from hypothesis import given, settings, strategies as st
 
 
 class TestExitCodeConsistency:

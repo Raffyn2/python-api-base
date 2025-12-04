@@ -4,23 +4,64 @@ Provides validation functions for CLI inputs.
 """
 
 import re
-from pathlib import Path
 
 from scripts.cli.exceptions import InvalidFieldError, ValidationError
 
 # Valid Python type annotations
 VALID_TYPES: set[str] = {
-    "str", "int", "float", "bool", "datetime", "date", "time",
-    "list", "dict", "set", "tuple", "bytes", "Any", "None",
+    "str",
+    "int",
+    "float",
+    "bool",
+    "datetime",
+    "date",
+    "time",
+    "list",
+    "dict",
+    "set",
+    "tuple",
+    "bytes",
+    "Any",
+    "None",
 }
 
 # Reserved Python keywords that cannot be used as names
 RESERVED_KEYWORDS: set[str] = {
-    "class", "def", "return", "if", "else", "elif", "for", "while",
-    "try", "except", "finally", "with", "as", "import", "from",
-    "pass", "break", "continue", "raise", "yield", "lambda", "and",
-    "or", "not", "in", "is", "True", "False", "None", "global",
-    "nonlocal", "assert", "del", "async", "await",
+    "class",
+    "def",
+    "return",
+    "if",
+    "else",
+    "elif",
+    "for",
+    "while",
+    "try",
+    "except",
+    "finally",
+    "with",
+    "as",
+    "import",
+    "from",
+    "pass",
+    "break",
+    "continue",
+    "raise",
+    "yield",
+    "lambda",
+    "and",
+    "or",
+    "not",
+    "in",
+    "is",
+    "True",
+    "False",
+    "None",
+    "global",
+    "nonlocal",
+    "assert",
+    "del",
+    "async",
+    "await",
 }
 
 
@@ -41,8 +82,7 @@ def validate_entity_name(name: str) -> str:
 
     if not re.match(r"^[a-z][a-z0-9_]*$", name):
         raise ValidationError(
-            f"Invalid entity name '{name}'. "
-            "Must be snake_case starting with a letter."
+            f"Invalid entity name '{name}'. Must be snake_case starting with a letter."
         )
 
     if name in RESERVED_KEYWORDS:
@@ -76,9 +116,7 @@ def validate_field_definition(field: str) -> tuple[str, str]:
         raise InvalidFieldError("Field name cannot be empty")
 
     if not re.match(r"^[a-z][a-z0-9_]*$", name):
-        raise InvalidFieldError(
-            f"Invalid field name '{name}'. Must be snake_case."
-        )
+        raise InvalidFieldError(f"Invalid field name '{name}'. Must be snake_case.")
 
     if name in RESERVED_KEYWORDS:
         raise InvalidFieldError(f"'{name}' is a reserved Python keyword")
@@ -152,8 +190,14 @@ def validate_alembic_command(command: str) -> str:
         ValidationError: If command is invalid.
     """
     valid_commands = {
-        "upgrade", "downgrade", "revision", "current",
-        "history", "heads", "branches", "show",
+        "upgrade",
+        "downgrade",
+        "revision",
+        "current",
+        "history",
+        "heads",
+        "branches",
+        "show",
     }
 
     if command not in valid_commands:
@@ -203,7 +247,9 @@ def validate_markers(markers: str) -> str:
         return ""
 
     # Basic validation - allow alphanumeric, spaces, and logical operators
-    if not re.match(r"^[a-zA-Z0-9_\s\(\)]+(?:\s+(?:and|or|not)\s+[a-zA-Z0-9_\s\(\)]+)*$", markers):
+    if not re.match(
+        r"^[a-zA-Z0-9_\s\(\)]+(?:\s+(?:and|or|not)\s+[a-zA-Z0-9_\s\(\)]+)*$", markers
+    ):
         raise ValidationError(
             f"Invalid marker expression '{markers}'. "
             "Use alphanumeric markers with 'and', 'or', 'not' operators."

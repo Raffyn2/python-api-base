@@ -9,15 +9,11 @@ Tests verify that the Container correctly tracks:
 - Singleton instance creation
 """
 
-import pytest
-
-from src.core.di.container import Container, ContainerStats, Lifetime
+from src.core.di.container import Container, Lifetime
 
 
 class Database:
     """Mock database service."""
-
-    pass
 
 
 class UserRepository:
@@ -30,13 +26,9 @@ class UserRepository:
 class EmailService:
     """Mock email service (transient)."""
 
-    pass
-
 
 class RequestContext:
     """Mock request context (scoped)."""
-
-    pass
 
 
 class TestContainerMetrics:
@@ -245,7 +237,9 @@ class TestContainerMetrics:
         assert stats.scoped_registrations == 1
 
         # Resolutions
-        assert stats.total_resolutions == 7  # 2 + 3 + 1 + 1 (Database from UserRepository)
+        assert (
+            stats.total_resolutions == 7
+        )  # 2 + 3 + 1 + 1 (Database from UserRepository)
         assert stats.singleton_instances_created == 1
 
         # Per-type resolutions

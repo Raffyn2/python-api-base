@@ -4,22 +4,20 @@
 **Validates: Requirements 1.1, 1.2**
 """
 
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import assume, given, settings, strategies as st
 from pydantic import BaseModel
 
 from interface.versioning import (
     ApiVersion,
+    BaseResponseTransformer,
     VersionConfig,
     VersionedRouter,
     VersionFormat,
     VersionRouter,
-    BaseResponseTransformer,
-    deprecated,
 )
-
 
 # =============================================================================
 # Strategies
@@ -74,7 +72,7 @@ class TestApiVersionImmutability:
     @settings(max_examples=100)
     def test_api_version_preserves_values(self, version: int) -> None:
         """ApiVersion SHALL preserve all provided values."""
-        sunset = datetime.now(timezone.utc)
+        sunset = datetime.now(UTC)
         successor = version + 1
 
         api_version = ApiVersion[int](
@@ -236,9 +234,7 @@ class TestVersionRouterVersionExtraction:
 
     @given(version=version_str_strategy, default=version_str_strategy)
     @settings(max_examples=100)
-    def test_version_router_default_version(
-        self, version: str, default: str
-    ) -> None:
+    def test_version_router_default_version(self, version: str, default: str) -> None:
         """VersionRouter SHALL use default version when header missing."""
         assume(len(default.strip()) > 0)
         router = VersionRouter(default_version=default)

@@ -7,11 +7,14 @@ statistical methods for automatic problem detection.
 **Validates: Requirements 7.3**
 """
 
+import logging
 import math
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Protocol, runtime_checkable
+
+logger = logging.getLogger(__name__)
 
 
 class AnomalyType(Enum):
@@ -96,11 +99,16 @@ class LogAnomalyHandler:
 
     async def handle(self, anomaly: Anomaly) -> None:
         """Log the anomaly."""
-        print(
-            f"[ANOMALY] {anomaly.severity.value.upper()}: {anomaly.metric_name} - "
-            f"{anomaly.anomaly_type.value} detected. "
-            f"Value: {anomaly.value:.2f}, Expected: {anomaly.expected_value:.2f}, "
-            f"Deviation: {anomaly.deviation_percent:.1f}%"
+        logger.warning(
+            "Anomaly detected",
+            extra={
+                "severity": anomaly.severity.value,
+                "metric_name": anomaly.metric_name,
+                "anomaly_type": anomaly.anomaly_type.value,
+                "value": anomaly.value,
+                "expected_value": anomaly.expected_value,
+                "deviation_percent": anomaly.deviation_percent,
+            },
         )
 
 
@@ -255,7 +263,7 @@ class AnomalyDetector:
         """Determine severity based on deviation."""
         if deviation >= self._config.critical_threshold:
             return AnomalySeverity.CRITICAL
-        elif deviation >= self._config.warning_threshold:
+        if deviation >= self._config.warning_threshold:
             return AnomalySeverity.WARNING
         return AnomalySeverity.INFO
 

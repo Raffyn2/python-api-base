@@ -7,14 +7,14 @@ Provides rate limiting:
 
 from infrastructure.security.rate_limit.limiter import InMemoryRateLimiter
 from infrastructure.security.rate_limit.sliding_window import (
-    SlidingWindowRateLimiter,
     RateLimitResult,
+    SlidingWindowRateLimiter,
     parse_rate_limit,
 )
 
 __all__ = [
     "InMemoryRateLimiter",
-    "SlidingWindowRateLimiter",
     "RateLimitResult",
+    "SlidingWindowRateLimiter",
     "parse_rate_limit",
 ]

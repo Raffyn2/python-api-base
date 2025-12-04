@@ -17,10 +17,10 @@ from .jwks_models import (
     JWK,
     JWKSResponse,
     KeyEntry,
-    generate_kid_from_public_key,
-    create_jwk_from_rsa_public_key,
     create_jwk_from_ec_public_key,
+    create_jwk_from_rsa_public_key,
     extract_public_key_from_private,
+    generate_kid_from_public_key,
 )
 
 logger = logging.getLogger(__name__)
@@ -227,10 +227,7 @@ class JWKSService:
             return False
 
         # Check if expired
-        if entry.expires_at and entry.expires_at < datetime.now(UTC):
-            return False
-
-        return True
+        return not (entry.expires_at and entry.expires_at < datetime.now(UTC))
 
     def get_jwks(self) -> JWKSResponse:
         """Get the JWKS for the well-known endpoint.
@@ -257,7 +254,9 @@ class JWKSService:
 
             try:
                 if entry.algorithm == "RS256":
-                    jwk = create_jwk_from_rsa_public_key(entry.public_key_pem, entry.kid)
+                    jwk = create_jwk_from_rsa_public_key(
+                        entry.public_key_pem, entry.kid
+                    )
                 elif entry.algorithm == "ES256":
                     jwk = create_jwk_from_ec_public_key(entry.public_key_pem, entry.kid)
                 else:
@@ -274,9 +273,7 @@ class JWKSService:
 
         # Remove keys that are past grace period after expiration or revocation
         self._keys = [
-            entry
-            for entry in self._keys
-            if not self._should_remove_key(entry, now)
+            entry for entry in self._keys if not self._should_remove_key(entry, now)
         ]
 
         # Keep only max_keys most recent

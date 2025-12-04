@@ -8,7 +8,7 @@
 import asyncio
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -144,8 +144,7 @@ class Saga[StepT, CompensationT]:
             # Execute with timeout if configured
             if step.timeout_seconds is not None:
                 await asyncio.wait_for(
-                    step.action(context),
-                    timeout=step.timeout_seconds
+                    step.action(context), timeout=step.timeout_seconds
                 )
             else:
                 await step.action(context)
@@ -161,7 +160,7 @@ class Saga[StepT, CompensationT]:
                 duration_ms=duration,
             )
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             step.status = StepStatus.FAILED
             timeout_error = TimeoutError(
                 f"Step '{step.name}' timed out after {step.timeout_seconds}s"

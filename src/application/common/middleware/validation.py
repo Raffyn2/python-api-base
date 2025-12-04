@@ -329,7 +329,7 @@ class RangeValidator[TCommand](Validator[TCommand]):
         if value is None:
             return errors
 
-        if not isinstance(value, (int, float)):
+        if not isinstance(value, int | float):
             return errors
 
         if self._min_value is not None and value < self._min_value:

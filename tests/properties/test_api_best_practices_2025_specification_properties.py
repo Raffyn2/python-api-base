@@ -9,30 +9,23 @@ Property tests for:
 """
 
 from dataclasses import dataclass
-
-import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
-
-from core.base.patterns.specification import (
-    Specification,
-    AndSpecification,
-    OrSpecification,
-    NotSpecification,
-    TrueSpecification,
-    FalseSpecification,
-    PredicateSpecification,
-    AttributeSpecification,
-)
 from decimal import Decimal
 
+from hypothesis import given, settings, strategies as st
+
+from core.base.patterns.specification import (
+    AttributeSpecification,
+    FalseSpecification,
+    PredicateSpecification,
+    Specification,
+    TrueSpecification,
+)
+from domain.examples.item.entity import ItemExample, ItemExampleStatus, Money
 from domain.examples.item.specifications import (
     ItemExampleActiveSpec,
     ItemExampleInStockSpec,
     ItemExamplePriceRangeSpec,
 )
-from domain.examples.item.entity import ItemExample, ItemExampleStatus, Money
-
 
 # === Test Fixtures ===
 
@@ -105,9 +98,7 @@ class TestSpecificationCompositionLaws:
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, threshold=threshold_strategy)
-    def test_identity_law_and(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_identity_law_and(self, entity: SampleEntity, threshold: int) -> None:
         """A & True = A (Identity law for AND).
 
         **Feature: api-best-practices-review-2025, Property 5: Specification Composition**
@@ -115,16 +106,14 @@ class TestSpecificationCompositionLaws:
         """
         spec_a = GreaterThanSpec(threshold)
         spec_true = TrueSpecification[SampleEntity]()
-        
+
         combined = spec_a & spec_true
-        
+
         assert combined.is_satisfied_by(entity) == spec_a.is_satisfied_by(entity)
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, threshold=threshold_strategy)
-    def test_identity_law_or(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_identity_law_or(self, entity: SampleEntity, threshold: int) -> None:
         """A | False = A (Identity law for OR).
 
         **Feature: api-best-practices-review-2025, Property 5**
@@ -132,16 +121,14 @@ class TestSpecificationCompositionLaws:
         """
         spec_a = GreaterThanSpec(threshold)
         spec_false = FalseSpecification[SampleEntity]()
-        
+
         combined = spec_a | spec_false
-        
+
         assert combined.is_satisfied_by(entity) == spec_a.is_satisfied_by(entity)
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, threshold=threshold_strategy)
-    def test_annihilation_law_and(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_annihilation_law_and(self, entity: SampleEntity, threshold: int) -> None:
         """A & False = False (Annihilation law for AND).
 
         **Feature: api-best-practices-review-2025, Property 5**
@@ -149,16 +136,14 @@ class TestSpecificationCompositionLaws:
         """
         spec_a = GreaterThanSpec(threshold)
         spec_false = FalseSpecification[SampleEntity]()
-        
+
         combined = spec_a & spec_false
-        
+
         assert combined.is_satisfied_by(entity) is False
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, threshold=threshold_strategy)
-    def test_annihilation_law_or(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_annihilation_law_or(self, entity: SampleEntity, threshold: int) -> None:
         """A | True = True (Annihilation law for OR).
 
         **Feature: api-best-practices-review-2025, Property 5**
@@ -166,80 +151,70 @@ class TestSpecificationCompositionLaws:
         """
         spec_a = GreaterThanSpec(threshold)
         spec_true = TrueSpecification[SampleEntity]()
-        
+
         combined = spec_a | spec_true
-        
+
         assert combined.is_satisfied_by(entity) is True
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, threshold=threshold_strategy)
-    def test_idempotence_law_and(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_idempotence_law_and(self, entity: SampleEntity, threshold: int) -> None:
         """A & A = A (Idempotence law for AND).
 
         **Feature: api-best-practices-review-2025, Property 5**
         **Validates: Requirements 5.3**
         """
         spec_a = GreaterThanSpec(threshold)
-        
+
         combined = spec_a & spec_a
-        
+
         assert combined.is_satisfied_by(entity) == spec_a.is_satisfied_by(entity)
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, threshold=threshold_strategy)
-    def test_idempotence_law_or(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_idempotence_law_or(self, entity: SampleEntity, threshold: int) -> None:
         """A | A = A (Idempotence law for OR).
 
         **Feature: api-best-practices-review-2025, Property 5**
         **Validates: Requirements 5.3**
         """
         spec_a = GreaterThanSpec(threshold)
-        
+
         combined = spec_a | spec_a
-        
+
         assert combined.is_satisfied_by(entity) == spec_a.is_satisfied_by(entity)
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, threshold=threshold_strategy)
-    def test_complement_law_and(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_complement_law_and(self, entity: SampleEntity, threshold: int) -> None:
         """A & ~A = False (Complement law for AND).
 
         **Feature: api-best-practices-review-2025, Property 5**
         **Validates: Requirements 5.4**
         """
         spec_a = GreaterThanSpec(threshold)
-        
+
         combined = spec_a & ~spec_a
-        
+
         assert combined.is_satisfied_by(entity) is False
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, threshold=threshold_strategy)
-    def test_complement_law_or(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_complement_law_or(self, entity: SampleEntity, threshold: int) -> None:
         """A | ~A = True (Complement law for OR).
 
         **Feature: api-best-practices-review-2025, Property 5**
         **Validates: Requirements 5.4**
         """
         spec_a = GreaterThanSpec(threshold)
-        
+
         combined = spec_a | ~spec_a
-        
+
         assert combined.is_satisfied_by(entity) is True
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, t1=threshold_strategy, t2=threshold_strategy)
-    def test_de_morgan_law_and(
-        self, entity: SampleEntity, t1: int, t2: int
-    ) -> None:
+    def test_de_morgan_law_and(self, entity: SampleEntity, t1: int, t2: int) -> None:
         """~(A & B) = ~A | ~B (De Morgan's law for AND).
 
         **Feature: api-best-practices-review-2025, Property 5**
@@ -247,17 +222,15 @@ class TestSpecificationCompositionLaws:
         """
         spec_a = GreaterThanSpec(t1)
         spec_b = LessThanSpec(t2)
-        
+
         left = ~(spec_a & spec_b)
         right = (~spec_a) | (~spec_b)
-        
+
         assert left.is_satisfied_by(entity) == right.is_satisfied_by(entity)
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, t1=threshold_strategy, t2=threshold_strategy)
-    def test_de_morgan_law_or(
-        self, entity: SampleEntity, t1: int, t2: int
-    ) -> None:
+    def test_de_morgan_law_or(self, entity: SampleEntity, t1: int, t2: int) -> None:
         """~(A | B) = ~A & ~B (De Morgan's law for OR).
 
         **Feature: api-best-practices-review-2025, Property 5**
@@ -265,10 +238,10 @@ class TestSpecificationCompositionLaws:
         """
         spec_a = GreaterThanSpec(t1)
         spec_b = LessThanSpec(t2)
-        
+
         left = ~(spec_a | spec_b)
         right = (~spec_a) & (~spec_b)
-        
+
         assert left.is_satisfied_by(entity) == right.is_satisfied_by(entity)
 
 
@@ -296,10 +269,10 @@ class TestSpecificationComposition:
         """
         spec_a = GreaterThanSpec(t1)
         spec_b = LessThanSpec(t2)
-        
+
         composed = spec_a & spec_b
         manual = spec_a.is_satisfied_by(entity) and spec_b.is_satisfied_by(entity)
-        
+
         assert composed.is_satisfied_by(entity) == manual
 
     @settings(max_examples=50, deadline=None)
@@ -314,10 +287,10 @@ class TestSpecificationComposition:
         """
         spec_a = GreaterThanSpec(t1)
         spec_b = LessThanSpec(t2)
-        
+
         composed = spec_a | spec_b
         manual = spec_a.is_satisfied_by(entity) or spec_b.is_satisfied_by(entity)
-        
+
         assert composed.is_satisfied_by(entity) == manual
 
     @settings(max_examples=50, deadline=None)
@@ -331,10 +304,10 @@ class TestSpecificationComposition:
         **Validates: Requirements 11.3**
         """
         spec_a = GreaterThanSpec(threshold)
-        
+
         composed = ~spec_a
         manual = not spec_a.is_satisfied_by(entity)
-        
+
         assert composed.is_satisfied_by(entity) == manual
 
 
@@ -357,7 +330,7 @@ class TestPredicateSpecification:
         """
         predicate = lambda e: e.value > threshold
         spec = PredicateSpecification[SampleEntity](predicate)
-        
+
         assert spec.is_satisfied_by(entity) == predicate(entity)
 
 
@@ -370,16 +343,14 @@ class TestAttributeSpecification:
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy)
-    def test_attribute_spec_matches_attribute(
-        self, entity: SampleEntity
-    ) -> None:
+    def test_attribute_spec_matches_attribute(self, entity: SampleEntity) -> None:
         """AttributeSpecification SHALL match attribute value.
 
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 11.5**
         """
         spec = AttributeSpecification[SampleEntity]("active", True)
-        
+
         assert spec.is_satisfied_by(entity) == (entity.active is True)
 
 
@@ -416,9 +387,9 @@ class TestItemExampleSpecifications:
         """
         active_item = self._create_item(status=ItemExampleStatus.ACTIVE)
         inactive_item = self._create_item(status=ItemExampleStatus.INACTIVE)
-        
+
         spec = ItemExampleActiveSpec()
-        
+
         assert spec.is_satisfied_by(active_item) is True
         assert spec.is_satisfied_by(inactive_item) is False
 
@@ -430,9 +401,9 @@ class TestItemExampleSpecifications:
         """
         in_stock = self._create_item(quantity=10)
         out_of_stock = self._create_item(quantity=0)
-        
+
         spec = ItemExampleInStockSpec()
-        
+
         assert spec.is_satisfied_by(in_stock) is True
         assert spec.is_satisfied_by(out_of_stock) is False
 
@@ -444,12 +415,12 @@ class TestItemExampleSpecifications:
         """
         cheap = self._create_item(price=Decimal("10.00"))
         expensive = self._create_item(price=Decimal("1000.00"))
-        
+
         spec = ItemExamplePriceRangeSpec(
             min_price=Decimal("5.00"),
             max_price=Decimal("50.00"),
         )
-        
+
         assert spec.is_satisfied_by(cheap) is True
         assert spec.is_satisfied_by(expensive) is False
 
@@ -464,16 +435,16 @@ class TestItemExampleSpecifications:
             quantity=5,
             status=ItemExampleStatus.ACTIVE,
         )
-        
+
         # Active AND in stock AND in price range
         spec = (
-            ItemExampleActiveSpec() &
-            ItemExampleInStockSpec() &
-            ItemExamplePriceRangeSpec(Decimal("10.00"), Decimal("50.00"))
+            ItemExampleActiveSpec()
+            & ItemExampleInStockSpec()
+            & ItemExamplePriceRangeSpec(Decimal("10.00"), Decimal("50.00"))
         )
-        
+
         assert spec.is_satisfied_by(item) is True
-        
+
         # Inactive item - should fail spec
         inactive_item = self._create_item(
             price=Decimal("25.00"),

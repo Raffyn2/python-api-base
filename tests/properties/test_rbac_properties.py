@@ -4,26 +4,22 @@
 **Validates: Requirements 2.1, 2.3**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.auth.rbac import (
+    ROLE_USER,
+    ROLE_VIEWER,
     Permission,
     RBACService,
     RBACUser,
     Role,
-    ROLE_ADMIN,
-    ROLE_USER,
-    ROLE_VIEWER,
-    ROLE_MODERATOR,
 )
 from core.exceptions import AuthorizationError
-
 
 # Strategy for generating user IDs
 user_id_strategy = st.text(
@@ -41,7 +37,9 @@ role_name_strategy = st.text(
 
 # Strategy for generating permission sets
 permission_strategy = st.sampled_from(list(Permission))
-permission_set_strategy = st.frozensets(permission_strategy, min_size=0, max_size=len(Permission))
+permission_set_strategy = st.frozensets(
+    permission_strategy, min_size=0, max_size=len(Permission)
+)
 
 
 class TestInsufficientPermissions:
@@ -177,10 +175,12 @@ class TestRolePermissionCombination:
         role1 = Role(name="custom_role_1", permissions=permissions1)
         role2 = Role(name="custom_role_2", permissions=permissions2)
 
-        service = RBACService(roles={
-            role1.name: role1,
-            role2.name: role2,
-        })
+        service = RBACService(
+            roles={
+                role1.name: role1,
+                role2.name: role2,
+            }
+        )
 
         user = RBACUser(id=user_id, roles=[role1.name, role2.name])
         combined = service.get_user_permissions(user)

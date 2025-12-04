@@ -11,17 +11,17 @@ Provides generic task queue with RabbitMQ backend:
 from infrastructure.tasks.rabbitmq.config import RabbitMQConfig
 from infrastructure.tasks.rabbitmq.queue import (
     RabbitMQTaskQueue,
-    TaskHandle,
     TaskError,
+    TaskHandle,
 )
-from infrastructure.tasks.rabbitmq.worker import RabbitMQWorker
 from infrastructure.tasks.rabbitmq.rpc import RabbitMQRpcClient
+from infrastructure.tasks.rabbitmq.worker import RabbitMQWorker
 
 __all__ = [
     "RabbitMQConfig",
-    "RabbitMQTaskQueue",
-    "TaskHandle",
-    "TaskError",
-    "RabbitMQWorker",
     "RabbitMQRpcClient",
+    "RabbitMQTaskQueue",
+    "RabbitMQWorker",
+    "TaskError",
+    "TaskHandle",
 ]

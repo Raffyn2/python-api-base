@@ -1,1 +1,1 @@
-"""Unit tests for ScyllaDB infrastructure."""
+"""ScyllaDB unit tests."""

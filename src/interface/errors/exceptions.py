@@ -15,8 +15,6 @@ class InterfaceError(Exception):
     All interface-specific exceptions should inherit from this class.
     """
 
-    pass
-
 
 class FieldError:
     """Field-level validation error.
@@ -99,8 +97,6 @@ class UnwrapError(InterfaceError):
     This exception is raised when trying to extract a value from
     an Err result using the unwrap() method.
     """
-
-    pass
 
 
 class BuilderValidationError(InterfaceError):

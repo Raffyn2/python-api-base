@@ -4,25 +4,23 @@
 **Validates: Requirements 7.1, 7.2, 7.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import string
 
 import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from core.shared.utils.sanitization import (
     InputSanitizer,
     SanitizationType,
-    sanitize_string,
-    sanitize_sql_identifier,
     sanitize_path,
+    sanitize_sql_identifier,
+    sanitize_string,
     strip_dangerous_chars,
 )
-
 
 # Strategy for alphanumeric strings (safe characters)
 alphanumeric_strategy = st.text(
@@ -334,7 +332,6 @@ class TestSanitizerConfiguration:
 
         Sanitizer SHALL log when modifications are made (when enabled).
         """
-        import logging
 
         sanitizer = InputSanitizer(log_modifications=True)
 

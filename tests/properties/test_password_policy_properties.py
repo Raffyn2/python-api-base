@@ -4,23 +4,20 @@
 **Validates: Requirements 10.1, 10.2, 10.3, 10.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import string
 
 import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import assume, given, settings, strategies as st
 
 from core.auth.password_policy import (
+    COMMON_PASSWORDS,
     PasswordPolicy,
     PasswordValidator,
-    PasswordValidationResult,
-    COMMON_PASSWORDS,
 )
-
 
 # Strategy for short passwords (less than 12 chars)
 short_password_strategy = st.text(
@@ -85,7 +82,9 @@ class TestMinimumLengthEnforcement:
         validator = PasswordValidator()
         result = validator.validate(password)
 
-        assert not result.valid, f"Password '{password}' should fail (length={len(password)})"
+        assert not result.valid, (
+            f"Password '{password}' should fail (length={len(password)})"
+        )
         assert any("at least 12 characters" in error.lower() for error in result.errors)
 
     @settings(max_examples=50, deadline=None)
@@ -121,7 +120,9 @@ class TestMinimumLengthEnforcement:
         result = validator.validate(password)
 
         # Should not have length error
-        assert not any("at least 12 characters" in error.lower() for error in result.errors)
+        assert not any(
+            "at least 12 characters" in error.lower() for error in result.errors
+        )
 
     def test_custom_minimum_length(self) -> None:
         """
@@ -230,7 +231,9 @@ class TestComplexityRequirements:
         validator = PasswordValidator()
         result = validator.validate(password)
 
-        assert result.valid, f"Password '{password}' should be valid, errors: {result.errors}"
+        assert result.valid, (
+            f"Password '{password}' should be valid, errors: {result.errors}"
+        )
 
 
 class TestValidationFeedbackSpecificity:
@@ -331,7 +334,10 @@ class TestCommonPasswordRejection:
         result = validator.validate(password)
 
         assert not result.valid
-        assert any("common" in error.lower() or "guessable" in error.lower() for error in result.errors)
+        assert any(
+            "common" in error.lower() or "guessable" in error.lower()
+            for error in result.errors
+        )
 
     def test_common_password_case_insensitive(self) -> None:
         """

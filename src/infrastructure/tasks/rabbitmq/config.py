@@ -21,7 +21,7 @@ class RabbitMQConfig:
     host: str = "localhost"
     port: int = 5672
     username: str = "guest"
-    password: str = "guest"
+    password: str = "guest"  # noqa: S105 - Default for local dev only
     virtual_host: str = "/"
     queue_name: str = "tasks"
     exchange: str = ""

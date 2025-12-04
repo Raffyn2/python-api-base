@@ -4,14 +4,13 @@
 **Validates: Requirements 5.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import time
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.security.request_signing import (
     ExpiredTimestampError,
@@ -25,17 +24,23 @@ from infrastructure.security.request_signing import (
     create_signer_verifier_pair,
 )
 
-
 # =============================================================================
 # Strategies
 # =============================================================================
 
+
 @st.composite
 def secret_key_strategy(draw: st.DrawFn) -> str:
     """Generate valid secret keys (minimum 32 bytes)."""
-    return draw(st.text(min_size=32, max_size=64, alphabet=st.characters(
-        whitelist_categories=("Lu", "Ll", "Nd"),
-    )))
+    return draw(
+        st.text(
+            min_size=32,
+            max_size=64,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"),
+            ),
+        )
+    )
 
 
 @st.composite
@@ -47,22 +52,30 @@ def http_method_strategy(draw: st.DrawFn) -> str:
 @st.composite
 def path_strategy(draw: st.DrawFn) -> str:
     """Generate URL paths."""
-    segments = draw(st.lists(
-        st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-"),
-        min_size=1,
-        max_size=5,
-    ))
+    segments = draw(
+        st.lists(
+            st.text(
+                min_size=1,
+                max_size=20,
+                alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-",
+            ),
+            min_size=1,
+            max_size=5,
+        )
+    )
     return "/" + "/".join(segments)
 
 
 @st.composite
 def body_strategy(draw: st.DrawFn) -> str | None:
     """Generate request bodies."""
-    return draw(st.one_of(
-        st.none(),
-        st.text(min_size=1, max_size=1000),
-        st.just('{"key": "value"}'),
-    ))
+    return draw(
+        st.one_of(
+            st.none(),
+            st.text(min_size=1, max_size=1000),
+            st.just('{"key": "value"}'),
+        )
+    )
 
 
 @st.composite
@@ -74,6 +87,7 @@ def nonce_strategy(draw: st.DrawFn) -> str:
 # =============================================================================
 # Property Tests - Request Signing
 # =============================================================================
+
 
 class TestRequestSignerProperties:
     """Property tests for request signer."""
@@ -232,6 +246,7 @@ class TestRequestSignerProperties:
 # =============================================================================
 # Property Tests - Request Verification
 # =============================================================================
+
 
 class TestRequestVerifierProperties:
     """Property tests for request verifier."""
@@ -438,6 +453,7 @@ class TestRequestVerifierProperties:
 # Property Tests - Nonce Store
 # =============================================================================
 
+
 class TestNonceStoreProperties:
     """Property tests for nonce store."""
 
@@ -514,6 +530,7 @@ class TestNonceStoreProperties:
 # =============================================================================
 # Property Tests - Hash Algorithms
 # =============================================================================
+
 
 class TestHashAlgorithmProperties:
     """Property tests for different hash algorithms."""
@@ -594,6 +611,7 @@ class TestHashAlgorithmProperties:
 # =============================================================================
 # Property Tests - Configuration
 # =============================================================================
+
 
 class TestSignatureConfigProperties:
     """Property tests for signature configuration."""

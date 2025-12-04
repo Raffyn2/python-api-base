@@ -8,14 +8,42 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Final, Self
 
 from infrastructure.errors import DatabaseError
 from infrastructure.scylladb.config import ScyllaDBConfig
 
 if TYPE_CHECKING:
     from cassandra.cluster import Cluster, Session
+
+# Regex pattern for valid CQL identifiers (table names, keyspace names, etc.)
+# Allows alphanumeric and underscore, must start with letter or underscore
+VALID_IDENTIFIER_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"^[a-zA-Z_][a-zA-Z0-9_]*$"
+)
+
+
+def _validate_identifier(value: str, identifier_type: str = "identifier") -> str:
+    """Validate a CQL identifier to prevent injection attacks.
+
+    Args:
+        value: The identifier value to validate
+        identifier_type: Type of identifier for error messages
+
+    Returns:
+        The validated identifier
+
+    Raises:
+        ValueError: If the identifier is invalid
+    """
+    if not value or not VALID_IDENTIFIER_PATTERN.match(value):
+        raise ValueError(
+            f"Invalid {identifier_type}: '{value}'. "
+            "Must start with letter/underscore and contain only alphanumeric/underscore."
+        )
+    return value
 
 logger = logging.getLogger(__name__)
 
@@ -237,7 +265,12 @@ class ScyllaDBClient:
             keyspace: Keyspace name
             replication: Replication strategy
             if_not_exists: Add IF NOT EXISTS clause
+
+        Raises:
+            ValueError: If keyspace name is invalid
         """
+        validated_keyspace = _validate_identifier(keyspace, "keyspace name")
+
         replication = replication or {
             "class": "SimpleStrategy",
             "replication_factor": 1,
@@ -248,13 +281,12 @@ class ScyllaDBClient:
             for k, v in replication.items()
         )
 
-        query = (
-            f"CREATE KEYSPACE {'IF NOT EXISTS ' if if_not_exists else ''}{keyspace} "
-        )
+        # S608: Identifier validated above, safe to use in query
+        query = f"CREATE KEYSPACE {'IF NOT EXISTS ' if if_not_exists else ''}{validated_keyspace} "
         query += f"WITH replication = {{{replication_str}}}"
 
         await self.execute(query)
-        logger.info(f"Created keyspace: {keyspace}")
+        logger.info(f"Created keyspace: {validated_keyspace}")
 
     async def create_table(
         self,
@@ -272,15 +304,27 @@ class ScyllaDBClient:
             primary_key: Primary key column(s)
             if_not_exists: Add IF NOT EXISTS clause
             **options: Table options
+
+        Raises:
+            ValueError: If table or column names are invalid
         """
-        cols = ", ".join(f"{name} {ctype}" for name, ctype in columns.items())
+        validated_table = _validate_identifier(table, "table name")
+
+        # Validate column names
+        validated_cols = []
+        for name, ctype in columns.items():
+            validated_name = _validate_identifier(name, "column name")
+            validated_cols.append(f"{validated_name} {ctype}")
+        cols = ", ".join(validated_cols)
 
         if isinstance(primary_key, list):
-            pk = f"({', '.join(primary_key)})"
+            validated_pk = [_validate_identifier(k, "primary key") for k in primary_key]
+            pk = f"({', '.join(validated_pk)})"
         else:
-            pk = primary_key
+            pk = _validate_identifier(primary_key, "primary key")
 
-        query = f"CREATE TABLE {'IF NOT EXISTS ' if if_not_exists else ''}{table} "
+        # S608: All identifiers validated above, safe to use in query
+        query = f"CREATE TABLE {'IF NOT EXISTS ' if if_not_exists else ''}{validated_table} "
         query += f"({cols}, PRIMARY KEY ({pk}))"
 
         if options:
@@ -288,7 +332,7 @@ class ScyllaDBClient:
             query += f" WITH {opts}"
 
         await self.execute(query)
-        logger.info(f"Created table: {table}")
+        logger.info(f"Created table: {validated_table}")
 
     async def drop_table(self, table: str, if_exists: bool = True) -> None:
         """Drop a table.
@@ -296,16 +340,26 @@ class ScyllaDBClient:
         Args:
             table: Table name
             if_exists: Add IF EXISTS clause
+
+        Raises:
+            ValueError: If table name is invalid
         """
-        query = f"DROP TABLE {'IF EXISTS ' if if_exists else ''}{table}"
+        validated_table = _validate_identifier(table, "table name")
+        # S608: Identifier validated above, safe to use in query
+        query = f"DROP TABLE {'IF EXISTS ' if if_exists else ''}{validated_table}"
         await self.execute(query)
-        logger.info(f"Dropped table: {table}")
+        logger.info(f"Dropped table: {validated_table}")
 
     async def truncate_table(self, table: str) -> None:
         """Truncate a table.
 
         Args:
             table: Table name
+
+        Raises:
+            ValueError: If table name is invalid
         """
-        await self.execute(f"TRUNCATE TABLE {table}")
-        logger.info(f"Truncated table: {table}")
+        validated_table = _validate_identifier(table, "table name")
+        # S608: Identifier validated above, safe to use in query
+        await self.execute(f"TRUNCATE TABLE {validated_table}")
+        logger.info(f"Truncated table: {validated_table}")

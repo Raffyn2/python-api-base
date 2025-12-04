@@ -9,12 +9,11 @@ for distributed tracing and log correlation.
 
 import contextvars
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
-from collections.abc import Callable
-
 
 # Context variable for correlation ID
 _correlation_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
@@ -44,11 +43,11 @@ def generate_id(format: IdFormat = IdFormat.UUID4_HEX) -> str:
     """Generate a unique ID in the specified format."""
     if format == IdFormat.UUID4:
         return str(uuid.uuid4())
-    elif format == IdFormat.UUID4_HEX:
+    if format == IdFormat.UUID4_HEX:
         return uuid.uuid4().hex
-    elif format == IdFormat.SHORT:
+    if format == IdFormat.SHORT:
         return uuid.uuid4().hex[:16]
-    elif format == IdFormat.TIMESTAMP:
+    if format == IdFormat.TIMESTAMP:
         timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         return f"{timestamp}-{uuid.uuid4().hex[:12]}"
     return uuid.uuid4().hex

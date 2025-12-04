@@ -14,8 +14,7 @@ from datetime import timedelta
 from io import BytesIO
 from typing import Any
 
-from core.base.patterns.result import Result, Err
-
+from core.base.patterns.result import Err, Result
 from infrastructure.minio.config import MinIOConfig
 from infrastructure.minio.download_operations import DownloadOperations
 from infrastructure.minio.object_management import ObjectManagement, ObjectMetadata

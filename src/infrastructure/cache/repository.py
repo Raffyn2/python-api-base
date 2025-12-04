@@ -13,7 +13,7 @@ Provides a decorator that:
 import functools
 import inspect
 import logging
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from typing import Any, TypeVar
 
 from infrastructure.cache.protocols import CacheProvider
@@ -169,7 +169,9 @@ def cached_repository[R](
 
         original_methods: dict[str, Callable] = {}
 
-        def _create_cached_method(method_name: str, original_method: Callable) -> Callable:
+        def _create_cached_method(
+            method_name: str, original_method: Callable
+        ) -> Callable:
             """Create cached version of a read method."""
 
             @functools.wraps(original_method)
@@ -228,7 +230,9 @@ def cached_repository[R](
 
             return cached_wrapper
 
-        def _create_invalidating_method(method_name: str, original_method: Callable) -> Callable:
+        def _create_invalidating_method(
+            method_name: str, original_method: Callable
+        ) -> Callable:
             """Create version of write method that invalidates cache."""
 
             @functools.wraps(original_method)

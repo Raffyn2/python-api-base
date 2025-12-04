@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Protocol, runtime_checkable
 
-
 # =============================================================================
 # Protocols for Type Bounds
 # =============================================================================
@@ -136,7 +135,7 @@ class Permission[TResource: Enum, TAction: Enum]:
         """
         return self.resource == resource and self.action == action
 
-    def with_condition(self, condition: str) -> "Permission[TResource, TAction]":
+    def with_condition(self, condition: str) -> Permission[TResource, TAction]:
         """Create permission with additional condition.
 
         Args:
@@ -211,15 +210,15 @@ class PermissionSet[TResource: Enum, TAction: Enum]:
 
     def __or__(
         self,
-        other: "PermissionSet[TResource, TAction]",
-    ) -> "PermissionSet[TResource, TAction]":
+        other: PermissionSet[TResource, TAction],
+    ) -> PermissionSet[TResource, TAction]:
         """Union of permission sets."""
         return PermissionSet(self._permissions | other._permissions)
 
     def __and__(
         self,
-        other: "PermissionSet[TResource, TAction]",
-    ) -> "PermissionSet[TResource, TAction]":
+        other: PermissionSet[TResource, TAction],
+    ) -> PermissionSet[TResource, TAction]:
         """Intersection of permission sets."""
         return PermissionSet(self._permissions & other._permissions)
 

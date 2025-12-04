@@ -11,10 +11,8 @@ Tests correctness properties of bulk operations including:
 """
 
 import asyncio
-from collections.abc import Sequence
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from pydantic import BaseModel
 
 from application.common.batch import (
@@ -58,13 +56,21 @@ class SampleUpdateDTO(BaseModel):
 def create_dto_strategy(draw: st.DrawFn) -> SampleCreateDTO:
     """Generate random create DTOs."""
     return SampleCreateDTO(
-        name=draw(st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N")))),
+        name=draw(
+            st.text(
+                min_size=1,
+                max_size=50,
+                alphabet=st.characters(whitelist_categories=("L", "N")),
+            )
+        ),
         value=draw(st.integers(min_value=0, max_value=10000)),
     )
 
 
 @st.composite
-def create_dto_list_strategy(draw: st.DrawFn, min_size: int = 1, max_size: int = 50) -> list[SampleCreateDTO]:
+def create_dto_list_strategy(
+    draw: st.DrawFn, min_size: int = 1, max_size: int = 50
+) -> list[SampleCreateDTO]:
     """Generate list of create DTOs."""
     return draw(st.lists(create_dto_strategy(), min_size=min_size, max_size=max_size))
 
@@ -218,7 +224,9 @@ class TestBatchRepository:
         *For any* list of items, succeeded + failed = total input.
         **Validates: Requirements 2.1**
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
         result = asyncio.run(repo.bulk_create(items))
 
         assert result.total_processed == len(items)
@@ -233,7 +241,9 @@ class TestBatchRepository:
         *For any* bulk create, all succeeded items exist in storage.
         **Validates: Requirements 2.1**
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
         result = asyncio.run(repo.bulk_create(items))
 
         # All succeeded items should be in storage
@@ -255,7 +265,9 @@ class TestBatchRepository:
         *For any* chunk size, same items produce same result count.
         **Validates: Requirements 2.1**
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
         config = BatchConfig(chunk_size=chunk_size)
 
         result = asyncio.run(repo.bulk_create(items, config=config))
@@ -271,7 +283,9 @@ class TestBatchRepository:
         *For any* created items, bulk_get returns them all.
         **Validates: Requirements 2.1**
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
         create_result = asyncio.run(repo.bulk_create(items))
 
         ids = [e.id for e in create_result.succeeded]
@@ -290,7 +304,9 @@ class TestBatchRepository:
         *For any* IDs, exists[id] == (get[id] is not None).
         **Validates: Requirements 2.1**
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
         create_result = asyncio.run(repo.bulk_create(items))
 
         ids = [e.id for e in create_result.succeeded]
@@ -311,10 +327,12 @@ class TestBatchRepository:
         *For any* deleted IDs, they no longer exist.
         **Validates: Requirements 2.1**
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
         create_result = asyncio.run(repo.bulk_create(items))
 
-        ids_to_delete = [e.id for e in create_result.succeeded[:len(items) // 2]]
+        ids_to_delete = [e.id for e in create_result.succeeded[: len(items) // 2]]
         delete_result = asyncio.run(repo.bulk_delete(ids_to_delete, soft=False))
 
         assert delete_result.total_succeeded == len(ids_to_delete)
@@ -332,14 +350,15 @@ class TestBatchRepository:
         *For any* updates, new values are reflected in storage.
         **Validates: Requirements 2.1**
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
         create_result = asyncio.run(repo.bulk_create(items))
 
         # Update all entities with new value
         new_value = 99999
         updates = [
-            (e.id, SampleUpdateDTO(value=new_value))
-            for e in create_result.succeeded
+            (e.id, SampleUpdateDTO(value=new_value)) for e in create_result.succeeded
         ]
 
         update_result = asyncio.run(repo.bulk_update(updates))
@@ -355,13 +374,17 @@ class TestBatchRepository:
 
     @given(items=create_dto_list_strategy(min_size=1, max_size=20))
     @settings(max_examples=50)
-    def test_bulk_upsert_creates_and_updates(self, items: list[SampleCreateDTO]) -> None:
+    def test_bulk_upsert_creates_and_updates(
+        self, items: list[SampleCreateDTO]
+    ) -> None:
         """Property: Upsert creates new and updates existing.
 
         *For any* items, upsert handles both cases correctly.
         **Validates: Requirements 2.1**
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
 
         # First upsert creates all
         result1 = asyncio.run(repo.bulk_upsert(items))
@@ -395,7 +418,9 @@ class TestBatchOperationBuilder:
         *For any* configuration, builder and direct call are equivalent.
         **Validates: Requirements 2.1**
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
         builder = BatchOperationBuilder(repo).with_chunk_size(chunk_size)
 
         result = asyncio.run(builder.create(items))
@@ -405,7 +430,9 @@ class TestBatchOperationBuilder:
 
     def test_builder_progress_callback(self) -> None:
         """Test that progress callback is invoked correctly."""
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
 
         progress_updates: list[BatchProgress] = []
 
@@ -445,7 +472,9 @@ class TestErrorStrategies:
 
     def test_fail_fast_stops_on_error(self) -> None:
         """Test that FAIL_FAST stops processing on first error."""
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
 
         # Create some entities first
         items = [SampleCreateDTO(name=f"item_{i}", value=i) for i in range(10)]
@@ -467,7 +496,9 @@ class TestErrorStrategies:
 
     def test_continue_processes_all(self) -> None:
         """Test that CONTINUE processes all items despite errors."""
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
 
         # Create some entities first
         items = [SampleCreateDTO(name=f"item_{i}", value=i) for i in range(10)]
@@ -508,10 +539,14 @@ class TestRollbackStrategy:
         For any batch operation with ROLLBACK strategy that encounters an error,
         the repository state after the operation SHALL equal the state before.
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
 
         # Create initial state
-        initial_items = [SampleCreateDTO(name=f"initial_{i}", value=i) for i in range(5)]
+        initial_items = [
+            SampleCreateDTO(name=f"initial_{i}", value=i) for i in range(5)
+        ]
         asyncio.run(repo.bulk_create(initial_items))
         initial_count = repo.count
         initial_storage = dict(repo._storage)
@@ -548,10 +583,14 @@ class TestRollbackStrategy:
         For any batch operation where rollback is triggered, the BatchResult
         SHALL have rolled_back=True and failed SHALL contain the triggering error.
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
 
         # Create initial state
-        initial_items = [SampleCreateDTO(name=f"initial_{i}", value=i) for i in range(3)]
+        initial_items = [
+            SampleCreateDTO(name=f"initial_{i}", value=i) for i in range(3)
+        ]
         asyncio.run(repo.bulk_create(initial_items))
 
         # Verify BatchResult has rollback fields
@@ -598,14 +637,18 @@ class TestRollbackStrategy:
 
     @given(items=create_dto_list_strategy(min_size=1, max_size=10))
     @settings(max_examples=30)
-    def test_successful_batch_not_rolled_back(self, items: list[SampleCreateDTO]) -> None:
+    def test_successful_batch_not_rolled_back(
+        self, items: list[SampleCreateDTO]
+    ) -> None:
         """**Feature: shared-modules-refactoring, Property 20: Rollback State Restoration**
         **Validates: Requirements 10.1**
 
         For any successful batch operation with ROLLBACK strategy,
         rolled_back SHALL be False.
         """
-        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
+        repo = BatchRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
+            SampleEntity
+        )
         config = BatchConfig(error_strategy=BatchErrorStrategy.ROLLBACK)
 
         result = asyncio.run(repo.bulk_create(items, config=config))

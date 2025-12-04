@@ -7,7 +7,6 @@
 import hashlib
 from dataclasses import dataclass
 
-import pytest
 from hypothesis import given, settings, strategies as st
 
 
@@ -139,9 +138,7 @@ class TestPercentageRollout:
 
     @given(flag_key=flag_keys, user_id=user_ids)
     @settings(max_examples=50)
-    def test_zero_percentage_always_disabled(
-        self, flag_key: str, user_id: str
-    ) -> None:
+    def test_zero_percentage_always_disabled(self, flag_key: str, user_id: str) -> None:
         """0% rollout is always disabled."""
         service = FeatureFlagService()
         flag = FeatureFlag(key=flag_key, is_enabled=True, rollout_percentage=0)
@@ -221,7 +218,7 @@ class TestVariantConsistency:
         )
         service.create_flag(flag)
 
-        variant_counts: dict[str, int] = {v: 0 for v in variants}
+        variant_counts: dict[str, int] = dict.fromkeys(variants, 0)
         for user_id in user_ids_list:
             context = EvaluationContext(user_id=user_id)
             variant = service.get_variant(flag_key, context)
@@ -269,9 +266,7 @@ class TestFlagEvaluation:
 
     @given(flag_key=flag_keys, user_id=user_ids)
     @settings(max_examples=50)
-    def test_disabled_flag_always_false(
-        self, flag_key: str, user_id: str
-    ) -> None:
+    def test_disabled_flag_always_false(self, flag_key: str, user_id: str) -> None:
         """Disabled flag always returns False."""
         service = FeatureFlagService()
         flag = FeatureFlag(key=flag_key, is_enabled=False, rollout_percentage=100)

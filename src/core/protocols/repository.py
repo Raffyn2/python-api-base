@@ -11,8 +11,6 @@ Refactored: 2025 - Split 401 lines into 2 focused modules
 """
 
 # Re-export data access components
-from .data_access import AsyncRepository, CacheProvider, UnitOfWork
-
 # Re-export application components
 from .application import (
     Command,
@@ -22,6 +20,7 @@ from .application import (
     Query,
     QueryHandler,
 )
+from .data_access import AsyncRepository, CacheProvider, UnitOfWork
 
 # Re-export all for public API
 __all__ = [

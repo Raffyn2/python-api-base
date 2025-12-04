@@ -11,65 +11,64 @@ Provides foundational patterns:
 """
 
 # Domain building blocks
+# CQRS
+from core.base.cqrs import BaseCommand, BaseQuery
 from core.base.domain import (
-    BaseEntity,
-    AuditableEntity,
-    VersionedEntity,
-    AuditableVersionedEntity,
-    ULIDEntity,
     AggregateRoot,
+    AuditableEntity,
+    AuditableVersionedEntity,
+    BaseEntity,
     BaseValueObject,
+    ULIDEntity,
+    VersionedEntity,
 )
 
 # Events
 from core.base.events import (
     DomainEvent,
     EntityCreatedEvent,
-    EntityUpdatedEvent,
     EntityDeletedEvent,
+    EntityUpdatedEvent,
     EventBus,
     IntegrationEvent,
 )
 
-# Repository
-from core.base.repository import (
-    IRepository,
-    InMemoryRepository,
-)
-
-# CQRS
-from core.base.cqrs import BaseCommand, BaseQuery
-
 # Patterns
 from core.base.patterns import (
-    # Result
-    Result,
-    Ok,
-    Err,
-    collect_results,
-    # Specification
-    Specification,
     AndSpecification,
-    OrSpecification,
-    NotSpecification,
-    TrueSpecification,
-    FalseSpecification,
-    PredicateSpecification,
     AttributeSpecification,
-    # Validation
-    Validator,
-    ValidationError,
-    FieldError,
-    CompositeValidator,
     ChainedValidator,
-    PredicateValidator,
-    RangeValidator,
-    validate_all,
-    # UoW
-    UnitOfWork,
+    CompositeValidator,
     # Pagination
     CursorPage,
     CursorPagination,
+    Err,
+    FalseSpecification,
+    FieldError,
+    NotSpecification,
+    Ok,
+    OrSpecification,
+    PredicateSpecification,
+    PredicateValidator,
+    RangeValidator,
+    # Result
+    Result,
+    # Specification
+    Specification,
+    TrueSpecification,
+    # UoW
+    UnitOfWork,
+    ValidationError,
+    # Validation
+    Validator,
+    collect_results,
+    validate_all,
+)
+
+# Repository
+from core.base.repository import (
+    InMemoryRepository,
+    IRepository,
 )
 
 __all__ = [

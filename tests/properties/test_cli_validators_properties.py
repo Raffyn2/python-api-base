@@ -7,10 +7,7 @@
 
 import pytest
 
-pytest.skip('Module cli.constants not implemented', allow_module_level=True)
-
-from hypothesis import assume, given, settings
-from hypothesis import strategies as st
+pytest.skip("Module cli.constants not implemented", allow_module_level=True)
 
 from cli.constants import (
     ALLOWED_ALEMBIC_COMMANDS,
@@ -37,6 +34,7 @@ from cli.validators import (
     validate_revision,
     validate_rollback_steps,
 )
+from hypothesis import assume, given, settings, strategies as st
 
 
 class TestAlembicCommandWhitelist:

@@ -4,13 +4,12 @@
 **Requirement: R7 - RFC 7807 Problem Details**
 """
 
-import pytest
 from http import HTTPStatus
 
 from core.errors.http.problem_details import (
+    PROBLEM_JSON_MEDIA_TYPE,
     ProblemDetail,
     ValidationErrorDetail,
-    PROBLEM_JSON_MEDIA_TYPE,
 )
 
 

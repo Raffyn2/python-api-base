@@ -1,11 +1,11 @@
 """Enhanced Audit Trail with diff tracking and snapshots."""
 
-from dataclasses import dataclass, field
-from datetime import datetime, UTC
-from enum import Enum
-from typing import Protocol, Any
-import json
 import hashlib
+import json
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any, Protocol
 
 
 class AuditAction(Enum):

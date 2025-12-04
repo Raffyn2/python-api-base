@@ -4,12 +4,9 @@
 **Requirement: R2 - Generic Elasticsearch Client**
 """
 
-import pytest
-from datetime import datetime, UTC
-
 from infrastructure.elasticsearch.document import (
-    ElasticsearchDocument,
     DocumentMetadata,
+    ElasticsearchDocument,
 )
 
 

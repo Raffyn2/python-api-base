@@ -10,10 +10,10 @@ from typing import Annotated
 from pydantic import Field, StringConstraints
 
 __all__ = [
-    "EntityId",
     "ULID",
     "UUID",
     "UUID7",
+    "EntityId",
 ]
 
 # PEP 695 type alias for entity identifiers

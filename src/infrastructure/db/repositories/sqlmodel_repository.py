@@ -6,16 +6,16 @@ Uses PEP 695 type parameter syntax (Python 3.12+) for cleaner generic definition
 **Validates: Requirements 1.1, 14.2**
 """
 
-from typing import Any, ClassVar
 from collections.abc import Sequence
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import false, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import SQLModel
 
-from core.exceptions import ValidationError as AppValidationError
 from core.base.repository import IRepository
+from core.exceptions import ValidationError as AppValidationError
 
 
 class SQLModelRepository[

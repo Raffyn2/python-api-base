@@ -6,22 +6,15 @@
 
 import pytest
 
-pytest.skip('Module interface.api not implemented', allow_module_level=True)
+pytest.skip("Module interface.api not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
 from interface.api.middleware.conditional_middleware import (
-    AlwaysCondition,
-    AndCondition,
-    ConditionalMiddleware,
     ConditionalMiddlewareRegistry,
-    CustomCondition,
     HeaderCondition,
     HttpMethod,
     MethodCondition,
-    NeverCondition,
-    NotCondition,
-    OrCondition,
     PathCondition,
     RouteInfo,
     always,
@@ -32,13 +25,14 @@ from interface.api.middleware.conditional_middleware import (
     path,
 )
 
-
 # Strategies
 path_strategy = st.from_regex(r"^/[a-z0-9/]*$", fullmatch=True)
 method_strategy = st.sampled_from([m for m in HttpMethod if m != HttpMethod.ALL])
 
 
-def make_route_info(path: str = "/test", method: HttpMethod = HttpMethod.GET) -> RouteInfo:
+def make_route_info(
+    path: str = "/test", method: HttpMethod = HttpMethod.GET
+) -> RouteInfo:
     """Create a RouteInfo for testing."""
     return RouteInfo(path=path, method=method)
 
@@ -102,7 +96,9 @@ class TestHeaderConditionProperties:
     def test_header_presence(self) -> None:
         """Property: Header presence check works."""
         condition = HeaderCondition("Authorization")
-        route_with = RouteInfo(path="/", method=HttpMethod.GET, headers={"Authorization": "Bearer token"})
+        route_with = RouteInfo(
+            path="/", method=HttpMethod.GET, headers={"Authorization": "Bearer token"}
+        )
         route_without = RouteInfo(path="/", method=HttpMethod.GET, headers={})
 
         assert condition.matches(route_with) is True
@@ -111,8 +107,14 @@ class TestHeaderConditionProperties:
     def test_header_value_match(self) -> None:
         """Property: Header value match works."""
         condition = HeaderCondition("Content-Type", "application/json")
-        route_match = RouteInfo(path="/", method=HttpMethod.GET, headers={"Content-Type": "application/json"})
-        route_no_match = RouteInfo(path="/", method=HttpMethod.GET, headers={"Content-Type": "text/html"})
+        route_match = RouteInfo(
+            path="/",
+            method=HttpMethod.GET,
+            headers={"Content-Type": "application/json"},
+        )
+        route_no_match = RouteInfo(
+            path="/", method=HttpMethod.GET, headers={"Content-Type": "text/html"}
+        )
 
         assert condition.matches(route_match) is True
         assert condition.matches(route_no_match) is False
@@ -120,7 +122,11 @@ class TestHeaderConditionProperties:
     def test_header_case_insensitive(self) -> None:
         """Property: Header names are case-insensitive."""
         condition = HeaderCondition("content-type")
-        route = RouteInfo(path="/", method=HttpMethod.GET, headers={"Content-Type": "application/json"})
+        route = RouteInfo(
+            path="/",
+            method=HttpMethod.GET,
+            headers={"Content-Type": "application/json"},
+        )
         assert condition.matches(route) is True
 
 
@@ -174,7 +180,9 @@ class TestAlwaysNeverConditionProperties:
 
     @given(path_str=path_strategy, http_method=method_strategy)
     @settings(max_examples=100)
-    def test_always_matches_everything(self, path_str: str, http_method: HttpMethod) -> None:
+    def test_always_matches_everything(
+        self, path_str: str, http_method: HttpMethod
+    ) -> None:
         """Property: Always condition matches any route."""
         condition = always()
         route_info = make_route_info(path_str, http_method)
@@ -182,7 +190,9 @@ class TestAlwaysNeverConditionProperties:
 
     @given(path_str=path_strategy, http_method=method_strategy)
     @settings(max_examples=100)
-    def test_never_matches_nothing(self, path_str: str, http_method: HttpMethod) -> None:
+    def test_never_matches_nothing(
+        self, path_str: str, http_method: HttpMethod
+    ) -> None:
         """Property: Never condition matches no route."""
         condition = never()
         route_info = make_route_info(path_str, http_method)
@@ -194,6 +204,7 @@ class TestCustomConditionProperties:
 
     def test_custom_function(self) -> None:
         """Property: Custom function is called correctly."""
+
         def is_admin_route(route: RouteInfo) -> bool:
             return route.path.startswith("/admin")
 
@@ -209,7 +220,9 @@ class TestConditionalMiddlewareRegistryProperties:
     @pytest.mark.anyio
     async def test_registry_executes_matching_middleware(self) -> None:
         """Property: Registry executes only matching middlewares."""
-        registry: ConditionalMiddlewareRegistry[dict, dict] = ConditionalMiddlewareRegistry()
+        registry: ConditionalMiddlewareRegistry[dict, dict] = (
+            ConditionalMiddlewareRegistry()
+        )
         executed: list[str] = []
 
         async def api_middleware(request: dict, next_handler) -> dict:
@@ -243,7 +256,9 @@ class TestConditionalMiddlewareRegistryProperties:
     @pytest.mark.anyio
     async def test_registry_for_methods(self) -> None:
         """Property: for_methods registers correctly."""
-        registry: ConditionalMiddlewareRegistry[dict, dict] = ConditionalMiddlewareRegistry()
+        registry: ConditionalMiddlewareRegistry[dict, dict] = (
+            ConditionalMiddlewareRegistry()
+        )
         executed = False
 
         async def write_middleware(request: dict, next_handler) -> dict:
@@ -258,21 +273,32 @@ class TestConditionalMiddlewareRegistryProperties:
 
         # POST should trigger
         executed = False
-        await registry.execute({}, make_route_info(method=HttpMethod.POST), final_handler)
+        await registry.execute(
+            {}, make_route_info(method=HttpMethod.POST), final_handler
+        )
         assert executed is True
 
         # GET should not trigger
         executed = False
-        await registry.execute({}, make_route_info(method=HttpMethod.GET), final_handler)
+        await registry.execute(
+            {}, make_route_info(method=HttpMethod.GET), final_handler
+        )
         assert executed is False
 
     def test_get_matching_returns_correct_middlewares(self) -> None:
         """Property: get_matching returns only matching middlewares."""
-        registry: ConditionalMiddlewareRegistry[dict, dict] = ConditionalMiddlewareRegistry()
+        registry: ConditionalMiddlewareRegistry[dict, dict] = (
+            ConditionalMiddlewareRegistry()
+        )
 
-        async def mw1(r, n): return await n(r)
-        async def mw2(r, n): return await n(r)
-        async def mw3(r, n): return await n(r)
+        async def mw1(r, n):
+            return await n(r)
+
+        async def mw2(r, n):
+            return await n(r)
+
+        async def mw3(r, n):
+            return await n(r)
 
         registry.for_path("/api/*", mw1, "api")
         registry.for_path("/admin/*", mw2, "admin")
@@ -287,9 +313,12 @@ class TestConditionalMiddlewareRegistryProperties:
 
     def test_registry_length(self) -> None:
         """Property: Registry length matches registered count."""
-        registry: ConditionalMiddlewareRegistry[dict, dict] = ConditionalMiddlewareRegistry()
+        registry: ConditionalMiddlewareRegistry[dict, dict] = (
+            ConditionalMiddlewareRegistry()
+        )
 
-        async def mw(r, n): return await n(r)
+        async def mw(r, n):
+            return await n(r)
 
         assert len(registry) == 0
         registry.for_path("/a", mw)

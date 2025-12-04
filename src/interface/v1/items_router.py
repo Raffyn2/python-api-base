@@ -2,10 +2,9 @@
 
 from application.mappers.item_mapper import ItemMapper
 from application.use_cases.item_use_case import ItemUseCase
-from domain.entities.item import Item, ItemCreate, ItemResponse, ItemUpdate
 from core.base.repository import InMemoryRepository
+from domain.entities.item import Item, ItemCreate, ItemResponse, ItemUpdate
 from interface.router import GenericCRUDRouter
-
 
 # Singleton mapper instance
 _item_mapper = ItemMapper()

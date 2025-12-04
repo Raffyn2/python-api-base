@@ -12,45 +12,45 @@ import logging
 import os
 
 from application.common.cqrs import CommandBus, QueryBus
-from application.common.middleware.resilience import ResilienceMiddleware
-from application.common.middleware.retry import RetryConfig
 from application.common.middleware.circuit_breaker import CircuitBreakerConfig
 from application.common.middleware.observability import (
-    LoggingMiddleware,
-    LoggingConfig,
-    MetricsMiddleware,
-    MetricsConfig,
     InMemoryMetricsCollector,
+    LoggingConfig,
+    LoggingMiddleware,
+    MetricsConfig,
+    MetricsMiddleware,
 )
 from application.common.middleware.query_cache import (
-    QueryCacheMiddleware,
-    QueryCacheConfig,
     InMemoryQueryCache,
+    QueryCacheConfig,
+    QueryCacheMiddleware,
 )
+from application.common.middleware.resilience import ResilienceMiddleware
+from application.common.middleware.retry import RetryConfig
 from application.users.commands import (
     CreateUserCommand,
     CreateUserHandler,
-    UpdateUserCommand,
-    UpdateUserHandler,
     DeleteUserCommand,
     DeleteUserHandler,
+    UpdateUserCommand,
+    UpdateUserHandler,
 )
 from application.users.queries import (
-    GetUserByIdQuery,
-    GetUserByIdHandler,
-    GetUserByEmailQuery,
-    GetUserByEmailHandler,
-    ListUsersQuery,
-    ListUsersHandler,
-    CountUsersQuery,
     CountUsersHandler,
+    CountUsersQuery,
+    GetUserByEmailHandler,
+    GetUserByEmailQuery,
+    GetUserByIdHandler,
+    GetUserByIdQuery,
+    ListUsersHandler,
+    ListUsersQuery,
 )
 from domain.users.services import UserDomainService
-from infrastructure.db.session import get_database_session
-from infrastructure.db.repositories.user_repository import SQLAlchemyUserRepository
 from infrastructure.db.repositories.user_read_repository import (
     SQLAlchemyUserReadRepository,
 )
+from infrastructure.db.repositories.user_repository import SQLAlchemyUserRepository
+from infrastructure.db.session import get_database_session
 
 logger = logging.getLogger(__name__)
 
@@ -241,9 +241,7 @@ def configure_cqrs_middleware(
             track_duration=True,
             track_success_rate=True,
             detect_slow_commands=True,
-            slow_threshold_ms=float(
-                os.getenv("CQRS_SLOW_THRESHOLD_MS", "1000.0")
-            ),
+            slow_threshold_ms=float(os.getenv("CQRS_SLOW_THRESHOLD_MS", "1000.0")),
         )
 
         metrics_middleware = MetricsMiddleware(metrics_collector, metrics_config)
@@ -259,8 +257,7 @@ def configure_cqrs_middleware(
             ttl_seconds=int(os.getenv("QUERY_CACHE_TTL_SECONDS", "300")),  # 5 min
             key_prefix="query_cache",
             enabled=True,
-            cache_all_queries=os.getenv("CACHE_ALL_QUERIES", "false").lower()
-            == "true",
+            cache_all_queries=os.getenv("CACHE_ALL_QUERIES", "false").lower() == "true",
             log_hits=True,
             log_misses=False,
         )

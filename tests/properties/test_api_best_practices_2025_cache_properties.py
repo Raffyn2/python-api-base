@@ -9,19 +9,17 @@ Property tests for:
 """
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
-from hypothesis import given, settings, HealthCheck
-from hypothesis import strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 from infrastructure.cache.providers.redis_jitter import (
-    RedisCacheWithJitter,
-    JitterConfig,
-    TTLPattern,
     CacheStats,
+    JitterConfig,
+    RedisCacheWithJitter,
+    TTLPattern,
 )
-
 
 # === Test Fixtures ===
 
@@ -88,13 +86,15 @@ class TestCacheTTLJitterRange:
         **Validates: Requirements 22.1**
         """
         jittered = cache_with_jitter._apply_jitter(base_ttl)
-        
+
         # Jitter should be positive (ttl increases)
         assert jittered >= base_ttl, "Jittered TTL must be >= base TTL"
-        
+
         # Jitter should be within 15% max
         max_jittered = int(base_ttl * 1.15) + 1  # +1 for rounding
-        assert jittered <= max_jittered, f"Jittered TTL {jittered} exceeds max {max_jittered}"
+        assert jittered <= max_jittered, (
+            f"Jittered TTL {jittered} exceeds max {max_jittered}"
+        )
 
     @settings(
         max_examples=50,
@@ -111,10 +111,10 @@ class TestCacheTTLJitterRange:
         """
         # Generate multiple jittered values
         jittered_values = [cache_with_jitter._apply_jitter(base_ttl) for _ in range(10)]
-        
+
         # At least some values should be different (probabilistic)
         unique_values = set(jittered_values)
-        
+
         # With 10 samples, we expect at least 2 unique values
         # (this may occasionally fail due to randomness, but that's rare)
         assert len(unique_values) >= 1, "Jitter should produce varied results"
@@ -140,17 +140,17 @@ class TestCacheStampedePrevention:
         # Track how many times compute is called
         compute_count = 0
         compute_lock = asyncio.Lock()
-        
+
         async def slow_compute() -> dict:
             nonlocal compute_count
             async with compute_lock:
                 compute_count += 1
             await asyncio.sleep(0.1)  # Simulate slow computation
             return {"data": "computed"}
-        
+
         # Create cache with mocked Redis
         cache = RedisCacheWithJitter[dict]()
-        
+
         # Mock Redis client
         mock_redis = AsyncMock()
         mock_redis.ping = AsyncMock()
@@ -158,32 +158,32 @@ class TestCacheStampedePrevention:
         mock_redis.set = AsyncMock(return_value=True)  # Lock acquired
         mock_redis.setex = AsyncMock()
         mock_redis.delete = AsyncMock()
-        
+
         # First call gets lock, subsequent calls wait
         lock_calls = 0
+
         async def mock_set(*args, **kwargs):
             nonlocal lock_calls
             lock_calls += 1
             if lock_calls == 1:
                 return True  # First caller gets lock
             return False  # Others don't
-        
+
         mock_redis.set = mock_set
         cache._redis = mock_redis
         cache._connected = True
-        
+
         # Launch concurrent requests
         tasks = [
-            cache.get_or_compute("test-key", slow_compute, ttl=300)
-            for _ in range(3)
+            cache.get_or_compute("test-key", slow_compute, ttl=300) for _ in range(3)
         ]
-        
+
         results = await asyncio.gather(*tasks)
-        
+
         # All results should be the same
         for result in results:
             assert result == {"data": "computed"}
-        
+
         # Only one computation should have happened
         # (due to locking, others wait for cache)
         # Note: In real scenario with Redis, stampede_prevented would increment
@@ -195,14 +195,14 @@ class TestCacheStampedePrevention:
         **Feature: api-best-practices-review-2025, Property 10**
         """
         cache = RedisCacheWithJitter[dict]()
-        
+
         # Initial stats
         stats = cache.get_stats()
         assert stats.stampede_prevented == 0
-        
+
         # Simulate stampede prevention increment
         cache._stats.stampede_prevented += 1
-        
+
         stats = cache.get_stats()
         assert stats.stampede_prevented == 1
 
@@ -222,10 +222,10 @@ class TestCacheStats:
         """
         stats = CacheStats(hits=80, misses=20)
         assert stats.hit_ratio == 0.8
-        
+
         stats = CacheStats(hits=0, misses=0)
         assert stats.hit_ratio == 0.0
-        
+
         stats = CacheStats(hits=100, misses=0)
         assert stats.hit_ratio == 1.0
 
@@ -238,9 +238,9 @@ class TestCacheStats:
         cache = RedisCacheWithJitter[dict]()
         cache._stats.hits = 100
         cache._stats.misses = 50
-        
+
         cache.reset_stats()
-        
+
         stats = cache.get_stats()
         assert stats.hits == 0
         assert stats.misses == 0
@@ -260,19 +260,23 @@ class TestTTLPatternConfiguration:
         **Validates: Requirements 22.5**
         """
         cache = RedisCacheWithJitter[dict](default_ttl=300)
-        
+
         # Configure patterns
-        cache.configure_ttl_pattern(TTLPattern(
-            pattern="user:*",
-            ttl_seconds=600,
-            enable_jitter=True,
-        ))
-        cache.configure_ttl_pattern(TTLPattern(
-            pattern="session:*",
-            ttl_seconds=1800,
-            enable_jitter=True,
-        ))
-        
+        cache.configure_ttl_pattern(
+            TTLPattern(
+                pattern="user:*",
+                ttl_seconds=600,
+                enable_jitter=True,
+            )
+        )
+        cache.configure_ttl_pattern(
+            TTLPattern(
+                pattern="session:*",
+                ttl_seconds=1800,
+                enable_jitter=True,
+            )
+        )
+
         # Test pattern matching
         assert cache._get_ttl_for_key("user:123") == 600
         assert cache._get_ttl_for_key("session:abc") == 1800
@@ -285,7 +289,7 @@ class TestTTLPatternConfiguration:
         **Validates: Requirements 22.5**
         """
         cache = RedisCacheWithJitter[dict]()
-        
+
         # Test glob matching
         assert cache._key_matches_pattern("user:123", "user:*")
         assert cache._key_matches_pattern("user:123:profile", "user:*:profile")
@@ -315,14 +319,14 @@ class TestJitterConfigValidation:
             max_jitter_percent=max_jitter,
         )
         cache = RedisCacheWithJitter[dict](config=config)
-        
+
         base_ttl = 1000
         jittered = cache._apply_jitter(base_ttl)
-        
+
         # Should be within custom range
         min_expected = base_ttl + int(base_ttl * min_jitter)
         max_expected = base_ttl + int(base_ttl * max_jitter) + 1
-        
+
         assert min_expected <= jittered <= max_expected
 
 
@@ -335,12 +339,12 @@ class TestCacheKeyPrefixing:
     def test_key_prefix_applied(self) -> None:
         """Key prefix SHALL be applied to all keys."""
         cache = RedisCacheWithJitter[dict](key_prefix="myapp")
-        
+
         assert cache._make_key("user:123") == "myapp:user:123"
         assert cache._make_key("session") == "myapp:session"
 
     def test_empty_prefix(self) -> None:
         """Empty prefix SHALL not modify keys."""
         cache = RedisCacheWithJitter[dict](key_prefix="")
-        
+
         assert cache._make_key("user:123") == "user:123"

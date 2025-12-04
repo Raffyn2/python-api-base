@@ -4,10 +4,10 @@
 **Validates: Requirements 9.2**
 """
 
-import pytest
 from datetime import timedelta
-from hypothesis import given, settings
-from hypothesis import strategies as st
+
+import pytest
+from hypothesis import given, settings, strategies as st
 
 try:
     from infrastructure.security.token_service import (
@@ -20,8 +20,7 @@ except ImportError:
 
 # Strategy for claim values
 claim_key_strategy = st.text(
-    min_size=1, max_size=20,
-    alphabet="abcdefghijklmnopqrstuvwxyz_"
+    min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"
 )
 claim_value_strategy = st.one_of(
     st.text(max_size=100),
@@ -36,10 +35,14 @@ claims_strategy = st.dictionaries(
     values=claim_value_strategy,
     min_size=1,
     max_size=5,
-).filter(lambda d: "exp" not in d and "iat" not in d and "iss" not in d and "aud" not in d)
+).filter(
+    lambda d: "exp" not in d and "iat" not in d and "iss" not in d and "aud" not in d
+)
 
 # Strategy for subject claim
-subject_strategy = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_")
+subject_strategy = st.text(
+    min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_"
+)
 
 
 class TestJWTRoundTrip:
@@ -50,7 +53,7 @@ class TestJWTRoundTrip:
     def test_sign_verify_roundtrip_preserves_subject(self, subject: str) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 12: JWT Encode/Decode Round-Trip**
-        
+
         For any subject claim, encoding to JWT and decoding back
         SHALL preserve the subject.
         **Validates: Requirements 9.2**
@@ -59,10 +62,10 @@ class TestJWTRoundTrip:
             secret_key="test-secret-key-at-least-32-characters-long",
             default_expiry=timedelta(hours=1),
         )
-        
+
         token = provider.sign({"sub": subject})
         claims = provider.verify(token)
-        
+
         assert claims["sub"] == subject
 
     @settings(max_examples=50)
@@ -77,10 +80,10 @@ class TestJWTRoundTrip:
             secret_key="test-secret-key-at-least-32-characters-long",
             default_expiry=timedelta(hours=1),
         )
-        
+
         token = provider.sign(claims)
         decoded = provider.verify(token)
-        
+
         # All original claims should be present
         for key, value in claims.items():
             assert key in decoded
@@ -99,10 +102,10 @@ class TestJWTRoundTrip:
             audience="test-audience",
             default_expiry=timedelta(hours=1),
         )
-        
+
         token = provider.sign({"sub": subject})
         claims = provider.verify(token)
-        
+
         assert claims["iss"] == "test-issuer"
         assert claims["aud"] == "test-audience"
         assert claims["sub"] == subject
@@ -118,16 +121,18 @@ class TestJWTRoundTrip:
             secret_key="test-secret-key-at-least-32-characters-long",
             default_expiry=timedelta(hours=1),
         )
-        
+
         token = provider.sign({"sub": subject})
         claims = provider.verify(token)
-        
+
         assert "iat" in claims  # Issued at
         assert "exp" in claims  # Expiration
 
     @settings(max_examples=20)
     @given(
-        roles=st.lists(st.text(min_size=1, max_size=20), min_size=1, max_size=5, unique=True)
+        roles=st.lists(
+            st.text(min_size=1, max_size=20), min_size=1, max_size=5, unique=True
+        )
     )
     def test_list_claims_preserved(self, roles: list[str]) -> None:
         """
@@ -138,10 +143,10 @@ class TestJWTRoundTrip:
             secret_key="test-secret-key-at-least-32-characters-long",
             default_expiry=timedelta(hours=1),
         )
-        
+
         token = provider.sign({"roles": roles})
         claims = provider.verify(token)
-        
+
         assert claims["roles"] == roles
 
     def test_wrong_secret_fails_verification(self) -> None:
@@ -157,8 +162,8 @@ class TestJWTRoundTrip:
             secret_key="second-secret-key-at-least-32-chars",
             default_expiry=timedelta(hours=1),
         )
-        
+
         token = provider1.sign({"sub": "user123"})
-        
+
         with pytest.raises(InvalidKeyError):
             provider2.verify(token)

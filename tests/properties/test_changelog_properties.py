@@ -6,18 +6,18 @@
 
 import pytest
 
-pytest.skip('Module interface.api not implemented', allow_module_level=True)
+pytest.skip("Module interface.api not implemented", allow_module_level=True)
 
-from hypothesis import given, strategies as st, settings
 from datetime import datetime
+
+from hypothesis import given, settings, strategies as st
 
 from interface.api.changelog import (
     Change,
-    ChangeType,
-    Version,
-    SemanticVersion,
-    BreakingChangeDetector,
     ChangelogGenerator,
+    ChangeType,
+    SemanticVersion,
+    Version,
 )
 
 
@@ -27,7 +27,7 @@ class TestSemanticVersionProperties:
     @given(
         st.integers(min_value=0, max_value=100),
         st.integers(min_value=0, max_value=100),
-        st.integers(min_value=0, max_value=100)
+        st.integers(min_value=0, max_value=100),
     )
     @settings(max_examples=100)
     def test_version_round_trip(self, major: int, minor: int, patch: int) -> None:
@@ -39,14 +39,11 @@ class TestSemanticVersionProperties:
     @given(
         st.integers(min_value=0, max_value=100),
         st.integers(min_value=0, max_value=100),
-        st.integers(min_value=0, max_value=100)
+        st.integers(min_value=0, max_value=100),
     )
     @settings(max_examples=100)
     def test_bump_major_resets_minor_patch(
-        self,
-        major: int,
-        minor: int,
-        patch: int
+        self, major: int, minor: int, patch: int
     ) -> None:
         """Bumping major resets minor and patch."""
         version = SemanticVersion(f"{major}.{minor}.{patch}")
@@ -58,15 +55,10 @@ class TestSemanticVersionProperties:
     @given(
         st.integers(min_value=0, max_value=100),
         st.integers(min_value=0, max_value=100),
-        st.integers(min_value=0, max_value=100)
+        st.integers(min_value=0, max_value=100),
     )
     @settings(max_examples=100)
-    def test_bump_minor_resets_patch(
-        self,
-        major: int,
-        minor: int,
-        patch: int
-    ) -> None:
+    def test_bump_minor_resets_patch(self, major: int, minor: int, patch: int) -> None:
         """Bumping minor resets patch."""
         version = SemanticVersion(f"{major}.{minor}.{patch}")
         bumped = version.bump_minor()
@@ -81,8 +73,7 @@ class TestChangelogGeneratorProperties:
     @given(st.lists(st.sampled_from(list(ChangeType)), min_size=1, max_size=10))
     @settings(max_examples=50)
     def test_markdown_contains_all_change_types(
-        self,
-        change_types: list[ChangeType]
+        self, change_types: list[ChangeType]
     ) -> None:
         """Generated markdown contains all change types."""
         generator = ChangelogGenerator()
@@ -90,11 +81,7 @@ class TestChangelogGeneratorProperties:
             Change(change_type=ct, description=f"Test {ct.value}")
             for ct in change_types
         ]
-        version = Version(
-            version="1.0.0",
-            date=datetime.utcnow(),
-            changes=changes
-        )
+        version = Version(version="1.0.0", date=datetime.utcnow(), changes=changes)
         generator.add_version(version)
         markdown = generator.generate_markdown()
 
@@ -109,13 +96,9 @@ class TestChangelogGeneratorProperties:
         change = Change(
             change_type=ChangeType.CHANGED,
             description="Test change",
-            is_breaking=is_breaking
+            is_breaking=is_breaking,
         )
-        version = Version(
-            version="1.0.0",
-            date=datetime.utcnow(),
-            changes=[change]
-        )
+        version = Version(version="1.0.0", date=datetime.utcnow(), changes=[change])
         generator.add_version(version)
         markdown = generator.generate_markdown()
 
@@ -127,30 +110,26 @@ class TestChangelogGeneratorProperties:
     def test_suggest_major_for_breaking(self) -> None:
         """Suggests major bump for breaking changes."""
         generator = ChangelogGenerator()
-        changes = [Change(
-            change_type=ChangeType.REMOVED,
-            description="Removed endpoint",
-            is_breaking=True
-        )]
+        changes = [
+            Change(
+                change_type=ChangeType.REMOVED,
+                description="Removed endpoint",
+                is_breaking=True,
+            )
+        ]
         suggested = generator.suggest_version("1.2.3", changes)
         assert suggested == "2.0.0"
 
     def test_suggest_minor_for_additions(self) -> None:
         """Suggests minor bump for additions."""
         generator = ChangelogGenerator()
-        changes = [Change(
-            change_type=ChangeType.ADDED,
-            description="Added endpoint"
-        )]
+        changes = [Change(change_type=ChangeType.ADDED, description="Added endpoint")]
         suggested = generator.suggest_version("1.2.3", changes)
         assert suggested == "1.3.0"
 
     def test_suggest_patch_for_fixes(self) -> None:
         """Suggests patch bump for fixes."""
         generator = ChangelogGenerator()
-        changes = [Change(
-            change_type=ChangeType.FIXED,
-            description="Fixed bug"
-        )]
+        changes = [Change(change_type=ChangeType.FIXED, description="Fixed bug")]
         suggested = generator.suggest_version("1.2.3", changes)
         assert suggested == "1.2.4"

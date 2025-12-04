@@ -5,8 +5,6 @@
 """
 
 import logging
-
-from infrastructure.errors import DatabaseError
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -17,6 +15,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlmodel import SQLModel
+
+from infrastructure.errors import DatabaseError
 
 logger = logging.getLogger(__name__)
 

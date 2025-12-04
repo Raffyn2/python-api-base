@@ -8,25 +8,25 @@ Demonstrates versioned API with deprecation headers.
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
+from fastapi import Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.common.base.dto import ApiResponse, PaginatedResponse
 from application.examples import (
     ItemExampleCreate,
     ItemExampleResponse,
-    PedidoExampleResponse,
     ItemExampleUseCase,
-    PedidoExampleUseCase,
     NotFoundError,
+    PedidoExampleResponse,
+    PedidoExampleUseCase,
     ValidationError,
 )
-from infrastructure.db.session import get_async_session
 from infrastructure.db.repositories.examples import (
     ItemExampleRepository,
     PedidoExampleRepository,
 )
-from infrastructure.kafka import create_event_publisher, EventPublisher
+from infrastructure.db.session import get_async_session
+from infrastructure.kafka import EventPublisher, create_event_publisher
 from interface.versioning import (
     ApiVersion,
     VersionedRouter,
@@ -120,7 +120,7 @@ async def list_items_v2(
     )
     if result.is_err():
         raise handle_result_error(result.unwrap_err())
-    
+
     items = result.unwrap()
     return PaginatedResponse(
         items=items,
@@ -199,7 +199,7 @@ async def list_pedidos_v2(
     )
     if result.is_err():
         raise handle_result_error(result.unwrap_err())
-    
+
     pedidos = result.unwrap()
     return PaginatedResponse(
         items=pedidos,

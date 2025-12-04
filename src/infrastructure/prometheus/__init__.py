@@ -7,20 +7,20 @@ Provides metrics collection, decorators, and FastAPI integration.
 """
 
 from infrastructure.prometheus.config import PrometheusConfig
-from infrastructure.prometheus.registry import (
-    MetricsRegistry,
-    get_registry,
-)
+from infrastructure.prometheus.endpoint import create_metrics_endpoint, setup_prometheus
 from infrastructure.prometheus.metrics import (
+    count_exceptions,
     counter,
     gauge,
     histogram,
     summary,
     timer,
-    count_exceptions,
 )
 from infrastructure.prometheus.middleware import PrometheusMiddleware
-from infrastructure.prometheus.endpoint import create_metrics_endpoint, setup_prometheus
+from infrastructure.prometheus.registry import (
+    MetricsRegistry,
+    get_registry,
+)
 
 __all__ = [
     # Config

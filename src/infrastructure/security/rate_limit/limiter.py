@@ -13,8 +13,8 @@ from slowapi.util import get_remote_address
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from core.config import get_settings
 from application.common.base.dto import ProblemDetail
+from core.config import get_settings
 
 from .sliding_window import (
     RateLimitResult,
@@ -166,8 +166,8 @@ async def rate_limit_exceeded_handler(
             config = parse_rate_limit(get_rate_limit())
             window_end = state.window_start + config.window_size_seconds
             retry_after = max(1, int(window_end - time.time()))
-    except Exception:
-        pass  # Fall back to default
+    except Exception:  # noqa: S110 - Fall back to default retry_after
+        pass
 
     problem = ProblemDetail(
         type="https://api.example.com/errors/RATE_LIMIT_EXCEEDED",

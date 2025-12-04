@@ -76,5 +76,3 @@ class CircuitBreakerError[TRequest](HttpError[TRequest]):
 
     **Requirement: R9.4 - Circuit breaker integration**
     """
-
-    pass

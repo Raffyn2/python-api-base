@@ -4,14 +4,14 @@
 """
 
 from application.users.queries.get_user import (
-    GetUserByIdQuery,
+    CountUsersHandler,
+    CountUsersQuery,
+    GetUserByEmailHandler,
     GetUserByEmailQuery,
     GetUserByIdHandler,
-    GetUserByEmailHandler,
-    ListUsersQuery,
+    GetUserByIdQuery,
     ListUsersHandler,
-    CountUsersQuery,
-    CountUsersHandler,
+    ListUsersQuery,
 )
 
 __all__ = [

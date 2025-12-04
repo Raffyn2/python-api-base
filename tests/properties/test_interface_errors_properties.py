@@ -4,29 +4,26 @@
 **Validates: Requirements 2.1, 2.3, 2.5**
 """
 
-import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
+from hypothesis import assume, given, settings, strategies as st
 
 from interface.errors import (
-    InterfaceError,
-    ValidationError,
-    FieldError,
-    NotFoundError,
-    UnwrapError,
     BuilderValidationError,
-    InvalidStatusTransitionError,
-    TransformationError,
     ConfigurationError,
     ErrorCode,
     ErrorMessage,
+    FieldError,
+    InterfaceError,
+    InvalidStatusTransitionError,
+    NotFoundError,
+    TransformationError,
+    UnwrapError,
+    ValidationError,
 )
 from interface.errors.exceptions import (
     CompositionError,
     RepositoryError,
     ServiceError,
 )
-
 
 # =============================================================================
 # Strategies
@@ -458,7 +455,9 @@ class TestValidationErrorCount:
 
     @given(
         errors=st.lists(
-            st.tuples(field_strategy, message_strategy, st.text(min_size=1, max_size=20)),
+            st.tuples(
+                field_strategy, message_strategy, st.text(min_size=1, max_size=20)
+            ),
             min_size=1,
             max_size=10,
         )

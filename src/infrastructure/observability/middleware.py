@@ -8,8 +8,8 @@ with OpenTelemetry, including context propagation and metrics.
 """
 
 import time
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -126,7 +126,7 @@ class TracingMiddleware(BaseHTTPMiddleware):
             if ctx.is_valid:
                 _current_trace_id.set(format(ctx.trace_id, "032x"))
                 _current_span_id.set(format(ctx.span_id, "016x"))
-        except Exception:
+        except Exception:  # noqa: S110 - Optional telemetry, fail silently
             pass
 
     def _set_response_status(self, span: Any, status_code: int) -> None:

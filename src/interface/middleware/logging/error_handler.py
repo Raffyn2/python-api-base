@@ -7,12 +7,12 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError as PydanticValidationError
 
+from application.common.base.dto import ProblemDetail
 from core.errors.base.domain_errors import (
     AppException,
     AuthenticationError,
     RateLimitExceededError,
 )
-from application.common.base.dto import ProblemDetail
 
 logger = logging.getLogger(__name__)
 

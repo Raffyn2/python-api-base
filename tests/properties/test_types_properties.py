@@ -4,13 +4,12 @@
 **Validates: Requirements 3.5**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from pydantic import BaseModel, ValidationError
 
 from core.types.types import (
@@ -27,7 +26,6 @@ from core.types.types import (
     ShortStr,
     Slug,
 )
-
 
 # =============================================================================
 # Test Models using Annotated types
@@ -159,7 +157,11 @@ def test_valid_email_accepted(email: str) -> None:
     assert model.email == email
 
 
-@given(st.text().filter(lambda x: "@" not in x or "." not in x.split("@")[-1] if "@" in x else True))
+@given(
+    st.text().filter(
+        lambda x: "@" not in x or "." not in x.split("@")[-1] if "@" in x else True
+    )
+)
 @settings(max_examples=50)
 def test_invalid_email_rejected(invalid_email: str) -> None:
     """Invalid email addresses should be rejected.
@@ -273,7 +275,9 @@ def test_percentage_in_range_accepted(value: float) -> None:
     assert model.rate == value
 
 
-@given(st.floats(min_value=100.01, max_value=1000.0, allow_nan=False, allow_infinity=False))
+@given(
+    st.floats(min_value=100.01, max_value=1000.0, allow_nan=False, allow_infinity=False)
+)
 @settings(max_examples=50)
 def test_percentage_over_100_rejected(value: float) -> None:
     """Percentages over 100 should be rejected.
@@ -343,7 +347,11 @@ def test_large_page_size_rejected(size: int) -> None:
 # =============================================================================
 
 
-@given(st.from_regex(r"^[a-z0-9]+(?:-[a-z0-9]+)*$", fullmatch=True).filter(lambda x: 1 <= len(x) <= 100))
+@given(
+    st.from_regex(r"^[a-z0-9]+(?:-[a-z0-9]+)*$", fullmatch=True).filter(
+        lambda x: 1 <= len(x) <= 100
+    )
+)
 @settings(max_examples=100)
 def test_valid_slug_accepted(slug: str) -> None:
     """Valid slugs should be accepted.

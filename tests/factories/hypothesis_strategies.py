@@ -9,7 +9,7 @@ Usage:
     )
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, TypeVar, get_args, get_origin
 
 from hypothesis import strategies as st
@@ -80,12 +80,12 @@ page_size_strategy = st.integers(min_value=1, max_value=100)
 datetime_strategy = st.datetimes(
     min_value=datetime(2000, 1, 1),
     max_value=datetime(2100, 12, 31),
-    timezones=st.just(timezone.utc),
+    timezones=st.just(UTC),
 )
 past_datetime_strategy = st.datetimes(
     min_value=datetime(2000, 1, 1),
     max_value=datetime.now(),
-    timezones=st.just(timezone.utc),
+    timezones=st.just(UTC),
 )
 bool_strategy = st.booleans()
 
@@ -215,7 +215,9 @@ def pydantic_strategy(model_class: type[T]) -> st.SearchStrategy[T]:
         if field_type is None:
             field_strategies[field_name] = st.none()
         else:
-            field_strategies[field_name] = _get_strategy_for_type(field_type, field_info)
+            field_strategies[field_name] = _get_strategy_for_type(
+                field_type, field_info
+            )
     return st.builds(model_class, **field_strategies)
 
 
@@ -233,7 +235,7 @@ def entity_strategy(
             if with_timestamps:
                 field_strategies[field_name] = datetime_strategy
             else:
-                field_strategies[field_name] = st.just(datetime.now(tz=timezone.utc))
+                field_strategies[field_name] = st.just(datetime.now(tz=UTC))
             continue
         if field_name == "is_deleted":
             field_strategies[field_name] = st.just(False)
@@ -241,7 +243,9 @@ def entity_strategy(
         if field_type is None:
             field_strategies[field_name] = st.none()
         else:
-            field_strategies[field_name] = _get_strategy_for_type(field_type, field_info)
+            field_strategies[field_name] = _get_strategy_for_type(
+                field_type, field_info
+            )
     return st.builds(entity_class, **field_strategies)
 
 
@@ -323,5 +327,7 @@ def create_model_strategy(
             if field_type is None:
                 field_strategies[field_name] = st.none()
             else:
-                field_strategies[field_name] = _get_strategy_for_type(field_type, field_info)
+                field_strategies[field_name] = _get_strategy_for_type(
+                    field_type, field_info
+                )
     return st.builds(model_class, **field_strategies)

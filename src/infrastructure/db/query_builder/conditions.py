@@ -82,10 +82,10 @@ class SortClause:
 class ConditionGroup:
     """Group of conditions combined with a logical operator."""
 
-    conditions: list[QueryCondition | "ConditionGroup"] = field(default_factory=list)
+    conditions: list[QueryCondition | ConditionGroup] = field(default_factory=list)
     operator: LogicalOperator = LogicalOperator.AND
 
-    def add(self, condition: QueryCondition | "ConditionGroup") -> None:
+    def add(self, condition: QueryCondition | ConditionGroup) -> None:
         """Add a condition to the group."""
         self.conditions.append(condition)
 

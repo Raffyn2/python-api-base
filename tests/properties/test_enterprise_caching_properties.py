@@ -9,18 +9,18 @@ from datetime import datetime, timedelta
 
 import pytest
 
-pytest.skip('Module core.shared.caching.providers not implemented', allow_module_level=True)
+pytest.skip(
+    "Module core.shared.caching.providers not implemented", allow_module_level=True
+)
 
 from hypothesis import given, settings, strategies as st
 
-from core.shared.caching.providers import (
-    CacheEntry,
-    CacheStats,
-    InMemoryCacheProvider,
-)
 from core.shared.caching.config import CacheConfig
 from core.shared.caching.decorators import cached
-
+from core.shared.caching.providers import (
+    CacheEntry,
+    InMemoryCacheProvider,
+)
 
 # Strategies for generating test data
 cache_keys = st.text(
@@ -41,7 +41,9 @@ ttl_values = st.integers(min_value=1, max_value=3600)
 class TestCacheEntryProperties:
     """Property tests for CacheEntry dataclass."""
 
-    @given(key=cache_keys, value=st.integers(), ttl=st.integers(min_value=1, max_value=100))
+    @given(
+        key=cache_keys, value=st.integers(), ttl=st.integers(min_value=1, max_value=100)
+    )
     @settings(max_examples=50)
     def test_cache_entry_is_frozen(self, key: str, value: int, ttl: int) -> None:
         """**Property: CacheEntry is immutable (frozen=True)**"""
@@ -243,7 +245,10 @@ class TestCachedDecorator:
 
         asyncio.run(run_test())
 
-    @given(x=st.integers(min_value=0, max_value=100), y=st.integers(min_value=101, max_value=200))
+    @given(
+        x=st.integers(min_value=0, max_value=100),
+        y=st.integers(min_value=101, max_value=200),
+    )
     @settings(max_examples=30)
     def test_different_args_different_cache_entries(self, x: int, y: int) -> None:
         """Different arguments create different cache entries."""
@@ -275,9 +280,7 @@ class TestCacheStats:
         value=st.integers(),
     )
     @settings(max_examples=30)
-    def test_stats_track_hits_and_misses(
-        self, keys: list[str], value: int
-    ) -> None:
+    def test_stats_track_hits_and_misses(self, keys: list[str], value: int) -> None:
         """Cache stats accurately track hits and misses."""
 
         async def run_test() -> None:

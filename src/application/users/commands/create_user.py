@@ -8,15 +8,14 @@ import logging
 import time
 from dataclasses import dataclass
 
-from core.base.cqrs.command import BaseCommand
-from core.base.patterns.result import Result, Ok, Err
 from application.common.cqrs.handlers import CommandHandler
 from application.users.commands.validators import CompositeUserValidator
+from core.base.cqrs.command import BaseCommand
+from core.base.patterns.result import Ok, Result
+from core.shared.utils.ids import generate_ulid
 from domain.users.aggregates import UserAggregate
 from domain.users.repositories import IUserRepository
 from domain.users.services import UserDomainService
-
-from core.shared.utils.ids import generate_ulid
 
 logger = logging.getLogger(__name__)
 

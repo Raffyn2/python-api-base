@@ -49,15 +49,15 @@ class Scope:
             ServiceNotRegisteredError: If service is not registered.
             CircularDependencyError: If circular dependency detected.
         """
-        if service_type not in self._parent._registrations:
+        if not self._parent.is_registered(service_type):
             raise ServiceNotRegisteredError(service_type)
 
         # Check for circular dependency
         if service_type in self._resolution_stack:
-            chain = self._resolution_stack + [service_type]
+            chain = [*self._resolution_stack, service_type]
             raise CircularDependencyError(chain)
 
-        registration = self._parent._registrations[service_type]
+        registration = self._parent.get_registration(service_type)
 
         if registration.lifetime == Lifetime.SINGLETON:
             return self._parent.resolve(service_type)
@@ -68,7 +68,7 @@ class Scope:
 
             self._resolution_stack.append(service_type)
             try:
-                instance = self._parent._resolver.create_instance(registration)
+                instance = self._parent.create_instance(registration)
             finally:
                 self._resolution_stack.pop()
 
@@ -77,7 +77,7 @@ class Scope:
 
         self._resolution_stack.append(service_type)
         try:
-            return self._parent._resolver.create_instance(registration)
+            return self._parent.create_instance(registration)
         finally:
             self._resolution_stack.pop()
 

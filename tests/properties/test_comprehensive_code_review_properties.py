@@ -12,16 +12,9 @@ from __future__ import annotations
 
 import ast
 import re
-import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 # Project root
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -37,34 +30,112 @@ MAX_PARAMETERS = 6
 
 # Known exceptions - documented technical debt
 KNOWN_FUNCTION_SIZE_EXCEPTIONS = {
-    "connection_from_list", "_generate_entity_content", "validate",
-    "dispatch", "traced", "evaluate", "analyze", "check", "create_app",
-    "_setup_routes", "generate_contract_from_spec", "format_date",
+    "connection_from_list",
+    "_generate_entity_content",
+    "validate",
+    "dispatch",
+    "traced",
+    "evaluate",
+    "analyze",
+    "check",
+    "create_app",
+    "_setup_routes",
+    "generate_contract_from_spec",
+    "format_date",
 }
 KNOWN_NESTING_EXCEPTIONS = {
-    "_evaluate", "to_sql_condition", "bulk_update", "bulk_delete",
-    "bulk_upsert", "matches", "format_date", "generate_contract_from_spec",
-    "process", "execute", "run", "handle", "_process", "_handle",
-    "parse", "_parse", "build", "_build", "transform", "_transform",
-    "compare", "verify", "validate", "check", "analyze",
-    "format", "serialize", "deserialize", "convert",
-    "generate_security_schemes", "generate_schema", "generate_spec",
-    "_election_loop", "generate", "get_user_info", "get_dependents",
+    "_evaluate",
+    "to_sql_condition",
+    "bulk_update",
+    "bulk_delete",
+    "bulk_upsert",
+    "matches",
+    "format_date",
+    "generate_contract_from_spec",
+    "process",
+    "execute",
+    "run",
+    "handle",
+    "_process",
+    "_handle",
+    "parse",
+    "_parse",
+    "build",
+    "_build",
+    "transform",
+    "_transform",
+    "compare",
+    "verify",
+    "validate",
+    "check",
+    "analyze",
+    "format",
+    "serialize",
+    "deserialize",
+    "convert",
+    "generate_security_schemes",
+    "generate_schema",
+    "generate_spec",
+    "_election_loop",
+    "generate",
+    "get_user_info",
+    "get_dependents",
 }
 KNOWN_COMPLEXITY_EXCEPTIONS = {"validate", "check"}
 KNOWN_PARAMETER_EXCEPTIONS = {
-    "create_item_router", "init_telemetry", "__init__", "create",
-    "configure", "setup", "initialize", "build", "make", "register",
-    "connect", "execute", "run", "process", "handle", "send",
-    "validate", "check", "verify", "transform", "convert",
-    "add_interaction", "add_rule", "add_route", "add_endpoint",
-    "create_connection", "create_session", "create_client",
-    "log", "info", "debug", "warning", "error", "critical",
-    "audit", "record", "track", "emit", "dispatch",
-    "format", "parse", "serialize", "deserialize",
-    "log_update", "log_create", "log_delete", "log_action",
-    "create_endpoint", "register_route", "add_handler",
-    "create_crud_router", "add_duration", "add_metric",
+    "create_item_router",
+    "init_telemetry",
+    "__init__",
+    "create",
+    "configure",
+    "setup",
+    "initialize",
+    "build",
+    "make",
+    "register",
+    "connect",
+    "execute",
+    "run",
+    "process",
+    "handle",
+    "send",
+    "validate",
+    "check",
+    "verify",
+    "transform",
+    "convert",
+    "add_interaction",
+    "add_rule",
+    "add_route",
+    "add_endpoint",
+    "create_connection",
+    "create_session",
+    "create_client",
+    "log",
+    "info",
+    "debug",
+    "warning",
+    "error",
+    "critical",
+    "audit",
+    "record",
+    "track",
+    "emit",
+    "dispatch",
+    "format",
+    "parse",
+    "serialize",
+    "deserialize",
+    "log_update",
+    "log_create",
+    "log_delete",
+    "log_action",
+    "create_endpoint",
+    "register_route",
+    "add_handler",
+    "create_crud_router",
+    "add_duration",
+    "add_metric",
 }
 
 # Patterns for secret detection
@@ -80,10 +151,10 @@ SECRET_PATTERNS = [
 EXCLUDED_SECRET_PATTERNS = [
     r'password\s*=\s*["\'][\$\{]',  # Template variables
     r'password\s*=\s*["\']["\']',  # Empty strings
-    r'password\s*:\s*str',  # Type hints
-    r'password_hash',  # Hashed passwords
-    r'get_password',  # Function names
-    r'password_policy',  # Policy references
+    r"password\s*:\s*str",  # Type hints
+    r"password_hash",  # Hashed passwords
+    r"get_password",  # Function names
+    r"password_policy",  # Policy references
     r'PASSWORD\s*=\s*["\']user',  # Enum values
     r'API_KEY\s*=\s*["\']api',  # Enum values
     r'API_KEY\s*=\s*["\']http',  # Enum values
@@ -155,10 +226,15 @@ def calculate_nesting_depth(node: ast.AST, current_depth: int = 0) -> int:
     """Calculate maximum nesting depth in a node."""
     max_depth = current_depth
     nesting_nodes = (
-        ast.If, ast.For, ast.While, ast.With,
-        ast.Try, ast.AsyncFor, ast.AsyncWith
+        ast.If,
+        ast.For,
+        ast.While,
+        ast.With,
+        ast.Try,
+        ast.AsyncFor,
+        ast.AsyncWith,
     )
-    
+
     for child in ast.iter_child_nodes(node):
         if isinstance(child, nesting_nodes):
             child_depth = calculate_nesting_depth(child, current_depth + 1)
@@ -166,24 +242,26 @@ def calculate_nesting_depth(node: ast.AST, current_depth: int = 0) -> int:
         else:
             child_depth = calculate_nesting_depth(child, current_depth)
             max_depth = max(max_depth, child_depth)
-    
+
     return max_depth
 
 
-def calculate_cyclomatic_complexity(node: ast.FunctionDef | ast.AsyncFunctionDef) -> int:
+def calculate_cyclomatic_complexity(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> int:
     """Calculate cyclomatic complexity of a function."""
     complexity = 1  # Base complexity
-    
+
     for child in ast.walk(node):
         if isinstance(child, (ast.If, ast.While, ast.For, ast.AsyncFor)):
             complexity += 1
         elif isinstance(child, ast.BoolOp):
             complexity += len(child.values) - 1
-        elif isinstance(child, ast.ExceptHandler):
+        elif isinstance(child, ast.ExceptHandler) or isinstance(
+            child, (ast.Assert, ast.comprehension)
+        ):
             complexity += 1
-        elif isinstance(child, (ast.Assert, ast.comprehension)):
-            complexity += 1
-    
+
     return complexity
 
 
@@ -191,11 +269,11 @@ def count_parameters(node: ast.FunctionDef | ast.AsyncFunctionDef) -> int:
     """Count function parameters excluding self/cls."""
     args = node.args
     count = len(args.args) + len(args.posonlyargs) + len(args.kwonlyargs)
-    
+
     # Exclude self/cls
     if args.args and args.args[0].arg in ("self", "cls"):
         count -= 1
-    
+
     return count
 
 
@@ -212,26 +290,32 @@ def get_imports(tree: ast.AST) -> list[str]:
     return imports
 
 
-def has_docstring(node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef | ast.Module) -> bool:
+def has_docstring(
+    node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef | ast.Module,
+) -> bool:
     """Check if node has a docstring."""
     if not node.body:
         return False
     first = node.body[0]
-    return isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str)
+    return (
+        isinstance(first, ast.Expr)
+        and isinstance(first.value, ast.Constant)
+        and isinstance(first.value.value, str)
+    )
 
 
 def has_type_annotations(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
     """Check if function has type annotations."""
     # Check return annotation
     has_return = node.returns is not None
-    
+
     # Check parameter annotations (excluding self/cls)
     args = node.args.args
     if args and args[0].arg in ("self", "cls"):
         args = args[1:]
-    
+
     has_params = all(arg.annotation is not None for arg in args)
-    
+
     return has_return and (not args or has_params)
 
 
@@ -242,19 +326,20 @@ def is_public(name: str) -> bool:
 
 # Property Tests
 
+
 @pytest.mark.parametrize("file_path", ALL_PYTHON_FILES)
 def test_function_size_compliance(file_path: Path) -> None:
     """
     **Feature: comprehensive-code-review, Property 1: Function Size Compliance**
     **Validates: Requirements 3.1**
-    
+
     For any Python function in the codebase, the function body should
     contain 75 lines or fewer.
     """
     tree = parse_file(file_path)
     if tree is None:
         pytest.skip(f"Could not parse {file_path}")
-    
+
     violations = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -263,7 +348,7 @@ def test_function_size_compliance(file_path: Path) -> None:
             lines = count_function_lines(node)
             if lines > MAX_FUNCTION_LINES:
                 violations.append(f"{node.name}: {lines} lines")
-    
+
     assert not violations, (
         f"Functions exceeding {MAX_FUNCTION_LINES} lines in {file_path.name}:\n"
         + "\n".join(violations)
@@ -275,21 +360,21 @@ def test_class_size_compliance(file_path: Path) -> None:
     """
     **Feature: comprehensive-code-review, Property 2: Class Size Compliance**
     **Validates: Requirements 3.2**
-    
+
     For any Python class in the codebase, the class definition should
     contain 400 lines or fewer.
     """
     tree = parse_file(file_path)
     if tree is None:
         pytest.skip(f"Could not parse {file_path}")
-    
+
     violations = []
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
             lines = count_class_lines(node)
             if lines > MAX_CLASS_LINES:
                 violations.append(f"{node.name}: {lines} lines")
-    
+
     assert not violations, (
         f"Classes exceeding {MAX_CLASS_LINES} lines in {file_path.name}:\n"
         + "\n".join(violations)
@@ -301,14 +386,14 @@ def test_nesting_depth_compliance(file_path: Path) -> None:
     """
     **Feature: comprehensive-code-review, Property 3: Nesting Depth Compliance**
     **Validates: Requirements 3.3**
-    
+
     For any code block in the codebase, the nesting depth should be
     4 levels or fewer.
     """
     tree = parse_file(file_path)
     if tree is None:
         pytest.skip(f"Could not parse {file_path}")
-    
+
     violations = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -317,7 +402,7 @@ def test_nesting_depth_compliance(file_path: Path) -> None:
             depth = calculate_nesting_depth(node)
             if depth > MAX_NESTING_DEPTH:
                 violations.append(f"{node.name}: depth {depth}")
-    
+
     assert not violations, (
         f"Functions exceeding nesting depth {MAX_NESTING_DEPTH} in {file_path.name}:\n"
         + "\n".join(violations)
@@ -329,14 +414,14 @@ def test_cyclomatic_complexity_compliance(file_path: Path) -> None:
     """
     **Feature: comprehensive-code-review, Property 4: Cyclomatic Complexity Compliance**
     **Validates: Requirements 3.4**
-    
+
     For any Python function in the codebase, the cyclomatic complexity
     should be 15 or fewer.
     """
     tree = parse_file(file_path)
     if tree is None:
         pytest.skip(f"Could not parse {file_path}")
-    
+
     violations = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -345,7 +430,7 @@ def test_cyclomatic_complexity_compliance(file_path: Path) -> None:
             complexity = calculate_cyclomatic_complexity(node)
             if complexity > MAX_CYCLOMATIC_COMPLEXITY:
                 violations.append(f"{node.name}: complexity {complexity}")
-    
+
     assert not violations, (
         f"Functions exceeding complexity {MAX_CYCLOMATIC_COMPLEXITY} in {file_path.name}:\n"
         + "\n".join(violations)
@@ -357,14 +442,14 @@ def test_parameter_count_compliance(file_path: Path) -> None:
     """
     **Feature: comprehensive-code-review, Property 5: Parameter Count Compliance**
     **Validates: Requirements 3.6**
-    
+
     For any Python function in the codebase, the parameter count should
     be 6 or fewer (excluding self/cls).
     """
     tree = parse_file(file_path)
     if tree is None:
         pytest.skip(f"Could not parse {file_path}")
-    
+
     violations = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -373,12 +458,11 @@ def test_parameter_count_compliance(file_path: Path) -> None:
             params = count_parameters(node)
             if params > MAX_PARAMETERS:
                 violations.append(f"{node.name}: {params} parameters")
-    
+
     assert not violations, (
         f"Functions exceeding {MAX_PARAMETERS} parameters in {file_path.name}:\n"
         + "\n".join(violations)
     )
-
 
 
 @pytest.mark.parametrize("file_path", DOMAIN_FILES)
@@ -386,29 +470,29 @@ def test_domain_layer_isolation(file_path: Path) -> None:
     """
     **Feature: comprehensive-code-review, Property 6: Domain Layer Isolation**
     **Validates: Requirements 5.1**
-    
+
     For any module in the domain layer, the module should not import
     from infrastructure or adapters layers.
     """
     tree = parse_file(file_path)
     if tree is None:
         pytest.skip(f"Could not parse {file_path}")
-    
+
     forbidden_prefixes = [
         "my_app.infrastructure",
         "my_app.adapters",
         "src.my_app.infrastructure",
         "src.my_app.adapters",
     ]
-    
+
     imports = get_imports(tree)
     violations = []
-    
+
     for imp in imports:
         for prefix in forbidden_prefixes:
             if imp.startswith(prefix):
                 violations.append(imp)
-    
+
     assert not violations, (
         f"Domain layer file {file_path.name} imports from forbidden layers:\n"
         + "\n".join(violations)
@@ -420,18 +504,17 @@ def test_no_circular_imports(file_path: Path) -> None:
     """
     **Feature: comprehensive-code-review, Property 7: No Circular Imports**
     **Validates: Requirements 5.5**
-    
+
     For any module in the codebase, importing that module should not
     raise an ImportError due to circular dependencies.
     """
     # Convert file path to module path
     relative = file_path.relative_to(PROJECT_ROOT / "src")
     module_path = str(relative.with_suffix("")).replace("/", ".").replace("\\", ".")
-    
+
     # Skip __init__ files for direct import test
-    if module_path.endswith(".__init__"):
-        module_path = module_path[:-9]
-    
+    module_path = module_path.removesuffix(".__init__")
+
     try:
         __import__(module_path)
     except ImportError as e:
@@ -448,30 +531,33 @@ def test_public_api_documentation(file_path: Path) -> None:
     """
     **Feature: comprehensive-code-review, Property 8: Public API Documentation**
     **Validates: Requirements 7.1, 7.3**
-    
+
     For any public function or class in the codebase, a docstring should exist.
     """
     tree = parse_file(file_path)
     if tree is None:
         pytest.skip(f"Could not parse {file_path}")
-    
+
     # Check module docstring
     if not has_docstring(tree):
         # Module docstrings are recommended but not required for all files
         pass
-    
+
     violations = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             if is_public(node.name) and not has_docstring(node):
                 # Skip simple property getters/setters and dunder methods
-                if not node.name.startswith("__") or node.name in ("__init__", "__call__"):
+                if not node.name.startswith("__") or node.name in (
+                    "__init__",
+                    "__call__",
+                ):
                     if len(node.body) > 3:  # Only check non-trivial functions
                         violations.append(f"Function: {node.name}")
         elif isinstance(node, ast.ClassDef):
             if is_public(node.name) and not has_docstring(node):
                 violations.append(f"Class: {node.name}")
-    
+
     # Allow some missing docstrings (warning level, not error)
     # For strict enforcement, uncomment the assertion
     # assert not violations, (
@@ -484,14 +570,14 @@ def test_type_annotation_coverage(file_path: Path) -> None:
     """
     **Feature: comprehensive-code-review, Property 9: Type Annotation Coverage**
     **Validates: Requirements 7.4**
-    
+
     For any public function in the codebase, type annotations should exist
     for parameters and return type.
     """
     tree = parse_file(file_path)
     if tree is None:
         pytest.skip(f"Could not parse {file_path}")
-    
+
     violations = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -503,7 +589,7 @@ def test_type_annotation_coverage(file_path: Path) -> None:
                         args = args[1:]
                     if args or node.returns is not None:
                         violations.append(node.name)
-    
+
     # Type annotations are recommended but not strictly required
     # For strict enforcement, uncomment the assertion
     # assert not violations, (
@@ -516,33 +602,58 @@ def test_no_hardcoded_secrets(file_path: Path) -> None:
     """
     **Feature: comprehensive-code-review, Property 10: No Hardcoded Secrets**
     **Validates: Requirements 4.4**
-    
+
     For any Python file in the codebase, no hardcoded passwords, API keys,
     or tokens should exist in string literals.
     """
     content = file_path.read_text(encoding="utf-8")
-    
+
     # Skip test files, example files, and known safe files
-    skip_patterns = ["test", "example", "mock", "fake", "demo", "factory", "fixture", "config"]
+    skip_patterns = [
+        "test",
+        "example",
+        "mock",
+        "fake",
+        "demo",
+        "factory",
+        "fixture",
+        "config",
+    ]
     if any(p in file_path.name.lower() for p in skip_patterns):
         return
-    safe_paths = ["data_factory", "mock_server", "secrets_manager", "field_encryption", "api_key"]
+    safe_paths = [
+        "data_factory",
+        "mock_server",
+        "secrets_manager",
+        "field_encryption",
+        "api_key",
+    ]
     if any(p in str(file_path).lower() for p in safe_paths):
         return
-    
+
     violations = []
     for pattern in SECRET_PATTERNS:
         matches = re.findall(pattern, content, re.IGNORECASE)
         for match in matches:
-            is_excluded = any(re.search(exc, match, re.IGNORECASE) for exc in EXCLUDED_SECRET_PATTERNS)
+            is_excluded = any(
+                re.search(exc, match, re.IGNORECASE) for exc in EXCLUDED_SECRET_PATTERNS
+            )
             if not is_excluded:
-                safe_values = ["example", "placeholder", "xxx", "your_", "changeme", "test", "demo", "fake"]
+                safe_values = [
+                    "example",
+                    "placeholder",
+                    "xxx",
+                    "your_",
+                    "changeme",
+                    "test",
+                    "demo",
+                    "fake",
+                ]
                 if not any(p in match.lower() for p in safe_values):
                     violations.append(match[:50] + "..." if len(match) > 50 else match)
-    
+
     assert not violations, (
-        f"Potential hardcoded secrets in {file_path.name}:\n"
-        + "\n".join(violations)
+        f"Potential hardcoded secrets in {file_path.name}:\n" + "\n".join(violations)
     )
 
 
@@ -550,7 +661,7 @@ def test_test_file_existence() -> None:
     """
     **Feature: comprehensive-code-review, Property 11: Test File Existence**
     **Validates: Requirements 8.1**
-    
+
     For any module in src/my_app, a corresponding test file should exist
     in the tests directory.
     """
@@ -562,7 +673,7 @@ def test_test_file_existence() -> None:
         "application/use_cases/item_use_case.py",
         "adapters/repositories/sqlmodel_repository.py",
     ]
-    
+
     missing_tests = []
     for module in key_modules:
         module_path = SRC_ROOT / module
@@ -574,20 +685,18 @@ def test_test_file_existence() -> None:
                 TESTS_ROOT / "integration" / test_name,
                 TESTS_ROOT / test_name,
             ]
-            
+
             # Also check in subdirectories matching module structure
             module_parts = module.split("/")
             if len(module_parts) > 1:
-                test_patterns.append(
-                    TESTS_ROOT / "unit" / module_parts[0] / test_name
-                )
-            
+                test_patterns.append(TESTS_ROOT / "unit" / module_parts[0] / test_name)
+
             has_test = any(p.exists() for p in test_patterns)
             if not has_test:
                 # Check if any test file contains tests for this module
                 # This is a relaxed check
                 pass
-    
+
     # This is informational - not all modules need dedicated test files
     # assert not missing_tests, f"Missing test files:\n" + "\n".join(missing_tests)
 
@@ -597,15 +706,15 @@ def test_code_review_summary() -> None:
     """Summary test that reports overall code quality metrics."""
     total_files = len(ALL_PYTHON_FILES)
     domain_files = len(DOMAIN_FILES)
-    
-    print(f"\n=== Code Review Summary ===")
+
+    print("\n=== Code Review Summary ===")
     print(f"Total Python files: {total_files}")
     print(f"Domain layer files: {domain_files}")
-    print(f"Thresholds:")
+    print("Thresholds:")
     print(f"  - Max function lines: {MAX_FUNCTION_LINES}")
     print(f"  - Max class lines: {MAX_CLASS_LINES}")
     print(f"  - Max nesting depth: {MAX_NESTING_DEPTH}")
     print(f"  - Max complexity: {MAX_CYCLOMATIC_COMPLEXITY}")
     print(f"  - Max parameters: {MAX_PARAMETERS}")
-    
+
     assert True  # Always passes, just for reporting

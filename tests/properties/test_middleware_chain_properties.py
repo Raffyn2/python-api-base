@@ -4,8 +4,8 @@
 **Validates: Requirements 4.4**
 """
 
-
 import pytest
+
 pytest.skip("Module not implemented", allow_module_level=True)
 
 import pytest
@@ -13,7 +13,6 @@ from hypothesis import given, settings, strategies as st
 
 from interface.api.middleware.middleware_chain import (
     ErrorHandlerMiddleware,
-    FunctionMiddleware,
     LoggingMiddleware,
     Middleware,
     MiddlewareChain,
@@ -129,7 +128,6 @@ class TestMiddlewareChainProperties:
         assert chain.middlewares[0].name == "high"
         assert chain.middlewares[1].name == "low"
 
-
     @pytest.mark.anyio
     async def test_stop_prevents_further_execution(self) -> None:
         """Property: Stopping chain prevents further middleware execution."""
@@ -217,6 +215,7 @@ class TestFunctionMiddlewareProperties:
     @pytest.mark.anyio
     async def test_function_middleware_executes(self) -> None:
         """Property: Function middleware executes correctly."""
+
         async def my_middleware(
             context: MiddlewareContext[dict],
             next_handler: NextHandler,

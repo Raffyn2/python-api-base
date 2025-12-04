@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any, ClassVar
 from uuid import UUID, uuid4
 
@@ -125,7 +125,7 @@ class ScyllaDBEntity(BaseModel):
         return data
 
     @classmethod
-    def from_row(cls, row: Any) -> "ScyllaDBEntity":
+    def from_row(cls, row: Any) -> ScyllaDBEntity:
         """Create entity from CQL row.
 
         Args:
@@ -134,10 +134,7 @@ class ScyllaDBEntity(BaseModel):
         Returns:
             Entity instance
         """
-        if hasattr(row, "_asdict"):
-            data = row._asdict()
-        else:
-            data = dict(row)
+        data = row._asdict() if hasattr(row, "_asdict") else dict(row)
 
         return cls.model_validate(data)
 

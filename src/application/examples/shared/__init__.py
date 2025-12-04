@@ -5,14 +5,14 @@
 
 from application.examples.shared.dtos import MoneyDTO
 from application.examples.shared.errors import (
-    UseCaseError,
     NotFoundError,
+    UseCaseError,
     ValidationError,
 )
 
 __all__ = [
     "MoneyDTO",
-    "UseCaseError",
     "NotFoundError",
+    "UseCaseError",
     "ValidationError",
 ]

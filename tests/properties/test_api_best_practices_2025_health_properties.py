@@ -11,19 +11,17 @@ Tests for:
 """
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from hypothesis import given, settings, HealthCheck
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.lifecycle import (
-    ShutdownHandler,
     ShutdownConfig,
-    ShutdownState,
+    ShutdownHandler,
     ShutdownMiddleware,
+    ShutdownState,
 )
-
 
 # === Test Fixtures ===
 
@@ -62,9 +60,10 @@ class TestLivenessCheck:
         """
         # The liveness endpoint just returns {"status": "ok"}
         # It doesn't depend on any state
-        from interface.v1.health_router import liveness
         import asyncio
-        
+
+        from interface.v1.health_router import liveness
+
         result = asyncio.run(liveness())
         assert result["status"] == "ok"
 
@@ -82,32 +81,32 @@ class TestStartupCheck:
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 24.3**
         """
-        import sys
         import asyncio
-        
+        import sys
+
         # Access the module directly
-        health_module = sys.modules.get('interface.v1.health_router')
+        health_module = sys.modules.get("interface.v1.health_router")
         if health_module is None:
             from interface.v1 import health_router as health_module
-        
+
         # Save original state
-        original_state = getattr(health_module, '_startup_complete', True)
-        
+        original_state = getattr(health_module, "_startup_complete", True)
+
         try:
             # Set startup incomplete
-            setattr(health_module, '_startup_complete', False)
-            
+            health_module._startup_complete = False
+
             # Create mock response
             mock_response = MagicMock()
-            
+
             result = asyncio.run(health_module.startup(mock_response))
-            
+
             assert result["startup_complete"] is False
             assert result["status"] == "starting"
             assert mock_response.status_code == 503
         finally:
             # Restore original state
-            setattr(health_module, '_startup_complete', original_state)
+            health_module._startup_complete = original_state
 
     def test_startup_returns_200_after_complete(self) -> None:
         """Startup SHALL return 200 after startup is complete.
@@ -115,32 +114,32 @@ class TestStartupCheck:
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 24.3**
         """
-        import sys
         import asyncio
-        
+        import sys
+
         # Access the module directly
-        health_module = sys.modules.get('interface.v1.health_router')
+        health_module = sys.modules.get("interface.v1.health_router")
         if health_module is None:
             from interface.v1 import health_router as health_module
-        
+
         # Save original state
-        original_state = getattr(health_module, '_startup_complete', True)
-        
+        original_state = getattr(health_module, "_startup_complete", True)
+
         try:
             # Mark startup complete
-            setattr(health_module, '_startup_complete', True)
-            
+            health_module._startup_complete = True
+
             # Create mock response
             mock_response = MagicMock()
-            
+
             result = asyncio.run(health_module.startup(mock_response))
-            
+
             assert result["startup_complete"] is True
             assert result["status"] == "ok"
             # Status code should not be set (defaults to 200)
         finally:
             # Restore original state
-            setattr(health_module, '_startup_complete', original_state)
+            health_module._startup_complete = original_state
 
 
 class TestGracefulShutdown:
@@ -169,16 +168,16 @@ class TestGracefulShutdown:
         **Validates: Requirements 24.4**
         """
         assert shutdown_handler.in_flight_requests == 0
-        
+
         shutdown_handler.request_started()
         assert shutdown_handler.in_flight_requests == 1
-        
+
         shutdown_handler.request_started()
         assert shutdown_handler.in_flight_requests == 2
-        
+
         shutdown_handler.request_finished()
         assert shutdown_handler.in_flight_requests == 1
-        
+
         shutdown_handler.request_finished()
         assert shutdown_handler.in_flight_requests == 0
 
@@ -193,7 +192,7 @@ class TestGracefulShutdown:
         # Finish more requests than started
         shutdown_handler.request_finished()
         shutdown_handler.request_finished()
-        
+
         assert shutdown_handler.in_flight_requests == 0
 
     @pytest.mark.asyncio
@@ -206,34 +205,32 @@ class TestGracefulShutdown:
         **Validates: Requirements 24.4, 24.5**
         """
         assert shutdown_handler.state == ShutdownState.RUNNING
-        
+
         await shutdown_handler.shutdown()
-        
+
         assert shutdown_handler.state == ShutdownState.SHUTDOWN
         assert shutdown_handler.is_shutting_down
 
     @pytest.mark.asyncio
-    async def test_shutdown_runs_hooks(
-        self, shutdown_handler: ShutdownHandler
-    ) -> None:
+    async def test_shutdown_runs_hooks(self, shutdown_handler: ShutdownHandler) -> None:
         """Shutdown SHALL run all registered hooks.
 
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 24.5**
         """
         hooks_called: list[str] = []
-        
+
         async def hook1():
             hooks_called.append("hook1")
-        
+
         async def hook2():
             hooks_called.append("hook2")
-        
+
         shutdown_handler.add_hook("hook1", hook1, priority=1)
         shutdown_handler.add_hook("hook2", hook2, priority=2)
-        
+
         await shutdown_handler.shutdown()
-        
+
         # Higher priority hooks run first
         assert hooks_called == ["hook2", "hook1"]
 
@@ -247,26 +244,26 @@ class TestGracefulShutdown:
         **Validates: Requirements 24.4**
         """
         await shutdown_handler.shutdown()
-        
+
         # Second call should not raise or cause issues
         await shutdown_handler.shutdown()
-        
+
         assert shutdown_handler.state == ShutdownState.SHUTDOWN
 
-    def test_hook_priority_ordering(
-        self, shutdown_handler: ShutdownHandler
-    ) -> None:
+    def test_hook_priority_ordering(self, shutdown_handler: ShutdownHandler) -> None:
         """Hooks SHALL be ordered by priority (higher first).
 
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 24.5**
         """
-        async def dummy(): pass
-        
+
+        async def dummy():
+            pass
+
         shutdown_handler.add_hook("low", dummy, priority=1)
         shutdown_handler.add_hook("high", dummy, priority=10)
         shutdown_handler.add_hook("medium", dummy, priority=5)
-        
+
         hooks = [name for name, _, _ in shutdown_handler._hooks]
         assert hooks == ["high", "medium", "low"]
 
@@ -319,24 +316,24 @@ class TestShutdownMiddleware:
         **Validates: Requirements 24.4**
         """
         handler = ShutdownHandler()
-        
+
         # Create mock app
         async def mock_app(scope, receive, send):
             # Simulate some processing
             await asyncio.sleep(0.01)
-        
+
         middleware = ShutdownMiddleware(mock_app, handler)
-        
+
         # Track that requests are counted
         assert handler.in_flight_requests == 0
-        
+
         # Simulate HTTP request
         scope = {"type": "http"}
         receive = AsyncMock()
         send = AsyncMock()
-        
+
         await middleware(scope, receive, send)
-        
+
         # Request should complete (count back to 0)
         assert handler.in_flight_requests == 0
 
@@ -348,26 +345,25 @@ class TestShutdownMiddleware:
         **Validates: Requirements 24.4**
         """
         handler = ShutdownHandler()
-        
+
         async def mock_app(scope, receive, send):
             pass
-        
-        middleware = ShutdownMiddleware(
-            mock_app, handler, reject_during_shutdown=True
-        )
-        
+
+        middleware = ShutdownMiddleware(mock_app, handler, reject_during_shutdown=True)
+
         # Trigger shutdown
         await handler.shutdown()
-        
+
         # Simulate HTTP request
         scope = {"type": "http"}
         receive = AsyncMock()
-        
+
         responses = []
+
         async def capture_send(message):
             responses.append(message)
-        
+
         await middleware(scope, receive, capture_send)
-        
+
         # Should have sent 503 response
         assert any(r.get("status") == 503 for r in responses)

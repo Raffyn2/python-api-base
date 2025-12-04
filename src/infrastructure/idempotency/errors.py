@@ -28,6 +28,4 @@ class IdempotencyKeyMissingError(Exception):
 
     def __init__(self, endpoint: str) -> None:
         self.endpoint = endpoint
-        super().__init__(
-            f"Idempotency-Key header is required for endpoint: {endpoint}"
-        )
+        super().__init__(f"Idempotency-Key header is required for endpoint: {endpoint}")
