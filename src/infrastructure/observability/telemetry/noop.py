@@ -1,9 +1,12 @@
 """No-op implementations for telemetry when OpenTelemetry is not available.
 
 Feature: file-size-compliance-phase2
+Improvement: P1-1 - Replaced Any with OpenTelemetry-compliant types
 """
 
 from typing import Any
+
+from infrastructure.observability.telemetry.types import Attributes, AttributeValue
 
 
 class _NoOpSpan:
@@ -15,16 +18,16 @@ class _NoOpSpan:
     def __exit__(self, *args: Any) -> None:
         pass
 
-    def set_attribute(self, key: str, value: Any) -> None:
+    def set_attribute(self, key: str, value: AttributeValue) -> None:
         pass
 
-    def add_event(self, name: str, attributes: dict[str, Any] | None = None) -> None:
+    def add_event(self, name: str, attributes: Attributes | None = None) -> None:
         pass
 
     def record_exception(self, exception: BaseException) -> None:
         pass
 
-    def set_status(self, status: Any, description: str | None = None) -> None:
+    def set_status(self, status: str | int, description: str | None = None) -> None:
         pass
 
 
@@ -59,7 +62,7 @@ class _NoOpCounter:
     """No-op counter."""
 
     def add(
-        self, amount: int | float, attributes: dict[str, Any] | None = None
+        self, amount: int | float, attributes: Attributes | None = None
     ) -> None:
         pass
 
@@ -68,6 +71,6 @@ class _NoOpHistogram:
     """No-op histogram."""
 
     def record(
-        self, amount: int | float, attributes: dict[str, Any] | None = None
+        self, amount: int | float, attributes: Attributes | None = None
     ) -> None:
         pass

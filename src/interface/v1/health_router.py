@@ -262,9 +262,34 @@ async def liveness() -> dict[str, str]:
     This endpoint is used by Kubernetes liveness probes.
     It should return 200 if the service is running.
 
-    **Validates: Requirements 7.1**
+    **Feature: api-best-practices-review-2025**
+    **Validates: Requirements 7.1, 24.1**
     """
     return {"status": "ok"}
+
+
+@router.get(
+    "/health/startup",
+    summary="Startup check",
+    responses={
+        200: {"description": "Service has completed startup"},
+        503: {"description": "Service is still starting up"},
+    },
+)
+async def startup(response: Response) -> dict[str, str | bool]:
+    """Check if the service has completed startup.
+
+    This endpoint is used by Kubernetes startup probes.
+    Returns 200 only after all dependencies are initialized.
+
+    **Feature: api-best-practices-review-2025**
+    **Validates: Requirements 24.3**
+    """
+    if _startup_complete:
+        return {"status": "ok", "startup_complete": True}
+    else:
+        response.status_code = 503
+        return {"status": "starting", "startup_complete": False}
 
 
 @router.get(

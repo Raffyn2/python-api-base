@@ -2,12 +2,14 @@
 
 **Feature: enterprise-generics-2025**
 **Requirement: R9.6 - Typed errors with request/response context**
+**Improvement: P1-1 - Replaced Any with JsonObject for better type safety**
 """
 
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any
+
+from infrastructure.httpclient.types import JsonObject
 
 
 class HttpError[TRequest](Exception):
@@ -60,8 +62,8 @@ class ValidationError[TResponse](Exception):
         self,
         message: str,
         response_type: type[TResponse],
-        raw_response: dict[str, Any],
-        validation_errors: list[dict[str, Any]],
+        raw_response: JsonObject,
+        validation_errors: list[JsonObject],
     ) -> None:
         super().__init__(message)
         self.response_type = response_type

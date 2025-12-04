@@ -3,13 +3,26 @@
 **Feature: api-base-score-100, Task 4.1: Add CacheMetrics dataclass**
 **Feature: api-base-score-100, Task 4.3: Create OpenTelemetry metrics exporter**
 **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
+**Improvement: P1-1 - Replaced Any with specific types (CacheProvider, TypedDict)**
 """
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypedDict
+
+from infrastructure.cache.protocols import CacheProvider
 
 logger = logging.getLogger(__name__)
+
+
+class CacheMetricsDict(TypedDict):
+    """Type-safe dictionary for cache metrics export."""
+
+    hits: int
+    misses: int
+    evictions: int
+    hit_rate: float
+    total_requests: int
 
 
 @dataclass
@@ -88,7 +101,7 @@ class CacheMetrics:
         self.misses = 0
         self.evictions = 0
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> CacheMetricsDict:
         """Convert metrics to dictionary for export."""
         return {
             "hits": self.hits,
@@ -245,14 +258,14 @@ class MetricsAwareCacheWrapper[T]:
 
     def __init__(
         self,
-        provider: Any,
+        provider: CacheProvider[T],
         exporter: CacheMetricsExporter | None = None,
         export_interval: int = 60,
     ) -> None:
         """Initialize metrics-aware cache wrapper.
 
         Args:
-            provider: Underlying cache provider.
+            provider: Underlying cache provider implementing CacheProvider[T] protocol.
             exporter: Optional OpenTelemetry exporter.
             export_interval: Seconds between metric exports.
         """

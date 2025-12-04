@@ -39,6 +39,8 @@ from interface.middleware.request import (
 )
 from interface.middleware.logging import RequestLoggerMiddleware
 from interface.v1.health_router import router as health_router, mark_startup_complete
+from interface.v1.jwks_router import router as jwks_router
+from infrastructure.auth.jwt.jwks import initialize_jwks_service
 from interface.openapi import setup_openapi
 from core.errors import setup_exception_handlers
 from infrastructure.redis import RedisClient, RedisConfig
@@ -125,6 +127,34 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         )
     logger.info("Example handlers bootstrapped")
 
+    # Initialize JWKS Service for JWT RS256 verification
+    # **Feature: api-best-practices-review-2025**
+    # **Validates: Requirements 20.1, 20.2, 20.3**
+    try:
+        jwt_settings = getattr(settings, 'jwt', None)
+        if jwt_settings and hasattr(jwt_settings, 'private_key') and jwt_settings.private_key:
+            initialize_jwks_service(
+                private_key_pem=jwt_settings.private_key,
+                algorithm=getattr(jwt_settings, 'algorithm', 'RS256'),
+            )
+            logger.info("JWKS service initialized with configured key")
+        else:
+            # Development mode: generate ephemeral key
+            from cryptography.hazmat.primitives.asymmetric import rsa
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import serialization
+            
+            private_key = rsa.generate_private_key(65537, 2048, default_backend())
+            private_pem = private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption(),
+            ).decode()
+            initialize_jwks_service(private_key_pem=private_pem, algorithm="RS256")
+            logger.warning("JWKS using ephemeral key - configure JWT_PRIVATE_KEY for production")
+    except Exception as e:
+        logger.error(f"JWKS initialization failed: {e}")
+
     # Initialize Redis if enabled
     obs = settings.observability
     if obs.redis_enabled:
@@ -135,8 +165,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         )
         app.state.redis = RedisClient(redis_config)
         await app.state.redis.connect()
+        
+        # Initialize IdempotencyHandler for POST/PUT idempotency
+        # **Feature: api-best-practices-review-2025**
+        # **Validates: Requirements 23.1, 23.2**
+        from infrastructure.idempotency import IdempotencyHandler, IdempotencyConfig
+        app.state.idempotency_handler = IdempotencyHandler(
+            redis_url=obs.redis_url,
+            config=IdempotencyConfig(
+                ttl_hours=24,
+                key_prefix="api:idempotency",
+            ),
+        )
+        await app.state.idempotency_handler.connect()
+        logger.info("Idempotency handler initialized")
     else:
         app.state.redis = None
+        app.state.idempotency_handler = None
 
     # Initialize MinIO if enabled
     if obs.minio_enabled:
@@ -461,6 +506,40 @@ def _configure_rate_limiting(app: FastAPI) -> None:
     logger.info("rate_limiting_configured", default_limit="100/min")
 
 
+def _configure_idempotency(app: FastAPI) -> None:
+    """Configure idempotency middleware for POST/PUT operations.
+
+    **Feature: api-best-practices-review-2025**
+    **Validates: Requirements 23.1, 23.5, 23.6**
+
+    Sets up:
+    - IdempotencyMiddleware for automatic duplicate detection
+    - Applies to POST/PUT on /api/v1/examples/* endpoints
+    
+    Note: Handler is fetched dynamically from app.state.idempotency_handler
+    during request processing (initialized in lifespan).
+    """
+    logger = get_logger("main")
+    
+    from infrastructure.idempotency import IdempotencyMiddleware, IdempotencyConfig
+    
+    app.add_middleware(
+        IdempotencyMiddleware,
+        handler=None,  # Fetched from app.state.idempotency_handler
+        methods={"POST", "PUT"},
+        required_endpoints={
+            "/api/v1/examples/items",
+            "/api/v1/examples/pedidos",
+        },
+        exclude_paths={"/health", "/metrics", "/docs", "/redoc"},
+        config=IdempotencyConfig(
+            ttl_hours=24,
+            key_prefix="api:idempotency",
+        ),
+    )
+    logger.info("idempotency_middleware_configured", endpoints=["/api/v1/examples/items", "/api/v1/examples/pedidos"])
+
+
 def _configure_prometheus(app: FastAPI) -> None:
     """Configure Prometheus metrics if enabled.
 
@@ -531,7 +610,17 @@ def create_app() -> FastAPI:
     # **Validates: Requirements 1.3**
     _configure_rate_limiting(app)
 
+    # Configure idempotency middleware for POST/PUT
+    # **Feature: api-best-practices-review-2025**
+    # **Validates: Requirements 23.1, 23.5**
+    _configure_idempotency(app)
+
     app.include_router(health_router)
+
+    # JWKS endpoint for JWT verification
+    # **Feature: api-best-practices-review-2025**
+    # **Validates: Requirements 20.2, 20.3**
+    app.include_router(jwks_router)
 
     # Core API Routes (permanent - do not remove)
     app.include_router(auth_router, prefix="/api/v1")

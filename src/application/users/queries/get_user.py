@@ -103,3 +103,39 @@ class ListUsersHandler(QueryHandler[ListUsersQuery, list[dict[str, Any]]]):
             return Ok(users)
         except Exception as e:
             return Err(e)
+
+
+@dataclass(frozen=True, kw_only=True)
+class CountUsersQuery(BaseQuery[int]):
+    """Query to count total users.
+
+    **Feature: code-review-interface-improvements**
+    **Validates: P1-1 - Correct pagination total count**
+    """
+
+    include_inactive: bool = False
+
+    def get_cache_key(self) -> str:
+        """Generate cache key for count query."""
+        return f"users:count:{self.include_inactive}"
+
+
+class CountUsersHandler(QueryHandler[CountUsersQuery, int]):
+    """Handler for counting total users.
+
+    **Feature: code-review-interface-improvements**
+    **Validates: P1-1 - Correct pagination total count**
+    """
+
+    def __init__(self, read_repository: IUserReadRepository) -> None:
+        self._read_repository = read_repository
+
+    async def handle(self, query: CountUsersQuery) -> Result[int, Exception]:
+        """Handle count users query."""
+        try:
+            count = await self._read_repository.count_all(
+                include_inactive=query.include_inactive,
+            )
+            return Ok(count)
+        except Exception as e:
+            return Err(e)

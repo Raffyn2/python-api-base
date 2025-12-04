@@ -4,8 +4,10 @@ This module provides:
 - TracerProvider and MeterProvider initialization
 - OTLP exporter configuration
 - @traced decorator for custom spans
+- OpenTelemetry-compliant type definitions
 
 Feature: file-size-compliance-phase2
+Improvement: P1-1 - Added telemetry type definitions
 """
 
 from .noop import (
@@ -26,6 +28,12 @@ from .service import (
     init_telemetry,
     traced,
 )
+from .types import (
+    AttributePrimitive,
+    AttributeSequence,
+    Attributes,
+    AttributeValue,
+)
 
 __all__ = [
     "P",
@@ -42,4 +50,8 @@ __all__ = [
     "get_telemetry",
     "init_telemetry",
     "traced",
+    "AttributePrimitive",
+    "AttributeSequence",
+    "AttributeValue",
+    "Attributes",
 ]

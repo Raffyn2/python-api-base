@@ -133,3 +133,17 @@ class IUserReadRepository(Protocol):
     ) -> list[dict]:
         """List all users with pagination."""
         ...
+
+    async def count_all(
+        self,
+        include_inactive: bool = False,
+    ) -> int:
+        """Count total users.
+
+        Args:
+            include_inactive: If True, include inactive users in count.
+
+        Returns:
+            Total number of users matching criteria.
+        """
+        ...

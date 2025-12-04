@@ -95,6 +95,30 @@ class SQLAlchemyUserReadRepository:
 
         return [self._to_dict(m) for m in models]
 
+    async def count_all(
+        self,
+        include_inactive: bool = False,
+    ) -> int:
+        """Count total users.
+
+        Args:
+            include_inactive: If True, include inactive users in count.
+
+        Returns:
+            Total number of users matching criteria.
+        """
+        from sqlalchemy import func
+
+        stmt = select(func.count(UserModel.id))
+
+        if not include_inactive:
+            stmt = stmt.where(UserModel.is_active)
+
+        result = await self._session.execute(stmt)
+        count = result.scalar_one()
+
+        return count
+
     def _to_dict(self, model: UserModel) -> dict[str, Any]:
         """Convert database model to dictionary.
 

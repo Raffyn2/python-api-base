@@ -1,13 +1,14 @@
 """JWT algorithm provider implementations.
 
-**Feature: api-base-score-100, Task 1.1: Add RS256/ES256 provider classes**
-**Validates: Requirements 1.1, 1.2, 1.4**
+**Feature: api-base-score-100, api-best-practices-review-2025**
+**Validates: Requirements 1.1, 1.2, 1.4, 20.1, 20.2**
 """
 
 import logging
 from datetime import timedelta
 
 from .exceptions import InvalidKeyError
+from .jwks import generate_kid_from_public_key, extract_public_key_from_private
 from .protocols import BaseJWTProvider
 
 logger = logging.getLogger(__name__)
@@ -16,8 +17,8 @@ logger = logging.getLogger(__name__)
 class RS256Provider(BaseJWTProvider):
     """RS256 (RSA + SHA-256) provider for asymmetric JWT.
 
-    **Feature: api-base-score-100, Task 1.1: Add RS256/ES256 provider classes**
-    **Validates: Requirements 1.1, 1.2**
+    **Feature: api-base-score-100, api-best-practices-review-2025**
+    **Validates: Requirements 1.1, 1.2, 20.1, 20.2**
 
     Uses RSA private key for signing and public key for verification.
     Recommended for production environments where key distribution is a concern.
@@ -27,6 +28,7 @@ class RS256Provider(BaseJWTProvider):
         - RSA 2048-bit keys recommended
         - PEM format support
         - Prevents algorithm confusion attacks
+        - Auto-generated kid for JWKS support
 
     Example:
         >>> provider = RS256Provider(
@@ -37,6 +39,7 @@ class RS256Provider(BaseJWTProvider):
         ... )
         >>> token = provider.sign({"sub": "user123", "roles": ["admin"]})
         >>> claims = provider.verify(token)
+        >>> # Token header includes kid for JWKS lookup
     """
 
     def __init__(
@@ -46,6 +49,7 @@ class RS256Provider(BaseJWTProvider):
         issuer: str | None = None,
         audience: str | None = None,
         default_expiry: timedelta = timedelta(hours=1),
+        kid: str | None = None,
     ) -> None:
         """Initialize RS256 provider.
 
@@ -55,13 +59,12 @@ class RS256Provider(BaseJWTProvider):
             issuer: Token issuer claim (iss). Optional.
             audience: Token audience claim (aud). Optional.
             default_expiry: Default token expiration time. Default: 1 hour.
+            kid: Key ID for JWKS. Auto-generated from public key if not provided.
 
         Raises:
             InvalidKeyError: If neither private nor public key provided,
                 or if key format is invalid.
         """
-        super().__init__(issuer, audience, default_expiry)
-
         if not private_key and not public_key:
             raise InvalidKeyError(
                 "RS256 requires at least one of private_key or public_key"
@@ -71,6 +74,25 @@ class RS256Provider(BaseJWTProvider):
         self._public_key = public_key
 
         self._validate_keys()
+
+        # Auto-generate kid from public key if not provided
+        if kid is None:
+            kid = self._generate_kid()
+
+        super().__init__(issuer, audience, default_expiry, kid)
+
+    def _generate_kid(self) -> str:
+        """Generate key ID from public key.
+
+        **Feature: api-best-practices-review-2025**
+        **Validates: Requirements 20.1**
+        """
+        if self._public_key:
+            return generate_kid_from_public_key(self._public_key)
+        elif self._private_key:
+            public_pem = extract_public_key_from_private(self._private_key)
+            return generate_kid_from_public_key(public_pem)
+        return ""
 
     def _validate_keys(self) -> None:
         """Validate RSA key format.
@@ -130,8 +152,8 @@ class RS256Provider(BaseJWTProvider):
 class ES256Provider(BaseJWTProvider):
     """ES256 (ECDSA + SHA-256) provider for asymmetric JWT.
 
-    **Feature: api-base-score-100, Task 1.1: Add RS256/ES256 provider classes**
-    **Validates: Requirements 1.1, 1.2**
+    **Feature: api-base-score-100, api-best-practices-review-2025**
+    **Validates: Requirements 1.1, 1.2, 20.1, 20.2**
 
     Uses ECDSA private key for signing and public key for verification.
     More compact signatures than RS256, ideal for bandwidth-constrained
@@ -142,6 +164,7 @@ class ES256Provider(BaseJWTProvider):
         - ECDSA P-256 curve
         - Smaller signatures than RS256 (~132 bytes vs ~256 bytes)
         - PEM format support
+        - Auto-generated kid for JWKS support
 
     Example:
         >>> provider = ES256Provider(
@@ -152,6 +175,7 @@ class ES256Provider(BaseJWTProvider):
         ... )
         >>> token = provider.sign({"sub": "user123"})
         >>> claims = provider.verify(token)
+        >>> # Token header includes kid for JWKS lookup
     """
 
     def __init__(
@@ -161,6 +185,7 @@ class ES256Provider(BaseJWTProvider):
         issuer: str | None = None,
         audience: str | None = None,
         default_expiry: timedelta = timedelta(hours=1),
+        kid: str | None = None,
     ) -> None:
         """Initialize ES256 provider.
 
@@ -170,13 +195,12 @@ class ES256Provider(BaseJWTProvider):
             issuer: Token issuer claim (iss). Optional.
             audience: Token audience claim (aud). Optional.
             default_expiry: Default token expiration time. Default: 1 hour.
+            kid: Key ID for JWKS. Auto-generated from public key if not provided.
 
         Raises:
             InvalidKeyError: If neither private nor public key provided,
                 or if key format is invalid.
         """
-        super().__init__(issuer, audience, default_expiry)
-
         if not private_key and not public_key:
             raise InvalidKeyError(
                 "ES256 requires at least one of private_key or public_key"
@@ -186,6 +210,25 @@ class ES256Provider(BaseJWTProvider):
         self._public_key = public_key
 
         self._validate_keys()
+
+        # Auto-generate kid from public key if not provided
+        if kid is None:
+            kid = self._generate_kid()
+
+        super().__init__(issuer, audience, default_expiry, kid)
+
+    def _generate_kid(self) -> str:
+        """Generate key ID from public key.
+
+        **Feature: api-best-practices-review-2025**
+        **Validates: Requirements 20.1**
+        """
+        if self._public_key:
+            return generate_kid_from_public_key(self._public_key)
+        elif self._private_key:
+            public_pem = extract_public_key_from_private(self._private_key)
+            return generate_kid_from_public_key(public_pem)
+        return ""
 
     def _validate_keys(self) -> None:
         """Validate ECDSA key format.

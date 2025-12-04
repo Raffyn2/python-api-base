@@ -10,9 +10,13 @@ from application.users.queries.get_user import (
     GetUserByEmailHandler,
     ListUsersQuery,
     ListUsersHandler,
+    CountUsersQuery,
+    CountUsersHandler,
 )
 
 __all__ = [
+    "CountUsersHandler",
+    "CountUsersQuery",
     "GetUserByEmailHandler",
     "GetUserByEmailQuery",
     "GetUserByIdHandler",

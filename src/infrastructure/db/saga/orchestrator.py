@@ -2,8 +2,10 @@
 
 **Feature: code-review-refactoring, Task 3.5: Extract orchestrator module**
 **Validates: Requirements 3.3**
+**Improvement: P2-3 - Added timeout support to Saga step execution**
 """
 
+import asyncio
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, UTC
@@ -131,12 +133,23 @@ class Saga[StepT, CompensationT]:
         return result
 
     async def _execute_step(self, step: SagaStep, context: SagaContext) -> StepResult:
-        """Execute a single saga step."""
+        """Execute a single saga step with optional timeout.
+
+        **Improvement: P2-3 - Added timeout support**
+        """
         step.status = StepStatus.RUNNING
         step.started_at = datetime.now(tz=UTC)
 
         try:
-            await step.action(context)
+            # Execute with timeout if configured
+            if step.timeout_seconds is not None:
+                await asyncio.wait_for(
+                    step.action(context),
+                    timeout=step.timeout_seconds
+                )
+            else:
+                await step.action(context)
+
             step.status = StepStatus.COMPLETED
             step.completed_at = datetime.now(tz=UTC)
 
@@ -145,6 +158,23 @@ class Saga[StepT, CompensationT]:
             return StepResult(
                 step_name=step.name,
                 status=StepStatus.COMPLETED,
+                duration_ms=duration,
+            )
+
+        except asyncio.TimeoutError:
+            step.status = StepStatus.FAILED
+            timeout_error = TimeoutError(
+                f"Step '{step.name}' timed out after {step.timeout_seconds}s"
+            )
+            step.error = timeout_error
+            step.completed_at = datetime.now(tz=UTC)
+
+            duration = (step.completed_at - step.started_at).total_seconds() * 1000
+
+            return StepResult(
+                step_name=step.name,
+                status=StepStatus.FAILED,
+                error=timeout_error,
                 duration_ms=duration,
             )
 

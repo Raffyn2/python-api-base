@@ -5,6 +5,7 @@ Main client interface that composes error handling and resilience patterns.
 **Feature: enterprise-generics-2025**
 **Requirement: R9 - Generic HTTP Client with Resilience**
 **Refactored: 2025 - Split into modular components for maintainability**
+**Improvement: P1-1 - Replaced Any with JsonObject for better type safety**
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from infrastructure.httpclient.resilience import (
     CircuitState,
     HttpClientConfig,
 )
+from infrastructure.httpclient.types import JsonObject
 
 logger = logging.getLogger(__name__)
 
@@ -236,7 +238,7 @@ class HttpClient[TRequest: BaseModel, TResponse: BaseModel]:
             self._circuit_breaker.record_failure()
             raise
 
-    def _parse_response(self, data: dict[str, Any]) -> TResponse:
+    def _parse_response(self, data: JsonObject) -> TResponse:
         """Parse and validate response.
 
         **Requirement: R9.3 - Typed ValidationError[TResponse]**
@@ -244,11 +246,13 @@ class HttpClient[TRequest: BaseModel, TResponse: BaseModel]:
         try:
             return self._response_type.model_validate(data)
         except PydanticValidationError as e:
+            # e.errors() returns list of error dicts that match JsonObject type
+            errors: list[JsonObject] = e.errors()  # type: ignore[assignment]
             raise ValidationError[TResponse](
                 f"Response validation failed: {e}",
                 response_type=self._response_type,
                 raw_response=data,
-                validation_errors=e.errors(),
+                validation_errors=errors,
             )
 
     @property

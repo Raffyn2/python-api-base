@@ -2,6 +2,7 @@
 
 **Feature: enterprise-generics-2025**
 **Requirement: R9 - Generic HTTP Client with Resilience**
+**Improvement: P1-1 - Added JSON type definitions for better type safety**
 
 Exports:
     - HttpClient[TRequest, TResponse]: Generic HTTP client
@@ -12,6 +13,7 @@ Exports:
     - CircuitBreakerError: Circuit breaker error
     - RetryPolicy: Retry policy configuration
     - CircuitState: Circuit breaker states
+    - JsonObject, JsonValue, JsonPrimitive, JsonArray: JSON type definitions
 """
 
 from infrastructure.httpclient.client import HttpClient
@@ -27,6 +29,12 @@ from infrastructure.httpclient.resilience import (
     CircuitState,
     HttpClientConfig,
     RetryPolicy,
+)
+from infrastructure.httpclient.types import (
+    JsonArray,
+    JsonObject,
+    JsonPrimitive,
+    JsonValue,
 )
 
 __all__ = [
@@ -44,4 +52,9 @@ __all__ = [
     # Resilience
     "CircuitBreaker",
     "CircuitState",
+    # Types
+    "JsonObject",
+    "JsonValue",
+    "JsonPrimitive",
+    "JsonArray",
 ]

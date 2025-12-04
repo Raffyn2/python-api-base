@@ -42,6 +42,8 @@ from application.users.queries import (
     GetUserByEmailHandler,
     ListUsersQuery,
     ListUsersHandler,
+    CountUsersQuery,
+    CountUsersHandler,
 )
 from domain.users.services import UserDomainService
 from infrastructure.db.session import get_database_session
@@ -139,6 +141,17 @@ async def register_user_handlers(
 
     query_bus.register(ListUsersQuery, list_users_handler)
     logger.info("Registered ListUsersHandler")
+
+    async def count_users_handler(query: CountUsersQuery):
+        """Factory for CountUsersHandler with fresh repository."""
+        db = get_database_session()
+        async with db.session() as session:
+            repo = SQLAlchemyUserReadRepository(session)
+            handler = CountUsersHandler(read_repository=repo)
+            return await handler.handle(query)
+
+    query_bus.register(CountUsersQuery, count_users_handler)
+    logger.info("Registered CountUsersHandler")
 
     logger.info("All user handlers registered successfully")
 

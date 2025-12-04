@@ -1,7 +1,7 @@
 """JWT protocols and base classes.
 
-**Feature: api-base-score-100**
-**Validates: Requirements 1.2, 1.3**
+**Feature: api-base-score-100, api-best-practices-review-2025**
+**Validates: Requirements 1.2, 1.3, 20.1, 20.4**
 """
 
 import logging
@@ -14,6 +14,14 @@ from jose import JWTError, jwt
 from .exceptions import AlgorithmMismatchError, InvalidKeyError
 
 logger = logging.getLogger(__name__)
+
+
+class KidNotFoundError(Exception):
+    """Raised when a token's kid is not found in JWKS."""
+
+    def __init__(self, kid: str) -> None:
+        self.kid = kid
+        super().__init__(f"Key ID not found in JWKS: {kid}")
 
 
 @runtime_checkable
@@ -73,8 +81,8 @@ class BaseJWTProvider(ABC):
     Provides shared implementation for token signing and verification,
     handling standard claims (iat, exp, iss, aud) automatically.
 
-    **Feature: api-base-score-100**
-    **Validates: Requirements 1.2, 1.3**
+    **Feature: api-base-score-100, api-best-practices-review-2025**
+    **Validates: Requirements 1.2, 1.3, 20.1, 20.4**
     """
 
     def __init__(
@@ -82,6 +90,7 @@ class BaseJWTProvider(ABC):
         issuer: str | None = None,
         audience: str | None = None,
         default_expiry: timedelta = timedelta(hours=1),
+        kid: str | None = None,
     ) -> None:
         """Initialize base JWT provider.
 
@@ -89,10 +98,26 @@ class BaseJWTProvider(ABC):
             issuer: Token issuer claim (iss). Optional.
             audience: Token audience claim (aud). Optional.
             default_expiry: Default token expiration time. Default: 1 hour.
+            kid: Key ID for JWKS. Auto-generated if not provided.
         """
         self._issuer = issuer
         self._audience = audience
         self._default_expiry = default_expiry
+        self._kid = kid
+
+    @property
+    def kid(self) -> str | None:
+        """Get the key ID for this provider.
+
+        **Feature: api-best-practices-review-2025**
+        **Validates: Requirements 20.1**
+        """
+        return self._kid
+
+    @kid.setter
+    def kid(self, value: str) -> None:
+        """Set the key ID for this provider."""
+        self._kid = value
 
     @property
     @abstractmethod
@@ -139,8 +164,12 @@ class BaseJWTProvider(ABC):
         - iss (issuer): If configured
         - aud (audience): If configured
 
-        **Feature: api-base-score-100, Property 1: RS256 Sign-Verify Round Trip**
-        **Validates: Requirements 1.2**
+        Token header includes:
+        - alg: Algorithm (RS256, ES256, HS256)
+        - kid: Key ID (if configured) for JWKS lookup
+
+        **Feature: api-base-score-100, api-best-practices-review-2025**
+        **Validates: Requirements 1.2, 20.1**
 
         Args:
             payload: Custom claims to include in token.
@@ -166,8 +195,18 @@ class BaseJWTProvider(ABC):
         if self._audience:
             claims["aud"] = self._audience
 
+        # Build headers with kid if available
+        headers: dict[str, str] = {}
+        if self._kid:
+            headers["kid"] = self._kid
+
         try:
-            return jwt.encode(claims, self._get_signing_key(), algorithm=self.algorithm)
+            return jwt.encode(
+                claims,
+                self._get_signing_key(),
+                algorithm=self.algorithm,
+                headers=headers if headers else None,
+            )
         except Exception as e:
             logger.error(f"JWT signing failed: {e}", exc_info=True)
             raise InvalidKeyError(f"Failed to sign token: {e}") from e

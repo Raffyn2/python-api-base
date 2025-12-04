@@ -2,17 +2,21 @@
 
 **Feature: python-api-base-2025-generics-audit**
 **Validates: Requirements 16.1, 16.2, 16.3, 16.4, 16.5**
+**Improvement: P2-2 - Added OpenTelemetry metrics to Circuit Breaker**
 """
 
 import asyncio
+import logging
 import random
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from core.base.patterns.result import Err, Ok, Result
+
+logger = logging.getLogger(__name__)
 
 
 class CircuitState(Enum):
@@ -48,15 +52,108 @@ class CircuitBreaker[TConfig: CircuitBreakerConfig]:
 
     **Feature: python-api-base-2025-generics-audit**
     **Validates: Requirements 16.1**
+    **Improvement: P2-2 - Added OpenTelemetry metrics**
     """
 
-    def __init__(self, config: TConfig) -> None:
+    def __init__(self, config: TConfig, name: str = "default") -> None:
         self._config = config
+        self._name = name
         self._state = CircuitState.CLOSED
         self._failure_count = 0
         self._success_count = 0
         self._last_failure_time: datetime | None = None
         self._half_open_calls = 0
+
+        # Initialize metrics
+        self._meter: Any = None
+        self._state_gauge: Any = None
+        self._calls_counter: Any = None
+        self._failures_counter: Any = None
+        self._state_transitions_counter: Any = None
+        self._execution_histogram: Any = None
+        self._initialize_metrics()
+
+    def _initialize_metrics(self) -> None:
+        """Initialize OpenTelemetry metrics for circuit breaker."""
+        try:
+            from opentelemetry import metrics
+
+            self._meter = metrics.get_meter("infrastructure.resilience")
+
+            # State gauge - current circuit state
+            self._state_gauge = self._meter.create_observable_gauge(
+                name="circuit_breaker.state",
+                description="Current circuit breaker state (0=closed, 1=half_open, 2=open)",
+                callbacks=[self._observe_state],
+            )
+
+            # Calls counter - total calls attempted
+            self._calls_counter = self._meter.create_counter(
+                name="circuit_breaker.calls",
+                description="Total number of calls attempted through circuit breaker",
+                unit="1",
+            )
+
+            # Failures counter - failed calls
+            self._failures_counter = self._meter.create_counter(
+                name="circuit_breaker.failures",
+                description="Number of failed calls",
+                unit="1",
+            )
+
+            # State transitions counter - circuit state changes
+            self._state_transitions_counter = self._meter.create_counter(
+                name="circuit_breaker.state_transitions",
+                description="Number of circuit state transitions",
+                unit="1",
+            )
+
+            # Execution histogram - call duration
+            self._execution_histogram = self._meter.create_histogram(
+                name="circuit_breaker.execution_duration",
+                description="Duration of calls through circuit breaker",
+                unit="ms",
+            )
+
+            logger.info(
+                f"Circuit breaker metrics initialized",
+                extra={"name": self._name}
+            )
+        except ImportError:
+            logger.debug("OpenTelemetry not available, metrics disabled")
+        except Exception as e:
+            logger.warning(f"Failed to initialize circuit breaker metrics: {e}")
+
+    def _observe_state(self) -> list:
+        """Callback for observing current circuit state."""
+        state_value = {
+            CircuitState.CLOSED: 0,
+            CircuitState.HALF_OPEN: 1,
+            CircuitState.OPEN: 2,
+        }[self._state]
+
+        from opentelemetry.metrics import Observation
+        return [Observation(state_value, {"circuit": self._name, "state": self._state.value})]
+
+    def _record_state_transition(self, from_state: CircuitState, to_state: CircuitState) -> None:
+        """Record circuit state transition metric."""
+        if self._state_transitions_counter:
+            self._state_transitions_counter.add(
+                1,
+                {
+                    "circuit": self._name,
+                    "from_state": from_state.value,
+                    "to_state": to_state.value,
+                },
+            )
+        logger.info(
+            f"Circuit breaker state transition",
+            extra={
+                "circuit": self._name,
+                "from_state": from_state.value,
+                "to_state": to_state.value,
+            }
+        )
 
     @property
     def state(self) -> CircuitState:
@@ -69,29 +166,46 @@ class CircuitBreaker[TConfig: CircuitBreakerConfig]:
         if self._state == CircuitState.OPEN and self._last_failure_time:
             elapsed = datetime.now() - self._last_failure_time
             if elapsed.total_seconds() >= self._config.timeout_seconds:
+                old_state = self._state
                 self._state = CircuitState.HALF_OPEN
                 self._half_open_calls = 0
+                self._record_state_transition(old_state, self._state)
 
     def record_success(self) -> None:
         """Record a successful call."""
         if self._state == CircuitState.HALF_OPEN:
             self._success_count += 1
             if self._success_count >= self._config.success_threshold:
+                old_state = self._state
                 self._state = CircuitState.CLOSED
                 self._failure_count = 0
                 self._success_count = 0
+                self._record_state_transition(old_state, self._state)
         else:
             self._failure_count = 0
 
     def record_failure(self) -> None:
         """Record a failed call."""
+        # Record failure metric
+        if self._failures_counter:
+            self._failures_counter.add(1, {"circuit": self._name, "state": self._state.value})
+
         self._failure_count += 1
         self._last_failure_time = datetime.now()
         threshold = self._config.failure_threshold
+
+        old_state = self._state
+        state_changed = False
+
         if isinstance(threshold, int) and self._failure_count >= threshold:
             self._state = CircuitState.OPEN
+            state_changed = True
         elif self._state == CircuitState.HALF_OPEN:
             self._state = CircuitState.OPEN
+            state_changed = True
+
+        if state_changed:
+            self._record_state_transition(old_state, self._state)
 
     def can_execute(self) -> bool:
         """Check if a call can be executed."""
@@ -111,18 +225,43 @@ class CircuitBreaker[TConfig: CircuitBreakerConfig]:
         Returns:
             Ok with result or Err with exception.
         """
+        # Record call attempt
+        if self._calls_counter:
+            self._calls_counter.add(1, {"circuit": self._name, "state": self._state.value})
+
         if not self.can_execute():
             return Err(Exception("Circuit is open"))
 
         if self._state == CircuitState.HALF_OPEN:
             self._half_open_calls += 1
 
+        # Track execution duration
+        start_time = datetime.now()
+
         try:
             result = await func()
             self.record_success()
+
+            # Record execution duration on success
+            if self._execution_histogram:
+                duration_ms = (datetime.now() - start_time).total_seconds() * 1000
+                self._execution_histogram.record(
+                    duration_ms,
+                    {"circuit": self._name, "result": "success", "state": self._state.value}
+                )
+
             return Ok(result)
         except Exception as e:
             self.record_failure()
+
+            # Record execution duration on failure
+            if self._execution_histogram:
+                duration_ms = (datetime.now() - start_time).total_seconds() * 1000
+                self._execution_histogram.record(
+                    duration_ms,
+                    {"circuit": self._name, "result": "failure", "state": self._state.value}
+                )
+
             return Err(e)
 
 

@@ -2,6 +2,7 @@
 
 **Feature: code-review-refactoring, Task 3.4: Extract steps module**
 **Validates: Requirements 3.1**
+**Improvement: P2-3 - Added timeout support to Saga steps**
 """
 
 from collections.abc import Awaitable, Callable
@@ -22,11 +23,14 @@ class SagaStep:
 
     Each step has an action to execute and an optional
     compensation action for rollback.
+
+    **Improvement: P2-3 - Added timeout_seconds parameter**
     """
 
     name: str
     action: StepAction
     compensation: CompensationAction | None = None
+    timeout_seconds: float | None = None  # None = no timeout
     status: StepStatus = StepStatus.PENDING
     error: Exception | None = None
     started_at: datetime | None = None

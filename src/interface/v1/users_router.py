@@ -14,6 +14,7 @@ from application.users.commands import (
 from application.users.queries import (
     GetUserByIdQuery,
     ListUsersQuery,
+    CountUsersQuery,
 )
 from application.users.commands.dtos import (
     UserDTO,

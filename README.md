@@ -741,6 +741,123 @@ async def get_users():
 
 ---
 
+## API Best Practices 2025
+
+Recursos implementados seguindo as melhores práticas de API para 2025, com **95+ property-based tests**.
+
+### JWKS (JSON Web Key Set)
+
+Endpoint para distribuição de chaves públicas JWT RS256.
+
+```bash
+# Obter chaves públicas
+curl http://localhost:8000/.well-known/jwks.json
+
+# OpenID Configuration
+curl http://localhost:8000/.well-known/openid-configuration
+```
+
+```python
+from infrastructure.auth.jwt.jwks import JWKSService, initialize_jwks_service
+
+# Inicializar com chave privada
+initialize_jwks_service(private_key_pem=private_key, algorithm="RS256")
+
+# Rotação de chaves com grace period
+jwks_service = get_jwks_service()
+jwks_service.rotate_current_key(new_public_key_pem, "RS256")
+```
+
+### Cache com TTL Jitter
+
+Previne thundering herd com jitter de 5-15% no TTL.
+
+```python
+from infrastructure.cache.providers import RedisCacheWithJitter, JitterConfig
+
+cache = RedisCacheWithJitter[dict](
+    redis_client=redis,  # ou redis_url="redis://localhost:6379"
+    config=JitterConfig(
+        min_jitter_percent=0.05,  # 5% mínimo
+        max_jitter_percent=0.15,  # 15% máximo
+    ),
+)
+
+# Get or compute com stampede prevention
+user = await cache.get_or_compute(
+    key="user:123",
+    compute_fn=lambda: repository.get_by_id("123"),
+    ttl=300,  # TTL com jitter automático
+)
+```
+
+### API Idempotency
+
+Suporte a operações idempotentes via header `Idempotency-Key`.
+
+```bash
+# Request idempotente
+curl -X POST http://localhost:8000/api/v1/examples/items \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: unique-request-id-123" \
+  -d '{"name": "Item", "sku": "SKU-001"}'
+
+# Retry retorna resposta cacheada
+curl -X POST http://localhost:8000/api/v1/examples/items \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: unique-request-id-123" \
+  -d '{"name": "Item", "sku": "SKU-001"}'
+# Header: X-Idempotent-Replayed: true
+```
+
+```python
+from infrastructure.idempotency import IdempotencyHandler, IdempotencyMiddleware
+
+# Configurar middleware (automático via main.py)
+app.add_middleware(
+    IdempotencyMiddleware,
+    methods={"POST", "PUT"},
+    required_endpoints={"/api/v1/payments"},
+)
+```
+
+### Pydantic V2 Performance
+
+Utilitários para validação de alta performance.
+
+```python
+from core.shared.validation import TypeAdapterCache, validate_json_fast
+
+# Cache de TypeAdapter (evita recriação)
+adapter = TypeAdapterCache(UserDTO)
+user = adapter.validate_json(b'{"name": "John", "email": "john@example.com"}')
+
+# Serialização rápida
+json_bytes = adapter.dump_json(user)
+
+# Validação em lote com coleta de erros
+valid, errors = validate_bulk(UserDTO, items)
+```
+
+### Health Checks (Kubernetes)
+
+Endpoints para probes de Kubernetes.
+
+| Endpoint | Descrição | Uso |
+|----------|-----------|-----|
+| `/health/live` | Liveness probe | Processo vivo |
+| `/health/ready` | Readiness probe | Dependências OK |
+| `/health/startup` | Startup probe | Inicialização completa |
+
+```bash
+# Verificar startup
+curl http://localhost:8000/health/startup
+# {"startup_complete": true, "uptime_seconds": 123.45}
+```
+
+
+---
+
 ## Configuração
 
 ### Variáveis de Ambiente

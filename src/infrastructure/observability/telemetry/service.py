@@ -2,6 +2,7 @@
 
 **Feature: infrastructure-code-review**
 **Validates: Requirements 4.2, 4.3**
+**Improvement: P1-1 - Replaced Any with OpenTelemetry-compliant types**
 """
 
 import functools
@@ -11,6 +12,7 @@ from contextvars import ContextVar
 from typing import Any, ParamSpec
 from collections.abc import Callable
 from .noop import _NoOpSpan, _NoOpTracer, _NoOpMeter, _NoOpCounter, _NoOpHistogram
+from .types import Attributes
 
 P = ParamSpec("P")
 
@@ -269,7 +271,7 @@ def init_telemetry(
         return _telemetry
 
 
-def _set_span_attributes(span: Any, attributes: dict[str, Any] | None) -> None:
+def _set_span_attributes(span: Any, attributes: Attributes | None) -> None:
     """Set attributes on a span."""
     if attributes:
         for key, value in attributes.items():
@@ -302,7 +304,7 @@ def _record_span_exception(span: Any, exc: Exception) -> None:
 
 def traced[T](
     name: str | None = None,
-    attributes: dict[str, Any] | None = None,
+    attributes: Attributes | None = None,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """Decorator for creating custom spans around functions.
 
