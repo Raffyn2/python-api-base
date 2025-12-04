@@ -6,10 +6,9 @@
 This module provides circuit breaker pattern for fault tolerance.
 """
 
-import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import TypeVar
 
@@ -60,7 +59,7 @@ class CircuitBreaker:
     def _check_timeout(self) -> None:
         """Check if timeout has passed to transition from OPEN to HALF_OPEN."""
         if self._state == CircuitState.OPEN and self._last_failure_time:
-            elapsed = datetime.now(timezone.utc) - self._last_failure_time
+            elapsed = datetime.now(UTC) - self._last_failure_time
             if elapsed >= self._config.timeout:
                 self._state = CircuitState.HALF_OPEN
                 self._half_open_calls = 0
@@ -80,11 +79,9 @@ class CircuitBreaker:
     def _record_failure(self) -> None:
         """Record a failed call."""
         self._failure_count += 1
-        self._last_failure_time = datetime.now(timezone.utc)
-        
-        if self._state == CircuitState.HALF_OPEN:
-            self._state = CircuitState.OPEN
-        elif self._failure_count >= self._config.failure_threshold:
+        self._last_failure_time = datetime.now(UTC)
+
+        if self._state == CircuitState.HALF_OPEN or self._failure_count >= self._config.failure_threshold:
             self._state = CircuitState.OPEN
 
     def _can_execute(self) -> bool:

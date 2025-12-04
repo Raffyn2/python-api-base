@@ -11,8 +11,8 @@ Main handler interface that composes configuration, buffering, and indexing.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
-from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
@@ -28,6 +28,8 @@ from infrastructure.observability.elasticsearch_config import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from elasticsearch import AsyncElasticsearch
 
 
@@ -197,10 +199,8 @@ class ElasticsearchHandler:
         # Cancel periodic flush task
         if self._flush_task and not self._flush_task.done():
             self._flush_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._flush_task
-            except asyncio.CancelledError:
-                pass
 
         # Final flush
         await self.flush()
@@ -247,6 +247,7 @@ class ElasticsearchLogProcessor:
         """
         self._handler = ElasticsearchHandler(config) if enabled else None
         self._enabled = enabled
+        self._pending_tasks: set[asyncio.Task[None]] = set()
 
     def __call__(
         self,
@@ -263,7 +264,9 @@ class ElasticsearchLogProcessor:
             # Queue event for async shipping (fire and forget)
             try:
                 loop = asyncio.get_running_loop()
-                loop.create_task(self._handler.emit(event_dict.copy()))
+                task = loop.create_task(self._handler.emit(event_dict.copy()))
+                self._pending_tasks.add(task)
+                task.add_done_callback(self._pending_tasks.discard)
             except RuntimeError:
                 # No running loop - skip shipping
                 pass

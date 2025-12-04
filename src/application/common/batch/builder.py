@@ -4,13 +4,13 @@ from collections.abc import Sequence
 
 from pydantic import BaseModel
 
-from .config import (
+from application.common.batch.config import (
     BatchConfig,
     BatchErrorStrategy,
     BatchResult,
     ProgressCallback,
 )
-from .interfaces import IBatchRepository
+from application.common.batch.interfaces import IBatchRepository
 
 
 class BatchOperationBuilder[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel]:

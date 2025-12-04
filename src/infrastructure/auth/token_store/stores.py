@@ -14,8 +14,8 @@ import threading
 from datetime import UTC, datetime
 from typing import Any
 
-from .models import StoredToken
-from .protocols import RefreshTokenStore
+from infrastructure.auth.token_store.models import StoredToken
+from infrastructure.auth.token_store.protocols import RefreshTokenStore
 
 logger = logging.getLogger(__name__)
 

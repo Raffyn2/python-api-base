@@ -9,10 +9,10 @@ Provides GraphQL queries and mutations for ItemExample and PedidoExample.
 
 import strawberry
 
-from .mutations import Mutation
-from .queries import Query
+from interface.graphql.mutations import Mutation
+from interface.graphql.queries import Query
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 # Re-export for backward compatibility
-__all__ = ["schema", "Query", "Mutation"]
+__all__ = ["Mutation", "Query", "schema"]

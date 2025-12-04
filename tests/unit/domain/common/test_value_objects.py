@@ -17,7 +17,7 @@ from decimal import Decimal
 import pytest
 from hypothesis import given, strategies as st
 
-from src.domain.common.value_objects.value_objects import (
+from domain.common.value_objects.value_objects import (
     Money,
     Percentage,
     Slug,

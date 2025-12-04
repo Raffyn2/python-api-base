@@ -4,7 +4,7 @@
 **Validates: Requirements 21.1-21.5**
 """
 
-from .generic import (
+from interface.versioning.generic import (
     ApiVersion,
     BaseResponseTransformer,
     ResponseTransformer,

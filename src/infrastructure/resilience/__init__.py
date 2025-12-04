@@ -4,7 +4,7 @@
 **Validates: Requirements 16.1-16.5**
 """
 
-from .patterns import (
+from infrastructure.resilience.patterns import (
     BackoffStrategy,
     Bulkhead,
     BulkheadConfig,

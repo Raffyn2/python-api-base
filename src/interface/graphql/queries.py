@@ -12,8 +12,7 @@ from application.common.cqrs import QueryBus
 from application.examples.item.queries import GetItemQuery, ListItemsQuery
 from application.examples.pedido.queries import GetPedidoQuery, ListPedidosQuery
 from core.base.patterns.result import Err, Ok
-
-from .mappers import (
+from interface.graphql.mappers import (
     create_empty_item_connection,
     create_empty_pedido_connection,
     create_item_connection,
@@ -22,7 +21,7 @@ from .mappers import (
     map_pedido_dto_to_type,
     parse_cursor_to_page,
 )
-from .types import (
+from interface.graphql.types import (
     ItemConnection,
     ItemExampleType,
     PedidoConnection,

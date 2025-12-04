@@ -10,8 +10,8 @@ Provides CQRS handlers for User aggregate:
 **Feature: architecture-restructuring-2025**
 """
 
-from .commands import CreateUserCommand, CreateUserHandler
-from .commands.dtos import (
+from application.users.commands import CreateUserCommand, CreateUserHandler
+from application.users.commands.dtos import (
     ChangeEmailDTO,
     ChangePasswordDTO,
     CreateUserDTO,
@@ -19,39 +19,46 @@ from .commands.dtos import (
     UserDTO,
     UserListDTO,
 )
-from .commands.mapper import UserMapper
-from .queries import (
+from application.users.commands.mapper import UserMapper
+from application.users.queries import (
     GetUserByEmailHandler,
     GetUserByEmailQuery,
     GetUserByIdHandler,
     GetUserByIdQuery,
 )
-from .read_model import UserListReadDTO, UserReadDTO, UserSearchResultDTO
-from .read_model.projections import UserProjectionHandler, UserReadModelProjector
+from application.users.read_model import (
+    UserListReadDTO,
+    UserReadDTO,
+    UserSearchResultDTO,
+)
+from application.users.read_model.projections import (
+    UserProjectionHandler,
+    UserReadModelProjector,
+)
 
 __all__ = [
+    "ChangeEmailDTO",
+    "ChangePasswordDTO",
     # Commands
     "CreateUserCommand",
+    "CreateUserDTO",
     "CreateUserHandler",
-    # Queries
-    "GetUserByIdQuery",
+    "GetUserByEmailHandler",
     "GetUserByEmailQuery",
     "GetUserByIdHandler",
-    "GetUserByEmailHandler",
+    # Queries
+    "GetUserByIdQuery",
+    "UpdateUserDTO",
     # Write Model DTOs
     "UserDTO",
-    "CreateUserDTO",
-    "UpdateUserDTO",
-    "ChangePasswordDTO",
-    "ChangeEmailDTO",
     "UserListDTO",
+    "UserListReadDTO",
     # Mappers
     "UserMapper",
     # Projections
     "UserProjectionHandler",
-    "UserReadModelProjector",
     # Read Model DTOs
     "UserReadDTO",
-    "UserListReadDTO",
+    "UserReadModelProjector",
     "UserSearchResultDTO",
 ]

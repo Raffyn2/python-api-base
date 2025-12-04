@@ -48,26 +48,33 @@ Example Usage:
 """
 
 # Re-export all components from refactored modules
-from .jwt.config import JWTKeyConfig
-from .jwt.exceptions import AlgorithmMismatchError, InvalidKeyError
-from .jwt.factory import create_jwt_provider
-from .jwt.protocols import BaseJWTProvider, JWTAlgorithmProvider
-from .jwt.providers import ES256Provider, HS256Provider, RS256Provider
+from infrastructure.auth.jwt.config import JWTKeyConfig
+from infrastructure.auth.jwt.exceptions import (
+    AlgorithmMismatchError,
+    InvalidKeyError,
+)
+from infrastructure.auth.jwt.factory import create_jwt_provider
+from infrastructure.auth.jwt.protocols import BaseJWTProvider, JWTAlgorithmProvider
+from infrastructure.auth.jwt.providers import (
+    ES256Provider,
+    HS256Provider,
+    RS256Provider,
+)
 
 # Re-export all for public API
 __all__ = [
-    # Exceptions
-    "InvalidKeyError",
     "AlgorithmMismatchError",
-    # Configuration
-    "JWTKeyConfig",
-    # Protocols
-    "JWTAlgorithmProvider",
     "BaseJWTProvider",
-    # Providers
-    "RS256Provider",
     "ES256Provider",
     "HS256Provider",
+    # Exceptions
+    "InvalidKeyError",
+    # Protocols
+    "JWTAlgorithmProvider",
+    # Configuration
+    "JWTKeyConfig",
+    # Providers
+    "RS256Provider",
     # Factory
     "create_jwt_provider",
 ]

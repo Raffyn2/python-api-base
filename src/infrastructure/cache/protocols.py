@@ -9,9 +9,10 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from .models import CacheStats
+if TYPE_CHECKING:
+    from infrastructure.cache.models import CacheStats
 
 
 @runtime_checkable

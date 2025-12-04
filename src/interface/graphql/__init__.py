@@ -30,26 +30,26 @@ except ImportError:
     HAS_STRAWBERRY = False
 
 __all__ = [
-    # Mapper
-    "GraphQLType",
-    "PydanticGraphQLMapper",
+    "HAS_STRAWBERRY",
     # Resolvers
     "BaseMutationResolver",
     "BaseQueryResolver",
     "BaseSubscription",
-    "MutationResolver",
-    "QueryArgs",
-    "QueryResolver",
-    "Subscription",
     # Relay
     "Connection",
-    "Edge",
-    "PageInfo",
     # DataLoader
     "DataLoader",
     "DataLoaderConfig",
+    "Edge",
+    # Mapper
+    "GraphQLType",
+    "MutationResolver",
+    "PageInfo",
+    "PydanticGraphQLMapper",
+    "QueryArgs",
+    "QueryResolver",
+    "Subscription",
     # Router
     "graphql_router",
     "graphql_schema",
-    "HAS_STRAWBERRY",
 ]

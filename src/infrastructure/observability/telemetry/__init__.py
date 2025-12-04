@@ -10,14 +10,14 @@ Feature: file-size-compliance-phase2
 Improvement: P1-1 - Added telemetry type definitions
 """
 
-from .noop import (
+from infrastructure.observability.telemetry.noop import (
     _NoOpCounter,
     _NoOpHistogram,
     _NoOpMeter,
     _NoOpSpan,
     _NoOpTracer,
 )
-from .service import (
+from infrastructure.observability.telemetry.service import (
     P,
     TelemetryProvider,
     _current_span_id,
@@ -28,7 +28,7 @@ from .service import (
     init_telemetry,
     traced,
 )
-from .types import (
+from infrastructure.observability.telemetry.types import (
     AttributePrimitive,
     Attributes,
     AttributeSequence,

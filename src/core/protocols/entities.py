@@ -9,7 +9,7 @@ Feature: file-size-compliance-phase2
 
 from typing import Protocol, runtime_checkable
 
-from .base import Identifiable, SoftDeletable, Timestamped
+from core.protocols.base import Identifiable, SoftDeletable, Timestamped
 
 
 @runtime_checkable

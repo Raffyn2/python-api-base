@@ -27,7 +27,6 @@ from infrastructure.db.session import get_async_session
 from infrastructure.kafka import EventPublisher, create_event_publisher
 from infrastructure.security.rbac import Permission, RBACUser, get_rbac_service
 
-
 # === TypeAdapter Cache (Singleton Pattern) ===
 
 

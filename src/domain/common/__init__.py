@@ -28,18 +28,18 @@ from domain.common.value_objects import (
 )
 
 __all__ = [
-    # Value Objects
-    "CurrencyCode",
-    "Money",
-    "Percentage",
-    "Slug",
     # Specification
     "AndSpecification",
     "AttributeSpecification",
     "ComparisonOperator",
+    # Value Objects
+    "CurrencyCode",
+    "Money",
     "NotSpecification",
     "OrSpecification",
+    "Percentage",
     "PredicateSpecification",
+    "Slug",
     "Specification",
     "contains",
     "equals",

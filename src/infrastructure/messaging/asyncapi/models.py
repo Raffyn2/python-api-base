@@ -7,7 +7,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from .enums import ProtocolType
+from infrastructure.messaging.asyncapi.enums import ProtocolType
 
 
 @dataclass(slots=True)

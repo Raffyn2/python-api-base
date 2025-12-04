@@ -6,8 +6,8 @@
 Feature: file-size-compliance-phase2
 """
 
-from .constants import DEMO_USERS
-from .service import (
+from interface.routes.auth.constants import DEMO_USERS
+from interface.routes.auth.service import (
     MessageResponse,
     RefreshRequest,
     RevokeAllResponse,

@@ -4,7 +4,7 @@
 **Validates: Requirements 8.8**
 """
 
-from .models import (
+from infrastructure.messaging.notification.models import (
     Notification,
     NotificationChannel,
     NotificationError,
@@ -12,7 +12,7 @@ from .models import (
     Template,
     UserPreferences,
 )
-from .service import NotificationService
+from infrastructure.messaging.notification.service import NotificationService
 
 __all__ = [
     "Notification",

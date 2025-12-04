@@ -12,9 +12,10 @@ Provides type-safe protocols for common infrastructure patterns:
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
-from core.base.patterns.result import Result
+if TYPE_CHECKING:
+    from core.base.patterns.result import Result
 
 
 @runtime_checkable

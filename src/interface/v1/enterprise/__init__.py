@@ -6,8 +6,8 @@
 
 from fastapi import APIRouter
 
-from .docs import router as docs_router
-from .models import (
+from interface.v1.enterprise.docs import router as docs_router
+from interface.v1.enterprise.models import (
     EmailTaskPayload,
     ExampleAction,
     ExampleResource,
@@ -19,9 +19,9 @@ from .models import (
     TaskEnqueueRequest,
     TaskEnqueueResponse,
 )
-from .ratelimit import router as ratelimit_router
-from .rbac import router as rbac_router
-from .tasks import router as tasks_router
+from interface.v1.enterprise.ratelimit import router as ratelimit_router
+from interface.v1.enterprise.rbac import router as rbac_router
+from interface.v1.enterprise.tasks import router as tasks_router
 
 # Main enterprise router aggregating all sub-routers
 router = APIRouter(prefix="/enterprise", tags=["Enterprise Examples"])

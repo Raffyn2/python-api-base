@@ -6,10 +6,14 @@
 
 from typing import Any
 
-from .config import JWTKeyConfig
-from .exceptions import InvalidKeyError
-from .protocols import JWTAlgorithmProvider
-from .providers import ES256Provider, HS256Provider, RS256Provider
+from infrastructure.auth.jwt.config import JWTKeyConfig
+from infrastructure.auth.jwt.exceptions import InvalidKeyError
+from infrastructure.auth.jwt.protocols import JWTAlgorithmProvider
+from infrastructure.auth.jwt.providers import (
+    ES256Provider,
+    HS256Provider,
+    RS256Provider,
+)
 
 
 def create_jwt_provider(config: JWTKeyConfig, **kwargs: Any) -> JWTAlgorithmProvider:

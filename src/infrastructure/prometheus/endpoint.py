@@ -10,10 +10,12 @@ from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Response
 
-from infrastructure.prometheus.registry import MetricsRegistry, get_registry
+from infrastructure.prometheus.registry import get_registry
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
+
+    from infrastructure.prometheus.registry import MetricsRegistry
 
 
 def create_metrics_endpoint(

@@ -7,15 +7,18 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Awaitable, Callable
 from enum import Enum
 from functools import wraps
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from fastapi import HTTPException, Request
 
 from infrastructure.rbac.permission import Permission
-from infrastructure.rbac.role import RoleRegistry
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from infrastructure.rbac.role import RoleRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +159,7 @@ class RBAC[TUser: RBACUser, TResource: Enum, TAction: Enum]:
             resource_id: Optional resource ID for audit.
 
         Raises:
-            PermissionDenied: If user lacks permission.
+            PermissionDeniedError: If user lacks permission.
         """
         if not self.has_permission(user, permission):
             if self._audit_logger:
@@ -166,7 +169,7 @@ class RBAC[TUser: RBACUser, TResource: Enum, TAction: Enum]:
                     "resource_id": resource_id,
                     "granted": False,
                 })
-            raise PermissionDenied(
+            raise PermissionDeniedError(
                 user=user,
                 permission=permission,
                 resource_id=resource_id,
@@ -186,8 +189,8 @@ class RBAC[TUser: RBACUser, TResource: Enum, TAction: Enum]:
 # =============================================================================
 
 
-class PermissionDenied[TUser, TResource: Enum, TAction: Enum](Exception):
-    """Permission denied exception with typed context."""
+class PermissionDeniedError[TUser, TResource: Enum, TAction: Enum](Exception):
+    """Permission denied error with typed context."""
 
     def __init__(
         self,

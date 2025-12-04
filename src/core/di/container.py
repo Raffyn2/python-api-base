@@ -18,20 +18,17 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from typing import Any
 
-from .exceptions import (
-    CircularDependencyError,
-    ServiceNotRegisteredError,
-)
-from .lifecycle import Lifetime, Registration
-from .metrics import ContainerHooks, ContainerStats, MetricsTracker
-from .resolver import Resolver
-from .scopes import Scope
+from core.di.exceptions import CircularDependencyError, ServiceNotRegisteredError
+from core.di.lifecycle import Lifetime, Registration
+from core.di.metrics import ContainerHooks, ContainerStats, MetricsTracker
+from core.di.resolver import Resolver
+from core.di.scopes import Scope
 
 # Re-export for backward compatibility
 __all__ = [
     "Container",
-    "ContainerStats",
     "ContainerHooks",
+    "ContainerStats",
     "Scope",
 ]
 
@@ -151,7 +148,7 @@ class Container:
                 raise ServiceNotRegisteredError(service_type)
 
             if service_type in self._resolution_stack:
-                chain = self._resolution_stack + [service_type]
+                chain = [*self._resolution_stack, service_type]
                 raise CircularDependencyError(chain)
         except Exception as e:
             self._metrics_tracker.trigger_hook(
@@ -237,6 +234,33 @@ class Container:
     def is_registered(self, service_type: type) -> bool:
         """Check if a service is registered."""
         return service_type in self._registrations
+
+    def get_registration[T](self, service_type: type[T]) -> Registration[T]:
+        """Get registration for a service type.
+
+        Args:
+            service_type: The type to get registration for.
+
+        Returns:
+            Registration entry for the service.
+
+        Raises:
+            ServiceNotRegisteredError: If service is not registered.
+        """
+        if service_type not in self._registrations:
+            raise ServiceNotRegisteredError(service_type)
+        return self._registrations[service_type]
+
+    def create_instance[T](self, registration: Registration[T]) -> T:
+        """Create an instance using the factory with auto-wiring.
+
+        Args:
+            registration: The registration entry for the service.
+
+        Returns:
+            Created instance of type T.
+        """
+        return self._resolver.create_instance(registration)
 
     def get_stats(self) -> ContainerStats:
         """Get container usage statistics for observability."""

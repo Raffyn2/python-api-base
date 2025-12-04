@@ -9,8 +9,8 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
 
-from .context import SagaContext
-from .enums import StepStatus
+from infrastructure.db.saga.context import SagaContext
+from infrastructure.db.saga.enums import StepStatus
 
 # Type aliases for step functions
 type StepAction = Callable[[SagaContext], Awaitable[None]]

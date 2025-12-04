@@ -3,20 +3,63 @@
 **Feature: enterprise-features-2025**
 **Validates: Requirements 10.1, 10.2, 10.3**
 **Refactored: Interface moved to interfaces.py for SRP compliance**
+**Fix: F-02 - Deep copy safety with fallback**
 """
 
+import copy
+import logging
 from collections.abc import Callable, Sequence
 
 from pydantic import BaseModel
 
-from .config import (
+from application.common.batch.config import (
     BatchConfig,
     BatchErrorStrategy,
     BatchProgress,
     BatchResult,
     ProgressCallback,
 )
-from .interfaces import IBatchRepository, chunk_sequence
+from application.common.batch.interfaces import IBatchRepository, chunk_sequence
+
+logger = logging.getLogger(__name__)
+
+
+def _process_chunk_with_progress[TItem, TResult](
+    chunk: list[TItem],
+    processor: callable,
+    progress: BatchProgress,
+    on_progress: ProgressCallback | None,
+    error_strategy: BatchErrorStrategy,
+    succeeded: list[TResult],
+    failed: list[tuple[TItem, Exception]],
+) -> bool:
+    """Process a chunk and update progress.
+
+    Returns:
+        True if should continue processing, False if should stop (fail-fast).
+    """
+    chunk_succeeded, chunk_failed = 0, 0
+
+    for item in chunk:
+        try:
+            result = processor(item)
+            succeeded.append(result)
+            chunk_succeeded += 1
+        except Exception as e:
+            failed.append((item, e))
+            chunk_failed += 1
+            if error_strategy == BatchErrorStrategy.FAIL_FAST:
+                break
+
+    progress.processed_items += chunk_succeeded + chunk_failed
+    progress.succeeded_items += chunk_succeeded
+    progress.failed_items += chunk_failed
+    progress.current_chunk += 1
+
+    if on_progress:
+        on_progress(progress)
+
+    return not (error_strategy == BatchErrorStrategy.FAIL_FAST and failed)
 
 
 class BatchRepository[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](
@@ -71,6 +114,27 @@ class BatchRepository[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](
         self._storage[entity_id] = entity
         return entity, entity_id
 
+    def _create_snapshot(self) -> dict[str, T]:
+        """Create deep copy of storage for rollback.
+
+        Uses Pydantic serialization when possible, falls back to deepcopy
+        for complex types that don't serialize cleanly.
+
+        **Feature: application-layer-code-review-fixes**
+        **Validates: Requirements F-02**
+        """
+        try:
+            return {
+                k: self._entity_type.model_validate(v.model_dump())
+                for k, v in self._storage.items()
+            }
+        except Exception as e:
+            logger.warning(
+                f"Pydantic snapshot failed, using deepcopy: {e}",
+                extra={"operation": "BATCH_SNAPSHOT", "fallback": "deepcopy"},
+            )
+            return copy.deepcopy(self._storage)
+
     def _handle_rollback(
         self,
         snapshot: dict[str, T],
@@ -111,8 +175,9 @@ class BatchRepository[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](
         succeeded: list[T] = []
         failed: list[tuple[CreateT, Exception]] = []
 
+        # Deep copy for rollback to prevent mutation issues
         snapshot = (
-            dict(self._storage)
+            self._create_snapshot()
             if cfg.error_strategy == BatchErrorStrategy.ROLLBACK
             else None
         )

@@ -12,7 +12,8 @@ from core.errors.http.constants import ErrorCodes, ErrorMessages, HttpStatus
 from core.shared.utils.ids import generate_ulid
 
 __all__ = [
-    "AppException",
+    "AppError",
+    "AppException",  # Backwards compatibility alias
     "AuthenticationError",
     "AuthorizationError",
     "BusinessRuleViolationError",
@@ -52,8 +53,8 @@ class ErrorContext:
         }
 
 
-class AppException(Exception):
-    """Base application exception with tracing support.
+class AppError(Exception):
+    """Base application error with tracing support.
 
     All application-specific exceptions should inherit from this class.
     Provides structured error information for consistent error handling.
@@ -116,7 +117,7 @@ class AppException(Exception):
 
         # Include cause chain if present
         if self.__cause__:
-            if isinstance(self.__cause__, AppException):
+            if isinstance(self.__cause__, AppError):
                 result["cause"] = self.__cause__.to_dict()
             else:
                 result["cause"] = {
@@ -127,7 +128,11 @@ class AppException(Exception):
         return result
 
 
-class EntityNotFoundError(AppException):
+# Backwards compatibility alias
+AppException = AppError
+
+
+class EntityNotFoundError(AppError):
     """Raised when an entity is not found."""
 
     def __init__(self, entity_type: str, entity_id: str | int) -> None:
@@ -147,7 +152,7 @@ class EntityNotFoundError(AppException):
         )
 
 
-class ValidationError(AppException):
+class ValidationError(AppError):
     """Raised when validation fails.
 
     **Feature: core-code-review, ultimate-generics-code-review-2025**
@@ -184,7 +189,7 @@ class ValidationError(AppException):
         )
 
 
-class BusinessRuleViolationError(AppException):
+class BusinessRuleViolationError(AppError):
     """Raised when a business rule is violated."""
 
     def __init__(self, rule: str, message: str) -> None:
@@ -204,7 +209,7 @@ class BusinessRuleViolationError(AppException):
         )
 
 
-class AuthenticationError(AppException):
+class AuthenticationError(AppError):
     """Raised when authentication fails."""
 
     def __init__(
@@ -226,7 +231,7 @@ class AuthenticationError(AppException):
         )
 
 
-class AuthorizationError(AppException):
+class AuthorizationError(AppError):
     """Raised when authorization fails."""
 
     def __init__(
@@ -257,7 +262,7 @@ class AuthorizationError(AppException):
         )
 
 
-class RateLimitExceededError(AppException):
+class RateLimitExceededError(AppError):
     """Raised when rate limit is exceeded."""
 
     def __init__(
@@ -280,7 +285,7 @@ class RateLimitExceededError(AppException):
         )
 
 
-class ConflictError(AppException):
+class ConflictError(AppError):
     """Raised when there is a resource conflict."""
 
     def __init__(

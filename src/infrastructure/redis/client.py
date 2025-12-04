@@ -9,15 +9,17 @@ Main client interface that composes connection and operations management.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any, Generic, TypeVar
-
-from pydantic import BaseModel
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from infrastructure.redis.circuit_breaker import CircuitBreaker
 from infrastructure.redis.config import RedisConfig
 from infrastructure.redis.connection import RedisConnection
 from infrastructure.redis.operations import RedisOperations
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from pydantic import BaseModel
 
 T = TypeVar("T")
 

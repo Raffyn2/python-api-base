@@ -7,7 +7,7 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from .utils import redact_url_credentials
+from core.config.utils import redact_url_credentials
 
 
 class DatabaseSettings(BaseSettings):

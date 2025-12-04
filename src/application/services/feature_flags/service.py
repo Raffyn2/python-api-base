@@ -12,10 +12,10 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from .config import FlagConfig
-from .enums import FlagStatus
-from .models import EvaluationContext
-from .strategies import (
+from application.services.feature_flags.config import FlagConfig
+from application.services.feature_flags.enums import FlagStatus
+from application.services.feature_flags.models import EvaluationContext
+from application.services.feature_flags.strategies import (
     CustomRuleStrategy,
     StrategyChain,
     create_default_strategy_chain,
@@ -123,8 +123,8 @@ class FeatureFlagService:
             flag_key: Flag key.
             rule: Custom rule function that takes EvaluationContext and returns bool.
         """
-        # Find CustomRuleStrategy in chain and register rule
-        for strategy in self._strategy_chain._strategies:
+        # Find CustomRuleStrategy using public accessor
+        for strategy in self._strategy_chain.get_strategies():
             if isinstance(strategy, CustomRuleStrategy):
                 strategy.register_rule(flag_key, rule)
                 return

@@ -7,9 +7,12 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+from typing import TYPE_CHECKING
 
-from infrastructure.httpclient.types import JsonObject
+if TYPE_CHECKING:
+    from datetime import timedelta
+
+    from infrastructure.httpclient.types import JsonObject
 
 
 class HttpError[TRequest](Exception):

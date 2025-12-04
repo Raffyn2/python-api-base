@@ -13,9 +13,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
-from .config import FlagConfig
-from .enums import FlagStatus
-from .models import EvaluationContext
+from application.services.feature_flags.config import FlagConfig
+from application.services.feature_flags.enums import FlagStatus
+from application.services.feature_flags.models import EvaluationContext
 
 logger = logging.getLogger(__name__)
 
@@ -301,12 +301,12 @@ class PercentageRolloutStrategy(EvaluationStrategy):
         context: EvaluationContext,
     ) -> FlagEvaluationResult:
         """Check if user is in percentage rollout."""
-        if flag.status == FlagStatus.PERCENTAGE and flag.percentage > 0:
-            if self._is_in_percentage(flag.key, context.user_id, flag.percentage):
-                return FlagEvaluationResult.match(
-                    value=flag.enabled_value,
-                    reason=f"In {flag.percentage}% rollout",
-                )
+        is_percentage_rollout = flag.status == FlagStatus.PERCENTAGE and flag.percentage > 0
+        if is_percentage_rollout and self._is_in_percentage(flag.key, context.user_id, flag.percentage):
+            return FlagEvaluationResult.match(
+                value=flag.enabled_value,
+                reason=f"In {flag.percentage}% rollout",
+            )
         return FlagEvaluationResult.no_match()
 
     def _is_in_percentage(
@@ -412,6 +412,14 @@ class StrategyChain:
             s for s in self._strategies if not isinstance(s, strategy_type)
         ]
         return len(self._strategies) < original_len
+
+    def get_strategies(self) -> list[EvaluationStrategy]:
+        """Get list of strategies (read-only access).
+
+        Returns:
+            Copy of strategies list.
+        """
+        return list(self._strategies)
 
     def evaluate(
         self,

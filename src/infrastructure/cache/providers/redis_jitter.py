@@ -17,7 +17,11 @@ import random
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
-from .cache_models import CacheStats, JitterConfig, TTLPattern
+from infrastructure.cache.providers.cache_models import (
+    CacheStats,
+    JitterConfig,
+    TTLPattern,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +109,7 @@ class RedisCacheWithJitter[T]:
             self._connected = False
             return None
         except Exception as e:
-            logger.warning(f"Redis connection failed: {e}")
+            logger.warning("Redis connection failed: %s", e)
             self._connected = False
             return None
 
@@ -200,7 +204,7 @@ class RedisCacheWithJitter[T]:
 
             return result
         except Exception as e:
-            logger.warning(f"Redis get failed: {e}")
+            logger.warning("Redis get failed: %s", e)
             return None
 
     async def set(
@@ -236,7 +240,7 @@ class RedisCacheWithJitter[T]:
 
             await client.setex(full_key, effective_ttl, data)
         except Exception as e:
-            logger.warning(f"Redis set failed: {e}")
+            logger.warning("Redis set failed: %s", e)
 
     async def delete(self, key: str) -> bool:
         """Delete value from cache.
@@ -256,7 +260,7 @@ class RedisCacheWithJitter[T]:
             result = await client.delete(full_key)
             return result > 0
         except Exception as e:
-            logger.warning(f"Redis delete failed: {e}")
+            logger.warning("Redis delete failed: %s", e)
             return False
 
     async def get_or_compute(
@@ -325,7 +329,7 @@ class RedisCacheWithJitter[T]:
                 self._stats.stampede_prevented += 1
                 return await self._wait_for_cache(key, compute, ttl, lock_timeout)
         except Exception as e:
-            logger.warning(f"get_or_compute failed: {e}")
+            logger.warning("get_or_compute failed: %s", e)
             # Fallback: compute without caching
             return await compute()
 
@@ -353,7 +357,7 @@ class RedisCacheWithJitter[T]:
                 return cached
 
         # Timeout - compute ourselves
-        logger.warning(f"Cache wait timeout for key: {key}")
+        logger.warning("Cache wait timeout for key: %s", key)
         value = await compute()
         await self.set(key, value, ttl, apply_jitter=True)
         return value
@@ -401,15 +405,16 @@ class RedisCacheWithJitter[T]:
         try:
             value = await compute()
             await self.set(key, value, ttl, apply_jitter=True)
-            logger.debug(f"Background recompute completed for key: {key}")
+            logger.debug("Background recompute completed for key: %s", key)
         except Exception as e:
-            logger.warning(f"Background recompute failed for key {key}: {e}")
+            logger.warning("Background recompute failed for key %s: %s", key, e)
 
-    async def clear_pattern(self, pattern: str) -> int:
+    async def clear_pattern(self, pattern: str, max_iterations: int = 1000) -> int:
         """Clear all keys matching pattern.
 
         Args:
             pattern: Key pattern (glob style).
+            max_iterations: Safety limit for SCAN iterations (default: 1000).
 
         Returns:
             Number of keys deleted.
@@ -422,17 +427,28 @@ class RedisCacheWithJitter[T]:
             full_pattern = self._make_key(pattern)
             cursor = 0
             deleted = 0
+            iterations = 0
+            scan_batch_size = 100
 
-            while True:
-                cursor, keys = await client.scan(cursor, match=full_pattern, count=100)
+            while iterations < max_iterations:
+                cursor, keys = await client.scan(
+                    cursor, match=full_pattern, count=scan_batch_size
+                )
                 if keys:
                     deleted += await client.delete(*keys)
+                iterations += 1
                 if cursor == 0:
                     break
 
+            if iterations >= max_iterations:
+                logger.warning(
+                    f"clear_pattern reached max iterations ({max_iterations})",
+                    extra={"pattern": pattern, "deleted": deleted},
+                )
+
             return deleted
         except Exception as e:
-            logger.warning(f"Redis clear_pattern failed: {e}")
+            logger.warning("Redis clear_pattern failed: %s", e)
             return 0
 
     def _handle_task_exception(self, task: asyncio.Task[None]) -> None:

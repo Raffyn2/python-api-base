@@ -11,7 +11,10 @@ from typing import Any, Protocol, runtime_checkable
 
 from jose import JWTError, jwt
 
-from .exceptions import AlgorithmMismatchError, InvalidKeyError
+from infrastructure.auth.jwt.exceptions import (
+    AlgorithmMismatchError,
+    InvalidKeyError,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -27,16 +27,16 @@ from core.shared.logging.redaction import (
 )
 
 __all__ = [
-    # Config
-    "configure_logging",
-    "get_logger",
+    "PII_PATTERNS",
     "LogLevel",
-    # Correlation
-    "get_correlation_id",
-    "set_correlation_id",
-    "bind_contextvars",
-    "clear_contextvars",
     # Redaction
     "RedactionProcessor",
-    "PII_PATTERNS",
+    "bind_contextvars",
+    "clear_contextvars",
+    # Config
+    "configure_logging",
+    # Correlation
+    "get_correlation_id",
+    "get_logger",
+    "set_correlation_id",
 ]

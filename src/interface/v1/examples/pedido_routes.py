@@ -19,8 +19,10 @@ from application.examples import (
     ValidationError,
 )
 from infrastructure.security.rbac import RBACUser
-
-from .dependencies import get_pedido_use_case, require_write_permission
+from interface.v1.examples.dependencies import (
+    get_pedido_use_case,
+    require_write_permission,
+)
 
 router = APIRouter()
 

@@ -8,7 +8,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from .lifecycle import Lifetime
+from core.di.lifecycle import Lifetime
 
 logger = logging.getLogger(__name__)
 

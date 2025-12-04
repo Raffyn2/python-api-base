@@ -11,14 +11,18 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
-from typing import Any
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from pydantic import BaseModel
 
-from infrastructure.tasks.rabbitmq.config import RabbitMQConfig
 from infrastructure.tasks.task import TaskResult, TaskStatus
+
+if TYPE_CHECKING:
+    from datetime import timedelta
+
+    from infrastructure.tasks.rabbitmq.config import RabbitMQConfig
 
 logger = logging.getLogger(__name__)
 

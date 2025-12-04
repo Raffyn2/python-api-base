@@ -11,10 +11,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 from core.shared.utils.ids import generate_ulid
-
-from .enums import SecurityEventType
-from .models import SecurityEvent
-from .patterns import IP_PATTERNS, PII_PATTERNS
+from infrastructure.security.audit_logger.enums import SecurityEventType
+from infrastructure.security.audit_logger.models import SecurityEvent
+from infrastructure.security.audit_logger.patterns import IP_PATTERNS, PII_PATTERNS
 
 
 class SecurityAuditLogger:

@@ -147,22 +147,20 @@ class ObservabilitySettings(BaseSettings):
     def validate_credentials(self) -> Self:
         """Validate that credentials are provided when services are enabled."""
         # MinIO validation
-        if self.minio_enabled:
-            if not self.minio_access_key or not self.minio_secret_key:
-                msg = (
-                    "MinIO credentials required when minio_enabled=True. "
-                    "Set OBSERVABILITY__MINIO_ACCESS_KEY and OBSERVABILITY__MINIO_SECRET_KEY"
-                )
-                raise ValueError(msg)
+        if self.minio_enabled and (not self.minio_access_key or not self.minio_secret_key):
+            msg = (
+                "MinIO credentials required when minio_enabled=True. "
+                "Set OBSERVABILITY__MINIO_ACCESS_KEY and OBSERVABILITY__MINIO_SECRET_KEY"
+            )
+            raise ValueError(msg)
 
         # RabbitMQ validation
-        if self.rabbitmq_enabled:
-            if not self.rabbitmq_username or not self.rabbitmq_password:
-                msg = (
-                    "RabbitMQ credentials required when rabbitmq_enabled=True. "
-                    "Set OBSERVABILITY__RABBITMQ_USERNAME and OBSERVABILITY__RABBITMQ_PASSWORD"
-                )
-                raise ValueError(msg)
+        if self.rabbitmq_enabled and (not self.rabbitmq_username or not self.rabbitmq_password):
+            msg = (
+                "RabbitMQ credentials required when rabbitmq_enabled=True. "
+                "Set OBSERVABILITY__RABBITMQ_USERNAME and OBSERVABILITY__RABBITMQ_PASSWORD"
+            )
+            raise ValueError(msg)
 
         # Keycloak validation
         if self.keycloak_enabled and not self.keycloak_client_secret:

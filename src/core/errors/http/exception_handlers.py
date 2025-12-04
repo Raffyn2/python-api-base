@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError as PydanticValidationError
@@ -22,7 +21,7 @@ from core.errors.http.problem_details import (
 )
 
 if TYPE_CHECKING:
-    from fastapi import FastAPI
+    from fastapi import FastAPI, Request
 
 logger = logging.getLogger(__name__)
 

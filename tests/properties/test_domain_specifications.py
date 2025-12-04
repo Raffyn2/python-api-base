@@ -19,7 +19,7 @@ from dataclasses import dataclass
 import pytest
 from hypothesis import given, strategies as st
 
-from src.domain.common.specification.specification import (
+from domain.common.specification.specification import (
     AndSpecification,
     NotSpecification,
     OrSpecification,

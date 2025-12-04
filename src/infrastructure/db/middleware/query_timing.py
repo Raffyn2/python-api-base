@@ -12,18 +12,20 @@ import logging
 import time
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import event
-from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.pool import Pool
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Connection, Engine
 
 logger = logging.getLogger(__name__)
 
 # Context var to store query timing data
-_query_context: ContextVar[dict[str, Any]] = ContextVar(
+_query_context: ContextVar[dict[str, Any] | None] = ContextVar(
     "_query_context",
-    default={},
+    default=None,
 )
 
 
@@ -73,23 +75,12 @@ class QueryStats:
         Returns:
             Query type (SELECT, INSERT, UPDATE, DELETE, etc.)
         """
-        statement = statement.strip().upper()
-        if statement.startswith("SELECT"):
-            return "SELECT"
-        elif statement.startswith("INSERT"):
-            return "INSERT"
-        elif statement.startswith("UPDATE"):
-            return "UPDATE"
-        elif statement.startswith("DELETE"):
-            return "DELETE"
-        elif statement.startswith("BEGIN"):
-            return "BEGIN"
-        elif statement.startswith("COMMIT"):
-            return "COMMIT"
-        elif statement.startswith("ROLLBACK"):
-            return "ROLLBACK"
-        else:
-            return "OTHER"
+        query_types = ("SELECT", "INSERT", "UPDATE", "DELETE", "BEGIN", "COMMIT", "ROLLBACK")
+        normalized = statement.strip().upper()
+        return next(
+            (qtype for qtype in query_types if normalized.startswith(qtype)),
+            "OTHER",
+        )
 
     def get_average_duration(self) -> float:
         """Calculate average query duration.

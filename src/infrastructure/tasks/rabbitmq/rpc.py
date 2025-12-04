@@ -9,11 +9,13 @@ from __future__ import annotations
 
 import asyncio
 from datetime import timedelta
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from pydantic import BaseModel
 
-from infrastructure.tasks.rabbitmq.config import RabbitMQConfig
+if TYPE_CHECKING:
+    from infrastructure.tasks.rabbitmq.config import RabbitMQConfig
 
 
 class RabbitMQRpcClient[TRequest: BaseModel, TResponse: BaseModel]:

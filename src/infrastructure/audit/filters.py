@@ -8,14 +8,16 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from infrastructure.audit.storage import AuditStore
-from infrastructure.audit.trail import AuditAction, AuditRecord
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from datetime import datetime
+
+    from infrastructure.audit.storage import AuditStore
+    from infrastructure.audit.trail import AuditAction, AuditRecord
 
 
 @dataclass

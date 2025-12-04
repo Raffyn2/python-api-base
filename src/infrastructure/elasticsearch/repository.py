@@ -11,9 +11,8 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
-from infrastructure.elasticsearch.client import ElasticsearchClient
 from infrastructure.elasticsearch.document import (
     DocumentMetadata,
     ElasticsearchDocument,
@@ -23,6 +22,9 @@ from infrastructure.elasticsearch.query import (
     SearchQuery,
     SearchResult,
 )
+
+if TYPE_CHECKING:
+    from infrastructure.elasticsearch.client import ElasticsearchClient
 
 logger = logging.getLogger(__name__)
 
@@ -182,10 +184,9 @@ class ElasticsearchRepository(Generic[T]):
         refresh: bool = False,
     ) -> int:
         """Bulk delete documents."""
-        operations: list[dict[str, Any]] = []
-
-        for doc_id in doc_ids:
-            operations.append({"delete": {"_index": self._index, "_id": doc_id}})
+        operations: list[dict[str, Any]] = [
+            {"delete": {"_index": self._index, "_id": doc_id}} for doc_id in doc_ids
+        ]
 
         result = await self._client.bulk(operations=operations, refresh=refresh)
 

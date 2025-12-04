@@ -12,7 +12,7 @@ Refactored: 2025 - Split 401 lines into 2 focused modules
 
 # Re-export data access components
 # Re-export application components
-from .application import (
+from core.protocols.application import (
     Command,
     CommandHandler,
     EventHandler,
@@ -20,19 +20,19 @@ from .application import (
     Query,
     QueryHandler,
 )
-from .data_access import AsyncRepository, CacheProvider, UnitOfWork
+from core.protocols.data_access import AsyncRepository, CacheProvider, UnitOfWork
 
 # Re-export all for public API
 __all__ = [
     # Data Access
     "AsyncRepository",
     "CacheProvider",
-    "UnitOfWork",
+    "Command",
+    "CommandHandler",
     # Application Layer
     "EventHandler",
-    "Command",
-    "Query",
-    "CommandHandler",
-    "QueryHandler",
     "Mapper",
+    "Query",
+    "QueryHandler",
+    "UnitOfWork",
 ]

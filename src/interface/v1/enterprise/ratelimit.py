@@ -9,9 +9,11 @@ from typing import Any
 from fastapi import APIRouter
 
 from infrastructure.ratelimit import RateLimit
-
-from .dependencies import get_rate_limiter
-from .models import RateLimitCheckRequest, RateLimitCheckResponse
+from interface.v1.enterprise.dependencies import get_rate_limiter
+from interface.v1.enterprise.models import (
+    RateLimitCheckRequest,
+    RateLimitCheckResponse,
+)
 
 router = APIRouter(tags=["Rate Limiter"])
 

@@ -24,14 +24,14 @@ from infrastructure.security.audit.trail import (
 __all__ = [
     # Log
     "AuditAction",
-    "AuditResult",
     "AuditEntry",
     "AuditFilters",
     "AuditLogger",
-    "InMemoryAuditLogger",
+    "AuditResult",
     # Trail
     "AuditService",
     "DiffCalculator",
     "FieldChange",
     "InMemoryAuditBackend",
+    "InMemoryAuditLogger",
 ]

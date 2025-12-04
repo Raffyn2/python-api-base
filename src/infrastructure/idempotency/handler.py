@@ -10,6 +10,7 @@ Implements:
 - Cached response return for duplicate requests
 """
 
+import contextlib
 import hashlib
 import json
 import logging
@@ -17,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from .errors import IdempotencyKeyConflictError
+from infrastructure.idempotency.errors import IdempotencyKeyConflictError
 
 logger = logging.getLogger(__name__)
 
@@ -169,10 +170,8 @@ class IdempotencyHandler:
     async def disconnect(self) -> None:
         """Disconnect from Redis."""
         if self._redis is not None:
-            try:
+            with contextlib.suppress(Exception):
                 await self._redis.close()
-            except Exception:  # noqa: S110 - Best effort cleanup
-                pass
             self._redis = None
             self._connected = False
 

@@ -6,10 +6,13 @@
 **Feature: full-codebase-review-2025, Task 1.4: Refactored for file size compliance**
 """
 
-from .enums import SecurityEventType
-from .models import SecurityEvent
-from .patterns import IP_PATTERNS, PII_PATTERNS
-from .service import SecurityAuditLogger, get_audit_logger
+from infrastructure.security.audit_logger.enums import SecurityEventType
+from infrastructure.security.audit_logger.models import SecurityEvent
+from infrastructure.security.audit_logger.patterns import IP_PATTERNS, PII_PATTERNS
+from infrastructure.security.audit_logger.service import (
+    SecurityAuditLogger,
+    get_audit_logger,
+)
 
 __all__ = [
     "IP_PATTERNS",

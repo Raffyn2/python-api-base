@@ -22,31 +22,34 @@ Usage:
 """
 
 # Backward compatible re-exports
-from .aggregate import Aggregate, AggregateId
-from .events import EventStream, SourcedEvent
-from .exceptions import ConcurrencyError
-from .projections import InMemoryProjection, Projection
-from .repository import EventSourcedRepository
-from .snapshots import Snapshot
-from .store import EventStore, InMemoryEventStore
+from infrastructure.db.event_sourcing.aggregate import Aggregate, AggregateId
+from infrastructure.db.event_sourcing.events import EventStream, SourcedEvent
+from infrastructure.db.event_sourcing.exceptions import ConcurrencyError
+from infrastructure.db.event_sourcing.projections import (
+    InMemoryProjection,
+    Projection,
+)
+from infrastructure.db.event_sourcing.repository import EventSourcedRepository
+from infrastructure.db.event_sourcing.snapshots import Snapshot
+from infrastructure.db.event_sourcing.store import EventStore, InMemoryEventStore
 
 __all__ = [
-    # Events
-    "SourcedEvent",
-    "EventStream",
-    # Snapshots
-    "Snapshot",
     # Aggregate
     "Aggregate",
     "AggregateId",
-    # Store
-    "EventStore",
-    "InMemoryEventStore",
-    # Projections
-    "Projection",
-    "InMemoryProjection",
-    # Repository
-    "EventSourcedRepository",
     # Exceptions
     "ConcurrencyError",
+    # Repository
+    "EventSourcedRepository",
+    # Store
+    "EventStore",
+    "EventStream",
+    "InMemoryEventStore",
+    "InMemoryProjection",
+    # Projections
+    "Projection",
+    # Snapshots
+    "Snapshot",
+    # Events
+    "SourcedEvent",
 ]

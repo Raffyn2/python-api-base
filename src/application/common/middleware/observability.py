@@ -11,13 +11,13 @@ Provides:
 """
 
 # Re-export for backward compatibility
-from .idempotency_middleware import (
+from application.common.middleware.idempotency_middleware import (
     IdempotencyCache,
     IdempotencyConfig,
     IdempotencyMiddleware,
     InMemoryIdempotencyCache,
 )
-from .logging_middleware import (
+from application.common.middleware.logging_middleware import (
     LoggingConfig,
     LoggingMiddleware,
     generate_request_id,
@@ -25,7 +25,7 @@ from .logging_middleware import (
     request_id_var,
     set_request_id,
 )
-from .metrics_middleware import (
+from application.common.middleware.metrics_middleware import (
     InMemoryMetricsCollector,
     MetricsCollector,
     MetricsConfig,
@@ -33,21 +33,21 @@ from .metrics_middleware import (
 )
 
 __all__ = [
+    # Idempotency
+    "IdempotencyCache",
+    "IdempotencyConfig",
+    "IdempotencyMiddleware",
+    "InMemoryIdempotencyCache",
+    "InMemoryMetricsCollector",
     # Logging
     "LoggingConfig",
     "LoggingMiddleware",
-    "request_id_var",
-    "get_request_id",
-    "set_request_id",
-    "generate_request_id",
-    # Idempotency
-    "IdempotencyCache",
-    "InMemoryIdempotencyCache",
-    "IdempotencyConfig",
-    "IdempotencyMiddleware",
     # Metrics
     "MetricsCollector",
-    "InMemoryMetricsCollector",
     "MetricsConfig",
     "MetricsMiddleware",
+    "generate_request_id",
+    "get_request_id",
+    "request_id_var",
+    "set_request_id",
 ]

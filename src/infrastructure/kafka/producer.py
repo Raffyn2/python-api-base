@@ -10,7 +10,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar
 
-from infrastructure.kafka.config import KafkaConfig
 from infrastructure.kafka.message import KafkaMessage, MessageMetadata
 
 # Re-export transactional components for backward compatibility
@@ -24,6 +23,8 @@ from infrastructure.kafka.transaction import (
 
 if TYPE_CHECKING:
     from aiokafka import AIOKafkaProducer
+
+    from infrastructure.kafka.config import KafkaConfig
 
 logger = logging.getLogger(__name__)
 

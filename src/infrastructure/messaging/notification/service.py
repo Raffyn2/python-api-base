@@ -7,8 +7,7 @@
 import logging
 
 from core.base.patterns.result import Err, Result
-
-from .models import (
+from infrastructure.messaging.notification.models import (
     Notification,
     NotificationChannel,
     NotificationError,

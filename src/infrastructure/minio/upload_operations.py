@@ -8,12 +8,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from core.base.patterns.result import Err, Ok, Result
+from core.base.patterns.result import Err, Ok
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+    from core.base.patterns.result import Result
 
 logger = logging.getLogger(__name__)
 

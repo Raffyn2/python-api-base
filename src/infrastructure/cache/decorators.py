@@ -12,8 +12,10 @@ import functools
 import hashlib
 import json
 import logging
-from collections.abc import Callable
-from typing import Any, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 P = ParamSpec("P")
 T = TypeVar("T")

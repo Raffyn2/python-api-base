@@ -8,9 +8,12 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 
 from infrastructure.rbac import Permission
-
-from .dependencies import get_audit_logger, get_rbac, get_role_registry
-from .models import (
+from interface.v1.enterprise.dependencies import (
+    get_audit_logger,
+    get_rbac,
+    get_role_registry,
+)
+from interface.v1.enterprise.models import (
     ExampleAction,
     ExampleResource,
     ExampleUser,

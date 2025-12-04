@@ -20,8 +20,7 @@ from application.examples import (
 )
 from infrastructure.ratelimit import InMemoryRateLimiter, RateLimit, RateLimitConfig
 from infrastructure.security.rbac import RBACUser
-
-from .dependencies import (
+from interface.v1.examples.dependencies import (
     get_item_use_case,
     require_delete_permission,
     require_write_permission,

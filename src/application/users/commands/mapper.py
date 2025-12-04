@@ -2,11 +2,16 @@
 
 **Feature: architecture-restructuring-2025**
 **Validates: Requirements 3.5**
+**Fix: F-04 - Password hash validation awareness**
 """
+
+import logging
 
 from application.common.base.mapper import IMapper
 from application.users.commands.dtos import UserDTO, UserListDTO
 from domain.users.aggregates import UserAggregate
+
+logger = logging.getLogger(__name__)
 
 
 class UserMapper(IMapper[UserAggregate, UserDTO]):
@@ -48,14 +53,24 @@ class UserMapper(IMapper[UserAggregate, UserDTO]):
             last_login_at=aggregate.last_login_at,
         )
 
-    def to_entity(self, dto: UserDTO) -> UserAggregate:
+    def to_entity(
+        self,
+        dto: UserDTO,
+        *,
+        password_hash: str | None = None,
+    ) -> UserAggregate:
         """Convert UserDTO to UserAggregate.
 
-        Note: This creates a new aggregate without domain events.
-        Use for reconstitution from persistence, not for new users.
+        WARNING: This method is for reconstitution from persistence only.
+        For new user creation, use UserAggregate.create() directly.
+
+        **Feature: application-layer-code-review-fixes**
+        **Validates: Requirements F-04**
 
         Args:
             dto: UserDTO to convert.
+            password_hash: Optional password hash for migration scenarios.
+                If None, creates aggregate without password (reconstitution mode).
 
         Returns:
             UserAggregate with all DTO fields mapped.
@@ -69,10 +84,16 @@ class UserMapper(IMapper[UserAggregate, UserDTO]):
         if not isinstance(dto, UserDTO):
             raise TypeError(f"Expected UserDTO instance, got {type(dto).__name__}")
 
+        if password_hash is None:
+            logger.debug(
+                "Creating UserAggregate without password_hash (reconstitution mode)",
+                extra={"user_id": dto.id, "operation": "USER_RECONSTITUTION"},
+            )
+
         return UserAggregate(
             id=dto.id,
             email=dto.email,
-            password_hash="",  # Not stored in DTO for security
+            password_hash=password_hash or "",
             username=dto.username,
             display_name=dto.display_name,
             is_active=dto.is_active,

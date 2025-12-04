@@ -8,7 +8,7 @@ from datetime import datetime
 
 import strawberry
 
-from .shared_types import PageInfoType
+from interface.graphql.types.shared_types import PageInfoType
 
 
 @strawberry.type

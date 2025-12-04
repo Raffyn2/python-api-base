@@ -42,27 +42,27 @@ from infrastructure.tasks.task import (
 )
 
 __all__ = [
-    # Task
-    "Task",
-    "TaskPriority",
-    "TaskStatus",
-    "TaskResult",
-    # Protocols
-    "TaskHandler",
-    "TaskQueue",
-    "TaskScheduler",
-    # Retry
-    "RetryPolicy",
     "ExponentialBackoff",
     "FixedDelay",
-    "NoRetry",
     # Implementations
     "InMemoryTaskQueue",
+    "NoRetry",
     # RabbitMQ
     "RabbitMQConfig",
+    "RabbitMQRpcClient",
     "RabbitMQTaskQueue",
     "RabbitMQWorker",
-    "RabbitMQRpcClient",
-    "TaskHandle",
+    # Retry
+    "RetryPolicy",
+    # Task
+    "Task",
     "TaskError",
+    "TaskHandle",
+    # Protocols
+    "TaskHandler",
+    "TaskPriority",
+    "TaskQueue",
+    "TaskResult",
+    "TaskScheduler",
+    "TaskStatus",
 ]

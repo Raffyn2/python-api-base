@@ -7,22 +7,22 @@ Note: Forward references are intentional for types defined in other modules.
 # ruff: noqa: F821
 
 __all__ = [
-    # Result Pattern
-    "Failure",
-    "OperationResult",
-    "Success",
-    "VoidResult",
     # Callbacks
     "AsyncCallback",
-    "EventCallback",
-    "Middleware",
-    "SyncCallback",
-    # Entity
-    "EntityId",
-    "Timestamp",
     # Specification
     "CompositeSpec",
+    # Entity
+    "EntityId",
+    "EventCallback",
+    # Result Pattern
+    "Failure",
+    "Middleware",
+    "OperationResult",
     "Spec",
+    "Success",
+    "SyncCallback",
+    "Timestamp",
+    "VoidResult",
 ]
 
 # =============================================================================

@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Any
 
-from .events import SourcedEvent
+from infrastructure.db.event_sourcing.events import SourcedEvent
 
 
 class Projection[EventT: SourcedEvent](ABC):

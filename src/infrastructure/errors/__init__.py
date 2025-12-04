@@ -29,21 +29,21 @@ from infrastructure.errors.system import (
 )
 
 __all__ = [
-    # Base
-    "InfrastructureError",
+    "AuditLogError",
+    "CacheError",
+    "ConfigurationError",
+    "ConnectionPoolError",
     # Database
     "DatabaseError",
-    "ConnectionPoolError",
     # External
     "ExternalServiceError",
-    "CacheError",
+    # Base
+    "InfrastructureError",
     "MessagingError",
     "StorageError",
+    # System
+    "TelemetryError",
     # Security
     "TokenStoreError",
     "TokenValidationError",
-    "AuditLogError",
-    # System
-    "TelemetryError",
-    "ConfigurationError",
 ]

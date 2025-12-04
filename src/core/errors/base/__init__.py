@@ -17,7 +17,8 @@ from core.errors.base.application_errors import (
     UseCaseError,
 )
 from core.errors.base.domain_errors import (
-    AppException,
+    AppError,
+    AppException,  # Backwards compatibility alias
     AuthenticationError,
     AuthorizationError,
     BusinessRuleViolationError,
@@ -35,27 +36,28 @@ from core.errors.base.infrastructure_errors import (
 
 __all__ = [
     # Domain
-    "AppException",
+    "AppError",
+    "AppException",  # Backwards compatibility alias
+    # Application
+    "ApplicationError",
     "AuthenticationError",
     "AuthorizationError",
     "BusinessRuleViolationError",
-    "ConflictError",
-    "EntityNotFoundError",
-    "ErrorContext",
-    "RateLimitExceededError",
-    "ValidationError",
-    # Application
-    "ApplicationError",
     "CommandHandlerError",
     "ConcurrencyError",
+    "ConflictError",
+    "DatabaseError",
+    "EntityNotFoundError",
+    "ErrorContext",
+    "ExternalServiceError",
     "HandlerNotFoundError",
+    # Infrastructure
+    "InfrastructureError",
     "InvalidCommandError",
     "InvalidQueryError",
     "QueryHandlerError",
+    "RateLimitExceededError",
     "TransactionError",
     "UseCaseError",
-    # Infrastructure
-    "InfrastructureError",
-    "DatabaseError",
-    "ExternalServiceError",
+    "ValidationError",
 ]

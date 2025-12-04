@@ -27,9 +27,13 @@ class CORSCredentials(str, Enum):
 
 @dataclass
 class CORSPolicy:
-    """CORS policy configuration."""
+    """CORS policy configuration.
 
-    allow_origins: list[str] = field(default_factory=lambda: ["*"])
+    Note: allow_origins defaults to empty list for security.
+    Use create_permissive_cors_policy() for development only.
+    """
+
+    allow_origins: list[str] = field(default_factory=list)
     allow_methods: list[str] = field(
         default_factory=lambda: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
     )

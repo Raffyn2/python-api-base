@@ -7,10 +7,10 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from .aggregate import Aggregate
-from .events import EventStream, SourcedEvent
-from .exceptions import ConcurrencyError
-from .snapshots import Snapshot
+from infrastructure.db.event_sourcing.aggregate import Aggregate
+from infrastructure.db.event_sourcing.events import EventStream, SourcedEvent
+from infrastructure.db.event_sourcing.exceptions import ConcurrencyError
+from infrastructure.db.event_sourcing.snapshots import Snapshot
 
 
 class EventStore[AggregateT: Aggregate[Any], EventT: SourcedEvent](ABC):

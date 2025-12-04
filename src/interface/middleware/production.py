@@ -14,6 +14,7 @@ import logging
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 
 from fastapi import Request, Response
@@ -48,7 +49,7 @@ class ResilienceConfig:
     """Configuration for resilience middleware."""
 
     failure_threshold: int = 5
-    timeout_seconds: float = 30.0
+    timeout: timedelta = timedelta(seconds=30.0)
     enabled: bool = True
 
 
@@ -66,10 +67,11 @@ class ResilienceMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self._config = config or ResilienceConfig()
         self._circuit = CircuitBreaker(
+            "production_middleware",
             CircuitBreakerConfig(
                 failure_threshold=self._config.failure_threshold,
-                timeout_seconds=self._config.timeout_seconds,
-            )
+                timeout=self._config.timeout,
+            ),
         )
 
     async def dispatch(
@@ -87,10 +89,16 @@ class ResilienceMiddleware(BaseHTTPMiddleware):
                 f"Circuit breaker OPEN for {request.url.path}",
                 extra={"path": request.url.path, "state": CircuitState.OPEN.value},
             )
+            from core.errors.http import PROBLEM_JSON_MEDIA_TYPE, ProblemDetail
+
+            problem = ProblemDetail.service_unavailable(
+                service="api",
+                retry_after=int(self._config.timeout.total_seconds()),
+            )
             return Response(
-                content='{"error": "Service temporarily unavailable"}',
+                content=problem.model_dump_json(),
                 status_code=503,
-                media_type="application/json",
+                media_type=PROBLEM_JSON_MEDIA_TYPE,
             )
 
         try:

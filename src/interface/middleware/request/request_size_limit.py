@@ -183,8 +183,7 @@ class StreamingRequestSizeLimitMiddleware(BaseHTTPMiddleware):
         """
         # For requests with Content-Length, check upfront
         content_length = request.headers.get("content-length")
-        if content_length is not None:
-            if int(content_length) > self.max_size:
+        if content_length is not None and int(content_length) > self.max_size:
                 return JSONResponse(
                     status_code=413,
                     content={

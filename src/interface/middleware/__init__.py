@@ -49,28 +49,28 @@ from interface.middleware.security import (
 )
 
 __all__ = [
-    # Security
-    "SecurityHeadersMiddleware",
-    "CORSManager",
-    "CORSPolicy",
-    # Request
-    "RequestIDMiddleware",
-    "RequestSizeLimitMiddleware",
-    "TimeoutConfig",
-    "TimeoutMiddleware",
-    # Logging
-    "RequestLoggerMiddleware",
-    "app_exception_handler",
-    "create_problem_detail",
-    "register_exception_handlers",
     # Production
     "AuditConfig",
     "AuditMiddleware",
+    "CORSManager",
+    "CORSPolicy",
     "FeatureFlagMiddleware",
     "MultitenancyConfig",
     "MultitenancyMiddleware",
+    # Request
+    "RequestIDMiddleware",
+    # Logging
+    "RequestLoggerMiddleware",
+    "RequestSizeLimitMiddleware",
     "ResilienceConfig",
     "ResilienceMiddleware",
+    # Security
+    "SecurityHeadersMiddleware",
+    "TimeoutConfig",
+    "TimeoutMiddleware",
+    "app_exception_handler",
+    "create_problem_detail",
     "is_feature_enabled",
+    "register_exception_handlers",
     "setup_production_middleware",
 ]

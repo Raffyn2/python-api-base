@@ -12,29 +12,29 @@ Structure:
 **Validates: Requirements 7.1, 7.2, 7.3**
 """
 
-from .middleware import (
+from application.services.multitenancy.middleware import (
     TenantMiddleware,
     require_tenant,
 )
-from .models import (
+from application.services.multitenancy.models import (
     TenantContext,
     get_current_tenant,
     set_current_tenant,
 )
-from .repository import (
+from application.services.multitenancy.repository import (
     TenantAware,
     TenantRepository,
 )
 
 __all__ = [
-    # Context Management
-    "TenantContext",
-    "get_current_tenant",
-    "set_current_tenant",
     # Repository
     "TenantAware",
-    "TenantRepository",
+    # Context Management
+    "TenantContext",
     # Middleware
     "TenantMiddleware",
+    "TenantRepository",
+    "get_current_tenant",
     "require_tenant",
+    "set_current_tenant",
 ]

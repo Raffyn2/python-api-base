@@ -14,8 +14,12 @@ from infrastructure.rbac import (
     RoleRegistry,
 )
 from infrastructure.tasks import RabbitMQConfig, RabbitMQTaskQueue
-
-from .models import EmailTaskPayload, ExampleAction, ExampleResource, ExampleUser
+from interface.v1.enterprise.models import (
+    EmailTaskPayload,
+    ExampleAction,
+    ExampleResource,
+    ExampleUser,
+)
 
 # Singletons (initialized on first use)
 _rate_limiter: InMemoryRateLimiter[str] | None = None

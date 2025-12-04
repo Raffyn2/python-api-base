@@ -23,20 +23,20 @@ from infrastructure.prometheus.registry import (
 )
 
 __all__ = [
-    # Config
-    "PrometheusConfig",
     # Registry
     "MetricsRegistry",
-    "get_registry",
-    # Metrics decorators
-    "counter",
-    "gauge",
-    "histogram",
-    "summary",
-    "timer",
-    "count_exceptions",
+    # Config
+    "PrometheusConfig",
     # FastAPI
     "PrometheusMiddleware",
+    "count_exceptions",
+    # Metrics decorators
+    "counter",
     "create_metrics_endpoint",
+    "gauge",
+    "get_registry",
+    "histogram",
     "setup_prometheus",
+    "summary",
+    "timer",
 ]

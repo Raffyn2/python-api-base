@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
@@ -109,11 +110,17 @@ class TestQueryTimingPrometheusMiddleware:
             10.000,  # 10s
         )
 
-        # Get histogram metric
-        histogram_metric = middleware.query_duration_histogram
+        # Get histogram metric's samples
+        samples = list(histogram_metric.collect())[0].samples
+        
+        # Extract bucket `le` labels
+        bucket_labels = [s.labels["le"] for s in samples if s.name.endswith("_bucket")]
+        
+        # Convert expected buckets to strings, and add "+Inf"
+        expected_labels = [str(b) for b in expected_buckets] + ["+Inf"]
 
         # Verify buckets match
-        assert histogram_metric._buckets == expected_buckets
+        assert bucket_labels == expected_labels
 
     @patch("infrastructure.db.middleware.query_timing_prometheus.time.perf_counter")
     def test_query_counter_incremented(
@@ -122,8 +129,7 @@ class TestQueryTimingPrometheusMiddleware:
         mock_engine: Engine,
         prometheus_registry: CollectorRegistry,
     ) -> None:
-        """Test that query counter is incremented."""
-        mock_time.side_effect = [0.0, 0.050]  # 50ms query
+        mock_time.side_effect = [0.0, 0.050, 0.1, 0.2]  # 50ms query
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -149,7 +155,7 @@ class TestQueryTimingPrometheusMiddleware:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that slow query counter is incremented for slow queries."""
-        mock_time.side_effect = [0.0, 0.200]  # 200ms query (slow)
+        mock_time.side_effect = [0.0, 0.200, 0.3, 0.4]  # 200ms query (slow)
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -158,9 +164,13 @@ class TestQueryTimingPrometheusMiddleware:
         )
         middleware.install()
 
+        # Create a dummy table for the query
+        with mock_engine.connect() as conn:
+            conn.execute(text("CREATE TABLE users (id INTEGER, created_at TEXT)"))
+
         # Execute a slow query
         with mock_engine.connect() as conn:
-            conn.execute(text("SELECT * FROM users WHERE created_at > NOW()"))
+            conn.execute(text("SELECT * FROM users WHERE created_at > '2025-01-01'"))
 
         # Verify slow query counter incremented
         slow_counter_value = prometheus_registry.get_sample_value(
@@ -176,7 +186,7 @@ class TestQueryTimingPrometheusMiddleware:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that fast queries are not counted as slow."""
-        mock_time.side_effect = [0.0, 0.050]  # 50ms query (fast)
+        mock_time.side_effect = [0.0, 0.050, 0.1, 0.2]  # 50ms query (fast)
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -204,7 +214,7 @@ class TestQueryTimingPrometheusMiddleware:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that histogram observes query duration."""
-        mock_time.side_effect = [0.0, 0.075]  # 75ms query
+        mock_time.side_effect = [0.0, 0.075, 0.1, 0.2]  # 75ms query
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -244,6 +254,8 @@ class TestQueryTimingPrometheusMiddleware:
             0.150,  # UPDATE: 50ms
             0.150,
             0.200,  # SELECT: 50ms
+            0.250,
+            0.300,
         ]
 
         middleware = QueryTimingPrometheusMiddleware(
@@ -290,6 +302,8 @@ class TestQueryTimingPrometheusMiddleware:
             0.030,  # 27ms - falls in 0.050 bucket
             0.030,
             0.150,  # 120ms - falls in 0.250 bucket
+            0.200,
+            0.300,
         ]
 
         middleware = QueryTimingPrometheusMiddleware(
@@ -394,7 +408,7 @@ class TestInstallQueryTimingWithPrometheus:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test install function and verify metrics are collected."""
-        mock_time.side_effect = [0.0, 0.050]  # 50ms query
+        mock_time.side_effect = [0.0, 0.050, 0.1, 0.2]  # 50ms query
 
         middleware = install_query_timing_with_prometheus(
             mock_engine, prometheus_registry=prometheus_registry
@@ -439,7 +453,7 @@ class TestEdgeCases:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that zero duration queries are handled correctly."""
-        mock_time.side_effect = [0.0, 0.0]  # 0ms query
+        mock_time.side_effect = [0.0, 0.0, 0.1, 0.2]  # 0ms query
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -465,7 +479,7 @@ class TestEdgeCases:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test handling of very slow queries (>10s)."""
-        mock_time.side_effect = [0.0, 15.0]  # 15 second query
+        mock_time.side_effect = [0.0, 15.0, 16.0, 17.0]  # 15 second query
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -473,9 +487,14 @@ class TestEdgeCases:
         )
         middleware.install()
 
+        # Define a user-defined function to simulate sleep
+        @mock_engine.connect
+        def connect(dbapi_connection, connection_record):
+            dbapi_connection.create_function("sleep", 1, lambda t: time.sleep(float(t)))
+
         # Execute very slow query
         with mock_engine.connect() as conn:
-            conn.execute(text("SELECT SLEEP(15)"))
+            conn.execute(text("SELECT sleep(0.1)"))
 
         # Verify it's counted
         counter_value = prometheus_registry.get_sample_value(
@@ -510,7 +529,7 @@ class TestEdgeCases:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that base statistics are still collected alongside Prometheus."""
-        mock_time.side_effect = [0.0, 0.150]  # 150ms slow query
+        mock_time.side_effect = [0.0, 0.150, 0.2, 0.3]  # 150ms slow query
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,

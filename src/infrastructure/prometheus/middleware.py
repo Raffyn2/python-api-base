@@ -10,13 +10,15 @@ import time
 from typing import TYPE_CHECKING
 
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import Response
 
-from infrastructure.prometheus.registry import MetricsRegistry, get_registry
+from infrastructure.prometheus.registry import get_registry
 
 if TYPE_CHECKING:
+    from starlette.requests import Request
+    from starlette.responses import Response
     from starlette.types import ASGIApp
+
+    from infrastructure.prometheus.registry import MetricsRegistry
 
 
 class PrometheusMiddleware(BaseHTTPMiddleware):

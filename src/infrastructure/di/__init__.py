@@ -3,7 +3,7 @@
 **Feature: architecture-restructuring-2025**
 """
 
-from .app_container import (
+from infrastructure.di.app_container import (
     Container,
     LifecycleHookError,
     LifecycleManager,

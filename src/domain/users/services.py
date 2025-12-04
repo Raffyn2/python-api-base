@@ -7,7 +7,11 @@ within a single entity or value object.
 **Validates: Requirements 2.5**
 """
 
+import re
 from typing import Protocol
+
+# Email validation pattern (RFC 5322 simplified)
+_EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 
 class PasswordHasher(Protocol):
@@ -244,10 +248,7 @@ class UserDomainService:
         """
         if not self._email_validator:
             # Basic validation only
-            import re
-
-            pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-            if re.match(pattern, email):
+            if _EMAIL_PATTERN.match(email):
                 return True, None
             return False, "Invalid email format"
 

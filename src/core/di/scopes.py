@@ -6,11 +6,11 @@
 
 from typing import TYPE_CHECKING, Any
 
-from .exceptions import CircularDependencyError, ServiceNotRegisteredError
-from .lifecycle import Lifetime
+from core.di.exceptions import CircularDependencyError, ServiceNotRegisteredError
+from core.di.lifecycle import Lifetime
 
 if TYPE_CHECKING:
-    from .container import Container
+    from core.di.container import Container
 
 
 class Scope:

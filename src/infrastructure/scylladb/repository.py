@@ -10,11 +10,14 @@ from __future__ import annotations
 import logging
 import re
 from datetime import UTC, datetime
-from typing import Any, Generic, TypeVar
-from uuid import UUID
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
-from infrastructure.scylladb.client import ScyllaDBClient
 from infrastructure.scylladb.entity import ScyllaDBEntity
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from infrastructure.scylladb.client import ScyllaDBClient
 
 logger = logging.getLogger(__name__)
 

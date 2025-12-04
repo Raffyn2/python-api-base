@@ -9,10 +9,12 @@ from __future__ import annotations
 import asyncio
 import functools
 import time
-from collections.abc import Callable
-from typing import ParamSpec, TypeVar
+from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
 from infrastructure.prometheus.registry import get_registry
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 P = ParamSpec("P")
 R = TypeVar("R")

@@ -4,9 +4,16 @@ Feature: file-size-compliance-phase2
 Validates: Requirements 3.1, 5.1, 5.2, 5.3
 """
 
-from .models import StoredToken
-from .protocols import RefreshTokenStore, TokenStoreProtocol
-from .stores import InMemoryTokenStore, RedisTokenStore, get_token_store_sync
+from infrastructure.auth.token_store.models import StoredToken
+from infrastructure.auth.token_store.protocols import (
+    RefreshTokenStore,
+    TokenStoreProtocol,
+)
+from infrastructure.auth.token_store.stores import (
+    InMemoryTokenStore,
+    RedisTokenStore,
+    get_token_store_sync,
+)
 
 __all__ = [
     "InMemoryTokenStore",

@@ -62,6 +62,8 @@ __all__ = [
     "MIN_PASSWORD_LENGTH",
     "OPENID_CONFIG_CACHE_MAX_AGE_SECONDS",
     "PRESIGNED_URL_EXPIRE_SECONDS",
+    # Settings
+    "RATE_LIMIT_PATTERN",
     "READ_RATE_LIMIT_REQUESTS",
     "REFRESH_TOKEN_EXPIRE_SECONDS",
     "STORAGE_TTL_DEFAULT_SECONDS",
@@ -69,8 +71,6 @@ __all__ = [
     "STORAGE_TTL_MIN_SECONDS",
     "UPLOAD_REQUEST_SIZE_BYTES",
     "WRITE_RATE_LIMIT_REQUESTS",
-    # Settings
-    "RATE_LIMIT_PATTERN",
     "DatabaseSettings",
     "ObservabilitySettings",
     "RedisSettings",

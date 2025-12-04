@@ -8,17 +8,8 @@
 
 from fastapi import APIRouter
 
-from .item_routes import router as item_router
-from .pedido_routes import router as pedido_router
-
-router = APIRouter(prefix="/examples", tags=["Examples"])
-
-# Include sub-routers
-router.include_router(item_router)
-router.include_router(pedido_router)
-
 # Re-export dependencies for backward compatibility
-from .dependencies import (
+from interface.v1.examples.dependencies import (
     get_current_user_optional,
     get_event_publisher,
     get_item_repository,
@@ -31,19 +22,26 @@ from .dependencies import (
     require_delete_permission,
     require_write_permission,
 )
+from interface.v1.examples.item_routes import router as item_router
+from interface.v1.examples.pedido_routes import router as pedido_router
+
+router = APIRouter(prefix="/examples", tags=["Examples"])
+
+# Include sub-routers
+router.include_router(item_router)
+router.include_router(pedido_router)
 
 __all__ = [
-    "router",
-    # Dependencies
-    "get_item_repository",
-    "get_pedido_repository",
-    "get_event_publisher",
-    "get_item_use_case",
-    "get_pedido_use_case",
     "get_current_user_optional",
-    "require_write_permission",
-    "require_delete_permission",
+    "get_event_publisher",
+    "get_item_repository",
     "get_item_response_adapter",
-    "get_pedido_response_adapter",
+    "get_item_use_case",
     "get_jitter_cache",
+    "get_pedido_repository",
+    "get_pedido_response_adapter",
+    "get_pedido_use_case",
+    "require_delete_permission",
+    "require_write_permission",
+    "router",
 ]

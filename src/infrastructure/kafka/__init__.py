@@ -31,27 +31,27 @@ from infrastructure.kafka.producer import (
 )
 
 __all__ = [
-    # Config
-    "KafkaConfig",
-    # Producer
-    "KafkaProducer",
-    "TransactionalKafkaProducer",
-    "TransactionContext",
-    "TransactionState",
-    "TransactionResult",
-    "TransactionError",
-    # Consumer
-    "KafkaConsumer",
-    # Message
-    "KafkaMessage",
-    "MessageMetadata",
     # Event Publisher
     "DomainEvent",
     "EventPublisher",
-    "KafkaEventPublisher",
-    "NoOpEventPublisher",
     "ItemCreatedEvent",
-    "ItemUpdatedEvent",
     "ItemDeletedEvent",
+    "ItemUpdatedEvent",
+    # Config
+    "KafkaConfig",
+    # Consumer
+    "KafkaConsumer",
+    "KafkaEventPublisher",
+    # Message
+    "KafkaMessage",
+    # Producer
+    "KafkaProducer",
+    "MessageMetadata",
+    "NoOpEventPublisher",
+    "TransactionContext",
+    "TransactionError",
+    "TransactionResult",
+    "TransactionState",
+    "TransactionalKafkaProducer",
     "create_event_publisher",
 ]

@@ -7,6 +7,7 @@ Note: Cache implementations are in infrastructure/cache/.
 This module re-exports for convenience.
 """
 
+from core.shared.caching.utils import generate_cache_key
 from infrastructure.cache.config import CacheConfig
 from infrastructure.cache.decorators import cached, get_default_cache
 from infrastructure.cache.policies import CacheEntry
@@ -14,8 +15,6 @@ from infrastructure.cache.providers import (
     InMemoryCacheProvider,
     RedisCacheProvider,
 )
-
-from .utils import generate_cache_key
 
 __all__ = [
     "CacheConfig",

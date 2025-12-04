@@ -4,15 +4,15 @@
 **Validates: Requirements 6.8, 6.9**
 """
 
-from .models import (
+from application.services.file_upload.models import (
     FileMetadata,
     FileValidationConfig,
     StorageProvider,
     UploadError,
     UploadResult,
 )
-from .service import FileUploadService
-from .validators import validate_file
+from application.services.file_upload.service import FileUploadService
+from application.services.file_upload.validators import validate_file
 
 __all__ = [
     "FileMetadata",

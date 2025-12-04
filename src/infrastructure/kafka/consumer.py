@@ -6,17 +6,20 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar
 
-from infrastructure.kafka.config import KafkaConfig
 from infrastructure.kafka.message import KafkaMessage, MessageMetadata
 
 if TYPE_CHECKING:
+    import asyncio
+    from collections.abc import AsyncIterator
+
     from aiokafka import AIOKafkaConsumer, ConsumerRecord
+
+    from infrastructure.kafka.config import KafkaConfig
 
 logger = logging.getLogger(__name__)
 

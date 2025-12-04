@@ -79,6 +79,31 @@ class CreateItemCommandHandler(CommandHandler[CreateItemCommand, ItemExampleResp
         return Ok(self._mapper.to_dto(saved))
 
 
+def _apply_update_command_fields(item: ItemExample, command: UpdateItemCommand) -> None:
+    """Apply update command fields to item entity.
+
+    Args:
+        item: ItemExample entity to update.
+        command: Update command with fields.
+    """
+    if command.name is not None:
+        item.name = command.name
+    if command.description is not None:
+        item.description = command.description
+    if command.price_amount is not None:
+        currency = command.price_currency or item.price.currency
+        item.price = Money(command.price_amount, currency)
+    if command.quantity is not None:
+        item.quantity = command.quantity
+    if command.category is not None:
+        item.category = command.category
+    if command.tags is not None:
+        item.tags = list(command.tags)
+    if command.metadata is not None:
+        item.metadata = dict(command.metadata)
+    item.mark_updated_by(command.updated_by)
+
+
 class UpdateItemCommandHandler(CommandHandler[UpdateItemCommand, ItemExampleResponse]):
     """Handler for UpdateItemCommand."""
 
@@ -100,23 +125,7 @@ class UpdateItemCommandHandler(CommandHandler[UpdateItemCommand, ItemExampleResp
         if not item:
             return Err(NotFoundError("ItemExample", command.item_id))
 
-        if command.name is not None:
-            item.name = command.name
-        if command.description is not None:
-            item.description = command.description
-        if command.price_amount is not None:
-            currency = command.price_currency or item.price.currency
-            item.price = Money(command.price_amount, currency)
-        if command.quantity is not None:
-            item.quantity = command.quantity
-        if command.category is not None:
-            item.category = command.category
-        if command.tags is not None:
-            item.tags = list(command.tags)
-        if command.metadata is not None:
-            item.metadata = dict(command.metadata)
-
-        item.mark_updated_by(command.updated_by)
+        _apply_update_command_fields(item, command)
         saved = await self._repo.update(item)
 
         if self._event_bus:

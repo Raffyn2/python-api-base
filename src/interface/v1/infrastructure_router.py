@@ -1,484 +1,82 @@
-"""Infrastructure examples router.
+"""Infrastructure examples router (facade).
 
-Demonstrates Redis cache and MinIO storage usage.
+Aggregates cache, storage, and Kafka routers for backward compatibility.
 
 **Feature: enterprise-infrastructure-2025**
+**Refactored: Split into cache_router, storage_router, kafka_router for SRP**
 """
 
 from __future__ import annotations
 
-import logging
-from datetime import timedelta
-from typing import Any
+from fastapi import APIRouter
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from pydantic import BaseModel, Field
+from interface.v1.cache_router import router as cache_router
+from interface.v1.kafka_router import router as kafka_router
+from interface.v1.storage_router import router as storage_router
 
-from core.config import (
-    MAX_STORAGE_LIST_KEYS,
-    PRESIGNED_URL_EXPIRE_SECONDS,
-    STORAGE_TTL_DEFAULT_SECONDS,
-    STORAGE_TTL_MAX_SECONDS,
-    STORAGE_TTL_MIN_SECONDS,
+# Re-export DTOs for backward compatibility
+from interface.v1.cache_router import (
+    CacheResponse,
+    CacheSetRequest,
+    cache_delete,
+    cache_delete_pattern,
+    cache_get,
+    cache_set,
+    cache_status,
+    get_redis,
+)
+from interface.v1.kafka_router import (
+    KafkaPublishRequest,
+    KafkaPublishResponse,
+    KafkaStatusResponse,
+    get_kafka,
+    kafka_publish,
+    kafka_status,
+)
+from interface.v1.storage_router import (
+    PresignedUrlResponse,
+    StorageUploadResponse,
+    get_minio,
+    storage_delete,
+    storage_download,
+    storage_list,
+    storage_presigned_url,
+    storage_upload,
 )
 
-logger = logging.getLogger(__name__)
+__all__ = [
+    "router",
+    # Cache DTOs and functions
+    "CacheSetRequest",
+    "CacheResponse",
+    "get_redis",
+    "cache_set",
+    "cache_get",
+    "cache_delete",
+    "cache_delete_pattern",
+    "cache_status",
+    # Storage DTOs and functions
+    "StorageUploadResponse",
+    "PresignedUrlResponse",
+    "get_minio",
+    "storage_upload",
+    "storage_download",
+    "storage_presigned_url",
+    "storage_delete",
+    "storage_list",
+    # Kafka DTOs and functions
+    "KafkaPublishRequest",
+    "KafkaPublishResponse",
+    "KafkaStatusResponse",
+    "get_kafka",
+    "kafka_publish",
+    "kafka_status",
+]
 
+# Create combined router
 router = APIRouter(prefix="/infrastructure", tags=["Infrastructure Examples"])
 
-
-# =============================================================================
-# DTOs
-# =============================================================================
-
-
-class CacheSetRequest(BaseModel):
-    """Request to set cache value."""
-
-    key: str = Field(..., min_length=1, max_length=256, examples=["user:123"])
-    value: dict[str, Any] = Field(
-        ..., examples=[{"name": "John", "email": "john@example.com"}]
-    )
-    ttl: int | None = Field(
-        default=STORAGE_TTL_DEFAULT_SECONDS,
-        ge=STORAGE_TTL_MIN_SECONDS,
-        le=STORAGE_TTL_MAX_SECONDS,
-        description="TTL in seconds",
-    )
-
-
-class CacheResponse(BaseModel):
-    """Cache operation response."""
-
-    key: str
-    value: dict[str, Any] | None = None
-    found: bool = False
-    message: str | None = None
-
-
-class StorageUploadResponse(BaseModel):
-    """Storage upload response."""
-
-    key: str
-    url: str
-    size: int
-    content_type: str
-
-
-class PresignedUrlResponse(BaseModel):
-    """Presigned URL response."""
-
-    key: str
-    url: str
-    expires_in_seconds: int
-
-
-# =============================================================================
-# Kafka DTOs
-# **Feature: kafka-workflow-integration**
-# **Validates: Requirements 2.1, 2.2**
-# =============================================================================
-
-
-class KafkaPublishRequest(BaseModel):
-    """Request to publish Kafka message."""
-
-    topic: str = Field(default="test-events", min_length=1, max_length=256)
-    key: str | None = Field(default=None, max_length=256)
-    payload: dict[str, Any] = Field(..., examples=[{"event": "test", "data": "hello"}])
-    headers: dict[str, str] | None = Field(default=None)
-
-
-class KafkaPublishResponse(BaseModel):
-    """Kafka publish response."""
-
-    topic: str
-    partition: int
-    offset: int
-    timestamp: str
-
-
-class KafkaStatusResponse(BaseModel):
-    """Kafka status response."""
-
-    enabled: bool
-    connected: bool
-    client_id: str | None = None
-    bootstrap_servers: list[str] | None = None
-
-
-# =============================================================================
-# Dependencies
-# =============================================================================
-
-
-def get_redis(request: Request):
-    """Get Redis client from app state."""
-    redis = getattr(request.app.state, "redis", None)
-    if redis is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Redis not configured. Set OBSERVABILITY__REDIS_ENABLED=true",
-        )
-    return redis
-
-
-def get_minio(request: Request):
-    """Get MinIO client from app state."""
-    minio = getattr(request.app.state, "minio", None)
-    if minio is None:
-        raise HTTPException(
-            status_code=503,
-            detail="MinIO not configured. Set OBSERVABILITY__MINIO_ENABLED=true",
-        )
-    return minio
-
-
-def get_kafka(request: Request):
-    """Get Kafka producer from app state.
-
-    **Feature: kafka-workflow-integration**
-    **Validates: Requirements 2.3**
-    """
-    producer = getattr(request.app.state, "kafka_producer", None)
-    if producer is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Kafka not configured. Set OBSERVABILITY__KAFKA_ENABLED=true",
-        )
-    return producer
-
-
-# =============================================================================
-# Redis Cache Endpoints
-# =============================================================================
-
-
-@router.post(
-    "/cache",
-    response_model=CacheResponse,
-    summary="Set cache value",
-    description="Store a value in Redis cache with optional TTL",
-)
-async def cache_set(
-    request: CacheSetRequest,
-    redis=Depends(get_redis),
-) -> CacheResponse:
-    """Set a value in Redis cache.
-
-    **Requirement: R1.2 - Set operation with TTL**
-    """
-    success = await redis.set(request.key, request.value, request.ttl)
-
-    return CacheResponse(
-        key=request.key,
-        value=request.value if success else None,
-        found=success,
-        message="Value cached successfully" if success else "Failed to cache value",
-    )
-
-
-@router.get(
-    "/cache/{key}",
-    response_model=CacheResponse,
-    summary="Get cache value",
-    description="Retrieve a value from Redis cache",
-)
-async def cache_get(
-    key: str,
-    redis=Depends(get_redis),
-) -> CacheResponse:
-    """Get a value from Redis cache.
-
-    **Requirement: R1.2 - Get operation**
-    """
-    value = await redis.get(key)
-
-    return CacheResponse(
-        key=key,
-        value=value,
-        found=value is not None,
-        message="Value found" if value else "Key not found",
-    )
-
-
-@router.delete(
-    "/cache/{key}",
-    response_model=CacheResponse,
-    summary="Delete cache value",
-    description="Remove a value from Redis cache",
-)
-async def cache_delete(
-    key: str,
-    redis=Depends(get_redis),
-) -> CacheResponse:
-    """Delete a value from Redis cache.
-
-    **Requirement: R1.2 - Delete operation**
-    """
-    deleted = await redis.delete(key)
-
-    return CacheResponse(
-        key=key,
-        found=deleted,
-        message="Value deleted" if deleted else "Key not found",
-    )
-
-
-@router.delete(
-    "/cache/pattern/{pattern}",
-    summary="Delete by pattern",
-    description="Delete all keys matching a pattern (e.g., user:*)",
-)
-async def cache_delete_pattern(
-    pattern: str,
-    redis=Depends(get_redis),
-) -> dict[str, Any]:
-    """Delete cache keys by pattern.
-
-    **Requirement: R1.7 - Bulk invalidation using pattern**
-    """
-    deleted_count = await redis.delete_pattern(pattern)
-
-    return {
-        "pattern": pattern,
-        "deleted_count": deleted_count,
-        "message": f"Deleted {deleted_count} keys matching pattern",
-    }
-
-
-@router.get(
-    "/cache/status",
-    summary="Cache status",
-    description="Get Redis cache status and circuit breaker state",
-)
-async def cache_status(
-    redis=Depends(get_redis),
-) -> dict[str, Any]:
-    """Get Redis cache status.
-
-    **Requirement: R1.5 - Circuit breaker state**
-    """
-    return {
-        "connected": redis.is_connected,
-        "circuit_state": redis.circuit_state,
-        "using_fallback": redis.is_using_fallback,
-    }
-
-
-# =============================================================================
-# MinIO Storage Endpoints
-# =============================================================================
-
-
-@router.post(
-    "/storage/upload",
-    response_model=StorageUploadResponse,
-    summary="Upload file",
-    description="Upload a file to MinIO storage",
-)
-async def storage_upload(
-    file: UploadFile = File(...),
-    minio=Depends(get_minio),
-) -> StorageUploadResponse:
-    """Upload a file to MinIO.
-
-    **Requirement: R3.2 - Streaming upload**
-    """
-    content = await file.read()
-    key = f"uploads/{file.filename}"
-
-    result = await minio.upload(
-        key=key,
-        data=content,
-        content_type=file.content_type or "application/octet-stream",
-    )
-
-    if result.is_err():
-        raise HTTPException(status_code=500, detail=str(result.unwrap_err()))
-
-    return StorageUploadResponse(
-        key=key,
-        url=result.unwrap(),
-        size=len(content),
-        content_type=file.content_type or "application/octet-stream",
-    )
-
-
-@router.get(
-    "/storage/{key:path}",
-    summary="Download file",
-    description="Download a file from MinIO storage",
-)
-async def storage_download(
-    key: str,
-    minio=Depends(get_minio),
-) -> bytes:
-    """Download a file from MinIO.
-
-    **Requirement: R3.4 - Download**
-    """
-    result = await minio.download(key)
-
-    if result.is_err():
-        raise HTTPException(status_code=404, detail="File not found")
-
-    return result.unwrap()
-
-
-@router.get(
-    "/storage/{key:path}/presigned",
-    response_model=PresignedUrlResponse,
-    summary="Get presigned URL",
-    description="Generate a presigned URL for direct file access",
-)
-async def storage_presigned_url(
-    key: str,
-    expires_in: int = PRESIGNED_URL_EXPIRE_SECONDS,
-    minio=Depends(get_minio),
-) -> PresignedUrlResponse:
-    """Generate presigned URL for file.
-
-    **Requirement: R3.5 - Presigned URLs with expiration**
-    """
-    result = await minio.get_presigned_url(
-        key=key,
-        expiry=timedelta(seconds=expires_in),
-    )
-
-    if result.is_err():
-        raise HTTPException(status_code=404, detail="File not found")
-
-    return PresignedUrlResponse(
-        key=key,
-        url=result.unwrap(),
-        expires_in_seconds=expires_in,
-    )
-
-
-@router.delete(
-    "/storage/{key:path}",
-    summary="Delete file",
-    description="Delete a file from MinIO storage",
-)
-async def storage_delete(
-    key: str,
-    minio=Depends(get_minio),
-) -> dict[str, Any]:
-    """Delete a file from MinIO.
-
-    **Requirement: R3 - Delete**
-    """
-    result = await minio.delete(key)
-
-    if result.is_err():
-        raise HTTPException(status_code=500, detail=str(result.unwrap_err()))
-
-    return {
-        "key": key,
-        "deleted": result.unwrap(),
-        "message": "File deleted successfully",
-    }
-
-
-@router.get(
-    "/storage",
-    summary="List files",
-    description="List files in MinIO storage with optional prefix filter",
-)
-async def storage_list(
-    prefix: str = "",
-    max_keys: int = MAX_STORAGE_LIST_KEYS,
-    minio=Depends(get_minio),
-) -> dict[str, Any]:
-    """List files in storage.
-
-    **Requirement: R3.7 - Pagination and prefix filtering**
-    """
-    result = await minio.list_objects(prefix=prefix, max_keys=max_keys)
-
-    if result.is_err():
-        raise HTTPException(status_code=500, detail=str(result.unwrap_err()))
-
-    objects = result.unwrap()
-
-    return {
-        "prefix": prefix,
-        "count": len(objects),
-        "objects": [
-            {
-                "key": obj.key,
-                "size": obj.size,
-                "content_type": obj.content_type,
-                "last_modified": obj.last_modified.isoformat()
-                if obj.last_modified
-                else None,
-            }
-            for obj in objects
-        ],
-    }
-
-
-# =============================================================================
-# Kafka Endpoints
-# **Feature: kafka-workflow-integration**
-# **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
-# =============================================================================
-
-
-@router.post(
-    "/kafka/publish",
-    response_model=KafkaPublishResponse,
-    summary="Publish Kafka message",
-    description="Publish a test message to Kafka topic",
-)
-async def kafka_publish(
-    request: KafkaPublishRequest,
-    producer=Depends(get_kafka),
-) -> KafkaPublishResponse:
-    """Publish test message to Kafka.
-
-    **Requirement: R2.1 - Publish test message**
-    **Requirement: R2.4 - Return message metadata**
-    """
-    try:
-        metadata = await producer.send(
-            payload=request.payload,
-            key=request.key,
-            headers=request.headers,
-            topic=request.topic,
-        )
-
-        return KafkaPublishResponse(
-            topic=metadata.topic,
-            partition=metadata.partition,
-            offset=metadata.offset,
-            timestamp=metadata.timestamp.isoformat() if metadata.timestamp else "",
-        )
-    except Exception as e:
-        logger.error(f"Kafka publish failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Kafka publish failed: {e}") from e
-
-
-@router.get(
-    "/kafka/status",
-    response_model=KafkaStatusResponse,
-    summary="Kafka status",
-    description="Get Kafka producer connection status",
-)
-async def kafka_status(request: Request) -> KafkaStatusResponse:
-    """Get Kafka producer status.
-
-    **Requirement: R2.2 - Return producer status**
-    """
-    producer = getattr(request.app.state, "kafka_producer", None)
-    settings = request.app.state.settings.observability
-
-    return KafkaStatusResponse(
-        enabled=settings.kafka_enabled,
-        connected=producer is not None and producer._started,
-        client_id=settings.kafka_client_id if settings.kafka_enabled else None,
-        bootstrap_servers=settings.kafka_bootstrap_servers
-        if settings.kafka_enabled
-        else None,
-    )
+# Include sub-routers
+router.include_router(cache_router)
+router.include_router(storage_router)
+router.include_router(kafka_router)

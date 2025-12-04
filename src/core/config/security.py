@@ -37,7 +37,7 @@ class SecuritySettings(BaseSettings):
         default="100/minute",
         description="Rate limit configuration (format: number/unit)",
     )
-    algorithm: str = Field(default="HS256", description="JWT algorithm")
+    algorithm: str = Field(default="RS256", description="JWT algorithm")
     access_token_expire_minutes: int = Field(
         default=30, ge=1, description="Access token expiration in minutes"
     )
@@ -64,17 +64,20 @@ class SecuritySettings(BaseSettings):
     @field_validator("cors_origins")
     @classmethod
     def validate_cors_origins(cls, v: list[str]) -> list[str]:
-        """Validate CORS origins - block wildcard in production."""
+        """Validate CORS origins - block wildcard in production and staging."""
         if "*" in v:
             env = os.getenv("ENVIRONMENT", "").lower()
-            if env == "production":
+            restricted_envs = {"production", "staging", "prod", "stg"}
+            if env in restricted_envs:
                 raise ValueError(
-                    "SECURITY: Wildcard CORS origin '*' is not allowed in production. "
+                    f"SECURITY: Wildcard CORS origin '*' is not allowed in {env}. "
                     "Specify explicit allowed origins."
                 )
             logger.warning(
                 "Wildcard CORS origin '*' detected. "
-                "This will be blocked in production environment."
+                "This will be blocked in production/staging environments. "
+                "Current environment: %s",
+                env or "development",
             )
         return v
 

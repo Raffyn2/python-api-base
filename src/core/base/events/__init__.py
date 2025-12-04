@@ -18,8 +18,8 @@ __all__ = [
     # Domain Events
     "DomainEvent",
     "EntityCreatedEvent",
-    "EntityUpdatedEvent",
     "EntityDeletedEvent",
+    "EntityUpdatedEvent",
     "EventBus",
     # Integration Events
     "IntegrationEvent",

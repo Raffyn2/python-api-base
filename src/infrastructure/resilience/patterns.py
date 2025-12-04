@@ -6,7 +6,7 @@
 """
 
 # Re-export for backward compatibility
-from .bulkhead import (
+from infrastructure.resilience.bulkhead import (
     Bulkhead,
     BulkheadConfig,
     BulkheadRegistry,
@@ -15,32 +15,41 @@ from .bulkhead import (
     BulkheadStats,
     bulkhead,
 )
-from .circuit_breaker import CircuitBreaker, CircuitBreakerConfig, CircuitState
-from .fallback import Fallback
-from .retry_pattern import BackoffStrategy, ExponentialBackoff, Retry, RetryConfig
-from .timeout import Timeout, TimeoutConfig
+from infrastructure.resilience.circuit_breaker import (
+    CircuitBreaker,
+    CircuitBreakerConfig,
+    CircuitState,
+)
+from infrastructure.resilience.fallback import Fallback
+from infrastructure.resilience.retry_pattern import (
+    BackoffStrategy,
+    ExponentialBackoff,
+    Retry,
+    RetryConfig,
+)
+from infrastructure.resilience.timeout import Timeout, TimeoutConfig
 
 __all__ = [
-    # Circuit Breaker
-    "CircuitState",
-    "CircuitBreakerConfig",
-    "CircuitBreaker",
-    # Retry
-    "RetryConfig",
     "BackoffStrategy",
-    "ExponentialBackoff",
-    "Retry",
-    # Timeout
-    "TimeoutConfig",
-    "Timeout",
-    # Fallback
-    "Fallback",
+    "Bulkhead",
     # Bulkhead
     "BulkheadConfig",
-    "Bulkhead",
     "BulkheadRegistry",
     "BulkheadRejectedError",
     "BulkheadState",
     "BulkheadStats",
+    "CircuitBreaker",
+    "CircuitBreakerConfig",
+    # Circuit Breaker
+    "CircuitState",
+    "ExponentialBackoff",
+    # Fallback
+    "Fallback",
+    "Retry",
+    # Retry
+    "RetryConfig",
+    "Timeout",
+    # Timeout
+    "TimeoutConfig",
     "bulkhead",
 ]

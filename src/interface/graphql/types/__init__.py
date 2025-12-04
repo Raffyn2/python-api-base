@@ -3,7 +3,7 @@
 **Feature: interface-modules-workflow-analysis**
 """
 
-from .item_types import (
+from interface.graphql.types.item_types import (
     ItemConnection,
     ItemCreateInput,
     ItemEdge,
@@ -11,7 +11,7 @@ from .item_types import (
     ItemMutationResult,
     ItemUpdateInput,
 )
-from .pedido_types import (
+from interface.graphql.types.pedido_types import (
     AddItemToPedidoInput,
     PedidoConnection,
     PedidoCreateInput,
@@ -20,25 +20,25 @@ from .pedido_types import (
     PedidoItemType,
     PedidoMutationResult,
 )
-from .shared_types import MutationResult, PageInfoType
+from interface.graphql.types.shared_types import MutationResult, PageInfoType
 
 __all__ = [
-    # Item types
-    "ItemExampleType",
-    "ItemEdge",
+    "AddItemToPedidoInput",
     "ItemConnection",
     "ItemCreateInput",
-    "ItemUpdateInput",
+    "ItemEdge",
+    # Item types
+    "ItemExampleType",
     "ItemMutationResult",
-    # Pedido types
-    "PedidoItemType",
-    "PedidoExampleType",
-    "PedidoEdge",
-    "PedidoConnection",
-    "PedidoCreateInput",
-    "AddItemToPedidoInput",
-    "PedidoMutationResult",
+    "ItemUpdateInput",
+    "MutationResult",
     # Shared
     "PageInfoType",
-    "MutationResult",
+    "PedidoConnection",
+    "PedidoCreateInput",
+    "PedidoEdge",
+    "PedidoExampleType",
+    # Pedido types
+    "PedidoItemType",
+    "PedidoMutationResult",
 ]

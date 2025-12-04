@@ -6,9 +6,9 @@
 
 from typing import Any
 
-from .aggregate import Aggregate
-from .events import SourcedEvent
-from .store import EventStore
+from infrastructure.db.event_sourcing.aggregate import Aggregate
+from infrastructure.db.event_sourcing.events import SourcedEvent
+from infrastructure.db.event_sourcing.store import EventStore
 
 
 class EventSourcedRepository[AggregateT: Aggregate[Any], EventT: SourcedEvent]:

@@ -12,7 +12,7 @@ Tests verify that hooks are called at the correct times:
 import pytest
 from unittest.mock import Mock
 
-from src.core.di.container import Container, Lifetime, ServiceNotRegisteredError
+from core.di.container import Container, Lifetime, ServiceNotRegisteredError
 
 
 class Database:
@@ -273,7 +273,7 @@ class TestContainerHooks:
         self, container: Container
     ) -> None:
         """Test that hook receives the full resolution stack on error."""
-        from src.core.di.exceptions import DependencyResolutionError
+        from core.di.exceptions import DependencyResolutionError
 
         hooks = Mock()
         hooks.on_resolution_error = Mock()

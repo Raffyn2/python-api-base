@@ -4,6 +4,7 @@
 **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
 """
 
+import contextlib
 import logging
 import threading
 from collections.abc import Callable
@@ -194,10 +195,8 @@ class RBACService:
         # Add scope-based permissions if user has scopes
         if hasattr(user, "scopes"):
             for scope in user.scopes:
-                try:
+                with contextlib.suppress(ValueError):
                     permissions.add(Permission(scope))
-                except ValueError:
-                    pass  # Ignore invalid scopes
 
         return permissions
 

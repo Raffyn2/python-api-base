@@ -44,6 +44,31 @@ class BatchUpdateRequest:
     category: str | None = None
 
 
+def _apply_batch_update_fields(
+    entity: ItemExample,
+    update_data: BatchUpdateRequest,
+    updated_by: str,
+) -> None:
+    """Apply update fields from batch request to entity.
+
+    Args:
+        entity: ItemExample entity to update.
+        update_data: Batch update request with fields.
+        updated_by: User performing the update.
+    """
+    if update_data.name is not None:
+        entity.name = update_data.name
+    if update_data.description is not None:
+        entity.description = update_data.description
+    if update_data.price_amount is not None:
+        entity.price = Money(update_data.price_amount, entity.price.currency)
+    if update_data.quantity is not None:
+        entity.quantity = update_data.quantity
+    if update_data.category is not None:
+        entity.category = update_data.category
+    entity.mark_updated_by(updated_by)
+
+
 class ItemExampleBatchService:
     """Service for batch operations on ItemExample entities.
 
@@ -143,20 +168,7 @@ class ItemExampleBatchService:
                     failed.append((i, f"Item {update_data.item_id} not found"))
                     continue
 
-                if update_data.name is not None:
-                    entity.name = update_data.name
-                if update_data.description is not None:
-                    entity.description = update_data.description
-                if update_data.price_amount is not None:
-                    entity.price = Money(
-                        update_data.price_amount, entity.price.currency
-                    )
-                if update_data.quantity is not None:
-                    entity.quantity = update_data.quantity
-                if update_data.category is not None:
-                    entity.category = update_data.category
-
-                entity.mark_updated_by(updated_by)
+                _apply_batch_update_fields(entity, update_data, updated_by)
                 saved = await self._repo.update(entity)
                 succeeded.append(self._mapper.to_dto(saved))
             except Exception as e:

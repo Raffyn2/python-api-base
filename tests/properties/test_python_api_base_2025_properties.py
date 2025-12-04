@@ -8,6 +8,7 @@ defined in the design document.
 
 import asyncio
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 
 import pytest
@@ -681,7 +682,7 @@ class TestCircuitBreakerStateTransitions:
         config = CircuitBreakerConfig(
             failure_threshold=threshold,
             success_threshold=1,
-            timeout_seconds=30.0,
+            timeout=timedelta(seconds=30.0),
         )
         cb = CircuitBreaker(config)
 
@@ -710,7 +711,7 @@ class TestCircuitBreakerStateTransitions:
         config = CircuitBreakerConfig(
             failure_threshold=1,
             success_threshold=threshold,
-            timeout_seconds=0.0,  # Immediate recovery for testing
+            timeout=timedelta(seconds=0.0),  # Immediate recovery for testing
         )
         cb = CircuitBreaker(config)
 

@@ -19,16 +19,16 @@ from core.base.domain.entity import (
 from core.base.domain.value_object import BaseValueObject
 
 __all__ = [
-    # Entity
-    "BaseEntity",
-    "AuditableEntity",
-    "VersionedEntity",
-    "AuditableVersionedEntity",
-    "ULIDEntity",
-    "AuditableULIDEntity",
-    "VersionedULIDEntity",
     # Aggregate
     "AggregateRoot",
+    "AuditableEntity",
+    "AuditableULIDEntity",
+    "AuditableVersionedEntity",
+    # Entity
+    "BaseEntity",
     # Value Object
     "BaseValueObject",
+    "ULIDEntity",
+    "VersionedEntity",
+    "VersionedULIDEntity",
 ]

@@ -10,12 +10,17 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from prometheus_client import Counter, Histogram
-from sqlalchemy.engine import Connection, Engine
 
-from .query_timing import QueryStats, QueryTimingMiddleware
+from infrastructure.db.middleware.query_timing import (
+    QueryStats,
+    QueryTimingMiddleware,
+)
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Connection, Engine
 
 logger = logging.getLogger(__name__)
 

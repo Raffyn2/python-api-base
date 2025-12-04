@@ -10,8 +10,8 @@ Demonstrates:
 **Feature: example-system-demo**
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime
+from collections.abc import Callable
+from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 from typing import Any
@@ -21,8 +21,25 @@ from pydantic import Field, PrivateAttr
 
 from core.base.domain.entity import AuditableEntity
 from core.base.events.domain_event import DomainEvent
-from core.shared.utils.datetime import utc_now
 from domain.examples.item.entity import Money
+from domain.examples.pedido.events import (
+    PedidoCancelled,
+    PedidoCompleted,
+    PedidoCreated,
+    PedidoItemAdded,
+)
+
+# Re-export events for backward compatibility
+__all__ = [
+    "PedidoStatus",
+    "PedidoItemExample",
+    "PedidoExample",
+    "PedidoCreated",
+    "PedidoItemAdded",
+    "PedidoCompleted",
+    "PedidoCancelled",
+]
+
 
 # === Enums ===
 
@@ -36,48 +53,6 @@ class PedidoStatus(Enum):
     SHIPPED = "shipped"
     DELIVERED = "delivered"
     CANCELLED = "cancelled"
-
-
-# === Domain Events ===
-
-
-@dataclass(frozen=True, kw_only=True)
-class PedidoCreated(DomainEvent):
-    """Event raised when a PedidoExample is created."""
-
-    pedido_id: str
-    customer_id: str
-    occurred_at: datetime = field(default_factory=utc_now)
-
-
-@dataclass(frozen=True, kw_only=True)
-class PedidoItemAdded(DomainEvent):
-    """Event raised when an item is added to order."""
-
-    pedido_id: str
-    item_id: str
-    quantity: int
-    unit_price: Decimal
-    occurred_at: datetime = field(default_factory=utc_now)
-
-
-@dataclass(frozen=True, kw_only=True)
-class PedidoCompleted(DomainEvent):
-    """Event raised when order is completed."""
-
-    pedido_id: str
-    total: Decimal
-    items_count: int
-    occurred_at: datetime = field(default_factory=utc_now)
-
-
-@dataclass(frozen=True, kw_only=True)
-class PedidoCancelled(DomainEvent):
-    """Event raised when order is cancelled."""
-
-    pedido_id: str
-    reason: str
-    occurred_at: datetime = field(default_factory=utc_now)
 
 
 # === Entities ===
@@ -311,38 +286,30 @@ class PedidoExample(AuditableEntity[str]):
         self.mark_updated_by(updated_by)
         self._events.append(PedidoCancelled(pedido_id=self.id, reason=reason))
 
+    def _aggregate_money(
+        self, getter: "Callable[[PedidoItemExample], Money]"
+    ) -> Money:
+        """Aggregate money values from items using provided getter."""
+        if not self.items:
+            return Money(Decimal("0"))
+        currency = self.items[0].unit_price.currency
+        total = sum((getter(item).amount for item in self.items), Decimal("0"))
+        return Money(total, currency)
+
     @property
     def subtotal(self) -> Money:
         """Calculate order subtotal before discounts."""
-        if not self.items:
-            return Money(Decimal("0"))
-        total = Decimal("0")
-        currency = self.items[0].unit_price.currency if self.items else "BRL"
-        for item in self.items:
-            total += item.subtotal.amount
-        return Money(total, currency)
+        return self._aggregate_money(lambda item: item.subtotal)
 
     @property
     def total_discount(self) -> Money:
         """Calculate total discount amount."""
-        if not self.items:
-            return Money(Decimal("0"))
-        total = Decimal("0")
-        currency = self.items[0].unit_price.currency if self.items else "BRL"
-        for item in self.items:
-            total += item.discount_amount.amount
-        return Money(total, currency)
+        return self._aggregate_money(lambda item: item.discount_amount)
 
     @property
     def total(self) -> Money:
         """Calculate order total after discounts."""
-        if not self.items:
-            return Money(Decimal("0"))
-        total = Decimal("0")
-        currency = self.items[0].unit_price.currency if self.items else "BRL"
-        for item in self.items:
-            total += item.total.amount
-        return Money(total, currency)
+        return self._aggregate_money(lambda item: item.total)
 
     @property
     def items_count(self) -> int:

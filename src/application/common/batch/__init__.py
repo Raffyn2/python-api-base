@@ -9,8 +9,8 @@ Uses PEP 695 type parameter syntax (Python 3.12+).
 **Refactored: Split into interfaces.py + repository.py for SRP compliance**
 """
 
-from .builder import BatchOperationBuilder
-from .config import (
+from application.common.batch.builder import BatchOperationBuilder
+from application.common.batch.config import (
     BatchConfig,
     BatchErrorStrategy,
     BatchOperationStats,
@@ -20,12 +20,12 @@ from .config import (
     ChunkProcessor,
     ProgressCallback,
 )
-from .interfaces import (
+from application.common.batch.interfaces import (
     IBatchRepository,
     chunk_sequence,
     iter_chunks,
 )
-from .repository import BatchRepository
+from application.common.batch.repository import BatchRepository
 
 __all__ = [
     "BatchConfig",

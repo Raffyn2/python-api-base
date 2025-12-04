@@ -22,14 +22,14 @@ from infrastructure.cache.providers.redis_cache import RedisCache, RedisConfig
 from infrastructure.cache.providers.redis_jitter import RedisCacheWithJitter
 
 __all__ = [
+    "CacheStats",
     "InMemoryCacheProvider",
-    "RedisCacheProvider",
+    "JitterConfig",
     "LRUCache",
     "RedisCache",
-    "RedisConfig",
+    "RedisCacheProvider",
     # Jitter-enabled cache
     "RedisCacheWithJitter",
-    "JitterConfig",
+    "RedisConfig",
     "TTLPattern",
-    "CacheStats",
 ]

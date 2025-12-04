@@ -9,8 +9,8 @@ import types
 from collections.abc import Callable
 from typing import Any, Union, get_args, get_origin, get_type_hints
 
-from .exceptions import DependencyResolutionError, InvalidFactoryError
-from .lifecycle import Registration
+from core.di.exceptions import DependencyResolutionError, InvalidFactoryError
+from core.di.lifecycle import Registration
 
 
 class Resolver:
@@ -60,12 +60,12 @@ class Resolver:
             try:
                 inspect.signature(factory.__init__)
             except (ValueError, TypeError) as e:
-                raise InvalidFactoryError(factory, f"Cannot inspect __init__: {e}")
+                raise InvalidFactoryError(factory, f"Cannot inspect __init__: {e}") from e
         else:
             try:
                 inspect.signature(factory)
             except (ValueError, TypeError) as e:
-                raise InvalidFactoryError(factory, f"Cannot inspect signature: {e}")
+                raise InvalidFactoryError(factory, f"Cannot inspect signature: {e}") from e
 
     def create_instance[T](self, registration: Registration[T]) -> T:
         """Create an instance using the factory with auto-wiring.
@@ -95,13 +95,13 @@ class Resolver:
             # If we can't get hints, try to call without args
             try:
                 return factory()
-            except TypeError:
+            except TypeError as factory_err:
                 raise DependencyResolutionError(
                     service_type=service_type,
                     param_name="<unknown>",
                     expected_type=type(None),
                     reason=f"Cannot get type hints: {e}",
-                )
+                ) from factory_err
 
         # Remove 'return' from hints
         hints.pop("return", None)
@@ -125,7 +125,7 @@ class Resolver:
                 param_name="<constructor>",
                 expected_type=service_type,
                 reason=f"Factory call failed: {e}",
-            )
+            ) from e
 
     def _resolve_parameter(
         self,

@@ -4,7 +4,7 @@
 **Validates: Requirements 18.1-18.5**
 """
 
-from .tenant import (
+from infrastructure.multitenancy.tenant import (
     SchemaConfig,
     TenantAuditEntry,
     TenantAwareRepository,

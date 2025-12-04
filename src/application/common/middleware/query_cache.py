@@ -104,6 +104,15 @@ class InMemoryQueryCache:
         """Clear cached results matching pattern.
 
         Supports * wildcard for pattern matching.
+        Optimized for common prefix patterns (e.g., "prefix:*").
+
+        **Feature: application-layer-code-review-fixes**
+        **Validates: Requirements F-05**
+
+        Performance Characteristics:
+            - Prefix patterns ("prefix:*"): O(n) with fast startswith
+            - Complex patterns ("*mid*"): O(n*m) with fnmatch where m is pattern length
+            - For caches >10k keys, consider using Redis SCAN for production
 
         Args:
             pattern: Pattern to match keys (e.g., "query_cache:GetUserQuery:*").
@@ -115,9 +124,14 @@ class InMemoryQueryCache:
             >>> await cache.clear_pattern("query_cache:GetUserQuery:*")
             >>> await cache.clear_pattern("*user:123*")
         """
-        import fnmatch
-
-        matching_keys = [key for key in self._cache if fnmatch.fnmatch(key, pattern)]
+        # Optimization: if pattern ends with * and has no other wildcards,
+        # use prefix matching (O(n) but faster than fnmatch)
+        if pattern.endswith("*") and "*" not in pattern[:-1] and "?" not in pattern:
+            prefix = pattern[:-1]
+            matching_keys = [key for key in self._cache if key.startswith(prefix)]
+        else:
+            import fnmatch
+            matching_keys = [key for key in self._cache if fnmatch.fnmatch(key, pattern)]
 
         for key in matching_keys:
             del self._cache[key]

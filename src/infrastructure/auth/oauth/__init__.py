@@ -22,16 +22,16 @@ from infrastructure.auth.oauth.provider import (
 )
 
 __all__ = [
-    # Core
-    "OAuthProvider",
-    "AuthResult",
-    "TokenPair",
-    "AuthError",
-    "OAuthConfig",
-    # Keycloak
-    "KeycloakProvider",
-    "KeycloakConfig",
+    "Auth0Config",
     # Auth0
     "Auth0Provider",
-    "Auth0Config",
+    "AuthError",
+    "AuthResult",
+    "KeycloakConfig",
+    # Keycloak
+    "KeycloakProvider",
+    "OAuthConfig",
+    # Core
+    "OAuthProvider",
+    "TokenPair",
 ]

@@ -7,8 +7,8 @@ Provides timezone-aware datetime operations with UTC as the standard.
 
 from datetime import UTC, datetime, timedelta, timezone
 
-# UTC timezone constant
-UTC = UTC
+# Re-export UTC from datetime module for convenience
+# Note: UTC is already imported from datetime, no need to reassign
 
 
 def utc_now() -> datetime:

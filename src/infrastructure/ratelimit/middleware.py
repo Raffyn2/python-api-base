@@ -7,15 +7,19 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Awaitable, Callable
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from fastapi import Request, Response
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from infrastructure.ratelimit.config import RateLimit
-from infrastructure.ratelimit.limiter import RateLimiter, RateLimitResult
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from fastapi import Response
+
+    from infrastructure.ratelimit.config import RateLimit
+    from infrastructure.ratelimit.limiter import RateLimiter, RateLimitResult
 
 logger = logging.getLogger(__name__)
 

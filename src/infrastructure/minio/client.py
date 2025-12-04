@@ -9,16 +9,20 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator
-from datetime import timedelta
-from io import BytesIO
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from core.base.patterns.result import Err, Result
+from core.base.patterns.result import Err
 from infrastructure.minio.config import MinIOConfig
 from infrastructure.minio.download_operations import DownloadOperations
 from infrastructure.minio.object_management import ObjectManagement, ObjectMetadata
 from infrastructure.minio.upload_operations import UploadOperations, UploadProgress
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+    from datetime import timedelta
+    from io import BytesIO
+
+    from core.base.patterns.result import Result
 
 logger = logging.getLogger(__name__)
 

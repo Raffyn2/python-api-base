@@ -5,6 +5,7 @@
 **Validates: Requirements 5.5**
 """
 
+import threading
 import uuid
 from dataclasses import dataclass
 from typing import Annotated
@@ -15,15 +16,21 @@ from application.common.cqrs import CommandBus, QueryBus
 from core.config.settings import Settings, get_settings
 from infrastructure.di.app_container import Container, create_container
 
-# Container singleton (immutable after creation)
+# Container singleton with thread-safe initialization (double-check locking)
 _container: Container | None = None
+_container_lock = threading.Lock()
 
 
 def _get_container() -> Container:
-    """Get or create the DI container (lazy initialization)."""
+    """Get or create the DI container (thread-safe lazy initialization).
+
+    Uses double-check locking pattern for thread safety.
+    """
     global _container
     if _container is None:
-        _container = create_container()
+        with _container_lock:
+            if _container is None:
+                _container = create_container()
     return _container
 
 

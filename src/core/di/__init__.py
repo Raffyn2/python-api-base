@@ -17,30 +17,30 @@ Example:
     >>> service = container.resolve(UserService)
 """
 
-from .container import Container, Scope
-from .exceptions import (
+from core.di.container import Container, Scope
+from core.di.exceptions import (
     CircularDependencyError,
     DependencyResolutionError,
     InvalidFactoryError,
     ServiceNotRegisteredError,
 )
-from .lifecycle import Lifetime, Registration
-from .metrics import ContainerHooks, ContainerStats, MetricsTracker
+from core.di.lifecycle import Lifetime, Registration
+from core.di.metrics import ContainerHooks, ContainerStats, MetricsTracker
 
 __all__ = [
+    "CircularDependencyError",
     # Container
     "Container",
-    "Scope",
-    # Lifecycle
-    "Lifetime",
-    "Registration",
-    # Exceptions
-    "DependencyResolutionError",
-    "CircularDependencyError",
-    "InvalidFactoryError",
-    "ServiceNotRegisteredError",
+    "ContainerHooks",
     # Metrics
     "ContainerStats",
-    "ContainerHooks",
+    # Exceptions
+    "DependencyResolutionError",
+    "InvalidFactoryError",
+    # Lifecycle
+    "Lifetime",
     "MetricsTracker",
+    "Registration",
+    "Scope",
+    "ServiceNotRegisteredError",
 ]

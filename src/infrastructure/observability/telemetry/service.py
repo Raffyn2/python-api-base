@@ -12,8 +12,14 @@ from collections.abc import Callable
 from contextvars import ContextVar
 from typing import Any, ParamSpec
 
-from .noop import _NoOpCounter, _NoOpHistogram, _NoOpMeter, _NoOpSpan, _NoOpTracer
-from .types import Attributes
+from infrastructure.observability.telemetry.noop import (
+    _NoOpCounter,
+    _NoOpHistogram,
+    _NoOpMeter,
+    _NoOpSpan,
+    _NoOpTracer,
+)
+from infrastructure.observability.telemetry.types import Attributes
 
 P = ParamSpec("P")
 

@@ -14,9 +14,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from application.services.multitenancy.models import get_current_tenant
 from core.base.repository import IRepository
-
-from .models import get_current_tenant
 
 logger = logging.getLogger(__name__)
 

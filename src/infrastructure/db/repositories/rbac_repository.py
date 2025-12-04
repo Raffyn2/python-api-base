@@ -32,7 +32,7 @@ class RBACRepository:
         stmt = select(RoleModel).where(
             and_(
                 RoleModel.name == name,
-                RoleModel.is_active == True,
+                RoleModel.is_active,
             )
         )
         result = await self._session.execute(stmt)
@@ -48,7 +48,7 @@ class RBACRepository:
         """Get all roles."""
         stmt = select(RoleModel)
         if not include_inactive:
-            stmt = stmt.where(RoleModel.is_active == True)
+            stmt = stmt.where(RoleModel.is_active)
         stmt = stmt.order_by(RoleModel.name)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
@@ -112,7 +112,7 @@ class RBACRepository:
             .where(
                 and_(
                     UserRoleModel.user_id == user_id,
-                    RoleModel.is_active == True,
+                    RoleModel.is_active,
                 )
             )
         )

@@ -86,27 +86,24 @@ class SchemaDiff:
 
     def generate_up_sql(self) -> str:
         """Generate SQL for applying changes."""
-        statements: list[str] = []
-        for table in self.added_tables:
-            statements.append(f"-- CREATE TABLE {table}")
-        for table, columns in self.added_columns.items():
-            for col in columns:
-                statements.append(f"ALTER TABLE {table} ADD COLUMN {col};")
-        for idx in self.added_indexes:
-            statements.append(f"-- CREATE INDEX {idx}")
+        statements: list[str] = [f"-- CREATE TABLE {table}" for table in self.added_tables]
+        statements.extend(
+            f"ALTER TABLE {table} ADD COLUMN {col};"
+            for table, columns in self.added_columns.items()
+            for col in columns
+        )
+        statements.extend(f"-- CREATE INDEX {idx}" for idx in self.added_indexes)
         return "\n".join(statements)
 
     def generate_down_sql(self) -> str:
         """Generate SQL for reverting changes."""
-        statements: list[str] = []
-        for idx in self.added_indexes:
-            statements.append(f"-- DROP INDEX {idx}")
-        for table, columns in self.added_columns.items():
-            for col in columns:
-                col_name = col.split()[0]
-                statements.append(f"ALTER TABLE {table} DROP COLUMN {col_name};")
-        for table in self.added_tables:
-            statements.append(f"DROP TABLE IF EXISTS {table};")
+        statements: list[str] = [f"-- DROP INDEX {idx}" for idx in self.added_indexes]
+        statements.extend(
+            f"ALTER TABLE {table} DROP COLUMN {col.split()[0]};"
+            for table, columns in self.added_columns.items()
+            for col in columns
+        )
+        statements.extend(f"DROP TABLE IF EXISTS {table};" for table in self.added_tables)
         return "\n".join(statements)
 
 

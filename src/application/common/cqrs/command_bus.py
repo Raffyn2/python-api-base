@@ -15,9 +15,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from application.common.cqrs.exceptions import HandlerNotFoundError
 from core.base.patterns.result import Ok, Result
-
-from .exceptions import HandlerNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +139,7 @@ class CommandBus:
         Args:
             uow_factory: Factory function that creates UoW instances.
         """
-        from .middleware import TransactionMiddleware
+        from application.common.cqrs.middleware import TransactionMiddleware
 
         self._middleware.append(TransactionMiddleware(uow_factory))
         logger.debug("Added transaction middleware to command bus")

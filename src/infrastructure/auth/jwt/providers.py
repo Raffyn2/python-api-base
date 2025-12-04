@@ -7,9 +7,12 @@
 import logging
 from datetime import timedelta
 
-from .exceptions import InvalidKeyError
-from .jwks import extract_public_key_from_private, generate_kid_from_public_key
-from .protocols import BaseJWTProvider
+from infrastructure.auth.jwt.exceptions import InvalidKeyError
+from infrastructure.auth.jwt.jwks import (
+    extract_public_key_from_private,
+    generate_kid_from_public_key,
+)
+from infrastructure.auth.jwt.protocols import BaseJWTProvider
 
 logger = logging.getLogger(__name__)
 

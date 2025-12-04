@@ -15,8 +15,7 @@ from starlette.responses import JSONResponse
 
 from application.common.base.dto import ProblemDetail
 from core.config import get_settings
-
-from .sliding_window import (
+from infrastructure.security.rate_limit.sliding_window import (
     RateLimitResult,
     SlidingWindowRateLimiter,
     parse_rate_limit,

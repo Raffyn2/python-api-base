@@ -36,27 +36,27 @@ from infrastructure.observability.metrics import CacheMetrics
 from infrastructure.observability.middleware import TracingMiddleware
 
 __all__ = [
+    # Metrics
+    "CacheMetrics",
     # Correlation
     "CorrelationConfig",
     "CorrelationContext",
     "CorrelationContextManager",
     "CorrelationService",
-    "add_correlation_context",
-    "get_correlation_id",
-    "set_correlation_id",
-    "get_request_id",
-    "set_request_id",
-    "clear_context",
-    # Logging
-    "LoggingMiddleware",
-    "create_logging_middleware",
     # Elasticsearch
     "ElasticsearchConfig",
     "ElasticsearchHandler",
     "ElasticsearchLogProcessor",
-    "create_elasticsearch_handler",
+    # Logging
+    "LoggingMiddleware",
     # Tracing
     "TracingMiddleware",
-    # Metrics
-    "CacheMetrics",
+    "add_correlation_context",
+    "clear_context",
+    "create_elasticsearch_handler",
+    "create_logging_middleware",
+    "get_correlation_id",
+    "get_request_id",
+    "set_correlation_id",
+    "set_request_id",
 ]

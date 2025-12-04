@@ -4,8 +4,13 @@
 **Validates: Requirements 7.8, 7.9**
 """
 
-from .models import Indexer, SearchProvider, SearchQuery, SearchResult
-from .service import InMemorySearchProvider, SearchService
+from infrastructure.db.search.models import (
+    Indexer,
+    SearchProvider,
+    SearchQuery,
+    SearchResult,
+)
+from infrastructure.db.search.service import InMemorySearchProvider, SearchService
 
 __all__ = [
     "InMemorySearchProvider",

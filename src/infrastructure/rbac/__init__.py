@@ -17,18 +17,18 @@ from infrastructure.rbac.permission import Action, Permission, Resource
 from infrastructure.rbac.role import Role, RoleRegistry
 
 __all__ = [
-    # Permission
-    "Permission",
-    "Action",
-    "Resource",
-    # Role
-    "Role",
-    "RoleRegistry",
     # RBAC
     "RBAC",
-    "requires",
+    "Action",
     # Audit
     "AuditEvent",
     "AuditLogger",
     "InMemoryAuditSink",
+    # Permission
+    "Permission",
+    "Resource",
+    # Role
+    "Role",
+    "RoleRegistry",
+    "requires",
 ]

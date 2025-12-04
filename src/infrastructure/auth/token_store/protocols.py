@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
-from .models import StoredToken
+from infrastructure.auth.token_store.models import StoredToken
 
 
 @runtime_checkable

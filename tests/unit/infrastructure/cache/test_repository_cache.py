@@ -15,9 +15,9 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from src.core.base.repository.interface import IRepository
-from src.infrastructure.cache.providers import InMemoryCacheProvider
-from src.infrastructure.cache.repository import (
+from core.base.repository.interface import IRepository
+from infrastructure.cache.providers import InMemoryCacheProvider
+from infrastructure.cache.repository import (
     RepositoryCacheConfig,
     cached_repository,
 )

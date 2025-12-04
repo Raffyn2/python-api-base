@@ -8,17 +8,19 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar
 
-from infrastructure.kafka.config import KafkaConfig
 from infrastructure.kafka.message import KafkaMessage, MessageMetadata
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
     from aiokafka import AIOKafkaProducer
+
+    from infrastructure.kafka.config import KafkaConfig
 
 logger = logging.getLogger(__name__)
 

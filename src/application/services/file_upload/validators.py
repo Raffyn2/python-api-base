@@ -24,12 +24,14 @@ Example:
 """
 
 import hashlib
-import os
+from pathlib import PurePath
 from typing import BinaryIO, Final
 
+from application.services.file_upload.models import (
+    FileValidationConfig,
+    UploadError,
+)
 from core.base.patterns.result import Err, Ok, Result
-
-from .models import FileValidationConfig, UploadError
 
 # =============================================================================
 # Magic Bytes Signatures for Content-Type Validation
@@ -131,7 +133,7 @@ def validate_file(
         return Err(UploadError.INVALID_TYPE)
 
     # Check file extension
-    _, ext = os.path.splitext(filename.lower())
+    ext = PurePath(filename.lower()).suffix
     if ext not in config.allowed_extensions:
         return Err(UploadError.INVALID_EXTENSION)
 
@@ -176,7 +178,7 @@ def validate_file_stream(
         return Err(UploadError.INVALID_TYPE)
 
     # Check file extension
-    _, ext = os.path.splitext(filename.lower())
+    ext = PurePath(filename.lower()).suffix
     if ext not in config.allowed_extensions:
         return Err(UploadError.INVALID_EXTENSION)
 
@@ -221,15 +223,17 @@ def get_safe_filename(filename: str) -> str:
         'aaa...aaa.pdf'  # name truncated to 200 chars
     """
     # Remove path separators
-    filename = os.path.basename(filename)
+    safe_name = PurePath(filename).name
 
     # Replace dangerous characters
     dangerous_chars = ["<", ">", ":", '"', "/", "\\", "|", "?", "*", "\x00"]
     for char in dangerous_chars:
-        filename = filename.replace(char, "_")
+        safe_name = safe_name.replace(char, "_")
 
     # Limit length
-    name, ext = os.path.splitext(filename)
+    path = PurePath(safe_name)
+    name = path.stem
+    ext = path.suffix
     if len(name) > 200:
         name = name[:200]
 

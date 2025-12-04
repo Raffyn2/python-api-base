@@ -24,18 +24,18 @@ from domain.examples.item.specifications import (
 __all__ = [
     # Entity
     "ItemExample",
-    "ItemExampleStatus",
-    "Money",
-    # Events
-    "ItemExampleCreated",
-    "ItemExampleUpdated",
-    "ItemExampleDeleted",
     # Specifications
     "ItemExampleActiveSpec",
     "ItemExampleAvailableSpec",
     "ItemExampleCategorySpec",
+    # Events
+    "ItemExampleCreated",
+    "ItemExampleDeleted",
     "ItemExampleInStockSpec",
     "ItemExamplePriceRangeSpec",
+    "ItemExampleStatus",
     "ItemExampleTagSpec",
+    "ItemExampleUpdated",
+    "Money",
     "available_items_in_category",
 ]

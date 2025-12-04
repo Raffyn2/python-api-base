@@ -8,14 +8,13 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 from pydantic import BaseModel
 
 from infrastructure.auth.oauth.provider import (
     AuthResult,
-    Credentials,
     InvalidTokenError,
     OAuth2Credentials,
     OAuthConfig,
@@ -23,6 +22,11 @@ from infrastructure.auth.oauth.provider import (
     PasswordCredentials,
     TokenPair,
 )
+
+if TYPE_CHECKING:
+    from infrastructure.auth.oauth.provider import (
+        Credentials,
+    )
 
 logger = logging.getLogger(__name__)
 

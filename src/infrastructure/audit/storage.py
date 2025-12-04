@@ -6,10 +6,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from infrastructure.audit.trail import AuditRecord
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from infrastructure.audit.trail import AuditRecord
 
 
 @runtime_checkable

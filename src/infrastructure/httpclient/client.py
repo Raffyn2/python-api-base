@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 from pydantic import BaseModel, ValidationError as PydanticValidationError
@@ -25,10 +25,14 @@ from infrastructure.httpclient.errors import (
 )
 from infrastructure.httpclient.resilience import (
     CircuitBreaker,
-    CircuitState,
-    HttpClientConfig,
 )
-from infrastructure.httpclient.types import JsonObject
+
+if TYPE_CHECKING:
+    from infrastructure.httpclient.resilience import (
+        CircuitState,
+        HttpClientConfig,
+    )
+    from infrastructure.httpclient.types import JsonObject
 
 logger = logging.getLogger(__name__)
 

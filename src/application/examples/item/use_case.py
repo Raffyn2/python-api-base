@@ -10,12 +10,17 @@ Demonstrates:
 
 **Feature: example-system-demo**
 **Feature: kafka-workflow-integration**
+**Feature: application-layer-code-review-2025**
 **Validates: Requirements 3.1, 3.2, 3.3, 3.5**
+**Refactored: Extracted reusable services**
 """
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
+from application.common.mixins.event_publishing import EventPublishingMixin
+from application.common.services.cache_service import CacheService
+from application.common.services.kafka_event_service import KafkaEventService
 from application.examples.item.dtos import (
     ItemExampleCreate,
     ItemExampleResponse,
@@ -30,21 +35,13 @@ from application.examples.shared.errors import (
 from core.base.patterns.result import Err, Ok, Result
 from domain.examples.item.entity import ItemExample, Money
 
-if TYPE_CHECKING:
-    from infrastructure.kafka.event_publisher import EventPublisher
-
 logger = logging.getLogger(__name__)
 
 
-class ItemExampleUseCase:
+class ItemExampleUseCase(EventPublishingMixin):
     """Use case for ItemExample CRUD operations.
 
-    Demonstrates:
-    - Repository pattern usage
-    - Result pattern for errors
-    - Event publishing after mutations
-    - Cache invalidation
-    - Structured logging
+    Uses extracted services for event publishing and caching.
 
     Example:
         >>> use_case = ItemExampleUseCase(repository, event_bus, cache)
@@ -55,23 +52,16 @@ class ItemExampleUseCase:
 
     def __init__(
         self,
-        repository: Any,  # ItemExampleRepository
+        repository: Any,
         event_bus: Any | None = None,
         cache: Any | None = None,
-        kafka_publisher: "EventPublisher | None" = None,
+        kafka_publisher: Any | None = None,
     ) -> None:
-        """Initialize use case.
-
-        Args:
-            repository: ItemExampleRepository instance
-            event_bus: Optional in-memory event bus
-            cache: Optional cache client
-            kafka_publisher: Optional Kafka event publisher for domain events
-        """
+        """Initialize use case with repository and optional services."""
         self._repo = repository
         self._event_bus = event_bus
-        self._cache = cache
-        self._kafka_publisher = kafka_publisher
+        self._cache_service = CacheService(cache, prefix="item")
+        self._kafka_service = KafkaEventService(kafka_publisher)
 
     async def create(
         self,
@@ -80,12 +70,10 @@ class ItemExampleUseCase:
     ) -> Result[ItemExampleResponse, UseCaseError]:
         """Create a new ItemExample."""
         try:
-            # Check for duplicate SKU
             existing = await self._repo.get_by_sku(data.sku)
             if existing:
                 return Err(ValidationError(f"SKU '{data.sku}' already exists", "sku"))
 
-            # Create entity
             item = ItemExample.create(
                 name=data.name,
                 description=data.description,
@@ -97,76 +85,71 @@ class ItemExampleUseCase:
                 created_by=created_by,
             )
             item.metadata = data.metadata
-
-            # Persist
             saved = await self._repo.create(item)
 
-            # Publish events
-            if self._event_bus:
-                for event in saved.events:
-                    await self._event_bus.publish(event)
-                saved.clear_events()
+            await self._publish_events(saved)
+            await self._publish_item_created_event(saved, created_by)
+            await self._cache_service.invalidate("list")
 
-            # Publish Kafka event
-            # **Feature: kafka-workflow-integration**
-            # **Validates: Requirements 3.1, 3.5**
-            if self._kafka_publisher:
-                try:
-                    from infrastructure.kafka.event_publisher import (
-                        DomainEvent,
-                        ItemCreatedEvent,
-                    )
-
-                    kafka_event = DomainEvent(
-                        event_type="ItemCreated",
-                        entity_type="ItemExample",
-                        entity_id=saved.id,
-                        payload=ItemCreatedEvent(
-                            id=saved.id,
-                            name=saved.name,
-                            sku=saved.sku,
-                            quantity=saved.quantity,
-                            created_by=created_by,
-                        ),
-                    )
-                    await self._kafka_publisher.publish(kafka_event, "items-events")
-                except Exception as e:
-                    logger.error(f"Failed to publish Kafka event: {e}")
-
-            # Invalidate cache
-            if self._cache:
-                await self._cache.delete("items:list")
-
-            logger.info(
-                f"ItemExample created: {saved.id}",
-                extra={"item_id": saved.id, "sku": saved.sku},
-            )
-
+            logger.info(f"ItemExample created: {saved.id}", extra={"item_id": saved.id})
             return Ok(ItemExampleMapper.to_response(saved))
 
         except Exception as e:
             logger.error(f"Failed to create ItemExample: {e}", exc_info=True)
             return Err(UseCaseError(str(e)))
 
+    async def _publish_item_created_event(
+        self, item: ItemExample, created_by: str
+    ) -> None:
+        """Publish ItemCreated event to Kafka."""
+        from infrastructure.kafka.event_publisher import ItemCreatedEvent
+
+        await self._kafka_service.publish_event(
+            event_type="ItemCreated",
+            entity_type="ItemExample",
+            entity_id=item.id,
+            payload=ItemCreatedEvent(
+                id=item.id, name=item.name, sku=item.sku,
+                quantity=item.quantity, created_by=created_by
+            ),
+            topic="items-events",
+        )
+
     async def get(self, item_id: str) -> Result[ItemExampleResponse, UseCaseError]:
         """Get ItemExample by ID."""
-        # Try cache first
-        if self._cache:
-            cached = await self._cache.get(f"item:{item_id}")
-            if cached:
-                return Ok(cached)
+        cached = await self._cache_service.get(item_id)
+        if cached:
+            return Ok(cached)
 
         item = await self._repo.get(item_id)
         if not item:
             return Err(NotFoundError("ItemExample", item_id))
 
         response = ItemExampleMapper.to_response(item)
-
-        # Cache result
-        if self._cache:
-            await self._cache.set(f"item:{item_id}", response, ttl=300)
-
+        await self._cache_service.set(item_id, response)
         return Ok(response)
+
+    def _apply_update_fields(
+        self,
+        item: ItemExample,
+        data: ItemExampleUpdate,
+        updated_by: str,
+    ) -> None:
+        """Apply update fields to item entity."""
+        if data.name is not None:
+            item.name = data.name
+        if data.description is not None:
+            item.description = data.description
+        if data.price is not None:
+            item.update_price(Money(data.price.amount, data.price.currency), updated_by)
+        if data.quantity is not None:
+            item.update_quantity(data.quantity, updated_by)
+        if data.category is not None:
+            item.category = data.category
+        if data.tags is not None:
+            item.tags = data.tags
+        if data.metadata is not None:
+            item.metadata = data.metadata
 
     async def update(
         self,
@@ -180,72 +163,36 @@ class ItemExampleUseCase:
             return Err(NotFoundError("ItemExample", item_id))
 
         try:
-            # Update fields
-            if data.name is not None:
-                item.name = data.name
-            if data.description is not None:
-                item.description = data.description
-            if data.price is not None:
-                item.update_price(
-                    Money(data.price.amount, data.price.currency),
-                    updated_by,
-                )
-            if data.quantity is not None:
-                item.update_quantity(data.quantity, updated_by)
-            if data.category is not None:
-                item.category = data.category
-            if data.tags is not None:
-                item.tags = data.tags
-            if data.metadata is not None:
-                item.metadata = data.metadata
-
+            self._apply_update_fields(item, data, updated_by)
             saved = await self._repo.update(item)
 
-            # Publish events
-            if self._event_bus:
-                for event in saved.events:
-                    await self._event_bus.publish(event)
-                saved.clear_events()
+            await self._publish_events(saved)
+            await self._publish_item_updated_event(saved, data, updated_by)
+            await self._cache_service.invalidate(item_id)
 
-            # Publish Kafka event
-            # **Feature: kafka-workflow-integration**
-            # **Validates: Requirements 3.2, 3.5**
-            if self._kafka_publisher:
-                try:
-                    from infrastructure.kafka.event_publisher import (
-                        DomainEvent,
-                        ItemUpdatedEvent,
-                    )
-
-                    changes = data.model_dump(exclude_unset=True)
-                    kafka_event = DomainEvent(
-                        event_type="ItemUpdated",
-                        entity_type="ItemExample",
-                        entity_id=saved.id,
-                        payload=ItemUpdatedEvent(
-                            id=saved.id,
-                            changes=changes,
-                            updated_by=updated_by,
-                        ),
-                    )
-                    await self._kafka_publisher.publish(kafka_event, "items-events")
-                except Exception as e:
-                    logger.error(f"Failed to publish Kafka event: {e}")
-
-            # Invalidate cache
-            if self._cache:
-                await self._cache.delete(f"item:{item_id}")
-                await self._cache.delete("items:list")
-
-            logger.info(
-                f"ItemExample updated: {saved.id}",
-                extra={"item_id": saved.id},
-            )
-
+            logger.info(f"ItemExample updated: {saved.id}", extra={"item_id": saved.id})
             return Ok(ItemExampleMapper.to_response(saved))
 
         except ValueError as e:
             return Err(ValidationError(str(e)))
+
+    async def _publish_item_updated_event(
+        self, item: ItemExample, data: ItemExampleUpdate, updated_by: str
+    ) -> None:
+        """Publish ItemUpdated event to Kafka."""
+        from infrastructure.kafka.event_publisher import ItemUpdatedEvent
+
+        await self._kafka_service.publish_event(
+            event_type="ItemUpdated",
+            entity_type="ItemExample",
+            entity_id=item.id,
+            payload=ItemUpdatedEvent(
+                id=item.id,
+                changes=data.model_dump(exclude_unset=True),
+                updated_by=updated_by,
+            ),
+            topic="items-events",
+        )
 
     async def delete(
         self,
@@ -260,46 +207,24 @@ class ItemExampleUseCase:
         item.delete(deleted_by)
         await self._repo.update(item)
 
-        # Publish events
-        if self._event_bus:
-            for event in item.events:
-                await self._event_bus.publish(event)
-            item.clear_events()
+        await self._publish_events(item)
+        await self._publish_item_deleted_event(item_id, deleted_by)
+        await self._cache_service.invalidate(item_id)
 
-        # Publish Kafka event
-        # **Feature: kafka-workflow-integration**
-        # **Validates: Requirements 3.3, 3.5**
-        if self._kafka_publisher:
-            try:
-                from infrastructure.kafka.event_publisher import (
-                    DomainEvent,
-                    ItemDeletedEvent,
-                )
-
-                kafka_event = DomainEvent(
-                    event_type="ItemDeleted",
-                    entity_type="ItemExample",
-                    entity_id=item_id,
-                    payload=ItemDeletedEvent(
-                        id=item_id,
-                        deleted_by=deleted_by,
-                    ),
-                )
-                await self._kafka_publisher.publish(kafka_event, "items-events")
-            except Exception as e:
-                logger.error(f"Failed to publish Kafka event: {e}")
-
-        # Invalidate cache
-        if self._cache:
-            await self._cache.delete(f"item:{item_id}")
-            await self._cache.delete("items:list")
-
-        logger.info(
-            f"ItemExample deleted: {item_id}",
-            extra={"item_id": item_id, "deleted_by": deleted_by},
-        )
-
+        logger.info(f"ItemExample deleted: {item_id}", extra={"item_id": item_id})
         return Ok(True)
+
+    async def _publish_item_deleted_event(self, item_id: str, deleted_by: str) -> None:
+        """Publish ItemDeleted event to Kafka."""
+        from infrastructure.kafka.event_publisher import ItemDeletedEvent
+
+        await self._kafka_service.publish_event(
+            event_type="ItemDeleted",
+            entity_type="ItemExample",
+            entity_id=item_id,
+            payload=ItemDeletedEvent(id=item_id, deleted_by=deleted_by),
+            topic="items-events",
+        )
 
     async def list(
         self,

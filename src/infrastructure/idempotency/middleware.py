@@ -14,8 +14,12 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from .errors import IdempotencyKeyConflictError
-from .handler import IdempotencyConfig, IdempotencyHandler, compute_request_hash
+from infrastructure.idempotency.errors import IdempotencyKeyConflictError
+from infrastructure.idempotency.handler import (
+    IdempotencyConfig,
+    IdempotencyHandler,
+    compute_request_hash,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +84,64 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
             return self._handler
         return getattr(request.app.state, "idempotency_handler", None)
 
+    def _create_error_response(self, error_type: str, title: str, detail: str, status: int) -> JSONResponse:
+        """Create standardized error response."""
+        return JSONResponse(
+            status_code=status,
+            content={
+                "type": f"https://api.example.com/errors/{error_type}",
+                "title": title,
+                "status": status,
+                "detail": detail,
+            },
+        )
+
+    def _create_conflict_response(self) -> JSONResponse:
+        """Create idempotency conflict response."""
+        return self._create_error_response(
+            error_type="idempotency-conflict",
+            title="Idempotency Key Conflict",
+            detail="Idempotency key was already used with a different request body",
+            status=422,
+        )
+
+    def _create_key_missing_response(self) -> JSONResponse:
+        """Create idempotency key missing response."""
+        return self._create_error_response(
+            error_type="idempotency-key-missing",
+            title="Idempotency Key Required",
+            detail="Idempotency-Key header is required for this endpoint",
+            status=400,
+        )
+
+    async def _handle_cached_record(
+        self,
+        record: Any,
+        request_hash: str,
+        idempotency_key: str,
+        path: str,
+    ) -> Response | None:
+        """Handle existing idempotency record. Returns response or None if conflict."""
+        if record.request_hash != request_hash:
+            logger.warning(
+                "Idempotency key conflict",
+                extra={"key": idempotency_key, "path": path},
+            )
+            return self._create_conflict_response()
+
+        logger.info(
+            "Replaying idempotent response",
+            extra={"key": idempotency_key, "status": record.status_code},
+        )
+        return Response(
+            content=record.response_body,
+            status_code=record.status_code,
+            headers={
+                self._config.replay_header: "true",
+                "Content-Type": "application/json",
+            },
+        )
+
     async def dispatch(
         self,
         request: Request,
@@ -90,35 +152,20 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 23.1, 23.5**
         """
-        # Check if idempotency applies
         if not self._should_handle(request):
             return await call_next(request)
 
-        # Get handler (may be None if Redis not available)
         handler = self._get_handler(request)
         if handler is None:
-            # No handler available, proceed without idempotency
             return await call_next(request)
 
-        # Get idempotency key from header
         idempotency_key = request.headers.get(self._config.header_name)
 
-        # Check if key is required
         if idempotency_key is None:
             if self._is_required(request.url.path):
-                return JSONResponse(
-                    status_code=400,
-                    content={
-                        "type": "https://api.example.com/errors/idempotency-key-missing",
-                        "title": "Idempotency Key Required",
-                        "status": 400,
-                        "detail": "Idempotency-Key header is required for this endpoint",
-                    },
-                )
-            # Key not required and not provided - proceed normally
+                return self._create_key_missing_response()
             return await call_next(request)
 
-        # Read and hash request body
         body = await request.body()
         request_hash = compute_request_hash(
             method=request.method,
@@ -128,82 +175,52 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         )
 
         try:
-            # Check for existing record
             record = await handler.get_record(idempotency_key)
 
             if record is not None:
-                # Check for conflict
-                if record.request_hash != request_hash:
-                    logger.warning(
-                        "Idempotency key conflict",
-                        extra={"key": idempotency_key, "path": request.url.path},
-                    )
-                    return JSONResponse(
-                        status_code=422,
-                        content={
-                            "type": "https://api.example.com/errors/idempotency-conflict",
-                            "title": "Idempotency Key Conflict",
-                            "status": 422,
-                            "detail": "Idempotency key was already used with a different request body",
-                        },
-                    )
-
-                # Return cached response
-                logger.info(
-                    "Replaying idempotent response",
-                    extra={"key": idempotency_key, "status": record.status_code},
-                )
-                return Response(
-                    content=record.response_body,
-                    status_code=record.status_code,
-                    headers={
-                        self._config.replay_header: "true",
-                        "Content-Type": "application/json",
-                    },
+                return await self._handle_cached_record(
+                    record, request_hash, idempotency_key, request.url.path
                 )
 
-            # Execute request
             response = await call_next(request)
-
-            # Store response for successful operations
-            if 200 <= response.status_code < 300:
-                # Read response body
-                response_body = b""
-                async for chunk in response.body_iterator:
-                    response_body += chunk
-
-                # Store in Redis
-                await handler.store_record(
-                    idempotency_key=idempotency_key,
-                    request_hash=request_hash,
-                    response_body=response_body.decode(),
-                    status_code=response.status_code,
-                )
-
-                # Return new response with body
-                return Response(
-                    content=response_body,
-                    status_code=response.status_code,
-                    headers=dict(response.headers),
-                    media_type=response.media_type,
-                )
-
-            return response
+            return await self._store_and_return_response(
+                handler, idempotency_key, request_hash, response
+            )
 
         except IdempotencyKeyConflictError:
-            return JSONResponse(
-                status_code=422,
-                content={
-                    "type": "https://api.example.com/errors/idempotency-conflict",
-                    "title": "Idempotency Key Conflict",
-                    "status": 422,
-                    "detail": "Idempotency key was already used with a different request body",
-                },
-            )
+            return self._create_conflict_response()
         except Exception as e:
             logger.error(f"Idempotency handling failed: {e}")
-            # Proceed without idempotency on error
             return await call_next(request)
+
+    async def _store_and_return_response(
+        self,
+        handler: IdempotencyHandler,
+        idempotency_key: str,
+        request_hash: str,
+        response: Response,
+    ) -> Response:
+        """Store successful response and return it."""
+        if not (200 <= response.status_code < 300):
+            return response
+
+        response_body = b""
+        async for chunk in response.body_iterator:
+            response_body += chunk
+
+        await handler.store_record(
+            idempotency_key=idempotency_key,
+            request_hash=request_hash,
+            response_body=response_body.decode(),
+            status_code=response.status_code,
+        )
+
+        return Response(
+            content=response_body,
+            status_code=response.status_code,
+            headers=dict(response.headers),
+            media_type=response.media_type,
+        )
 
     def _should_handle(self, request: Request) -> bool:
         """Check if request should be handled for idempotency."""

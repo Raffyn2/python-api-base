@@ -10,7 +10,10 @@ import logging
 import re
 from typing import Any, Final
 
-from .models import TenantContext, get_current_tenant
+from application.services.multitenancy.models import (
+    TenantContext,
+    get_current_tenant,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,13 +92,31 @@ class TenantMiddleware:
         - SQL injection
         - Path traversal
         - Header injection
+        - Empty/whitespace-only bypass
+
+        **Feature: application-layer-code-review-fixes**
+        **Validates: Requirements F-01**
         """
+        # Strip whitespace first to handle " valid " -> "valid"
+        tenant_id = tenant_id.strip()
+
+        # Reject empty after strip (handles "" and "   ")
+        if not tenant_id:
+            logger.warning(
+                "Tenant ID rejected: empty or whitespace-only",
+                extra={
+                    "operation": "TENANT_VALIDATION",
+                    "reason": "EMPTY_OR_WHITESPACE",
+                },
+            )
+            return None
+
         if len(tenant_id) > TENANT_ID_MAX_LENGTH:
             logger.warning(
-                f"Tenant ID rejected: exceeds max length ({len(tenant_id)} > {TENANT_ID_MAX_LENGTH})",
+                "Tenant ID rejected: exceeds max length",
                 extra={
-                    "tenant_id_length": len(tenant_id),
                     "operation": "TENANT_VALIDATION",
+                    "reason": "LENGTH_EXCEEDED",
                 },
             )
             return None
@@ -103,7 +124,10 @@ class TenantMiddleware:
         if not TENANT_ID_PATTERN.match(tenant_id):
             logger.warning(
                 "Tenant ID rejected: invalid characters",
-                extra={"operation": "TENANT_VALIDATION"},
+                extra={
+                    "operation": "TENANT_VALIDATION",
+                    "reason": "INVALID_CHARS",
+                },
             )
             return None
 

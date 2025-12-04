@@ -12,37 +12,22 @@ from abc import ABC, abstractmethod
 from typing import Any, overload
 
 from application.common.base.dto import PaginatedResponse
+from application.common.base.exceptions import (
+    ApplicationError as UseCaseError,
+    NotFoundError,
+    ValidationError,
+)
 from core.base.patterns.result import Err, Ok, Result
 
 logger = logging.getLogger(__name__)
 
-
-class UseCaseError(Exception):
-    """Base exception for use case errors."""
-
-    def __init__(self, message: str, code: str | None = None) -> None:
-        self.message = message
-        self.code = code
-        super().__init__(message)
-
-
-class NotFoundError(UseCaseError):
-    """Entity not found error."""
-
-    def __init__(self, entity_type: str, entity_id: Any) -> None:
-        self.entity_type = entity_type
-        self.entity_id = entity_id
-        super().__init__(f"{entity_type} with id '{entity_id}' not found", "NOT_FOUND")
-
-
-class ValidationError(UseCaseError):
-    """Validation error."""
-
-    def __init__(
-        self, message: str, errors: list[dict[str, Any]] | None = None
-    ) -> None:
-        self.errors = errors or []
-        super().__init__(message, "VALIDATION_ERROR")
+# Re-exports for backward compatibility
+__all__ = [
+    "BaseUseCase",
+    "NotFoundError",
+    "UseCaseError",
+    "ValidationError",
+]
 
 
 class BaseUseCase[TEntity, TId](ABC):

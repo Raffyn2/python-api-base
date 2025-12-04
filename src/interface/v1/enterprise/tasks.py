@@ -7,8 +7,12 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from .dependencies import get_task_queue
-from .models import EmailTaskPayload, TaskEnqueueRequest, TaskEnqueueResponse
+from interface.v1.enterprise.dependencies import get_task_queue
+from interface.v1.enterprise.models import (
+    EmailTaskPayload,
+    TaskEnqueueRequest,
+    TaskEnqueueResponse,
+)
 
 router = APIRouter(tags=["Task Queue"])
 

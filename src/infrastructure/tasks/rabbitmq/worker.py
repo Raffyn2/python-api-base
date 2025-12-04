@@ -10,16 +10,18 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from infrastructure.tasks.retry import ExponentialBackoff, RetryPolicy
+from infrastructure.tasks.retry import ExponentialBackoff
 from infrastructure.tasks.task import TaskStatus
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from infrastructure.tasks.rabbitmq.queue import RabbitMQTaskQueue
+    from infrastructure.tasks.retry import RetryPolicy
 
 logger = logging.getLogger(__name__)
 

@@ -313,8 +313,6 @@ async def readiness(
 
     **Validates: Requirements 7.2, 7.3, 7.4**
     """
-    global _last_status
-
     # Ensure metrics are set up
     if _health_counter is None:
         _setup_metrics()

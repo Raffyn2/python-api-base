@@ -4,6 +4,8 @@
 **Validates: Requirements 5.1**
 """
 
+from typing import Any, NoReturn
+
 from fastapi import APIRouter, HTTPException, status
 
 from application.common.base.dto import PaginatedResponse
@@ -27,6 +29,69 @@ from core.base.patterns.result import Err, Ok
 from interface.dependencies import CommandBusDep, PaginationDep, QueryBusDep
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+# Error message constants
+ERR_USER_NOT_FOUND = "User not found"
+ERR_EMAIL_CONFLICT = "Email already registered"
+
+
+def _aggregate_to_dto(user_aggregate: Any) -> UserDTO:
+    """Convert user aggregate to UserDTO.
+
+    Args:
+        user_aggregate: User aggregate from command result.
+
+    Returns:
+        UserDTO with formatted data.
+    """
+    return UserDTO(
+        id=user_aggregate.id,
+        email=user_aggregate.email,
+        username=user_aggregate.username,
+        display_name=user_aggregate.display_name,
+        is_active=user_aggregate.is_active,
+        is_verified=user_aggregate.is_verified,
+        created_at=user_aggregate.created_at.isoformat()
+        if user_aggregate.created_at
+        else None,
+        updated_at=user_aggregate.updated_at.isoformat()
+        if user_aggregate.updated_at
+        else None,
+    )
+
+
+def _raise_error_response(error: Any, context: str = "operation") -> NoReturn:
+    """Map domain errors to HTTP responses.
+
+    Args:
+        error: Error from Result pattern.
+        context: Operation context for logging.
+
+    Raises:
+        HTTPException: Mapped HTTP error.
+    """
+    error_msg = str(error)
+    error_lower = error_msg.lower()
+
+    if "not found" in error_lower:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ERR_USER_NOT_FOUND,
+        )
+    if "already registered" in error_lower or "already exists" in error_lower:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=error_msg,
+        )
+    if "invalid" in error_lower or "password" in error_lower:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=error_msg,
+        )
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=error_msg,
+    )
 
 
 @router.get("", response_model=PaginatedResponse[UserListDTO])
@@ -58,13 +123,12 @@ async def list_users(
     # Handle results
     match (list_result, count_result):
         case (Ok(users), Ok(total_count)):
-            # Convert to UserListDTO format
             user_dtos = [
                 UserListDTO(
-                    id=u["id"],
-                    email=u["email"],
+                    id=u.get("id", ""),
+                    email=u.get("email", ""),
                     username=u.get("username"),
-                    is_active=u["is_active"],
+                    is_active=u.get("is_active", False),
                 )
                 for u in users
             ]
@@ -75,10 +139,7 @@ async def list_users(
                 size=pagination.page_size,
             )
         case (Err(error), _) | (_, Err(error)):
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=str(error),
-            )
+            _raise_error_response(error, "list_users")
 
 
 @router.get("/{user_id}", response_model=UserDTO)
@@ -105,24 +166,20 @@ async def get_user(user_id: str, query_bus: QueryBusDep) -> UserDTO:
             if user_data is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"User {user_id} not found",
+                    detail=ERR_USER_NOT_FOUND,
                 )
-            # Convert to UserDTO
             return UserDTO(
-                id=user_data["id"],
-                email=user_data["email"],
+                id=user_data.get("id", ""),
+                email=user_data.get("email", ""),
                 username=user_data.get("username"),
                 display_name=user_data.get("display_name"),
-                is_active=user_data["is_active"],
-                is_verified=user_data["is_verified"],
+                is_active=user_data.get("is_active", False),
+                is_verified=user_data.get("is_verified", False),
                 created_at=user_data.get("created_at"),
                 updated_at=user_data.get("updated_at"),
             )
         case Err(error):
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=str(error),
-            )
+            _raise_error_response(error, "get_user")
 
 
 @router.post("", response_model=UserDTO, status_code=status.HTTP_201_CREATED)
@@ -153,38 +210,9 @@ async def create_user(data: CreateUserDTO, command_bus: CommandBusDep) -> UserDT
     # Handle result
     match result:
         case Ok(user_aggregate):
-            # Convert aggregate to DTO
-            return UserDTO(
-                id=user_aggregate.id,
-                email=user_aggregate.email,
-                username=user_aggregate.username,
-                display_name=user_aggregate.display_name,
-                is_active=user_aggregate.is_active,
-                is_verified=user_aggregate.is_verified,
-                created_at=user_aggregate.created_at.isoformat()
-                if user_aggregate.created_at
-                else None,
-                updated_at=user_aggregate.updated_at.isoformat()
-                if user_aggregate.updated_at
-                else None,
-            )
+            return _aggregate_to_dto(user_aggregate)
         case Err(error):
-            # Handle specific errors
-            error_msg = str(error)
-            if "Email already registered" in error_msg:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail=error_msg,
-                )
-            if "Invalid email" in error_msg or "password" in error_msg.lower():
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=error_msg,
-                )
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=error_msg,
-            )
+            _raise_error_response(error, "create_user")
 
 
 @router.patch("/{user_id}", response_model=UserDTO)
@@ -217,32 +245,9 @@ async def update_user(
     # Handle result
     match result:
         case Ok(user_aggregate):
-            # Convert aggregate to DTO
-            return UserDTO(
-                id=user_aggregate.id,
-                email=user_aggregate.email,
-                username=user_aggregate.username,
-                display_name=user_aggregate.display_name,
-                is_active=user_aggregate.is_active,
-                is_verified=user_aggregate.is_verified,
-                created_at=user_aggregate.created_at.isoformat()
-                if user_aggregate.created_at
-                else None,
-                updated_at=user_aggregate.updated_at.isoformat()
-                if user_aggregate.updated_at
-                else None,
-            )
+            return _aggregate_to_dto(user_aggregate)
         case Err(error):
-            error_msg = str(error)
-            if "not found" in error_msg.lower():
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=error_msg,
-                )
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=error_msg,
-            )
+            _raise_error_response(error, "update_user")
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -268,16 +273,6 @@ async def delete_user(user_id: str, command_bus: CommandBusDep) -> None:
     # Handle result
     match result:
         case Ok(_):
-            # Success - return 204 No Content
             return
         case Err(error):
-            error_msg = str(error)
-            if "not found" in error_msg.lower():
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=error_msg,
-                )
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=error_msg,
-            )
+            _raise_error_response(error, "delete_user")

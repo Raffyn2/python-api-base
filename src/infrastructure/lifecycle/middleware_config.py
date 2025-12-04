@@ -184,7 +184,7 @@ def _configure_production_middleware(app: FastAPI) -> None:
         app,
         resilience_config=ResilienceConfig(
             failure_threshold=5,
-            timeout_seconds=30.0,
+            timeout=timedelta(seconds=30.0),
             enabled=True,
         ),
         multitenancy_config=MultitenancyConfig(

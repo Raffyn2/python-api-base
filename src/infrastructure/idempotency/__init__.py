@@ -9,13 +9,16 @@ Provides:
 - IdempotencyKeyConflictError: Error for key reuse with different body
 """
 
-from .errors import IdempotencyKeyConflictError, IdempotencyKeyMissingError
-from .handler import (
+from infrastructure.idempotency.errors import (
+    IdempotencyKeyConflictError,
+    IdempotencyKeyMissingError,
+)
+from infrastructure.idempotency.handler import (
     IdempotencyConfig,
     IdempotencyHandler,
     IdempotencyRecord,
 )
-from .middleware import IdempotencyMiddleware
+from infrastructure.idempotency.middleware import IdempotencyMiddleware
 
 __all__ = [
     "IdempotencyConfig",

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from .enums import FlagStatus
+from application.services.feature_flags.enums import FlagStatus
 
 
 @dataclass

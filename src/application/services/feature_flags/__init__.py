@@ -7,11 +7,11 @@ user targeting, and custom evaluation rules using Strategy pattern.
 **Validates: Requirements 10.1, 10.2, 10.3, Strategy pattern refactoring**
 """
 
-from .config import FlagConfig
-from .enums import FlagStatus, RolloutStrategy
-from .models import EvaluationContext
-from .service import FeatureFlagService
-from .strategies import (
+from application.services.feature_flags.config import FlagConfig
+from application.services.feature_flags.enums import FlagStatus, RolloutStrategy
+from application.services.feature_flags.models import EvaluationContext
+from application.services.feature_flags.service import FeatureFlagService
+from application.services.feature_flags.strategies import (
     CustomRuleStrategy,
     DefaultValueStrategy,
     DisabledStrategy,
@@ -26,24 +26,24 @@ from .strategies import (
 )
 
 __all__ = [
-    # Enums
-    "FlagStatus",
-    "RolloutStrategy",
-    # Models
-    "EvaluationContext",
-    "FlagConfig",
-    # Service
-    "FeatureFlagService",
-    # Strategies
-    "EvaluationStrategy",
-    "FlagEvaluationResult",
-    "StrategyChain",
+    "CustomRuleStrategy",
+    "DefaultValueStrategy",
     "DisabledStrategy",
     "EnabledStrategy",
-    "CustomRuleStrategy",
-    "UserTargetingStrategy",
+    # Models
+    "EvaluationContext",
+    # Strategies
+    "EvaluationStrategy",
+    # Service
+    "FeatureFlagService",
+    "FlagConfig",
+    "FlagEvaluationResult",
+    # Enums
+    "FlagStatus",
     "GroupTargetingStrategy",
     "PercentageRolloutStrategy",
-    "DefaultValueStrategy",
+    "RolloutStrategy",
+    "StrategyChain",
+    "UserTargetingStrategy",
     "create_default_strategy_chain",
 ]

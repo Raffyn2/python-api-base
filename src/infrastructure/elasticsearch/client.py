@@ -11,10 +11,9 @@ and search operations into a unified client interface.
 
 from __future__ import annotations
 
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from infrastructure.elasticsearch.config import (
-    ElasticsearchClientConfig,
     ElasticsearchConnection,
 )
 from infrastructure.elasticsearch.index_operations import (
@@ -22,6 +21,11 @@ from infrastructure.elasticsearch.index_operations import (
     IndexOperations,
 )
 from infrastructure.elasticsearch.search_operations import SearchOperations
+
+if TYPE_CHECKING:
+    from infrastructure.elasticsearch.config import (
+        ElasticsearchClientConfig,
+    )
 
 
 class ElasticsearchClient:

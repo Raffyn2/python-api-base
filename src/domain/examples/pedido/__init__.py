@@ -25,22 +25,22 @@ from domain.examples.pedido.specifications import (
 )
 
 __all__ = [
-    # Entity
-    "PedidoExample",
-    "PedidoItemExample",
-    "PedidoStatus",
     # Events
     "PedidoCancelled",
     "PedidoCompleted",
-    "PedidoCreated",
-    "PedidoItemAdded",
     # Specifications
     "PedidoConfirmedSpec",
+    "PedidoCreated",
     "PedidoCustomerSpec",
+    # Entity
+    "PedidoExample",
     "PedidoHasItemsSpec",
+    "PedidoItemAdded",
+    "PedidoItemExample",
     "PedidoMinItemsSpec",
     "PedidoMinValueSpec",
     "PedidoPendingSpec",
+    "PedidoStatus",
     "PedidoTenantSpec",
     "high_value_pending_orders",
     "orders_ready_for_processing",

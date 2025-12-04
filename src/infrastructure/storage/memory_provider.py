@@ -45,10 +45,7 @@ class InMemoryStorageProvider:
             if isinstance(data, bytes):
                 file_data = data
             else:
-                chunks = []
-                async for chunk in data:
-                    chunks.append(chunk)
-                file_data = b"".join(chunks)
+                file_data = b"".join([chunk async for chunk in data])
 
             self._storage[key] = (file_data, content_type)
             return Ok(f"memory://{key}")

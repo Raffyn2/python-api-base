@@ -7,7 +7,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from .models import (
+from infrastructure.messaging.asyncapi.models import (
     ChannelObject,
     InfoObject,
     MessageObject,

@@ -13,9 +13,10 @@ from collections import defaultdict
 from collections.abc import Hashable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from infrastructure.ratelimit.config import RateLimit, RateLimitConfig
+if TYPE_CHECKING:
+    from infrastructure.ratelimit.config import RateLimit, RateLimitConfig
 
 # =============================================================================
 # Type Parameters (PEP 695)

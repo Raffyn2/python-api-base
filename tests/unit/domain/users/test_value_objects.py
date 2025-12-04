@@ -14,7 +14,7 @@ Tests verify:
 import pytest
 from hypothesis import given, strategies as st
 
-from src.domain.users.value_objects import (
+from domain.users.value_objects import (
     Email,
     PasswordHash,
     PhoneNumber,

@@ -519,9 +519,9 @@ class TestLockManagerProperties:
         **Validates: Requirements 2.4**
 
         When a lock acquisition times out after the specified timeout,
-        the LockManager SHALL raise LockAcquisitionTimeout.
+        the LockManager SHALL raise LockAcquisitionTimeoutError.
         """
-        from core.errors.exceptions import LockAcquisitionTimeout
+        from core.errors.shared.exceptions import LockAcquisitionTimeoutError
         from infrastructure.security.auto_ban.lock_manager import InMemoryLockManager
 
         lock_manager = InMemoryLockManager()
@@ -530,7 +530,7 @@ class TestLockManagerProperties:
         # Acquire lock and hold it
         async with lock_manager.acquire(identifier):
             # Try to acquire same lock with short timeout
-            with pytest.raises(LockAcquisitionTimeout) as exc_info:
+            with pytest.raises(LockAcquisitionTimeoutError) as exc_info:
                 async with lock_manager.acquire(identifier, timeout=0.1):
                     pass
 

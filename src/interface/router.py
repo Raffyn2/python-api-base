@@ -15,7 +15,12 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 
-from application.common.base.dto import ApiResponse, PaginatedResponse
+from application.common.base.dto import (
+    ApiResponse,
+    BulkDeleteRequest,
+    BulkDeleteResponse,
+    PaginatedResponse,
+)
 
 
 class RouteOperation(Enum):
@@ -55,19 +60,6 @@ class CRUDRouterConfig:
     # OpenAPI customization
     operation_id_prefix: str = ""
     deprecated: bool = False
-
-
-class BulkDeleteRequest(BaseModel):
-    """Request model for bulk delete operations."""
-
-    ids: list[str]
-
-
-class BulkDeleteResponse(BaseModel):
-    """Response model for bulk delete operations."""
-
-    deleted_count: int
-    failed_ids: list[str]
 
 
 class GenericCRUDRouter[T, CreateDTO, UpdateDTO, ResponseDTO]:
@@ -198,6 +190,8 @@ class GenericCRUDRouter[T, CreateDTO, UpdateDTO, ResponseDTO]:
         ) -> ApiResponse[response_model]:
             try:
                 return ApiResponse(data=await use_case.get(id))
+            except HTTPException:
+                raise
             except Exception as e:
                 if hasattr(e, "status_code") and e.status_code == 404:
                     raise HTTPException(status_code=404, detail=str(e)) from e
@@ -238,6 +232,8 @@ class GenericCRUDRouter[T, CreateDTO, UpdateDTO, ResponseDTO]:
         ) -> ApiResponse[response_model]:
             try:
                 return ApiResponse(data=await use_case.update(id, data))
+            except HTTPException:
+                raise
             except Exception as e:
                 if hasattr(e, "status_code") and e.status_code == 404:
                     raise HTTPException(status_code=404, detail=str(e)) from e
@@ -264,6 +260,8 @@ class GenericCRUDRouter[T, CreateDTO, UpdateDTO, ResponseDTO]:
         ) -> ApiResponse[response_model]:
             try:
                 return ApiResponse(data=await use_case.update(id, data))
+            except HTTPException:
+                raise
             except Exception as e:
                 if hasattr(e, "status_code") and e.status_code == 404:
                     raise HTTPException(status_code=404, detail=str(e)) from e
@@ -282,6 +280,8 @@ class GenericCRUDRouter[T, CreateDTO, UpdateDTO, ResponseDTO]:
         async def delete_item(id: str, use_case: Any = Depends(use_case_dep)) -> None:
             try:
                 await use_case.delete(id)
+            except HTTPException:
+                raise
             except Exception as e:
                 if hasattr(e, "status_code") and e.status_code == 404:
                     raise HTTPException(status_code=404, detail=str(e)) from e

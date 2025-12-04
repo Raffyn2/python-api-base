@@ -82,8 +82,31 @@ class AuditableEntity[IdType: (str, int)](BaseEntity[IdType]):
         self.mark_updated()
 
 
+class VersionMixin[VersionT: (int, str) = int]:
+    """Mixin providing version field and increment logic.
+
+    Type Parameters:
+        VersionT: The type of the version (int or str), defaults to int.
+    """
+
+    version: VersionT = Field(
+        default=1,  # type: ignore
+        description="Version number for optimistic locking",
+    )
+
+    def increment_version(self) -> None:
+        """Increment version number."""
+        current = self.version
+        if isinstance(current, int):
+            object.__setattr__(self, "version", current + 1)
+        else:
+            object.__setattr__(self, "version", f"{current}.1")
+        if hasattr(self, "mark_updated"):
+            self.mark_updated()  # type: ignore
+
+
 class VersionedEntity[IdType: (str, int), VersionT: (int, str) = int](
-    BaseEntity[IdType]
+    VersionMixin[VersionT], BaseEntity[IdType]
 ):
     """Entity with optimistic locking version.
 
@@ -97,24 +120,11 @@ class VersionedEntity[IdType: (str, int), VersionT: (int, str) = int](
     **Validates: Requirements 11.1**
     """
 
-    version: VersionT = Field(
-        default=1,  # type: ignore
-        description="Version number for optimistic locking",
-    )
-
-    def increment_version(self) -> None:
-        """Increment version number."""
-        current = self.version
-        if isinstance(current, int):
-            object.__setattr__(self, "version", current + 1)
-        else:
-            # For string versions, append increment
-            object.__setattr__(self, "version", f"{current}.1")
-        self.mark_updated()
+    pass
 
 
 class AuditableVersionedEntity[IdType: (str, int), VersionT: (int, str) = int](
-    AuditableEntity[IdType]
+    VersionMixin[VersionT], AuditableEntity[IdType]
 ):
     """Entity with both audit trail and optimistic locking.
 
@@ -124,20 +134,6 @@ class AuditableVersionedEntity[IdType: (str, int), VersionT: (int, str) = int](
         IdType: The type of the entity ID (str or int).
         VersionT: The type of the version (int or str), defaults to int.
     """
-
-    version: VersionT = Field(
-        default=1,  # type: ignore
-        description="Version number for optimistic locking",
-    )
-
-    def increment_version(self) -> None:
-        """Increment version number."""
-        current = self.version
-        if isinstance(current, int):
-            object.__setattr__(self, "version", current + 1)
-        else:
-            object.__setattr__(self, "version", f"{current}.1")
-        self.mark_updated()
 
     def mark_updated_by_with_version(self, user_id: str) -> None:
         """Update timestamp, user, and increment version."""

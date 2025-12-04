@@ -12,10 +12,10 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Import from focused modules
-from .database import DatabaseSettings
-from .observability import ObservabilitySettings
-from .security import RATE_LIMIT_PATTERN, RedisSettings, SecuritySettings
-from .utils import redact_url_credentials
+from core.config.database import DatabaseSettings
+from core.config.observability import ObservabilitySettings
+from core.config.security import RATE_LIMIT_PATTERN, RedisSettings, SecuritySettings
+from core.config.utils import redact_url_credentials
 
 __all__ = [
     "RATE_LIMIT_PATTERN",

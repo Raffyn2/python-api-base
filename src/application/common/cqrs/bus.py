@@ -8,6 +8,14 @@ Re-exports CQRS components for public API.
 
 # Re-export from existing modules
 # Re-export errors from core.errors
+from application.common.cqrs.command_bus import Command, CommandBus, CommandHandler
+from application.common.cqrs.event_bus import (
+    EventHandler,
+    EventHandlerError,
+    TypedEventBus,
+)
+from application.common.cqrs.exceptions import HandlerNotFoundError
+from application.common.cqrs.query_bus import Query, QueryBus, QueryHandler
 from core.errors import (
     ApplicationError,
     AuthenticationError as UnauthorizedError,
@@ -17,31 +25,26 @@ from core.errors import (
     ValidationError,
 )
 
-from .command_bus import Command, CommandBus, CommandHandler
-from .event_bus import EventHandler, EventHandlerError, TypedEventBus
-from .exceptions import HandlerNotFoundError
-from .query_bus import Query, QueryBus, QueryHandler
-
 # Re-export all for public API
 __all__ = [
     # Exceptions
     "ApplicationError",
-    "ConflictError",
-    "ForbiddenError",
-    "HandlerNotFoundError",
-    "NotFoundError",
-    "UnauthorizedError",
-    "ValidationError",
-    # Event Bus
-    "EventHandler",
-    "EventHandlerError",
-    "TypedEventBus",
     # Command Bus
     "Command",
     "CommandBus",
     "CommandHandler",
+    "ConflictError",
+    # Event Bus
+    "EventHandler",
+    "EventHandlerError",
+    "ForbiddenError",
+    "HandlerNotFoundError",
+    "NotFoundError",
     # Query Bus
     "Query",
     "QueryBus",
     "QueryHandler",
+    "TypedEventBus",
+    "UnauthorizedError",
+    "ValidationError",
 ]

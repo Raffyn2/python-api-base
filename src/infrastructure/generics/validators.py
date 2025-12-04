@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
-from .errors import ErrorMessages, ValidationError
+from infrastructure.generics.errors import ErrorMessages, ValidationError
 
 T = TypeVar("T")
 

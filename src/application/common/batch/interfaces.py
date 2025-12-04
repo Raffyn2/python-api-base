@@ -14,7 +14,11 @@ from collections.abc import AsyncIterator, Sequence
 
 from pydantic import BaseModel
 
-from .config import BatchConfig, BatchResult, ProgressCallback
+from application.common.batch.config import (
+    BatchConfig,
+    BatchResult,
+    ProgressCallback,
+)
 
 # =============================================================================
 # Utility Functions

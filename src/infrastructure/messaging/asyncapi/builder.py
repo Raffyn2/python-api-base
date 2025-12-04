@@ -4,16 +4,22 @@
 **Validates: Requirements 5.10**
 """
 
-from .document import AsyncAPIDocument
-from .enums import ProtocolType
-from .models import (
+from typing import TYPE_CHECKING
+
+from infrastructure.messaging.asyncapi.document import AsyncAPIDocument
+from infrastructure.messaging.asyncapi.enums import ProtocolType
+from infrastructure.messaging.asyncapi.models import (
     ChannelObject,
     InfoObject,
     MessageObject,
     OperationObject,
-    SchemaObject,
     ServerObject,
 )
+
+if TYPE_CHECKING:
+    from infrastructure.messaging.asyncapi.models import (
+        SchemaObject,
+    )
 
 
 class AsyncAPIBuilder:

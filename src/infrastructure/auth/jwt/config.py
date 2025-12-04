@@ -6,7 +6,7 @@
 
 from dataclasses import dataclass
 
-from .exceptions import InvalidKeyError
+from infrastructure.auth.jwt.exceptions import InvalidKeyError
 
 
 @dataclass(frozen=True, slots=True)

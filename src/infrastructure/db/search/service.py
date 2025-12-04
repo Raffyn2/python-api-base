@@ -6,7 +6,7 @@
 
 import logging
 
-from .models import SearchQuery, SearchResult
+from infrastructure.db.search.models import SearchQuery, SearchResult
 
 logger = logging.getLogger(__name__)
 

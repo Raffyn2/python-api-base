@@ -20,15 +20,15 @@ from infrastructure.elasticsearch.repository import (
 )
 
 __all__ = [
+    "AggregationResult",
+    "DocumentMetadata",
     # Client
     "ElasticsearchClient",
     "ElasticsearchClientConfig",
+    # Document
+    "ElasticsearchDocument",
     # Repository
     "ElasticsearchRepository",
     "SearchQuery",
     "SearchResult",
-    "AggregationResult",
-    # Document
-    "ElasticsearchDocument",
-    "DocumentMetadata",
 ]

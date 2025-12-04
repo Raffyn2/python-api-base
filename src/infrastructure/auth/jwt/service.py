@@ -5,16 +5,22 @@
 """
 
 from collections import OrderedDict
-from datetime import datetime, timedelta
-from typing import Final
+from datetime import timedelta
+from typing import TYPE_CHECKING, Final
 
 from jose import JWTError, jwt
 
 from core.shared.utils.ids import generate_ulid
+from infrastructure.auth.jwt.errors import (
+    TokenExpiredError,
+    TokenInvalidError,
+    TokenRevokedError,
+)
+from infrastructure.auth.jwt.models import TokenPair, TokenPayload
+from infrastructure.auth.jwt.time_source import SystemTimeSource, TimeSource
 
-from .errors import TokenExpiredError, TokenInvalidError, TokenRevokedError
-from .models import TokenPair, TokenPayload
-from .time_source import SystemTimeSource, TimeSource
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class JWTService:

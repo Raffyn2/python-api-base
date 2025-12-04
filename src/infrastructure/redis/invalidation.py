@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Coroutine
+
     from infrastructure.redis.client import RedisClient
 
 logger = logging.getLogger(__name__)
@@ -99,10 +100,11 @@ class PatternInvalidation(InvalidationStrategy):
 
         for pattern in patterns:
             # Replace entity_id placeholder
+            resolved_pattern = pattern
             if event.entity_id and "{entity_id}" in pattern:
-                pattern = pattern.replace("{entity_id}", event.entity_id)
+                resolved_pattern = pattern.replace("{entity_id}", event.entity_id)
 
-            deleted = await client.delete_pattern(pattern)
+            deleted = await client.delete_pattern(resolved_pattern)
             total_deleted += deleted
 
         logger.info(

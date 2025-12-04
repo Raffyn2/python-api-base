@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import Any
 
@@ -131,7 +132,5 @@ class SearchOperations:
         finally:
             # Clear scroll - best effort cleanup
             if scroll_id:
-                try:
+                with contextlib.suppress(Exception):
                     await client.clear_scroll(scroll_id=scroll_id)
-                except Exception:  # noqa: S110 - Best effort cleanup
-                    pass

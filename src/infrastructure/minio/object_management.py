@@ -9,10 +9,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from core.base.patterns.result import Err, Ok, Result
+from core.base.patterns.result import Err, Ok
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
+
+    from core.base.patterns.result import Result
 
 logger = logging.getLogger(__name__)
 
@@ -180,17 +184,16 @@ class ObjectManagement:
                 )[:max_keys]
             )
 
-            result = []
-            for obj in objects:
-                result.append(
-                    ObjectMetadata(
-                        key=obj.object_name,
-                        size=obj.size,
-                        content_type=obj.content_type or "application/octet-stream",
-                        etag=obj.etag,
-                        last_modified=obj.last_modified,
-                    )
+            result = [
+                ObjectMetadata(
+                    key=obj.object_name,
+                    size=obj.size,
+                    content_type=obj.content_type or "application/octet-stream",
+                    etag=obj.etag,
+                    last_modified=obj.last_modified,
                 )
+                for obj in objects
+            ]
 
             return Ok(result)
 

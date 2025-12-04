@@ -10,8 +10,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Any
 
-from .events import SourcedEvent
-from .snapshots import Snapshot
+from infrastructure.db.event_sourcing.events import SourcedEvent
+from infrastructure.db.event_sourcing.snapshots import Snapshot
 
 # Type alias for backward compatibility
 type AggregateId = str | int

@@ -51,7 +51,7 @@ class BanOperationError(SharedModuleError):
     """
 
 
-class LockAcquisitionTimeout(SharedModuleError):
+class LockAcquisitionTimeoutError(SharedModuleError):
     """Lock acquisition timed out.
 
     Raised when a lock cannot be acquired within the specified timeout.
@@ -146,7 +146,7 @@ class Phase2ModuleError(SharedModuleError):
     """
 
 
-class PoolInvariantViolation(Phase2ModuleError):
+class PoolInvariantViolationError(Phase2ModuleError):
     """Connection pool counter invariant violated.
 
     Raised when the pool's counter invariant (idle + in_use + unhealthy == total)

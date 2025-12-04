@@ -49,10 +49,8 @@ class MinIOStorageProvider:
                 await self._client.upload_bytes(key, data, content_type)
             else:
                 # Collect async iterator to bytes
-                chunks = []
-                async for chunk in data:
-                    chunks.append(chunk)
-                await self._client.upload_bytes(key, b"".join(chunks), content_type)
+                collected = b"".join([chunk async for chunk in data])
+                await self._client.upload_bytes(key, collected, content_type)
 
             url = f"{self._client._config.endpoint}/{self._client._config.bucket}/{key}"
             return Ok(url)

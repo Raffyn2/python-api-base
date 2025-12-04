@@ -38,23 +38,23 @@ from infrastructure.httpclient.types import (
 )
 
 __all__ = [
+    # Resilience
+    "CircuitBreaker",
+    "CircuitBreakerConfig",
+    "CircuitBreakerError",
+    "CircuitState",
     # Client
     "HttpClient",
     # Configuration
     "HttpClientConfig",
-    "RetryPolicy",
-    "CircuitBreakerConfig",
     # Errors
     "HttpError",
-    "TimeoutError",
-    "ValidationError",
-    "CircuitBreakerError",
-    # Resilience
-    "CircuitBreaker",
-    "CircuitState",
+    "JsonArray",
     # Types
     "JsonObject",
-    "JsonValue",
     "JsonPrimitive",
-    "JsonArray",
+    "JsonValue",
+    "RetryPolicy",
+    "TimeoutError",
+    "ValidationError",
 ]

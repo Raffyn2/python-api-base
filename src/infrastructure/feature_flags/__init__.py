@@ -4,7 +4,7 @@
 **Validates: Requirements 19.1-19.5**
 """
 
-from .flags import (
+from infrastructure.feature_flags.flags import (
     EvaluationContext,
     EvaluationResult,
     FeatureFlag,

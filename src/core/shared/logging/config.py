@@ -25,10 +25,11 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 import structlog
-from structlog.types import Processor
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from structlog.types import Processor
 
 
 class LogLevel(StrEnum):

@@ -8,7 +8,7 @@ Provides high-performance validation using Pydantic V2 features:
 - computed_field for derived properties
 """
 
-from .pydantic_v2 import (
+from core.shared.validation.pydantic_v2 import (
     ComputedFieldExample,
     EmailStr,
     LowercaseStr,

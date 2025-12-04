@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .aggregate import Aggregate
+    from infrastructure.db.event_sourcing.aggregate import Aggregate
 
 
 @dataclass

@@ -108,9 +108,9 @@ class ConfigurableFileValidator[T]:
                 return Err(f"Extension not allowed: {ext}")
 
         # Check content type
-        if self._rules.allowed_content_types:
-            if file_info.content_type not in self._rules.allowed_content_types:
-                return Err(f"Content type not allowed: {file_info.content_type}")
+        has_content_type_rules = bool(self._rules.allowed_content_types)
+        if has_content_type_rules and file_info.content_type not in self._rules.allowed_content_types:
+            return Err(f"Content type not allowed: {file_info.content_type}")
 
         return Ok(file_info)
 

@@ -13,12 +13,13 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from core.base.patterns.result import Err, Ok, Result
-from domain.users.repositories import IUserRepository
-from domain.users.services import UserDomainService
+from core.base.patterns.result import Err, Ok
 
 if TYPE_CHECKING:
     from application.users.commands.create_user import CreateUserCommand
+    from core.base.patterns.result import Result
+    from domain.users.repositories import IUserRepository
+    from domain.users.services import UserDomainService
 
 logger = logging.getLogger(__name__)
 

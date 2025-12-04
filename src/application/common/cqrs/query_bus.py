@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
-from .exceptions import HandlerNotFoundError
+from application.common.cqrs.exceptions import HandlerNotFoundError
 
 logger = logging.getLogger(__name__)
 

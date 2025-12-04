@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from .enums import SecurityEventType
+from infrastructure.security.audit_logger.enums import SecurityEventType
 
 
 @dataclass(frozen=True, slots=True)

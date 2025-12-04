@@ -7,12 +7,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     REGISTRY,
-    CollectorRegistry,
     Counter,
     Gauge,
     Histogram,
@@ -21,6 +20,11 @@ from prometheus_client import (
 )
 
 from infrastructure.prometheus.config import PrometheusConfig
+
+if TYPE_CHECKING:
+    from prometheus_client import (
+        CollectorRegistry,
+    )
 
 logger = logging.getLogger(__name__)
 

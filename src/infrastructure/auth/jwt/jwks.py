@@ -12,9 +12,9 @@ Implements:
 
 import logging
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
-from .jwks_models import (
-    JWK,
+from infrastructure.auth.jwt.jwks_models import (
     JWKSResponse,
     KeyEntry,
     create_jwk_from_ec_public_key,
@@ -22,6 +22,11 @@ from .jwks_models import (
     extract_public_key_from_private,
     generate_kid_from_public_key,
 )
+
+if TYPE_CHECKING:
+    from infrastructure.auth.jwt.jwks_models import (
+        JWK,
+    )
 
 logger = logging.getLogger(__name__)
 

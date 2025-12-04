@@ -4,7 +4,7 @@
 **Validates: Requirements 5.10**
 """
 
-from .models import MessageObject, SchemaObject
+from infrastructure.messaging.asyncapi.models import MessageObject, SchemaObject
 
 
 def create_event_schema(

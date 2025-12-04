@@ -123,12 +123,10 @@ class EventBus:
             event_type: Event type to unsubscribe from.
             handler: Handler function to remove.
         """
-        if event_type is None:
-            if handler in self._global_handlers:
-                self._global_handlers.remove(handler)
-        elif event_type in self._handlers:
-            if handler in self._handlers[event_type]:
-                self._handlers[event_type].remove(handler)
+        if event_type is None and handler in self._global_handlers:
+            self._global_handlers.remove(handler)
+        elif event_type in self._handlers and handler in self._handlers[event_type]:
+            self._handlers[event_type].remove(handler)
 
     async def publish(self, event: DomainEvent) -> None:
         """Publish an event to all subscribed handlers.

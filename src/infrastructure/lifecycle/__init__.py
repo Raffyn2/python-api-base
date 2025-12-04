@@ -34,20 +34,20 @@ from infrastructure.lifecycle.startup import (
 )
 
 __all__ = [
-    # Middleware config
-    "configure_idempotency",
-    "configure_middleware",
-    "configure_prometheus",
-    "configure_rate_limiting",
     # Shutdown
     "ShutdownConfig",
     "ShutdownHandler",
     "ShutdownMiddleware",
     "ShutdownState",
-    "create_shutdown_handler",
-    "graceful_shutdown_lifespan",
     # Startup
     "cleanup_resources",
+    # Middleware config
+    "configure_idempotency",
+    "configure_middleware",
+    "configure_prometheus",
+    "configure_rate_limiting",
+    "create_shutdown_handler",
+    "graceful_shutdown_lifespan",
     "initialize_cqrs",
     "initialize_database",
     "initialize_examples",

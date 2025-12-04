@@ -13,10 +13,11 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Final, Self
 
 from infrastructure.errors import DatabaseError
-from infrastructure.scylladb.config import ScyllaDBConfig
 
 if TYPE_CHECKING:
     from cassandra.cluster import Cluster, Session
+
+    from infrastructure.scylladb.config import ScyllaDBConfig
 
 # Regex pattern for valid CQL identifiers (table names, keyspace names, etc.)
 # Allows alphanumeric and underscore, must start with letter or underscore

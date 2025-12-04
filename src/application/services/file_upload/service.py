@@ -10,16 +10,18 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import Any
 
-from core.base.patterns.result import Err, Ok, Result
-
-from .models import (
+from application.services.file_upload.models import (
     FileMetadata,
     FileValidationConfig,
     StorageProvider,
     UploadError,
     UploadResult,
 )
-from .validators import get_safe_filename, validate_file
+from application.services.file_upload.validators import (
+    get_safe_filename,
+    validate_file,
+)
+from core.base.patterns.result import Err, Ok, Result
 
 logger = logging.getLogger(__name__)
 

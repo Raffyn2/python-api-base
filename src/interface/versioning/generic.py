@@ -241,9 +241,9 @@ class BaseResponseTransformer[TFrom: BaseModel, TTo: BaseModel]:
 
         # Copy unmapped fields directly
         for field_name, value in source_dict.items():
-            if field_name not in self._field_mapping:
-                if field_name in self._target_type.model_fields:
-                    target_dict[field_name] = value
+            is_unmapped = field_name not in self._field_mapping
+            if is_unmapped and field_name in self._target_type.model_fields:
+                target_dict[field_name] = value
 
         return self._target_type(**target_dict)
 

@@ -11,7 +11,8 @@ Provides structured error handling:
 # Base error hierarchy
 from core.errors.base import (
     # Domain
-    AppException,
+    AppError,
+    AppException,  # Backwards compatibility alias
     # Application
     ApplicationError,
     AuthenticationError,
@@ -64,7 +65,9 @@ from core.errors.status import (
 )
 
 __all__ = [
-    "AppException",
+    "PROBLEM_JSON_MEDIA_TYPE",
+    "AppError",
+    "AppException",  # Backwards compatibility alias
     "ApplicationError",
     "AuthenticationError",
     "AuthorizationError",
@@ -86,6 +89,8 @@ __all__ = [
     "InvalidCommandError",
     "InvalidQueryError",
     "OperationStatus",
+    # RFC 7807
+    "ProblemDetail",
     "QueryHandlerError",
     "RateLimitExceededError",
     "TaskStatus",
@@ -93,13 +98,10 @@ __all__ = [
     "UseCaseError",
     "UserStatus",
     "ValidationError",
-    "ValidationStatus",
-    # RFC 7807
-    "ProblemDetail",
     "ValidationErrorDetail",
-    "PROBLEM_JSON_MEDIA_TYPE",
-    "setup_exception_handlers",
-    "http_exception_handler",
-    "validation_exception_handler",
+    "ValidationStatus",
     "generic_exception_handler",
+    "http_exception_handler",
+    "setup_exception_handlers",
+    "validation_exception_handler",
 ]

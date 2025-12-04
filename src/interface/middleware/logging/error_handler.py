@@ -9,7 +9,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from application.common.base.dto import ProblemDetail
 from core.errors.base.domain_errors import (
-    AppException,
+    AppError,
     AuthenticationError,
     RateLimitExceededError,
 )
@@ -36,7 +36,7 @@ def create_problem_detail(
     ).model_dump()
 
 
-async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
+async def app_exception_handler(request: Request, exc: AppError) -> JSONResponse:
     """Handle application exceptions."""
     content = create_problem_detail(
         request=request,
@@ -64,13 +64,14 @@ async def validation_exception_handler(
     request: Request, exc: PydanticValidationError
 ) -> JSONResponse:
     """Handle Pydantic validation errors."""
-    errors = []
-    for error in exc.errors():
-        errors.append({
+    errors = [
+        {
             "field": ".".join(str(loc) for loc in error["loc"]),
             "message": error["msg"],
             "code": error["type"],
-        })
+        }
+        for error in exc.errors()
+    ]
 
     content = create_problem_detail(
         request=request,
@@ -107,6 +108,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 def register_exception_handlers(app: FastAPI) -> None:
     """Register all exception handlers with the FastAPI app."""
-    app.add_exception_handler(AppException, app_exception_handler)
+    app.add_exception_handler(AppError, app_exception_handler)
     app.add_exception_handler(PydanticValidationError, validation_exception_handler)
     app.add_exception_handler(Exception, unhandled_exception_handler)

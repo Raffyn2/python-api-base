@@ -3,10 +3,13 @@
 import logging
 import sys
 from contextvars import ContextVar
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
-from structlog.types import EventDict, Processor
+from structlog.types import EventDict
+
+if TYPE_CHECKING:
+    from structlog.types import Processor
 
 # Context variable for request ID
 request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
@@ -92,8 +95,8 @@ def add_trace_context(
     return event_dict
 
 
-# PII patterns to redact
-PII_PATTERNS = {
+# PII patterns to redact (immutable default set)
+_DEFAULT_PII_PATTERNS: frozenset[str] = frozenset({
     "password",
     "secret",
     "token",
@@ -105,7 +108,10 @@ PII_PATTERNS = {
     "credit_card",
     "ssn",
     "social_security",
-}
+})
+
+# Active PII patterns (thread-local would be ideal, but module-level for simplicity)
+_active_pii_patterns: set[str] = set(_DEFAULT_PII_PATTERNS)
 
 
 def redact_pii(
@@ -132,7 +138,7 @@ def redact_pii(
             return value
 
         key_lower = str(key).lower()
-        for pattern in PII_PATTERNS:
+        for pattern in _active_pii_patterns:
             if pattern in key_lower:
                 return "[REDACTED]"
 
@@ -175,8 +181,11 @@ def configure_logging(
         )
 
     # Add additional PII patterns if provided
+    global _active_pii_patterns
     if additional_pii_patterns:
-        PII_PATTERNS.update(additional_pii_patterns)
+        _active_pii_patterns = set(_DEFAULT_PII_PATTERNS) | additional_pii_patterns
+    else:
+        _active_pii_patterns = set(_DEFAULT_PII_PATTERNS)
     # Shared processors
     shared_processors: list[Processor] = [
         structlog.contextvars.merge_contextvars,

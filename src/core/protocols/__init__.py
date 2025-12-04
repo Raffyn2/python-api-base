@@ -3,8 +3,8 @@
 Feature: file-size-compliance-phase2
 """
 
-from .base import Identifiable, SoftDeletable, Timestamped
-from .entities import (
+from core.protocols.base import Identifiable, SoftDeletable, Timestamped
+from core.protocols.entities import (
     Auditable,
     DeletableEntity,
     Entity,
@@ -13,7 +13,7 @@ from .entities import (
     Versionable,
     VersionedEntity,
 )
-from .repository import (
+from core.protocols.repository import (
     AsyncRepository,
     CacheProvider,
     Command,

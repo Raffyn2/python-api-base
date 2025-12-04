@@ -1,12 +1,15 @@
 """Unit of Work pattern for transaction management."""
 
-import asyncio
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator, Awaitable, Callable
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
+if TYPE_CHECKING:
+    import asyncio
+    from collections.abc import Awaitable, Callable
 
 
 class IUnitOfWork(ABC):

@@ -7,12 +7,14 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
-from pydantic import BaseModel
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
-from infrastructure.redis.connection import RedisConnection
+    from pydantic import BaseModel
+
+    from infrastructure.redis.connection import RedisConnection
 
 logger = logging.getLogger(__name__)
 
