@@ -6,6 +6,26 @@ Configurações de deploy production-ready para Python API Base em múltiplos am
 
 ```
 deployments/
+├── argocd/                 # ArgoCD GitOps
+│   ├── base/               # ArgoCD installation
+│   ├── projects/           # AppProjects
+│   ├── applications/       # Application definitions
+│   ├── applicationsets/    # Dynamic generation
+│   ├── notifications/      # Slack/email alerts
+│   ├── image-updater/      # Auto image updates
+│   ├── hooks/              # Pre/Post sync hooks
+│   ├── sealed-secrets/     # Secret management
+│   └── overlays/           # Environment overlays
+├── istio/                  # Istio Service Mesh
+│   ├── base/               # Base Istio configuration
+│   │   ├── istio-operator.yaml    # IstioOperator CRD
+│   │   ├── gateway.yaml           # Istio Gateway
+│   │   ├── virtualservice.yaml    # Traffic routing
+│   │   ├── destinationrule.yaml   # Circuit breaker, mTLS
+│   │   ├── peerauthentication.yaml # mTLS policies
+│   │   ├── authorizationpolicy.yaml # Access control
+│   │   └── serviceentry.yaml      # External services
+│   └── overlays/           # Environment overlays (dev/staging/prod)
 ├── docker/                 # Docker Compose
 │   ├── configs/            # Prometheus, Grafana, Nginx
 │   ├── dockerfiles/        # Multi-stage Dockerfiles
@@ -271,12 +291,71 @@ Three-tiered health check strategy:
 
 ## 🔄 CI/CD Integration
 
+### ArgoCD GitOps
+
+O projeto utiliza ArgoCD para continuous delivery GitOps-native:
+
+```bash
+# Instalar ArgoCD
+kubectl apply -k deployments/argocd/overlays/dev
+
+# Aplicar Applications
+kubectl apply -k deployments/argocd/applications
+
+# Verificar status
+argocd app list
+```
+
+**Recursos:**
+- Auto-sync para dev/staging
+- Manual sync para produção
+- Image Updater para atualização automática
+- Notificações Slack
+- Sealed Secrets para gestão de secrets
+
+Documentação completa: [ArgoCD README](./argocd/README.md)
+
+### Istio Service Mesh
+
+O projeto utiliza Istio para service mesh com mTLS, traffic management e observabilidade:
+
+```bash
+# Instalar Istio (desenvolvimento)
+kubectl apply -k deployments/istio/overlays/dev
+
+# Instalar Istio (produção)
+kubectl apply -k deployments/istio/overlays/prod
+
+# Verificar instalação
+istioctl analyze deployments/istio/base/
+
+# Verificar mTLS
+istioctl authn tls-check my-api.my-api.svc.cluster.local
+```
+
+**Recursos:**
+- mTLS automático entre serviços (STRICT mode em prod)
+- Traffic management (canary, circuit breaker, retries)
+- Authorization policies baseadas em identidade
+- JWT validation integrado
+- Observabilidade (métricas, tracing, access logs)
+- Egress control (REGISTRY_ONLY em prod)
+
+| Ambiente | mTLS | Egress | Tracing |
+|----------|------|--------|---------|
+| Dev | PERMISSIVE | ALLOW_ANY | 10% |
+| Staging | STRICT | REGISTRY_ONLY | 5% |
+| Prod | STRICT | REGISTRY_ONLY | 1% |
+
+Documentação completa: [Istio README](./istio/README.md)
+
 ### GitHub Actions Workflows
 
 Automated validation on every PR:
 
 - `.github/workflows/terraform.yml` - Terraform fmt/validate/plan
 - `.github/workflows/helm.yml` - Helm lint/test/package
+- `.github/workflows/argocd.yml` - ArgoCD manifest validation
 
 ### Pre-Deployment Checklist
 

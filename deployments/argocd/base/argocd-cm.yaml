@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Repository configuration
+  repositories: |
+    - url: https://github.com/org/python-api-base.git
+      name: python-api-base
+      type: git
+    - url: https://charts.bitnami.com/bitnami
+      name: bitnami
+      type: helm
+
+  # Resource tracking method
+  application.resourceTrackingMethod: annotation
+
+  # Health check settings
+  resource.customizations.health.argoproj.io_Application: |
+    hs = {}
+    hs.status = "Progressing"
+    hs.message = ""
+    if obj.status ~= nil then
+      if obj.status.health ~= nil then
+        hs.status = obj.status.health.status
+        if obj.status.health.message ~= nil then
+          hs.message = obj.status.health.message
+        end
+      end
+    end
+    return hs
+
+  # Custom health check for Deployments
+  resource.customizations.health.apps_Deployment: |
+    hs = {}
+    hs.status = "Progressing"
+    hs.message = ""
+    if obj.status ~= nil then
+      if obj.status.conditions ~= nil then
+        for i, condition in ipairs(obj.status.conditions) do
+          if condition.type == "Available" and condition.status == "True" then
+            hs.status = "Healthy"
+            hs.message = "Deployment is available"
+            return hs
+          end
+          if condition.type == "Progressing" and condition.status == "False" then
+            hs.status = "Degraded"
+            hs.message = condition.message
+            return hs
+          end
+        end
+      end
+      if obj.status.replicas ~= nil and obj.status.readyReplicas ~= nil then
+        if obj.status.replicas == obj.status.readyReplicas then
+          hs.status = "Healthy"
+          hs.message = "All replicas are ready"
+        end
+      end
+    end
+    return hs
+
+  # Custom health check for Jobs
+  resource.customizations.health.batch_Job: |
+    hs = {}
+    hs.status = "Progressing"
+    hs.message = ""
+    if obj.status ~= nil then
+      if obj.status.succeeded ~= nil and obj.status.succeeded > 0 then
+        hs.status = "Healthy"
+        hs.message = "Job completed successfully"
+        return hs
+      end
+      if obj.status.failed ~= nil and obj.status.failed > 0 then
+        hs.status = "Degraded"
+        hs.message = "Job failed"
+        return hs
+      end
+      if obj.status.active ~= nil and obj.status.active > 0 then
+        hs.status = "Progressing"
+        hs.message = "Job is running"
+      end
+    end
+    return hs
+
+  # Ignore differences for specific fields
+  resource.customizations.ignoreDifferences.all: |
+    managedFieldsManagers:
+      - kube-controller-manager
+    jsonPointers:
+      - /status
+
+  # Admin enabled
+  admin.enabled: "true"
+
+  # Dex configuration (SSO)
+  dex.config: |
+    connectors: []
+
+  # URL configuration
+  url: https://argocd.example.com
+
+  # Status badge enabled
+  statusbadge.enabled: "true"
+
+  # Resource exclusions
+  resource.exclusions: |
+    - apiGroups:
+        - cilium.io
+      kinds:
+        - CiliumIdentity
+      clusters:
+        - "*"

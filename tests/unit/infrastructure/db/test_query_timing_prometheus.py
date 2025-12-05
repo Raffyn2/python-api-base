@@ -7,12 +7,13 @@
 from __future__ import annotations
 
 import time
+from itertools import cycle
 from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
 import pytest
 from prometheus_client import CollectorRegistry, Counter, Histogram
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, event
 
 from infrastructure.db.middleware.query_timing_prometheus import (
     QueryTimingPrometheusMiddleware,
@@ -94,6 +95,9 @@ class TestQueryTimingPrometheusMiddleware:
             engine=mock_engine,
             prometheus_registry=prometheus_registry,
         )
+        middleware.install()
+        with mock_engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
 
         expected_buckets = (
             0.001,  # 1ms
@@ -110,6 +114,7 @@ class TestQueryTimingPrometheusMiddleware:
             10.000,  # 10s
         )
 
+        histogram_metric = middleware.query_duration_histogram
         # Get histogram metric's samples
         samples = list(histogram_metric.collect())[0].samples
         
@@ -121,6 +126,8 @@ class TestQueryTimingPrometheusMiddleware:
 
         # Verify buckets match
         assert bucket_labels == expected_labels
+        
+        middleware.uninstall()
 
     @patch("infrastructure.db.middleware.query_timing_prometheus.time.perf_counter")
     def test_query_counter_incremented(
@@ -129,7 +136,7 @@ class TestQueryTimingPrometheusMiddleware:
         mock_engine: Engine,
         prometheus_registry: CollectorRegistry,
     ) -> None:
-        mock_time.side_effect = [0.0, 0.050, 0.1, 0.2]  # 50ms query
+        mock_time.side_effect = cycle([0.0, 0.050])
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -146,6 +153,8 @@ class TestQueryTimingPrometheusMiddleware:
             "db_queries_total", {"query_type": "SELECT"}
         )
         assert counter_value == 1.0
+        
+        middleware.uninstall()
 
     @patch("infrastructure.db.middleware.query_timing_prometheus.time.perf_counter")
     def test_slow_query_counter_incremented(
@@ -155,7 +164,7 @@ class TestQueryTimingPrometheusMiddleware:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that slow query counter is incremented for slow queries."""
-        mock_time.side_effect = [0.0, 0.200, 0.3, 0.4]  # 200ms query (slow)
+        mock_time.side_effect = cycle([0.0, 0.200])
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -164,19 +173,16 @@ class TestQueryTimingPrometheusMiddleware:
         )
         middleware.install()
 
-        # Create a dummy table for the query
         with mock_engine.connect() as conn:
             conn.execute(text("CREATE TABLE users (id INTEGER, created_at TEXT)"))
-
-        # Execute a slow query
-        with mock_engine.connect() as conn:
             conn.execute(text("SELECT * FROM users WHERE created_at > '2025-01-01'"))
 
-        # Verify slow query counter incremented
         slow_counter_value = prometheus_registry.get_sample_value(
             "db_slow_queries_total", {"query_type": "SELECT"}
-        )
+        ) or 0.0
         assert slow_counter_value == 1.0
+
+        middleware.uninstall()
 
     @patch("infrastructure.db.middleware.query_timing_prometheus.time.perf_counter")
     def test_fast_query_not_counted_as_slow(
@@ -186,7 +192,7 @@ class TestQueryTimingPrometheusMiddleware:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that fast queries are not counted as slow."""
-        mock_time.side_effect = [0.0, 0.050, 0.1, 0.2]  # 50ms query (fast)
+        mock_time.side_effect = cycle([0.0, 0.050])
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -195,16 +201,15 @@ class TestQueryTimingPrometheusMiddleware:
         )
         middleware.install()
 
-        # Execute a fast query
         with mock_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
 
-        # Verify slow query counter NOT incremented
         slow_counter_value = prometheus_registry.get_sample_value(
             "db_slow_queries_total", {"query_type": "SELECT"}
         )
-        # Should be None (no slow queries) or 0
         assert slow_counter_value is None or slow_counter_value == 0.0
+
+        middleware.uninstall()
 
     @patch("infrastructure.db.middleware.query_timing_prometheus.time.perf_counter")
     def test_histogram_observes_duration(
@@ -214,7 +219,7 @@ class TestQueryTimingPrometheusMiddleware:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that histogram observes query duration."""
-        mock_time.side_effect = [0.0, 0.075, 0.1, 0.2]  # 75ms query
+        mock_time.side_effect = [0.0, 0.1]
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -222,11 +227,9 @@ class TestQueryTimingPrometheusMiddleware:
         )
         middleware.install()
 
-        # Execute a query
         with mock_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
 
-        # Verify histogram recorded the duration
         histogram_count = prometheus_registry.get_sample_value(
             "db_query_duration_seconds_count", {"query_type": "SELECT"}
         )
@@ -235,7 +238,9 @@ class TestQueryTimingPrometheusMiddleware:
         )
 
         assert histogram_count == 1.0
-        assert histogram_sum == pytest.approx(0.075, rel=0.01)
+        assert histogram_sum == pytest.approx(0.1, rel=0.01)
+
+        middleware.uninstall()
 
     @patch("infrastructure.db.middleware.query_timing_prometheus.time.perf_counter")
     def test_multiple_query_types_tracked_separately(
@@ -245,18 +250,13 @@ class TestQueryTimingPrometheusMiddleware:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that different query types are tracked separately."""
-        mock_time.side_effect = [
+        mock_time.side_effect = cycle([
             0.0,
-            0.050,  # SELECT: 50ms
             0.050,
-            0.100,  # INSERT: 50ms
             0.100,
-            0.150,  # UPDATE: 50ms
             0.150,
-            0.200,  # SELECT: 50ms
-            0.250,
-            0.300,
-        ]
+            0.200,
+        ])
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -264,14 +264,13 @@ class TestQueryTimingPrometheusMiddleware:
         )
         middleware.install()
 
-        # Execute different query types
         with mock_engine.connect() as conn:
+            conn.execute(text("CREATE TABLE test (value INTEGER)"))
             conn.execute(text("SELECT 1"))
             conn.execute(text("INSERT INTO test VALUES (1)"))
             conn.execute(text("UPDATE test SET value = 2"))
             conn.execute(text("SELECT 2"))
 
-        # Verify each type tracked separately
         select_count = prometheus_registry.get_sample_value(
             "db_queries_total", {"query_type": "SELECT"}
         )
@@ -286,6 +285,8 @@ class TestQueryTimingPrometheusMiddleware:
         assert insert_count == 1.0
         assert update_count == 1.0
 
+        middleware.uninstall()
+
     @patch("infrastructure.db.middleware.query_timing_prometheus.time.perf_counter")
     def test_histogram_buckets_distribution(
         self,
@@ -294,16 +295,11 @@ class TestQueryTimingPrometheusMiddleware:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that histogram buckets are populated correctly."""
-        # Queries with different durations
         mock_time.side_effect = [
             0.0,
-            0.003,  # 3ms - falls in 0.005 bucket
             0.003,
-            0.030,  # 27ms - falls in 0.050 bucket
             0.030,
-            0.150,  # 120ms - falls in 0.250 bucket
-            0.200,
-            0.300,
+            0.150,
         ]
 
         middleware = QueryTimingPrometheusMiddleware(
@@ -312,13 +308,11 @@ class TestQueryTimingPrometheusMiddleware:
         )
         middleware.install()
 
-        # Execute queries with different durations
         with mock_engine.connect() as conn:
-            conn.execute(text("SELECT 1"))  # 3ms
-            conn.execute(text("SELECT 2"))  # 27ms
-            conn.execute(text("SELECT 3"))  # 120ms
+            conn.execute(text("SELECT 1"))
+            conn.execute(text("SELECT 2"))
+            conn.execute(text("SELECT 3"))
 
-        # Verify bucket counts
         bucket_005 = prometheus_registry.get_sample_value(
             "db_query_duration_seconds_bucket", {"query_type": "SELECT", "le": "0.005"}
         )
@@ -329,9 +323,11 @@ class TestQueryTimingPrometheusMiddleware:
             "db_query_duration_seconds_bucket", {"query_type": "SELECT", "le": "0.25"}
         )
 
-        assert bucket_005 == 1.0  # Only first query
-        assert bucket_050 == 2.0  # First two queries
-        assert bucket_250 == 3.0  # All three queries
+        assert bucket_005 == 1.0
+        assert bucket_050 == 2.0
+        assert bucket_250 == 3.0
+
+        middleware.uninstall()
 
     def test_install_and_uninstall(
         self, mock_engine: Engine, prometheus_registry: CollectorRegistry
@@ -341,28 +337,21 @@ class TestQueryTimingPrometheusMiddleware:
             engine=mock_engine,
             prometheus_registry=prometheus_registry,
         )
-
-        # Install
         middleware.install()
 
-        # Execute query
         with mock_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
 
-        # Verify metrics collected
         counter_value = prometheus_registry.get_sample_value(
             "db_queries_total", {"query_type": "SELECT"}
         )
         assert counter_value == 1.0
 
-        # Uninstall
         middleware.uninstall()
 
-        # Execute another query (should not be tracked)
         with mock_engine.connect() as conn:
             conn.execute(text("SELECT 2"))
 
-        # Counter should still be 1 (not incremented)
         counter_value = prometheus_registry.get_sample_value(
             "db_queries_total", {"query_type": "SELECT"}
         )
@@ -408,17 +397,15 @@ class TestInstallQueryTimingWithPrometheus:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test install function and verify metrics are collected."""
-        mock_time.side_effect = [0.0, 0.050, 0.1, 0.2]  # 50ms query
+        mock_time.side_effect = cycle([0.0, 0.050])
 
-        middleware = install_query_timing_with_prometheus(
+        install_query_timing_with_prometheus(
             mock_engine, prometheus_registry=prometheus_registry
         )
 
-        # Execute a query
         with mock_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
 
-        # Verify metrics
         counter_value = prometheus_registry.get_sample_value(
             "db_queries_total", {"query_type": "SELECT"}
         )
@@ -432,15 +419,13 @@ class TestEdgeCases:
         self, mock_engine: Engine, prometheus_registry: CollectorRegistry
     ) -> None:
         """Test that creating middleware twice doesn't duplicate metrics."""
-        # First middleware
-        middleware1 = QueryTimingPrometheusMiddleware(
+        QueryTimingPrometheusMiddleware(
             engine=mock_engine,
             prometheus_registry=prometheus_registry,
         )
 
-        # Should raise ValueError if trying to register same metric twice
         with pytest.raises(ValueError, match="Duplicated timeseries"):
-            middleware2 = QueryTimingPrometheusMiddleware(
+            QueryTimingPrometheusMiddleware(
                 engine=mock_engine,
                 prometheus_registry=prometheus_registry,
             )
@@ -453,7 +438,7 @@ class TestEdgeCases:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that zero duration queries are handled correctly."""
-        mock_time.side_effect = [0.0, 0.0, 0.1, 0.2]  # 0ms query
+        mock_time.side_effect = cycle([0.0, 0.0])
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -461,11 +446,9 @@ class TestEdgeCases:
         )
         middleware.install()
 
-        # Execute query
         with mock_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
 
-        # Should not raise exception
         counter_value = prometheus_registry.get_sample_value(
             "db_queries_total", {"query_type": "SELECT"}
         )
@@ -479,30 +462,27 @@ class TestEdgeCases:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test handling of very slow queries (>10s)."""
-        mock_time.side_effect = [0.0, 15.0, 16.0, 17.0]  # 15 second query
+        mock_time.side_effect = cycle([0.0, 15.0])
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
             prometheus_registry=prometheus_registry,
         )
         middleware.install()
-
-        # Define a user-defined function to simulate sleep
-        @mock_engine.connect
+        
+        @event.listens_for(mock_engine, "connect")
         def connect(dbapi_connection, connection_record):
-            dbapi_connection.create_function("sleep", 1, lambda t: time.sleep(float(t)))
+            dbapi_connection.create_function("sleep", 1, time.sleep)
 
-        # Execute very slow query
         with mock_engine.connect() as conn:
             conn.execute(text("SELECT sleep(0.1)"))
 
-        # Verify it's counted
         counter_value = prometheus_registry.get_sample_value(
             "db_queries_total", {"query_type": "SELECT"}
         )
         slow_counter_value = prometheus_registry.get_sample_value(
             "db_slow_queries_total", {"query_type": "SELECT"}
-        )
+        ) or 0.0
 
         assert counter_value == 1.0
         assert slow_counter_value == 1.0
@@ -517,9 +497,7 @@ class TestEdgeCases:
             metric_prefix="",
         )
 
-        # Metrics should be created with empty prefix
         assert middleware.metric_prefix == ""
-        # Metrics names would be "_queries_total" etc.
 
     @patch("infrastructure.db.middleware.query_timing_prometheus.time.perf_counter")
     def test_statistics_still_collected(
@@ -529,7 +507,7 @@ class TestEdgeCases:
         prometheus_registry: CollectorRegistry,
     ) -> None:
         """Test that base statistics are still collected alongside Prometheus."""
-        mock_time.side_effect = [0.0, 0.150, 0.2, 0.3]  # 150ms slow query
+        mock_time.side_effect = cycle([0.0, 0.150])
 
         middleware = QueryTimingPrometheusMiddleware(
             engine=mock_engine,
@@ -539,17 +517,14 @@ class TestEdgeCases:
         )
         middleware.install()
 
-        # Execute query
         with mock_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
 
-        # Verify base stats collected
         stats = middleware.get_stats()
         assert stats is not None
         assert stats.total_queries == 1
         assert stats.slow_queries == 1
 
-        # Verify Prometheus metrics also collected
         counter_value = prometheus_registry.get_sample_value(
             "db_queries_total", {"query_type": "SELECT"}
         )

@@ -1,0 +1,88 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: python-api-base
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: python-api-base
+    app.kubernetes.io/part-of: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Python API Base application project
+
+  # Allowed source repositories
+  sourceRepos:
+    - "https://github.com/org/python-api-base.git"
+    - "https://charts.bitnami.com/bitnami"
+
+  # Allowed destination clusters and namespaces
+  destinations:
+    - namespace: python-api-dev
+      server: https://kubernetes.default.svc
+    - namespace: python-api-staging
+      server: https://kubernetes.default.svc
+    - namespace: python-api-prod
+      server: https://kubernetes.default.svc
+
+  # Restricted cluster-scoped resources (security)
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+
+  # Allow all namespace-scoped resources
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  # Deny dangerous resources
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+
+  # Orphaned resources monitoring
+  orphanedResources:
+    warn: true
+    ignore: []
+
+  # RBAC roles for this project
+  roles:
+    - name: developer
+      description: Developer access to python-api-base applications
+      policies:
+        - p, proj:python-api-base:developer, applications, get, python-api-base/*, allow
+        - p, proj:python-api-base:developer, applications, sync, python-api-base/*, allow
+        - p, proj:python-api-base:developer, applications, action/*, python-api-base/*, allow
+        - p, proj:python-api-base:developer, logs, get, python-api-base/*, allow
+      groups:
+        - developers
+
+    - name: viewer
+      description: Read-only access to python-api-base applications
+      policies:
+        - p, proj:python-api-base:viewer, applications, get, python-api-base/*, allow
+        - p, proj:python-api-base:viewer, logs, get, python-api-base/*, allow
+      groups:
+        - viewers
+
+  # Sync windows (optional - restrict sync times for prod)
+  syncWindows:
+    - kind: allow
+      schedule: "* * * * *"
+      duration: 24h
+      applications:
+        - "*-dev"
+        - "*-staging"
+      namespaces:
+        - python-api-dev
+        - python-api-staging
+    - kind: allow
+      schedule: "0 6-18 * * 1-5"
+      duration: 12h
+      applications:
+        - "*-prod"
+      namespaces:
+        - python-api-prod
+      manualSync: true

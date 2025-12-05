@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: argocd
+
+resources:
+  - ../../base
+  - ../../projects
+  - ../../notifications
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /data/url
+        value: https://argocd-dev.example.com
+    target:
+      kind: ConfigMap
+      name: argocd-cm
+  - patch: |-
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: argocd-dev.example.com
+      - op: replace
+        path: /spec/rules/0/host
+        value: argocd-dev.example.com
+    target:
+      kind: Ingress
+      name: argocd-server-ingress
+
+configMapGenerator:
+  - name: argocd-notifications-cm
+    behavior: merge
+    literals:
+      - context=|
+          argocdUrl: https://argocd-dev.example.com
+
+labels:
+  - pairs:
+      environment: dev
+    includeSelectors: false

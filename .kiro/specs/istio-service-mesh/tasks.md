@@ -1,0 +1,258 @@
+# Implementation Plan
+
+## Istio Service Mesh Integration
+
+- [ ] 1. Set up Istio base infrastructure
+  - [ ] 1.1 Create Istio directory structure under deployments/istio
+    - Create base/, overlays/dev, overlays/staging, overlays/prod directories
+    - Create kustomization.yaml files for each overlay
+    - _Requirements: 1.1, 1.2_
+  - [ ] 1.2 Create IstioOperator manifest for control plane installation
+    - Configure istiod with resource limits (CPU: 500m-2000m, Memory: 512Mi-2Gi)
+    - Enable automatic sidecar injection
+    - Configure mesh-wide settings (accessLogFile, tracing, outboundTrafficPolicy)
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [ ] 1.3 Write property test for resource limits bounds
+    - **Property 2: Resource Limits Within Bounds**
+    - **Validates: Requirements 1.3**
+  - [ ] 1.4 Create namespace configuration with istio-injection label
+    - Update my-api namespace with istio-injection=enabled label
+    - _Requirements: 1.2_
+  - [ ] 1.5 Write property test for sidecar injection label
+    - **Property 1: Sidecar Injection Label Consistency**
+    - **Validates: Requirements 1.2**
+
+- [ ] 2. Implement Gateway and Ingress configuration
+  - [ ] 2.1 Create Istio Gateway manifest
+    - Configure HTTPS server with TLS termination
+    - Reference cert-manager certificate secret
+    - Configure HTTP to HTTPS redirect
+    - _Requirements: 4.1, 4.2_
+  - [ ] 2.2 Write property test for Gateway TLS configuration
+    - **Property 9: Gateway TLS Configuration**
+    - **Validates: Requirements 4.1**
+  - [ ] 2.3 Create base VirtualService manifest
+    - Configure host and gateway binding
+    - Set default timeout (30s) and retry policy
+    - Configure CORS policy
+    - _Requirements: 3.1, 3.4, 3.5, 4.4_
+  - [ ] 2.4 Write property test for Gateway-VirtualService host matching
+    - **Property 10: Gateway-VirtualService Host Matching**
+    - **Validates: Requirements 4.2**
+  - [ ] 2.5 Write property test for timeout configuration validity
+    - **Property 8: Timeout Configuration Validity**
+    - **Validates: Requirements 3.5**
+
+- [ ] 3. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 4. Implement traffic management policies
+  - [ ] 4.1 Create DestinationRule with circuit breaker
+    - Configure outlierDetection (consecutive5xxErrors, interval, baseEjectionTime)
+    - Configure connection pool settings
+    - Define subsets for canary deployments
+    - _Requirements: 3.2, 3.3_
+  - [ ] 4.2 Write property test for circuit breaker configuration
+    - **Property 6: Circuit Breaker Configuration Validity**
+    - **Validates: Requirements 3.2, 8.5**
+  - [ ] 4.3 Create VirtualService with weighted routing for canary
+    - Configure 90/10 weight distribution between stable and canary
+    - _Requirements: 3.1_
+  - [ ] 4.4 Write property test for VirtualService weight distribution
+    - **Property 5: VirtualService Weight Distribution**
+    - **Validates: Requirements 3.1, 10.2**
+  - [ ] 4.5 Write property test for retry policy configuration
+    - **Property 7: Retry Policy Configuration Validity**
+    - **Validates: Requirements 3.4**
+
+- [ ] 5. Implement mTLS and security policies
+  - [ ] 5.1 Create PeerAuthentication for STRICT mTLS
+    - Configure namespace-wide STRICT mode
+    - _Requirements: 2.1, 2.2_
+  - [ ] 5.2 Write property test for mTLS STRICT mode
+    - **Property 3: mTLS STRICT Mode Enforcement**
+    - **Validates: Requirements 2.1**
+  - [ ] 5.3 Create AuthorizationPolicy for service access control
+    - Configure allowed source principals
+    - Define allowed operations (methods, paths)
+    - _Requirements: 6.1, 6.3_
+  - [ ] 5.4 Write property test for AuthorizationPolicy principals
+    - **Property 15: AuthorizationPolicy Principal Validity**
+    - **Validates: Requirements 6.1, 6.3**
+  - [ ] 5.5 Create RequestAuthentication for JWT validation
+    - Configure JWKS URI for token validation
+    - _Requirements: 6.4_
+  - [ ] 5.6 Write property test for JWT JWKS URI presence
+    - **Property 16: JWT JWKS URI Presence**
+    - **Validates: Requirements 6.4**
+
+- [ ] 6. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 7. Implement external service access
+  - [ ] 7.1 Create ServiceEntry for external APIs
+    - Define external hosts and ports
+    - Configure resolution and location
+    - _Requirements: 8.1_
+  - [ ] 7.2 Write property test for ServiceEntry host validity
+    - **Property 19: ServiceEntry Host Validity**
+    - **Validates: Requirements 8.1**
+  - [ ] 7.3 Create DestinationRule for external services
+    - Configure TLS origination
+    - Add circuit breaker for external calls
+    - _Requirements: 8.3, 8.4_
+  - [ ] 7.4 Write property test for external service DestinationRule
+    - **Property 21: External Service DestinationRule Completeness**
+    - **Validates: Requirements 8.3, 8.4**
+  - [ ] 7.5 Configure egress policy REGISTRY_ONLY
+    - Update IstioOperator meshConfig
+    - _Requirements: 8.2_
+  - [ ] 7.6 Write property test for egress policy configuration
+    - **Property 20: Egress Policy Configuration**
+    - **Validates: Requirements 8.2**
+
+- [ ] 8. Implement observability integration
+  - [ ] 8.1 Configure Prometheus integration
+    - Create ServiceMonitor for Istio metrics
+    - Configure scrape endpoints
+    - _Requirements: 1.4, 5.1_
+  - [ ] 8.2 Configure Jaeger tracing integration
+    - Set sampling rate (1% for production)
+    - Configure trace propagation headers
+    - _Requirements: 5.2, 5.4_
+  - [ ] 8.3 Write property test for tracing configuration
+    - **Property 13: Tracing Configuration**
+    - **Validates: Requirements 5.2, 5.4**
+  - [ ] 8.4 Configure access logging in JSON format
+    - Update IstioOperator accessLogFormat
+    - _Requirements: 5.5_
+  - [ ] 8.5 Write property test for access log format
+    - **Property 14: Access Log Format JSON**
+    - **Validates: Requirements 5.5**
+  - [ ] 8.6 Create Kiali deployment configuration
+    - Configure Kiali to connect to Prometheus and Jaeger
+    - _Requirements: 5.3_
+
+- [ ] 9. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 10. Implement ArgoCD integration
+  - [ ] 10.1 Create ArgoCD Application for Istio system
+    - Configure sync policy (manual for prod, auto for dev/staging)
+    - Add health checks for Istio CRDs
+    - _Requirements: 7.1, 7.2, 7.3_
+  - [ ] 10.2 Write property test for ArgoCD Application health checks
+    - **Property 17: ArgoCD Application Health Checks**
+    - **Validates: Requirements 7.2**
+  - [ ] 10.3 Write property test for ArgoCD sync policy
+    - **Property 18: ArgoCD Sync Policy Configuration**
+    - **Validates: Requirements 7.3**
+  - [ ] 10.4 Create ArgoCD Application for Istio resources (VirtualService, etc.)
+    - Configure project and destination
+    - _Requirements: 7.1_
+  - [ ] 10.5 Configure ArgoCD notifications for Istio sync events
+    - Add Slack notification triggers
+    - _Requirements: 7.5_
+
+- [ ] 11. Update Helm chart with Istio support
+  - [ ] 11.1 Add Istio templates to Helm chart
+    - Create templates/istio/virtualservice.yaml
+    - Create templates/istio/destinationrule.yaml
+    - Create templates/istio/peerauthentication.yaml
+    - _Requirements: 9.4_
+  - [ ] 11.2 Write property test for Helm chart Istio templates
+    - **Property 22: Helm Chart Istio Templates**
+    - **Validates: Requirements 9.4**
+  - [ ] 11.3 Update values.yaml with Istio configuration options
+    - Add istio.enabled, istio.virtualService, istio.destinationRule sections
+    - _Requirements: 9.4_
+  - [ ] 11.4 Update Helm chart README with Istio documentation
+    - Document Istio configuration options
+    - _Requirements: 9.1_
+
+- [ ] 12. Create environment overlays
+  - [ ] 12.1 Create dev overlay with permissive settings
+    - Configure PERMISSIVE mTLS for debugging
+    - Higher tracing sampling rate (10%)
+    - _Requirements: 1.1_
+  - [ ] 12.2 Create staging overlay with production-like settings
+    - Configure STRICT mTLS
+    - Production tracing sampling rate (1%)
+    - _Requirements: 1.1_
+  - [ ] 12.3 Create prod overlay with hardened settings
+    - Configure STRICT mTLS
+    - REGISTRY_ONLY egress policy
+    - Conservative resource limits
+    - _Requirements: 1.1, 2.1, 8.2_
+
+- [ ] 13. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 14. Create documentation and runbooks
+  - [ ] 14.1 Create Istio README in deployments/istio
+    - Document installation steps
+    - Document configuration options
+    - _Requirements: 9.1, 9.2_
+  - [ ] 14.2 Create ADR for Istio adoption
+    - Document decision rationale
+    - Document alternatives considered
+    - _Requirements: 9.2_
+  - [ ] 14.3 Create troubleshooting runbook
+    - Document common issues and resolutions
+    - Include istioctl commands for debugging
+    - _Requirements: 9.3_
+  - [ ] 14.4 Create traffic management examples
+    - Document canary deployment example
+    - Document blue-green deployment example
+    - Document A/B testing example
+    - _Requirements: 9.2_
+
+- [ ] 15. Implement CI/CD validation
+  - [ ] 15.1 Create GitHub Actions workflow for Istio validation
+    - Run istioctl analyze on manifests
+    - Run property-based tests
+    - _Requirements: 10.1, 10.4_
+  - [ ] 15.2 Create validation script for local development
+    - Integrate istioctl validate
+    - _Requirements: 9.5, 10.1_
+  - [ ] 15.3 Write unit tests for Istio validators
+    - Test VirtualService validation
+    - Test DestinationRule validation
+    - Test AuthorizationPolicy validation
+    - _Requirements: 10.1, 10.2, 10.3_
+
+- [ ] 16. Update project documentation
+  - [ ] 16.1 Update main README.md with Istio section
+    - Add Istio to technology stack
+    - Add quick start commands
+    - _Requirements: 9.1_
+  - [ ] 16.2 Update deployments/README.md
+    - Add Istio deployment instructions
+    - Document integration with existing infrastructure
+    - _Requirements: 9.1_
+  - [ ] 16.3 Update architecture documentation
+    - Add Istio to architecture diagrams
+    - Document service mesh layer
+    - _Requirements: 9.2_
+
+- [ ] 17. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 18. Code review and final validation
+  - [ ] 18.1 Run comprehensive code review on all Istio manifests
+    - Verify YAML syntax and structure
+    - Verify security best practices
+    - Verify resource naming conventions
+    - _Requirements: 10.1_
+  - [ ] 18.2 Validate all property tests pass
+    - Run full property test suite
+    - Verify 100+ iterations per property
+    - _Requirements: 10.2, 10.3_
+  - [ ] 18.3 Run istioctl analyze on complete configuration
+    - Verify no warnings or errors
+    - _Requirements: 10.4_
+  - [ ] 18.4 Final documentation review
+    - Verify all docs are complete and accurate
+    - Update CHANGELOG
+    - _Requirements: 9.1, 9.2, 9.3_
+

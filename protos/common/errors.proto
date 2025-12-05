@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package common;
+
+option python_generic_services = true;
+
+// ErrorDetail represents a single error detail with context
+message ErrorDetail {
+  // Error code identifier
+  string code = 1;
+  // Human-readable error message
+  string message = 2;
+  // Field that caused the error (for validation errors)
+  string field = 3;
+  // Additional metadata about the error
+  map<string, string> metadata = 4;
+}
+
+// ErrorResponse represents a complete error response
+message ErrorResponse {
+  // Unique error identifier for tracking
+  string error_id = 1;
+  // Error code category
+  string error_code = 2;
+  // Main error message
+  string message = 3;
+  // Detailed error information
+  repeated ErrorDetail details = 4;
+  // Trace ID for distributed tracing
+  string trace_id = 5;
+  // Timestamp when error occurred
+  string timestamp = 6;
+}

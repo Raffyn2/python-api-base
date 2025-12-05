@@ -1,0 +1,249 @@
+# Implementation Plan
+
+- [x] 1. Set up gRPC infrastructure and dependencies
+  - [x] 1.1 Add gRPC dependencies to pyproject.toml
+    - Add grpcio, grpcio-tools, grpcio-health-checking, grpcio-reflection
+    - Add grpcio-status for rich error details
+    - Add buf for proto management
+    - _Requirements: 1.1, 1.4_
+  - [x] 1.2 Create gRPC configuration settings
+    - Create `src/core/config/grpc.py` with GRPCServerSettings and GRPCClientSettings
+    - Add gRPC settings to main Settings class
+    - _Requirements: 1.1_
+  - [x] 1.3 Create proto directory structure and buf configuration
+    - Create `protos/` directory with common/ and examples/ subdirectories
+    - Create `buf.yaml` and `buf.gen.yaml` for code generation
+    - Add Makefile targets for proto compilation
+    - _Requirements: 1.1, 1.2_
+
+- [x] 2. Implement core gRPC server infrastructure
+  - [x] 2.1 Create gRPC server class
+    - Implement `src/infrastructure/grpc/server.py` with async server
+    - Support interceptor chain configuration
+    - Implement graceful shutdown
+    - _Requirements: 2.1, 4.4_
+  - [x] 2.2 Create base servicer class with DI integration
+    - Implement `src/interface/grpc/servicers/base.py`
+    - Integrate with dependency-injector container
+    - Provide use case resolution helper
+    - _Requirements: 2.1, 2.2_
+  - [x] 2.3 Implement error-to-status mapping utilities
+    - Create `src/infrastructure/grpc/utils/status.py`
+    - Map all domain exceptions to gRPC status codes
+    - Include error detail serialization
+    - _Requirements: 2.4_
+  - [x] 2.4 Write property test for error-to-status mapping
+    - **Property 3: Domain Error to gRPC Status Mapping**
+    - **Validates: Requirements 2.4**
+
+- [x] 3. Implement Protobuf utilities and mappers
+  - [x] 3.1 Create common proto definitions
+    - Create `protos/common/errors.proto` with ErrorDetail and ErrorResponse
+    - Create `protos/common/health.proto` (standard health check)
+    - _Requirements: 1.2, 1.3_
+  - [x] 3.2 Implement Protobuf mapper base class
+    - Create `src/infrastructure/grpc/utils/mappers.py`
+    - Implement generic ProtobufMapper protocol
+    - Add list mapping utilities
+    - _Requirements: 2.3_
+  - [x] 3.3 Write property test for Protobuf round-trip
+    - **Property 1: Protobuf Message Round-Trip**
+    - **Validates: Requirements 1.5**
+  - [x] 3.4 Write property test for entity-protobuf mapper
+    - **Property 2: Entity-Protobuf Mapper Consistency**
+    - **Validates: Requirements 2.3**
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - All tests passing (14/14)
+
+- [x] 5. Implement server interceptors
+  - [x] 5.1 Create authentication interceptor
+    - Implement `src/infrastructure/grpc/interceptors/auth.py`
+    - Extract JWT from metadata and validate
+    - Support method exclusion list
+    - _Requirements: 3.1_
+  - [x] 5.2 Write property test for JWT authentication
+    - **Property 4: JWT Authentication Validation**
+    - **Validates: Requirements 3.1**
+  - [x] 5.3 Create logging interceptor
+    - Implement `src/infrastructure/grpc/interceptors/logging.py`
+    - Log request/response with correlation ID
+    - Use structlog for structured logging
+    - _Requirements: 3.2_
+  - [x] 5.4 Create tracing interceptor
+    - Implement `src/infrastructure/grpc/interceptors/tracing.py`
+    - Create OpenTelemetry spans for each RPC
+    - Propagate trace context via metadata
+    - _Requirements: 3.3, 7.3_
+  - [x] 5.5 Write property test for trace context propagation
+    - **Property 13: Trace Context Propagation**
+    - **Validates: Requirements 7.3**
+  - [x] 5.6 Create metrics interceptor
+    - Implement `src/infrastructure/grpc/interceptors/metrics.py`
+    - Record request count, latency histogram, status labels
+    - Integrate with existing Prometheus setup
+    - _Requirements: 7.1_
+  - [x] 5.7 Write property test for metrics recording
+    - **Property 12: Metrics Recording Completeness**
+    - **Validates: Requirements 7.1**
+  - [x] 5.8 Create error handling interceptor
+    - Implement `src/infrastructure/grpc/interceptors/error.py`
+    - Catch exceptions and convert to gRPC status
+    - Include error details in trailing metadata
+    - _Requirements: 3.4_
+  - [x] 5.9 Write property test for interceptor execution order
+    - **Property 5: Interceptor Execution Order**
+    - **Validates: Requirements 3.5**
+
+- [x] 6. Checkpoint - Ensure all tests pass
+  - All tests passing
+
+- [x] 7. Implement health check service
+  - [x] 7.1 Create health service implementation
+    - Implement `src/infrastructure/grpc/health/service.py`
+    - Support Check and Watch methods
+    - Integrate with existing dependency checks
+    - _Requirements: 4.1, 4.2_
+  - [x] 7.2 Write property test for health check status
+    - **Property 6: Health Check Status Consistency**
+    - **Validates: Requirements 4.2**
+  - [x] 7.3 Add reflection service support
+    - Enable gRPC reflection when configured
+    - Support service discovery for debugging tools
+    - _Requirements: 4.3_
+
+- [x] 8. Implement gRPC client infrastructure
+  - [x] 8.1 Create client factory
+    - Implement `src/infrastructure/grpc/client/factory.py`
+    - Support secure and insecure channels
+    - Configure connection pooling
+    - _Requirements: 5.1, 5.5_
+  - [x] 8.2 Implement retry interceptor for clients
+    - Create `src/infrastructure/grpc/client/resilience.py`
+    - Implement exponential backoff with jitter
+    - Support configurable max retries
+    - _Requirements: 5.2_
+  - [x] 8.3 Write property test for retry backoff
+    - **Property 7: Retry with Exponential Backoff**
+    - **Validates: Requirements 5.2**
+  - [x] 8.4 Integrate circuit breaker with gRPC clients
+    - Create `src/infrastructure/grpc/client/resilience.py`
+    - Wrap client calls with circuit breaker
+    - Support state transitions (CLOSED, OPEN, HALF_OPEN)
+    - _Requirements: 5.3_
+  - [x] 8.5 Write property test for circuit breaker
+    - **Property 8: Circuit Breaker State Transitions**
+    - **Validates: Requirements 5.3**
+  - [x] 8.6 Implement deadline enforcement
+    - Add deadline/timeout support to client factory
+    - Propagate deadlines through call chain
+    - _Requirements: 5.4_
+  - [x] 8.7 Write property test for deadline enforcement
+    - **Property 9: Deadline Enforcement**
+    - **Validates: Requirements 5.4**
+
+- [x] 9. Checkpoint - Ensure all tests pass
+  - All tests passing
+
+- [x] 10. Implement streaming support
+  - [x] 10.1 Implement server streaming utilities
+    - Add async generator support in base servicer
+    - Handle stream cancellation
+    - _Requirements: 6.1_
+  - [x] 10.2 Write property test for server streaming
+    - **Property 10: Server Streaming Message Delivery**
+    - **Validates: Requirements 6.1**
+  - [x] 10.3 Implement client streaming utilities
+    - Add async iterator handling in base servicer
+    - Support message aggregation
+    - _Requirements: 6.2_
+  - [x] 10.4 Write property test for client streaming
+    - **Property 11: Client Streaming Message Reception**
+    - **Validates: Requirements 6.2**
+  - [x] 10.5 Implement bidirectional streaming support
+    - Add concurrent send/receive handling
+    - Implement stream lifecycle management
+    - _Requirements: 6.3, 6.4_
+
+- [x] 11. Create example gRPC service
+  - [x] 11.1 Create example proto definition
+    - Create `protos/examples/items.proto` with ItemService
+    - Include unary, server streaming, client streaming methods
+    - _Requirements: 8.1, 8.2_
+  - [x] 11.2 Implement example servicer
+    - Create `src/interface/grpc/servicers/examples.py`
+    - Integrate with existing Item domain entities
+    - Demonstrate all RPC patterns
+    - _Requirements: 8.2, 8.3_
+  - [x] 11.3 Create example Protobuf mapper
+    - Implement Item entity to Protobuf mapper
+    - Demonstrate mapper pattern usage
+    - _Requirements: 8.3_
+  - [x] 11.4 Write property tests for example service
+    - Test message serialization round-trip
+    - **Validates: Requirements 8.4**
+
+- [x] 12. Checkpoint - Ensure all tests pass
+  - All tests passing (14/14)
+
+- [x] 13. Implement deployment configurations
+  - [x] 13.1 Create Kubernetes gRPC service manifest
+    - Add gRPC service to Helm chart
+    - Configure gRPC port (50051)
+    - _Requirements: 9.1_
+  - [x] 13.2 Configure Istio for gRPC traffic
+    - Create VirtualService for gRPC routing
+    - Configure DestinationRule for load balancing
+    - _Requirements: 9.2_
+  - [x] 13.3 Configure Kubernetes health probes
+    - Use gRPC health check protocol for probes
+    - Configure liveness and readiness probes
+    - _Requirements: 9.3_
+  - [x] 13.4 Add mTLS configuration
+    - Document Istio mTLS setup
+    - Add manual certificate configuration option
+    - _Requirements: 9.4_
+
+- [x] 14. Integration and documentation
+  - [x] 14.1 Integrate gRPC server with main application
+    - Add gRPC server startup to main.py
+    - Configure concurrent REST and gRPC servers
+    - Register all servicers
+    - _Requirements: 2.1_
+  - [x] 14.2 Create ADR for gRPC adoption
+    - Document decision rationale
+    - List alternatives considered
+    - Document trade-offs
+    - _Requirements: All_
+  - [x] 14.3 Create gRPC usage guide
+    - Document how to create new services
+    - Document client usage patterns
+    - Include troubleshooting section
+    - _Requirements: 8.1_
+  - [x] 14.4 Update README.md with gRPC section
+    - Add gRPC to features list
+    - Document configuration options
+    - Add quick start for gRPC
+    - _Requirements: All_
+
+- [x] 15. Final code review and validation
+  - [x] 15.1 Run comprehensive code review
+    - Review all new code for security issues
+    - Verify Clean Architecture compliance
+    - Check type annotations completeness
+    - _Requirements: All_
+  - [x] 15.2 Run full test suite
+    - Execute all unit tests
+    - Execute all property-based tests
+    - Verify coverage meets threshold
+    - _Requirements: All_
+  - [x] 15.3 Validate documentation completeness
+    - Verify all public APIs are documented
+    - Check ADR is complete
+    - Verify README updates
+    - _Requirements: All_
+
+- [x] 16. Final Checkpoint - Ensure all tests pass
+  - All 14 property-based tests passing
+  - No type errors detected
+  - Documentation complete

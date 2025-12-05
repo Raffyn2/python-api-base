@@ -1,0 +1,95 @@
+{{- if .Values.grpc.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "python-api-base.fullname" . }}-grpc
+  labels:
+    {{- include "python-api-base.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grpc
+  annotations:
+    {{- if .Values.grpc.service.annotations }}
+    {{- toYaml .Values.grpc.service.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ .Values.grpc.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.grpc.service.port | default 50051 }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+      {{- if and (eq .Values.grpc.service.type "NodePort") .Values.grpc.service.nodePort }}
+      nodePort: {{ .Values.grpc.service.nodePort }}
+      {{- end }}
+  selector:
+    {{- include "python-api-base.selectorLabels" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "python-api-base.fullname" . }}-grpc
+  labels:
+    {{- include "python-api-base.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grpc
+spec:
+  replicas: {{ .Values.grpc.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "python-api-base.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: grpc
+  template:
+    metadata:
+      labels:
+        {{- include "python-api-base.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: grpc
+      annotations:
+        {{- if .Values.grpc.podAnnotations }}
+        {{- toYaml .Values.grpc.podAnnotations | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - name: grpc
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.grpc.containerPort | default 50051 }}
+              protocol: TCP
+          env:
+            - name: GRPC__SERVER__ENABLED
+              value: "true"
+            - name: GRPC__SERVER__PORT
+              value: "{{ .Values.grpc.containerPort | default 50051 }}"
+            {{- if .Values.grpc.env }}
+            {{- toYaml .Values.grpc.env | nindent 12 }}
+            {{- end }}
+          {{- if .Values.grpc.healthCheck.enabled }}
+          livenessProbe:
+            grpc:
+              port: {{ .Values.grpc.containerPort | default 50051 }}
+            initialDelaySeconds: {{ .Values.grpc.healthCheck.initialDelaySeconds | default 10 }}
+            periodSeconds: {{ .Values.grpc.healthCheck.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.grpc.healthCheck.timeoutSeconds | default 5 }}
+            failureThreshold: {{ .Values.grpc.healthCheck.failureThreshold | default 3 }}
+          readinessProbe:
+            grpc:
+              port: {{ .Values.grpc.containerPort | default 50051 }}
+            initialDelaySeconds: {{ .Values.grpc.healthCheck.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.grpc.healthCheck.periodSeconds | default 5 }}
+            timeoutSeconds: {{ .Values.grpc.healthCheck.timeoutSeconds | default 3 }}
+            failureThreshold: {{ .Values.grpc.healthCheck.failureThreshold | default 3 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.grpc.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

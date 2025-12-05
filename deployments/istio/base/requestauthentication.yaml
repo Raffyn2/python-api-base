@@ -1,0 +1,45 @@
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: jwt-auth
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: jwt-auth
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  selector:
+    matchLabels:
+      app: my-api
+  jwtRules:
+    - issuer: "https://auth.example.com"
+      jwksUri: "https://auth.example.com/.well-known/jwks.json"
+      audiences:
+        - "api.example.com"
+      forwardOriginalToken: true
+      outputPayloadToHeader: "x-jwt-payload"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: require-jwt
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: require-jwt
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  selector:
+    matchLabels:
+      app: my-api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            requestPrincipals: ["https://auth.example.com/*"]
+      to:
+        - operation:
+            paths: ["/api/v1/*"]
+            notPaths: ["/api/v1/public/*"]
+    # Allow public endpoints without JWT
+    - to:
+        - operation:
+            paths: ["/api/v1/public/*", "/health/*", "/metrics"]

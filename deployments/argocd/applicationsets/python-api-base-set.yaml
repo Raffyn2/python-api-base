@@ -1,0 +1,89 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: python-api-base
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: python-api-base-set
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            namespace: python-api-dev
+            autoSync: "true"
+            selfHeal: "true"
+            prune: "true"
+            targetRevision: HEAD
+            imageTagPattern: "^v[0-9]+\\.[0-9]+\\.[0-9]+(-dev\\.[0-9]+)?$"
+            slackChannel: dev-deployments
+            slackAlertChannel: dev-alerts
+          - env: staging
+            namespace: python-api-staging
+            autoSync: "true"
+            selfHeal: "false"
+            prune: "true"
+            targetRevision: HEAD
+            imageTagPattern: "^v[0-9]+\\.[0-9]+\\.[0-9]+(-rc\\.[0-9]+)?$"
+            slackChannel: staging-deployments
+            slackAlertChannel: staging-alerts
+          - env: prod
+            namespace: python-api-prod
+            autoSync: "false"
+            selfHeal: "false"
+            prune: "false"
+            targetRevision: HEAD
+            imageTagPattern: "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+            slackChannel: prod-deployments
+            slackAlertChannel: prod-alerts
+
+  template:
+    metadata:
+      name: "python-api-base-{{env}}-generated"
+      namespace: argocd
+      labels:
+        app.kubernetes.io/name: "python-api-base-{{env}}"
+        app.kubernetes.io/part-of: python-api-base
+        environment: "{{env}}"
+        generated-by: applicationset
+      annotations:
+        argocd-image-updater.argoproj.io/image-list: api=ghcr.io/org/python-api-base
+        argocd-image-updater.argoproj.io/api.update-strategy: semver
+        argocd-image-updater.argoproj.io/api.allow-tags: "regexp:{{imageTagPattern}}"
+        argocd-image-updater.argoproj.io/write-back-method: git
+        notifications.argoproj.io/subscribe.on-sync-succeeded.slack: "{{slackChannel}}"
+        notifications.argoproj.io/subscribe.on-sync-failed.slack: "{{slackAlertChannel}}"
+        notifications.argoproj.io/subscribe.on-health-degraded.slack: "{{slackAlertChannel}}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: python-api-base
+      source:
+        repoURL: https://github.com/org/python-api-base.git
+        targetRevision: "{{targetRevision}}"
+        path: deployments/helm/api
+        helm:
+          valueFiles:
+            - values.yaml
+            - "values-{{env}}.yaml"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          prune: "{{prune}}"
+          selfHeal: "{{selfHeal}}"
+        syncOptions:
+          - CreateNamespace=true
+          - PruneLast=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 5m
+
+  # Sync policy for ApplicationSet itself
+  syncPolicy:
+    preserveResourcesOnDeletion: false

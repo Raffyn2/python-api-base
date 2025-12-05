@@ -1,0 +1,71 @@
+name: Istio Manifest Validation
+
+on:
+  pull_request:
+    paths:
+      - 'deployments/istio/**'
+      - 'tests/properties/test_istio_manifests.py'
+  push:
+    branches:
+      - main
+    paths:
+      - 'deployments/istio/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install istioctl
+        run: |
+          curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.20.0 sh -
+          sudo mv istio-1.20.0/bin/istioctl /usr/local/bin/
+          istioctl version --remote=false
+
+      - name: Validate Istio manifests (base)
+        run: |
+          istioctl analyze deployments/istio/base/ --use-kube=false || true
+
+      - name: Validate YAML syntax
+        run: |
+          for file in deployments/istio/base/*.yaml; do
+            echo "Validating $file"
+            python -c "import yaml; yaml.safe_load_all(open('$file'))" || exit 1
+          done
+
+  property-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install pytest hypothesis pyyaml
+
+      - name: Run property-based tests
+        run: |
+          pytest tests/properties/test_istio_manifests.py -v --tb=short
+
+  kustomize-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        overlay: [dev, staging, prod]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Build ${{ matrix.overlay }} overlay
+        run: |
+          kustomize build deployments/istio/overlays/${{ matrix.overlay }} > /dev/null
+          echo "✅ ${{ matrix.overlay }} overlay builds successfully"

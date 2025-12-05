@@ -1,0 +1,65 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: python-api-base-staging
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: python-api-base-staging
+    app.kubernetes.io/part-of: python-api-base
+    environment: staging
+  annotations:
+    # Image Updater annotations
+    argocd-image-updater.argoproj.io/image-list: api=ghcr.io/org/python-api-base
+    argocd-image-updater.argoproj.io/api.update-strategy: semver
+    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+    # Notifications
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: staging-deployments
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: staging-alerts
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: staging-alerts
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: python-api-base
+
+  source:
+    repoURL: https://github.com/org/python-api-base.git
+    targetRevision: HEAD
+    path: deployments/helm/api
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-staging.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: python-api-staging
+
+  # Auto-sync without self-heal for staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+
+  # Ignore differences
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+
+  # Revision history limit
+  revisionHistoryLimit: 15

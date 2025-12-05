@@ -1,0 +1,72 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: python-api-base-grpc
+  namespace: default
+  labels:
+    app: python-api-base
+    component: grpc
+spec:
+  hosts:
+    - python-api-base-grpc
+    - python-api-base-grpc.default.svc.cluster.local
+  http:
+    - match:
+        - headers:
+            content-type:
+              prefix: application/grpc
+      route:
+        - destination:
+            host: python-api-base-grpc
+            port:
+              number: 50051
+      timeout: 30s
+      retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: unavailable,resource-exhausted,deadline-exceeded
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: python-api-base-grpc
+  namespace: default
+  labels:
+    app: python-api-base
+    component: grpc
+spec:
+  host: python-api-base-grpc
+  trafficPolicy:
+    connectionPool:
+      http:
+        h2UpgradePolicy: UPGRADE
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 100
+      tcp:
+        maxConnections: 100
+        connectTimeout: 10s
+    loadBalancer:
+      simple: ROUND_ROBIN
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+    - port:
+        number: 50051
+      tls:
+        mode: ISTIO_MUTUAL
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: python-api-base-grpc-mtls
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: python-api-base
+      component: grpc
+  mtls:
+    mode: STRICT

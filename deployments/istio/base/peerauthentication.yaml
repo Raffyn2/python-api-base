@@ -1,0 +1,25 @@
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+  labels:
+    app.kubernetes.io/name: default-mtls
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  # Mesh-wide STRICT mTLS
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: my-api-mtls
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: my-api-mtls
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  # Namespace-level STRICT mTLS
+  mtls:
+    mode: STRICT

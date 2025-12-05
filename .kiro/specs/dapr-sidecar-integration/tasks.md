@@ -1,0 +1,388 @@
+# Implementation Plan
+
+## Dapr 1.14 Sidecar Integration
+
+- [x] 1. Project Setup and Dependencies
+  - [x] 1.1 Add Dapr Python SDK dependencies to pyproject.toml
+    - Add `dapr>=1.14.0`, `dapr-ext-fastapi>=1.14.0`, `dapr-ext-workflow>=1.14.0`
+    - Add `cloudevents>=1.10.0` for CloudEvents support
+    - _Requirements: 1.1, 1.2_
+  - [x] 1.2 Create Dapr configuration settings module
+    - Create `src/core/config/dapr.py` with DaprSettings class
+    - Add environment variable support for endpoints and tokens
+    - _Requirements: 1.1, 12.1_
+  - [x] 1.3 Write property test for configuration validation
+    - **Property 30: Configuration Priority Resolution**
+    - **Validates: Requirements 12.4**
+
+- [x] 2. Core Dapr Client Infrastructure
+  - [x] 2.1 Implement DaprClientWrapper
+    - Create `src/infrastructure/dapr/client.py`
+    - Implement connection management and lifecycle
+    - Add error handling for sidecar unavailability
+    - _Requirements: 1.1, 1.4, 1.5_
+  - [x] 2.2 Write property test for client initialization
+    - **Property 1: CloudEvents Serialization Round-Trip**
+    - **Validates: Requirements 1.3, 3.1, 3.3**
+  - [x] 2.3 Implement Dapr error types
+    - Create `src/infrastructure/dapr/errors.py`
+    - Define DaprConnectionError, DaprTimeoutError, etc.
+    - _Requirements: 1.5, 2.2_
+
+- [x] 3. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 4. State Management Implementation
+  - [x] 4.1 Implement StateManager
+    - Create `src/infrastructure/dapr/state.py`
+    - Implement get, save, delete operations
+    - Add ETag support for optimistic concurrency
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 4.2 Write property test for state round-trip
+    - **Property 2: State Management Round-Trip**
+    - **Validates: Requirements 4.1, 4.2**
+  - [x] 4.3 Write property test for state deletion
+    - **Property 3: State Deletion Consistency**
+    - **Validates: Requirements 4.3**
+  - [x] 4.4 Implement bulk state operations
+    - Add get_bulk, save_bulk methods
+    - _Requirements: 4.4_
+  - [x] 4.5 Write property test for bulk operations
+    - **Property 4: Bulk State Operations Completeness**
+    - **Validates: Requirements 4.4**
+  - [x] 4.6 Implement transactional state operations
+    - Add transaction method with ACID guarantees
+    - _Requirements: 4.5_
+  - [x] 4.7 Write property test for transactions
+    - **Property 5: Transactional State Atomicity**
+    - **Validates: Requirements 4.5**
+  - [x] 4.8 Implement state query operations
+    - Add query method for supported stores
+    - _Requirements: 4.6_
+  - [x] 4.9 Write property test for query results
+    - **Property 6: State Query Result Correctness**
+    - **Validates: Requirements 4.6**
+
+- [x] 5. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 6. Pub/Sub Messaging Implementation
+  - [x] 6.1 Implement PubSubManager
+    - Create `src/infrastructure/dapr/pubsub.py`
+    - Implement publish with CloudEvents format
+    - _Requirements: 3.1_
+  - [x] 6.2 Implement subscription registration
+    - Create `src/interface/dapr/subscriptions.py`
+    - Register HTTP endpoints for Dapr callbacks
+    - _Requirements: 3.2, 3.3_
+  - [x] 6.3 Write property test for message status codes
+    - **Property 10: Pub/Sub Message Status Codes**
+    - **Validates: Requirements 3.4**
+  - [x] 6.4 Implement bulk publish
+    - Add publish_bulk method for batch operations
+    - _Requirements: 3.5_
+  - [x] 6.5 Write property test for bulk publish
+    - **Property 11: Bulk Publish Completeness**
+    - **Validates: Requirements 3.5**
+  - [x] 6.6 Implement dead-letter topic support
+    - Add dead_letter_topic configuration to subscriptions
+    - _Requirements: 3.6_
+  - [x] 6.7 Write property test for dead-letter routing
+    - **Property 12: Dead Letter Queue Routing**
+    - **Validates: Requirements 3.6**
+
+- [x] 7. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 8. Secrets Management Implementation
+  - [x] 8.1 Implement SecretsManager
+    - Create `src/infrastructure/dapr/secrets.py`
+    - Implement get_secret and get_bulk_secrets
+    - Add SecretNotFoundError handling
+    - _Requirements: 5.1, 5.2, 5.3, 5.4_
+  - [x] 8.2 Write property test for secret retrieval
+    - **Property 7: Secret Retrieval Consistency**
+    - **Validates: Requirements 5.1, 5.3**
+  - [x] 8.3 Write property test for secret protection
+    - **Property 29: Secret Value Protection**
+    - **Validates: Requirements 13.4**
+
+- [x] 9. Service Invocation Implementation
+  - [x] 9.1 Implement ServiceInvoker
+    - Create `src/infrastructure/dapr/invoke.py`
+    - Implement HTTP method support (GET, POST, PUT, DELETE, PATCH)
+    - Add gRPC invocation support
+    - _Requirements: 2.1, 2.3, 2.4_
+  - [x] 9.2 Write property test for HTTP methods
+    - **Property 8: Service Invocation HTTP Method Support**
+    - **Validates: Requirements 2.3**
+  - [x] 9.3 Implement trace context propagation
+    - Add traceparent/tracestate header propagation
+    - _Requirements: 2.5_
+  - [x] 9.4 Write property test for trace propagation
+    - **Property 9: Trace Context Propagation**
+    - **Validates: Requirements 2.5, 10.1**
+
+- [x] 10. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 11. Input/Output Bindings Implementation
+  - [x] 11.1 Implement BindingsManager
+    - Create `src/infrastructure/dapr/bindings.py`
+    - Implement invoke_binding for output bindings
+    - _Requirements: 6.2_
+  - [x] 11.2 Implement binding endpoint handlers
+    - Create `src/interface/dapr/bindings.py`
+    - Register HTTP endpoints for input binding callbacks
+    - _Requirements: 6.1, 6.3, 6.4_
+  - [x] 11.3 Write unit tests for binding operations
+    - Test cron binding scheduling
+    - Test Kafka binding with partition tracking
+    - _Requirements: 6.3, 6.4, 6.5_
+
+- [x] 12. Virtual Actors Implementation
+  - [x] 12.1 Implement Actor base class
+    - Create `src/infrastructure/dapr/actors.py`
+    - Define Actor ABC with lifecycle methods
+    - _Requirements: 7.1_
+  - [x] 12.2 Implement ActorRuntime
+    - Add actor registration and configuration
+    - Integrate with dapr-ext-fastapi DaprActor
+    - _Requirements: 7.1_
+  - [x] 12.3 Implement actor endpoints
+    - Create `src/interface/dapr/actors.py`
+    - Register actor routes with FastAPI
+    - _Requirements: 7.1_
+  - [x] 12.4 Write property test for actor concurrency
+    - **Property 13: Actor Single-Threaded Execution**
+    - **Validates: Requirements 7.2**
+  - [x] 12.5 Implement actor state management
+    - Add get_state, set_state methods to Actor
+    - _Requirements: 7.4_
+  - [x] 12.6 Write property test for actor state persistence
+    - **Property 14: Actor State Persistence Round-Trip**
+    - **Validates: Requirements 7.4**
+  - [x] 12.7 Implement actor timers and reminders
+    - Add register_timer, register_reminder methods
+    - _Requirements: 7.5, 7.6_
+  - [x] 12.8 Write property test for actor deactivation
+    - **Property 15: Actor Deactivation on Idle**
+    - **Validates: Requirements 7.3**
+  - [x] 12.9 Write property test for reminder persistence
+    - **Property 16: Actor Reminder Persistence**
+    - **Validates: Requirements 7.6**
+
+- [x] 13. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 14. Workflow Engine Implementation
+  - [x] 14.1 Implement Workflow and Activity base classes
+    - Create `src/infrastructure/dapr/workflow.py`
+    - Define Workflow, WorkflowActivity ABCs
+    - _Requirements: 8.1_
+  - [x] 14.2 Implement WorkflowEngine
+    - Add workflow registration and execution
+    - Integrate with dapr-ext-workflow
+    - _Requirements: 8.1, 8.2_
+  - [x] 14.3 Write property test for workflow instance ID
+    - **Property 17: Workflow Instance ID Uniqueness**
+    - **Validates: Requirements 8.2**
+  - [x] 14.4 Implement workflow status query
+    - Add get_workflow_state method
+    - _Requirements: 8.4_
+  - [x] 14.5 Write property test for workflow status
+    - **Property 18: Workflow Status Accuracy**
+    - **Validates: Requirements 8.4**
+  - [x] 14.6 Implement workflow termination and events
+    - Add terminate_workflow, raise_event methods
+    - _Requirements: 8.5, 8.6_
+  - [x] 14.7 Write unit tests for workflow patterns
+    - Test sequential, parallel, conditional execution
+    - Test sub-workflow composition
+    - _Requirements: 8.1, 8.3, 8.6_
+
+- [x] 15. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 16. Resiliency Policies Implementation
+  - [x] 16.1 Create resiliency configuration files
+    - Create `deployments/dapr/config/resiliency.yaml`
+    - Define timeout, retry, circuit breaker policies
+    - _Requirements: 9.1, 9.2, 9.3, 9.5_
+  - [x] 16.2 Write property test for timeout enforcement
+    - **Property 19: Timeout Policy Enforcement**
+    - **Validates: Requirements 9.1**
+  - [x] 16.3 Write property test for retry backoff
+    - **Property 20: Retry Policy Backoff**
+    - **Validates: Requirements 9.2**
+  - [x] 16.4 Write property test for circuit breaker
+    - **Property 21: Circuit Breaker State Transitions**
+    - **Validates: Requirements 9.3, 9.4**
+
+- [x] 17. Health Checks Implementation
+  - [x] 17.1 Implement HealthChecker
+    - Create `src/infrastructure/dapr/health.py`
+    - Implement check_sidecar_health, wait_for_sidecar
+    - _Requirements: 15.1, 15.5_
+  - [x] 17.2 Write property test for health status
+    - **Property 24: Health Check Status Accuracy**
+    - **Validates: Requirements 15.1, 15.2, 15.4**
+  - [x] 17.3 Write property test for startup wait
+    - **Property 25: Startup Sidecar Wait**
+    - **Validates: Requirements 15.5**
+  - [x] 17.4 Integrate health checks with FastAPI
+    - Update health router with Dapr health endpoints
+    - Add liveness/readiness probe support
+    - _Requirements: 15.3_
+
+- [x] 18. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 19. Middleware Pipeline Implementation
+  - [x] 19.1 Implement MiddlewarePipeline
+    - Create `src/infrastructure/dapr/middleware.py`
+    - Support middleware chaining and execution order
+    - _Requirements: 16.1, 16.2_
+  - [x] 19.2 Write property test for middleware order
+    - **Property 26: Middleware Execution Order**
+    - **Validates: Requirements 16.1, 16.2**
+  - [x] 19.3 Implement custom middleware support
+    - Add Python-based middleware handler registration
+    - _Requirements: 16.3_
+  - [x] 19.4 Write property test for error propagation
+    - **Property 27: Middleware Error Propagation**
+    - **Validates: Requirements 16.5**
+
+- [x] 20. Observability Integration
+  - [x] 20.1 Configure distributed tracing
+    - Create `deployments/dapr/config/config.yaml` with tracing config
+    - Configure OpenTelemetry exporter (Jaeger/Zipkin/OTLP)
+    - _Requirements: 10.1, 10.2_
+  - [x] 20.2 Write property test for metrics format
+    - **Property 22: Prometheus Metrics Format Compliance**
+    - **Validates: Requirements 10.3**
+  - [x] 20.3 Integrate logging with trace context
+    - Update structlog configuration to include trace IDs
+    - Create `src/core/shared/logging/trace_context.py`
+    - _Requirements: 10.4_
+  - [x] 20.4 Write property test for log correlation
+    - **Property 23: Log Correlation ID Presence**
+    - **Validates: Requirements 10.4**
+
+- [x] 21. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 22. Security Implementation
+  - [x] 22.1 Configure mTLS
+    - Create Sentry configuration for mTLS
+    - _Requirements: 13.1_
+  - [x] 22.2 Write property test for mTLS
+    - **Property 28: mTLS Enforcement**
+    - **Validates: Requirements 13.1**
+  - [x] 22.3 Implement API token authentication
+    - Add dapr-api-token header support
+    - _Requirements: 13.2_
+  - [x] 22.4 Configure access control policies
+    - Create access control configuration
+    - _Requirements: 13.3_
+
+- [x] 23. Dapr Component Configuration
+  - [x] 23.1 Create state store component
+    - Create `deployments/dapr/components/statestore.yaml`
+    - Configure Redis state store with actor support
+    - _Requirements: 4.1, 7.4, 11.2_
+  - [x] 23.2 Create pub/sub component
+    - Create `deployments/dapr/components/pubsub.yaml`
+    - Configure Kafka pub/sub broker
+    - _Requirements: 3.1, 11.2_
+  - [x] 23.3 Create secret store component
+    - Create `deployments/dapr/components/secretstore.yaml`
+    - Configure HashiCorp Vault or Kubernetes secrets
+    - _Requirements: 5.1, 5.5, 11.2_
+  - [x] 23.4 Create binding components
+    - Create `deployments/dapr/components/bindings.yaml`
+    - Configure cron and Kafka bindings
+    - _Requirements: 6.1, 6.3, 6.4, 11.2_
+
+- [x] 24. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 25. Local Development Environment
+  - [x] 25.1 Create Docker Compose configuration
+    - Create `deployments/dapr/docker-compose.dapr.yaml`
+    - Include Dapr sidecar, Redis, Kafka, Jaeger
+    - _Requirements: 14.1, 14.2_
+  - [x] 25.2 Create local component configurations
+    - Create local versions of component files
+    - _Requirements: 14.1_
+  - [x] 25.3 Update Makefile with Dapr commands
+    - Add dapr-up, dapr-down, dapr-logs targets
+    - _Requirements: 14.1_
+
+- [x] 26. Kubernetes Deployment Configuration
+  - [x] 26.1 Create Kubernetes deployment manifests
+    - Create `deployments/k8s/dapr/deployment.yaml`
+    - Add Dapr annotations for sidecar injection
+    - _Requirements: 11.1, 11.5_
+  - [x] 26.2 Create Kubernetes component manifests
+    - Create K8s versions of component files
+    - _Requirements: 11.2, 11.3_
+  - [x] 26.3 Update Helm chart with Dapr configuration
+    - Add Dapr annotations and configuration to Helm values
+    - Add Dapr component templates to Helm chart
+    - _Requirements: 11.4_
+
+- [x] 27. FastAPI Integration
+  - [x] 27.1 Create Dapr route registration
+    - Create `src/interface/dapr/routes.py`
+    - Register all Dapr endpoints with FastAPI
+    - _Requirements: 1.2_
+  - [x] 27.2 Update application lifespan
+    - Initialize Dapr client in lifespan
+    - Wait for sidecar before accepting traffic
+    - _Requirements: 1.1, 1.4, 15.5_
+  - [x] 27.3 Register Dapr routes in main.py
+    - Include Dapr router in application
+    - _Requirements: 1.2_
+
+- [x] 28. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 29. Documentation
+  - [x] 29.1 Create Dapr architecture documentation
+    - Create `docs/dapr/architecture.md`
+    - Include diagrams and component descriptions
+    - _Requirements: 17.1_
+  - [x] 29.2 Create Dapr API reference
+    - Create `docs/dapr/api-reference.md`
+    - Document all Dapr manager classes and methods
+    - _Requirements: 17.1_
+  - [x] 29.3 Create Dapr setup guide
+    - Create `docs/dapr/setup.md`
+    - Include local and Kubernetes setup instructions
+    - _Requirements: 17.3_
+  - [x] 29.4 Update README.md
+    - Add Dapr section with overview and quick start
+    - _Requirements: 17.3_
+  - [x] 29.5 Create ADR for Dapr integration
+    - Create `docs/adr/ADR-001-dapr-integration.md`
+    - Document decision rationale and alternatives
+    - _Requirements: 17.4_
+
+- [x] 30. Code Review
+  - [x] 30.1 Security review
+    - Review secret handling and mTLS configuration
+    - Verify no secrets in logs
+    - _Requirements: 13.4, 17.2_
+  - [x] 30.2 Code quality review
+    - Verify adherence to project coding standards
+    - Check type hints and documentation
+    - _Requirements: 17.2_
+  - [x] 30.3 Performance review
+    - Review connection pooling and resource usage
+    - Verify async patterns are correctly implemented
+    - _Requirements: 17.2_
+
+- [ ] 31. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+

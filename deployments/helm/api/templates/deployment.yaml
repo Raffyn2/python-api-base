@@ -13,10 +13,34 @@ spec:
       {{- include "my-api.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
+        {{- if .Values.dapr.enabled }}
+        dapr.io/enabled: "true"
+        dapr.io/app-id: {{ .Values.dapr.appId | quote }}
+        dapr.io/app-port: {{ .Values.dapr.appPort | quote }}
+        dapr.io/app-protocol: {{ .Values.dapr.appProtocol | quote }}
+        dapr.io/http-port: {{ .Values.dapr.httpPort | quote }}
+        dapr.io/grpc-port: {{ .Values.dapr.grpcPort | quote }}
+        dapr.io/metrics-port: {{ .Values.dapr.metricsPort | quote }}
+        dapr.io/enable-profiling: {{ .Values.dapr.enableProfiling | quote }}
+        dapr.io/log-level: {{ .Values.dapr.logLevel | quote }}
+        dapr.io/log-as-json: {{ .Values.dapr.logAsJson | quote }}
+        dapr.io/enable-mtls: {{ .Values.dapr.enableMtls | quote }}
+        dapr.io/enable-api-logging: {{ .Values.dapr.enableApiLogging | quote }}
+        dapr.io/config: {{ .Values.dapr.config | quote }}
+        {{- if .Values.dapr.sidecarImage }}
+        dapr.io/sidecar-image: "{{ .Values.dapr.sidecarImage.repository }}:{{ .Values.dapr.sidecarImage.tag }}"
+        {{- end }}
+        {{- if .Values.dapr.resources }}
+        dapr.io/sidecar-cpu-limit: {{ .Values.dapr.resources.limits.cpu | quote }}
+        dapr.io/sidecar-memory-limit: {{ .Values.dapr.resources.limits.memory | quote }}
+        dapr.io/sidecar-cpu-request: {{ .Values.dapr.resources.requests.cpu | quote }}
+        dapr.io/sidecar-memory-request: {{ .Values.dapr.resources.requests.memory | quote }}
+        {{- end }}
+        {{- end }}
       labels:
         {{- include "my-api.selectorLabels" . | nindent 8 }}
     spec:

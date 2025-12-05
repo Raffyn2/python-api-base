@@ -1,0 +1,83 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: external-api
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: external-api-entry
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  hosts:
+    - "external-api.example.com"
+  ports:
+    - number: 443
+      name: https
+      protocol: HTTPS
+  location: MESH_EXTERNAL
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: external-api-dr
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: external-api-dr
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  host: external-api.example.com
+  trafficPolicy:
+    tls:
+      mode: SIMPLE
+      sni: external-api.example.com
+    connectionPool:
+      tcp:
+        maxConnections: 50
+        connectTimeout: 10s
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 30s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 100
+---
+# AWS Services
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: aws-services
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: aws-services-entry
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  hosts:
+    - "*.amazonaws.com"
+    - "*.aws.amazon.com"
+  ports:
+    - number: 443
+      name: https
+      protocol: HTTPS
+  location: MESH_EXTERNAL
+  resolution: NONE
+---
+# Database (RDS)
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: database-rds
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: database-rds-entry
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  hosts:
+    - "mydb.cluster-xxxxx.us-east-1.rds.amazonaws.com"
+  ports:
+    - number: 5432
+      name: postgres
+      protocol: TCP
+  location: MESH_EXTERNAL
+  resolution: DNS

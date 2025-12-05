@@ -1,0 +1,46 @@
+{{- if .Values.dapr.enabled }}
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: {{ .Values.dapr.config }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "my-api.labels" . | nindent 4 }}
+spec:
+  tracing:
+    samplingRate: "1"
+    otel:
+      endpointAddress: "otel-collector.observability.svc.cluster.local:4317"
+      isSecure: false
+      protocol: grpc
+  metrics:
+    enabled: true
+    rules:
+      - name: dapr_http_server_request_count
+        labels:
+          - name: method
+            regex:
+              "GET|POST|PUT|DELETE|PATCH"
+      - name: dapr_http_server_latency_bucket
+        labels:
+          - name: method
+            regex:
+              "GET|POST|PUT|DELETE|PATCH"
+  logging:
+    apiLogging:
+      enabled: {{ .Values.dapr.enableApiLogging }}
+      obfuscateURLs: false
+      omitHealthChecks: true
+  mtls:
+    enabled: {{ .Values.dapr.enableMtls }}
+    workloadCertTTL: "24h"
+    allowedClockSkew: "15m"
+  accessControl:
+    defaultAction: deny
+    trustDomain: "cluster.local"
+    policies:
+      - appId: "*"
+        defaultAction: allow
+        trustDomain: "cluster.local"
+        namespace: {{ .Release.Namespace }}
+{{- end }}

@@ -1,0 +1,89 @@
+apiVersion: dapr.io/v1alpha1
+kind: Resiliency
+metadata:
+  name: python-api-resiliency
+scopes:
+  - python-api
+spec:
+  policies:
+    timeouts:
+      general: 5s
+      important: 60s
+      largeResponse: 30s
+
+    retries:
+      defaultRetry:
+        policy: constant
+        duration: 1s
+        maxRetries: 3
+
+      importantRetry:
+        policy: exponential
+        maxInterval: 15s
+        maxRetries: 10
+
+      pubsubRetry:
+        policy: constant
+        duration: 5s
+        maxRetries: 5
+
+      stateRetry:
+        policy: exponential
+        maxInterval: 10s
+        maxRetries: 5
+
+    circuitBreakers:
+      defaultCB:
+        maxRequests: 1
+        timeout: 30s
+        trip: consecutiveFailures >= 5
+
+      pubsubCB:
+        maxRequests: 1
+        interval: 8s
+        timeout: 45s
+        trip: consecutiveFailures > 8
+
+      stateCB:
+        maxRequests: 1
+        timeout: 60s
+        trip: consecutiveFailures >= 3
+
+  targets:
+    apps:
+      order-service:
+        timeout: general
+        retry: defaultRetry
+        circuitBreaker: defaultCB
+
+      payment-service:
+        timeout: important
+        retry: importantRetry
+        circuitBreaker: defaultCB
+
+    components:
+      statestore:
+        outbound:
+          timeout: general
+          retry: stateRetry
+          circuitBreaker: stateCB
+
+      pubsub:
+        outbound:
+          retry: pubsubRetry
+          circuitBreaker: pubsubCB
+        inbound:
+          timeout: general
+          retry: pubsubRetry
+
+      secretstore:
+        outbound:
+          timeout: general
+          retry: defaultRetry
+
+    actors:
+      OrderActor:
+        timeout: important
+        retry: importantRetry
+        circuitBreaker: defaultCB
+        circuitBreakerScope: id

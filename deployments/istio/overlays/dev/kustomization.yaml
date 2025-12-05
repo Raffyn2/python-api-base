@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: istio-system
+
+resources:
+  - ../../base
+
+patches:
+  # Dev: PERMISSIVE mTLS for debugging
+  - target:
+      kind: PeerAuthentication
+      name: default
+    patch: |
+      - op: replace
+        path: /spec/mtls/mode
+        value: PERMISSIVE
+  
+  - target:
+      kind: PeerAuthentication
+      name: my-api-mtls
+    patch: |
+      - op: replace
+        path: /spec/mtls/mode
+        value: PERMISSIVE
+
+  # Dev: Higher tracing sampling (10%)
+  - target:
+      kind: IstioOperator
+      name: istio-control-plane
+    patch: |
+      - op: replace
+        path: /spec/meshConfig/defaultConfig/tracing/sampling
+        value: 10.0
+      - op: replace
+        path: /spec/meshConfig/outboundTrafficPolicy/mode
+        value: ALLOW_ANY
+
+commonLabels:
+  environment: dev

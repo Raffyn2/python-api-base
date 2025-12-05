@@ -1,0 +1,92 @@
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: python-api-config
+  namespace: default
+spec:
+  tracing:
+    samplingRate: "1"
+    otel:
+      endpointAddress: jaeger-collector.observability.svc.cluster.local:4317
+      isSecure: false
+      protocol: grpc
+  metrics:
+    enabled: true
+    rules:
+      - name: dapr_http_server_request_count
+        labels:
+          - name: method
+          - name: path
+          - name: status
+  logging:
+    apiLogging:
+      enabled: true
+      obfuscateURLs: false
+      omitHealthChecks: true
+  accessControl:
+    defaultAction: allow
+    trustDomain: "cluster.local"
+  mtls:
+    enabled: true
+    workloadCertTTL: "24h"
+    allowedClockSkew: "15m"
+  httpPipeline:
+    handlers: []
+  appHttpPipeline:
+    handlers: []
+  features:
+    - name: ServiceInvocationStreaming
+      enabled: true
+    - name: AppHealthCheck
+      enabled: true
+---
+apiVersion: dapr.io/v1alpha1
+kind: Resiliency
+metadata:
+  name: python-api-resiliency
+  namespace: default
+scopes:
+  - python-api
+spec:
+  policies:
+    timeouts:
+      general: 5s
+      important: 60s
+      largeResponse: 30s
+    retries:
+      defaultRetry:
+        policy: constant
+        duration: 1s
+        maxRetries: 3
+      importantRetry:
+        policy: exponential
+        maxInterval: 15s
+        maxRetries: 10
+      pubsubRetry:
+        policy: constant
+        duration: 5s
+        maxRetries: 5
+    circuitBreakers:
+      defaultCB:
+        maxRequests: 1
+        timeout: 30s
+        trip: consecutiveFailures >= 5
+      pubsubCB:
+        maxRequests: 1
+        interval: 8s
+        timeout: 45s
+        trip: consecutiveFailures > 8
+  targets:
+    components:
+      statestore:
+        outbound:
+          timeout: general
+          retry: defaultRetry
+          circuitBreaker: defaultCB
+      pubsub:
+        outbound:
+          retry: pubsubRetry
+          circuitBreaker: pubsubCB
+        inbound:
+          timeout: general
+          retry: pubsubRetry

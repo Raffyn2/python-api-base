@@ -43,6 +43,14 @@ from interface.v1.jwks_router import router as jwks_router
 from interface.v1.users_router import router as users_router
 from interface.v2 import examples_v2_router
 
+# Dapr Support (optional)
+try:
+    from interface.dapr.routes import dapr_router
+    HAS_DAPR = True
+except ImportError:
+    dapr_router = None
+    HAS_DAPR = False
+
 # GraphQL Support (optional)
 try:
     from interface.graphql import HAS_STRAWBERRY, graphql_router
@@ -120,6 +128,13 @@ def _register_routes(app: FastAPI) -> None:
         logger.info("graphql_enabled", endpoint="/api/graphql")
     else:
         logger.info("graphql_disabled", reason="strawberry not installed")
+
+    # Register Dapr routes if available
+    if HAS_DAPR and dapr_router is not None:
+        app.include_router(dapr_router)
+        logger.info("dapr_routes_enabled", endpoints=["/dapr/subscribe", "/dapr/config", "/dapr/healthz"])
+    else:
+        logger.debug("dapr_routes_disabled", reason="dapr module not available")
 
 
 def create_app() -> FastAPI:

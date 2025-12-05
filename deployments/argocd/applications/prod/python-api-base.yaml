@@ -1,0 +1,70 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: python-api-base-prod
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: python-api-base-prod
+    app.kubernetes.io/part-of: python-api-base
+    environment: prod
+  annotations:
+    # Image Updater annotations - manual approval required
+    argocd-image-updater.argoproj.io/image-list: api=ghcr.io/org/python-api-base
+    argocd-image-updater.argoproj.io/api.update-strategy: semver
+    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^v[0-9]+\.[0-9]+\.[0-9]+$
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+    # Notifications
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: prod-deployments
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: prod-alerts
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: prod-alerts
+    notifications.argoproj.io/subscribe.on-sync-status-unknown.slack: prod-alerts
+    # Sync waves
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: python-api-base
+
+  source:
+    repoURL: https://github.com/org/python-api-base.git
+    targetRevision: HEAD
+    path: deployments/helm/api
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-prod.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: python-api-prod
+
+  # Manual sync for production - NO automated sync
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - PrunePropagationPolicy=foreground
+      - Validate=true
+    retry:
+      limit: 2
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m
+
+  # Ignore differences
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+      jsonPointers:
+        - /spec/minReplicas
+        - /spec/maxReplicas
+
+  # Revision history limit
+  revisionHistoryLimit: 30

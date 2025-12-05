@@ -325,3 +325,166 @@ ci-security: ## Run CI security checks
 
 ci: validate-strict ci-lint ci-security ci-test ## Run full CI pipeline
 	@echo "$(GREEN)✅ CI pipeline complete!$(NC)"
+
+##@ ArgoCD / GitOps
+
+validate-argocd: ## Validate ArgoCD manifests
+	@echo "$(BLUE)🔍 Validating ArgoCD manifests...$(NC)"
+	@chmod +x scripts/validate-argocd.sh
+	@./scripts/validate-argocd.sh
+
+argocd-install-dev: ## Install ArgoCD in dev environment
+	@echo "$(BLUE)🚀 Installing ArgoCD (dev)...$(NC)"
+	@kubectl apply -k deployments/argocd/overlays/dev
+	@echo "$(GREEN)✅ ArgoCD installed$(NC)"
+	@echo "$(YELLOW)Run 'make argocd-password' to get admin password$(NC)"
+
+argocd-install-staging: ## Install ArgoCD in staging environment
+	@echo "$(BLUE)🚀 Installing ArgoCD (staging)...$(NC)"
+	@kubectl apply -k deployments/argocd/overlays/staging
+	@echo "$(GREEN)✅ ArgoCD installed$(NC)"
+
+argocd-install-prod: ## Install ArgoCD in production environment
+	@echo "$(BLUE)🚀 Installing ArgoCD (prod)...$(NC)"
+	@kubectl apply -k deployments/argocd/overlays/prod
+	@echo "$(GREEN)✅ ArgoCD installed$(NC)"
+
+argocd-password: ## Get ArgoCD admin password
+	@echo "$(BLUE)🔑 ArgoCD Admin Password:$(NC)"
+	@kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
+
+argocd-port-forward: ## Port-forward ArgoCD UI
+	@echo "$(BLUE)🌐 Port-forwarding ArgoCD UI to https://localhost:8080$(NC)"
+	@kubectl port-forward svc/argocd-server -n argocd 8080:443
+
+argocd-sync: ## Sync all ArgoCD applications
+	@echo "$(BLUE)🔄 Syncing all applications...$(NC)"
+	@argocd app list -o name | xargs -I {} argocd app sync {}
+
+argocd-sync-dev: ## Sync dev application
+	@echo "$(BLUE)🔄 Syncing dev application...$(NC)"
+	@argocd app sync python-api-base-dev
+
+argocd-sync-staging: ## Sync staging application
+	@echo "$(BLUE)🔄 Syncing staging application...$(NC)"
+	@argocd app sync python-api-base-staging
+
+argocd-sync-prod: ## Sync production application (manual)
+	@echo "$(YELLOW)⚠️  Syncing production application...$(NC)"
+	@argocd app sync python-api-base-prod
+
+argocd-status: ## Show ArgoCD applications status
+	@echo "$(BLUE)📊 ArgoCD Applications Status:$(NC)"
+	@argocd app list
+
+argocd-diff: ## Show diff for all applications
+	@echo "$(BLUE)📝 Application Diffs:$(NC)"
+	@argocd app list -o name | xargs -I {} sh -c 'echo "=== {} ===" && argocd app diff {}'
+
+test-argocd: ## Run ArgoCD property tests
+	@echo "$(BLUE)🧪 Running ArgoCD property tests...$(NC)"
+	@uv run pytest tests/properties/test_argocd_manifests.py -v
+
+
+##@ gRPC
+
+proto-gen: ## Generate Python code from proto files
+	@echo "$(BLUE)🔧 Generating gRPC code from proto files...$(NC)"
+	@mkdir -p src/infrastructure/grpc/generated
+	@python -m grpc_tools.protoc \
+		-I protos \
+		-I protos/common \
+		--python_out=src/infrastructure/grpc/generated \
+		--grpc_python_out=src/infrastructure/grpc/generated \
+		--pyi_out=src/infrastructure/grpc/generated \
+		protos/common/*.proto protos/examples/*.proto
+	@touch src/infrastructure/grpc/generated/__init__.py
+	@echo "$(GREEN)✅ gRPC code generated$(NC)"
+
+proto-clean: ## Clean generated proto files
+	@echo "$(BLUE)🧹 Cleaning generated proto files...$(NC)"
+	@rm -rf src/infrastructure/grpc/generated/*_pb2*.py
+	@rm -rf src/infrastructure/grpc/generated/*_pb2*.pyi
+	@echo "$(GREEN)✅ Generated files cleaned$(NC)"
+
+proto-lint: ## Lint proto files with buf
+	@echo "$(BLUE)🔍 Linting proto files...$(NC)"
+	@cd protos && buf lint
+	@echo "$(GREEN)✅ Proto files are valid$(NC)"
+
+grpc-run: ## Run gRPC server
+	@echo "$(BLUE)🚀 Starting gRPC server...$(NC)"
+	@uv run python -m src.infrastructure.grpc.server
+
+test-grpc: ## Run gRPC property tests
+	@echo "$(BLUE)🧪 Running gRPC property tests...$(NC)"
+	@uv run pytest tests/properties/test_grpc*.py -v
+
+
+##@ Dapr
+
+dapr-up: ## Start Dapr development environment with Docker Compose
+	@echo "$(BLUE)🚀 Starting Dapr development environment...$(NC)"
+	@docker compose -f deployments/dapr/docker-compose.dapr.yaml up -d
+	@echo "$(GREEN)✅ Dapr environment started$(NC)"
+	@echo "$(YELLOW)Services:$(NC)"
+	@echo "  - API: http://localhost:8000"
+	@echo "  - Dapr Dashboard: http://localhost:8080 (if installed)"
+	@echo "  - Jaeger UI: http://localhost:16686"
+	@echo "  - Prometheus: http://localhost:9091"
+
+dapr-down: ## Stop Dapr development environment
+	@echo "$(YELLOW)⏹️  Stopping Dapr environment...$(NC)"
+	@docker compose -f deployments/dapr/docker-compose.dapr.yaml down
+	@echo "$(GREEN)✅ Dapr environment stopped$(NC)"
+
+dapr-logs: ## Show Dapr sidecar logs
+	@echo "$(BLUE)📋 Dapr sidecar logs:$(NC)"
+	@docker compose -f deployments/dapr/docker-compose.dapr.yaml logs -f python-api-dapr
+
+dapr-logs-all: ## Show all Dapr service logs
+	@docker compose -f deployments/dapr/docker-compose.dapr.yaml logs -f
+
+dapr-ps: ## Show Dapr running containers
+	@docker compose -f deployments/dapr/docker-compose.dapr.yaml ps
+
+dapr-restart: ## Restart Dapr environment
+	@echo "$(BLUE)🔄 Restarting Dapr environment...$(NC)"
+	@$(MAKE) -s dapr-down
+	@$(MAKE) -s dapr-up
+
+dapr-health: ## Check Dapr sidecar health
+	@echo "$(BLUE)🏥 Checking Dapr sidecar health...$(NC)"
+	@curl -s http://localhost:3500/v1.0/healthz && echo "$(GREEN)✅ Sidecar healthy$(NC)" || echo "$(RED)❌ Sidecar unhealthy$(NC)"
+
+dapr-metadata: ## Show Dapr metadata
+	@echo "$(BLUE)📊 Dapr metadata:$(NC)"
+	@curl -s http://localhost:3500/v1.0/metadata | python -m json.tool
+
+dapr-components: ## List Dapr components
+	@echo "$(BLUE)🧩 Dapr components:$(NC)"
+	@curl -s http://localhost:3500/v1.0/metadata | python -c "import sys,json; d=json.load(sys.stdin); [print(f\"  - {c['name']} ({c['type']})\") for c in d.get('components',[])]"
+
+dapr-run: ## Run application with Dapr sidecar (local mode)
+	@echo "$(BLUE)🚀 Starting application with Dapr sidecar...$(NC)"
+	@dapr run --app-id python-api --app-port 8000 --dapr-http-port 3500 --dapr-grpc-port 50001 \
+		--components-path deployments/dapr/components \
+		--config deployments/dapr/config/config.yaml \
+		-- uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
+
+dapr-run-debug: ## Run application with Dapr in debug mode
+	@echo "$(BLUE)🐛 Starting application with Dapr (debug mode)...$(NC)"
+	@dapr run --app-id python-api --app-port 8000 --dapr-http-port 3500 --dapr-grpc-port 50001 \
+		--components-path deployments/dapr/components \
+		--config deployments/dapr/config/config.yaml \
+		--log-level debug \
+		-- uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+test-dapr: ## Run Dapr property tests
+	@echo "$(BLUE)🧪 Running Dapr property tests...$(NC)"
+	@uv run pytest tests/properties/dapr/ -v
+
+test-dapr-cov: ## Run Dapr tests with coverage
+	@echo "$(BLUE)📊 Running Dapr tests with coverage...$(NC)"
+	@uv run pytest tests/properties/dapr/ --cov=src/infrastructure/dapr --cov-report=html --cov-report=term
+

@@ -100,6 +100,15 @@ Python API Base é um framework REST API reutilizável e pronto para produção,
 - **MinIO/S3** - Object storage
 - **RabbitMQ** - Background tasks
 
+### gRPC (Microservices)
+
+- **gRPC Server** - Comunicação service-to-service de alta performance via HTTP/2
+- **Protocol Buffers** - Serialização binária eficiente com type safety
+- **Interceptors** - Auth, Logging, Tracing, Metrics integrados
+- **Health Checks** - Protocolo padrão gRPC para Kubernetes probes
+- **Streaming** - Suporte a server, client e bidirectional streaming
+- **Resilience** - Retry com exponential backoff + Circuit Breaker
+
 ---
 
 ## Arquitetura
@@ -603,6 +612,104 @@ async def delete_user(
 
 ---
 
+## gRPC (Microservices Communication)
+
+O Python API Base inclui suporte completo a gRPC para comunicação eficiente entre microsserviços.
+
+### Quick Start
+
+```bash
+# Gerar código Python a partir dos protos
+make proto-gen
+
+# Iniciar servidor gRPC
+make grpc-run
+
+# Testar com grpcurl
+grpcurl -plaintext localhost:50051 list
+grpcurl -plaintext localhost:50051 grpc.health.v1.Health/Check
+```
+
+### Configuração
+
+```bash
+# .env
+GRPC__SERVER__ENABLED=true
+GRPC__SERVER__PORT=50051
+GRPC__SERVER__REFLECTION_ENABLED=true
+GRPC__CLIENT__DEFAULT_TIMEOUT=30.0
+GRPC__CLIENT__MAX_RETRIES=3
+```
+
+### Implementando um Serviço
+
+```python
+# 1. Definir proto (protos/myservice/service.proto)
+# 2. Gerar código: make proto-gen
+# 3. Implementar servicer:
+
+from src.interface.grpc.servicers.base import BaseServicer
+
+class MyServiceServicer(BaseServicer):
+    async def GetResource(self, request, context):
+        use_case = self.get_use_case(GetResourceUseCase)
+        result = await use_case.execute(request.id)
+        return self._to_proto(result)
+```
+
+### Cliente com Resilience
+
+```python
+from src.infrastructure.grpc.client import GRPCClientFactory
+
+factory = GRPCClientFactory(
+    default_timeout=30.0,
+    retry_config=RetryConfig(max_retries=3),
+    circuit_breaker_config=CircuitBreakerConfig(failure_threshold=5),
+)
+
+channel = await factory.create_channel("service:50051")
+stub = factory.create_stub(MyServiceStub, channel)
+response = await stub.GetResource(GetResourceRequest(id="123"))
+```
+
+### Interceptors Incluídos
+
+| Interceptor | Descrição |
+|-------------|-----------|
+| `AuthInterceptor` | Validação JWT via metadata |
+| `LoggingInterceptor` | Logs com correlation ID |
+| `TracingInterceptor` | OpenTelemetry spans |
+| `MetricsInterceptor` | Métricas Prometheus |
+| `ErrorInterceptor` | Conversão de erros para gRPC status |
+
+### Health Checks (Kubernetes)
+
+```yaml
+# Kubernetes probe configuration
+livenessProbe:
+  grpc:
+    port: 50051
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+readinessProbe:
+  grpc:
+    port: 50051
+  initialDelaySeconds: 5
+  periodSeconds: 5
+```
+
+### Endpoints gRPC
+
+| Endpoint | Porta | Descrição |
+|----------|-------|-----------|
+| gRPC Server | 50051 | Serviços gRPC |
+| Health Check | 50051 | `grpc.health.v1.Health` |
+| Reflection | 50051 | Service discovery |
+
+---
+
 ## Recursos Avançados
 
 ### Caching
@@ -1087,6 +1194,7 @@ O projeto suporta múltiplas estratégias de deploy:
 | **Docker** | `deployments/docker/` | Docker Compose para dev/staging/prod |
 | **Kubernetes** | `deployments/k8s/` | Manifests K8s com Kustomize |
 | **Helm** | `deployments/helm/` | Helm charts para K8s |
+| **ArgoCD** | `deployments/argocd/` | GitOps continuous delivery |
 | **Terraform** | `deployments/terraform/` | IaC para AWS/GCP/Azure |
 | **Serverless** | `deployments/serverless/` | AWS Lambda, Vercel |
 
@@ -1139,6 +1247,42 @@ terraform plan -var-file=environments/production.tfvars
 # Aplicar
 terraform apply -var-file=environments/production.tfvars
 ```
+
+### ArgoCD (GitOps)
+
+O projeto inclui configuração completa de GitOps com ArgoCD para continuous delivery declarativo.
+
+```bash
+# Instalar ArgoCD
+kubectl apply -k deployments/argocd/overlays/dev
+
+# Obter senha admin
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+# Acessar UI
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+# Abrir: https://localhost:8080
+
+# Aplicar Applications
+kubectl apply -k deployments/argocd/applications
+```
+
+**Ambientes configurados:**
+
+| Ambiente | Auto-Sync | Self-Heal | Aprovação |
+|----------|-----------|-----------|-----------|
+| Dev | ✅ | ✅ | Automática |
+| Staging | ✅ | ❌ | Automática |
+| Prod | ❌ | ❌ | Manual |
+
+**Recursos incluídos:**
+- ApplicationSets para geração dinâmica
+- Image Updater para atualização automática de imagens
+- Notificações Slack para eventos de sync
+- Sealed Secrets para gestão segura de secrets
+- Sync hooks (PreSync migrations, PostSync smoke tests)
+
+Documentação completa: [`deployments/argocd/README.md`](deployments/argocd/README.md)
 
 
 ---
@@ -1198,6 +1342,17 @@ make clean-all        # Limpar tudo incluindo venv
 make generate-secret  # Gerar secret key
 make health           # Verificar saúde do sistema
 make validate         # Validar configurações
+
+# ArgoCD / GitOps
+make validate-argocd  # Validar manifests ArgoCD
+make argocd-install-dev    # Instalar ArgoCD (dev)
+make argocd-install-prod   # Instalar ArgoCD (prod)
+make argocd-password       # Obter senha admin
+make argocd-port-forward   # Port-forward UI
+make argocd-status         # Status das applications
+make argocd-sync-dev       # Sync dev
+make argocd-sync-prod      # Sync prod (manual)
+make test-argocd           # Property tests ArgoCD
 ```
 
 ### Scripts Disponíveis
@@ -1321,6 +1476,16 @@ events = await repo.find_by_partition("user_123")
 |-----------|------------|-----|
 | GraphQL | Strawberry | Schema e resolvers |
 
+### Service Mesh & Infrastructure
+
+| Categoria | Tecnologia | Uso |
+|-----------|------------|-----|
+| Service Mesh | Istio 1.20+ | mTLS, traffic management, observability |
+| GitOps | ArgoCD | Continuous delivery |
+| Container Orchestration | Kubernetes 1.28+ | Orquestração de containers |
+| Infrastructure as Code | Terraform 1.6+ | Provisionamento de infraestrutura |
+| Helm | Helm 3.14+ | Packaging de aplicações K8s |
+
 
 ---
 
@@ -1350,6 +1515,8 @@ events = await repo.find_by_partition("user_123")
 | ADR-005 | Repository Pattern | Accepted |
 | ADR-006 | Specification Pattern | Accepted |
 | ADR-007 | CQRS Implementation | Accepted |
+| ADR-015 | GitOps with ArgoCD | Accepted |
+| ADR-016 | Istio Service Mesh | Accepted |
 | ADR-008 | Cache Strategy | Accepted |
 | ADR-009 | Resilience Patterns | Accepted |
 | ADR-010 | Error Handling | Accepted |
@@ -1640,3 +1807,81 @@ MIT License - veja [LICENSE](LICENSE) para detalhes.
 <p align="center">
   Desenvolvido com ❤️ usando Python e FastAPI
 </p>
+
+
+---
+
+## Dapr Integration
+
+O Python API Base inclui integração completa com Dapr 1.14 para construção de microsserviços distribuídos.
+
+### Building Blocks Suportados
+
+| Building Block | Descrição | Componente |
+|----------------|-----------|------------|
+| Service Invocation | Comunicação service-to-service | HTTP/gRPC |
+| Pub/Sub | Mensageria assíncrona | Kafka |
+| State Management | Armazenamento de estado | Redis |
+| Secrets | Gerenciamento de secrets | Vault/K8s |
+| Bindings | Integrações externas | Cron, Kafka |
+| Actors | Atores virtuais | Redis |
+| Workflows | Orquestração de processos | Dapr Workflow |
+
+### Quick Start
+
+```bash
+# Iniciar com Docker Compose
+cd deployments/dapr
+docker-compose -f docker-compose.dapr.yaml up -d
+
+# Ou com Dapr CLI
+dapr run --app-id python-api --app-port 8000 -- python -m uvicorn src.main:app
+```
+
+### Configuração
+
+```bash
+# .env
+DAPR_ENABLED=true
+DAPR_HTTP_ENDPOINT=http://localhost:3500
+DAPR_GRPC_ENDPOINT=localhost:50001
+DAPR_APP_ID=python-api
+```
+
+### Uso
+
+```python
+from infrastructure.dapr.client import get_dapr_client
+from infrastructure.dapr.state import StateManager
+from infrastructure.dapr.pubsub import PubSubManager
+
+# State Management
+client = get_dapr_client()
+state = StateManager(client, "statestore")
+await state.save("key", b"value")
+item = await state.get("key")
+
+# Pub/Sub
+pubsub = PubSubManager(client, "pubsub")
+await pubsub.publish("orders", {"order_id": "123"})
+
+# Service Invocation
+from infrastructure.dapr.invoke import ServiceInvoker
+invoker = ServiceInvoker(client)
+response = await invoker.invoke("order-service", "orders")
+```
+
+### Resiliency
+
+Políticas de resiliência configuráveis em `deployments/dapr/config/resiliency.yaml`:
+
+- **Timeouts**: Duração máxima de operações
+- **Retries**: Retry com backoff exponencial
+- **Circuit Breakers**: Proteção contra falhas em cascata
+
+### Documentação
+
+- [Arquitetura Dapr](docs/dapr/architecture.md)
+- [Guia de Setup](docs/dapr/setup.md)
+- [ADR-001: Dapr Integration](docs/adr/ADR-001-dapr-integration.md)
+

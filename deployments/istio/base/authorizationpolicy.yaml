@@ -1,0 +1,80 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-all
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: deny-all-policy
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  # Deny all by default - explicit ALLOW policies required
+  {}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ingress-gateway
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: allow-ingress-gateway
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  selector:
+    matchLabels:
+      app: my-api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+            paths: ["/api/*", "/health/*", "/metrics"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-internal-services
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: allow-internal-services
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  selector:
+    matchLabels:
+      app: my-api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/my-api/sa/my-api"
+              - "cluster.local/ns/my-api/sa/my-api-worker"
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: allow-prometheus-scrape
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  selector:
+    matchLabels:
+      app: my-api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/monitoring/sa/prometheus"
+      to:
+        - operation:
+            methods: ["GET"]
+            paths: ["/metrics"]

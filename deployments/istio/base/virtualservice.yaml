@@ -1,0 +1,92 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: api-virtualservice
+  namespace: my-api
+  labels:
+    app.kubernetes.io/name: api-virtualservice
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  hosts:
+    - "api.example.com"
+  gateways:
+    - api-gateway
+  http:
+    # Health endpoints - no auth required
+    - match:
+        - uri:
+            prefix: /health
+      route:
+        - destination:
+            host: my-api
+            port:
+              number: 80
+      timeout: 5s
+    
+    # Metrics endpoint
+    - match:
+        - uri:
+            exact: /metrics
+      route:
+        - destination:
+            host: my-api
+            port:
+              number: 80
+      timeout: 10s
+    
+    # API v1 routes with canary support
+    - match:
+        - uri:
+            prefix: /api/v1
+      route:
+        - destination:
+            host: my-api
+            subset: stable
+            port:
+              number: 80
+          weight: 90
+        - destination:
+            host: my-api
+            subset: canary
+            port:
+              number: 80
+          weight: 10
+      timeout: 30s
+      retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: 5xx,reset,connect-failure,retriable-4xx
+        retryRemoteLocalities: true
+      corsPolicy:
+        allowOrigins:
+          - exact: "https://app.example.com"
+          - regex: "https://.*\\.example\\.com"
+        allowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        allowHeaders:
+          - authorization
+          - content-type
+          - x-request-id
+          - x-correlation-id
+          - accept
+          - origin
+        exposeHeaders:
+          - x-request-id
+          - x-correlation-id
+        maxAge: "24h"
+        allowCredentials: true
+    
+    # Default route
+    - route:
+        - destination:
+            host: my-api
+            subset: stable
+            port:
+              number: 80
+          weight: 100
+      timeout: 30s

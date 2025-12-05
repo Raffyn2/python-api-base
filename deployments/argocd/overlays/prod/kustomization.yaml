@@ -1,0 +1,116 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: argocd
+
+resources:
+  - ../../base
+  - ../../projects
+  - ../../notifications
+  - ../../image-updater
+  - ../../sealed-secrets
+
+patches:
+  # Update ArgoCD URL for production
+  - patch: |-
+      - op: replace
+        path: /data/url
+        value: https://argocd.example.com
+    target:
+      kind: ConfigMap
+      name: argocd-cm
+  
+  # Update Ingress hosts for production
+  - patch: |-
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: argocd.example.com
+      - op: replace
+        path: /spec/rules/0/host
+        value: argocd.example.com
+    target:
+      kind: Ingress
+      name: argocd-server-ingress
+  
+  # Increase resource limits for production
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: argocd-server
+      spec:
+        template:
+          spec:
+            containers:
+              - name: argocd-server
+                resources:
+                  requests:
+                    cpu: 250m
+                    memory: 512Mi
+                  limits:
+                    cpu: 500m
+                    memory: 1Gi
+    target:
+      kind: Deployment
+      name: argocd-server
+  
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: argocd-repo-server
+      spec:
+        template:
+          spec:
+            containers:
+              - name: argocd-repo-server
+                resources:
+                  requests:
+                    cpu: 250m
+                    memory: 512Mi
+                  limits:
+                    cpu: 1000m
+                    memory: 2Gi
+    target:
+      kind: Deployment
+      name: argocd-repo-server
+  
+  - patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: argocd-application-controller
+      spec:
+        template:
+          spec:
+            containers:
+              - name: argocd-application-controller
+                resources:
+                  requests:
+                    cpu: 500m
+                    memory: 1Gi
+                  limits:
+                    cpu: 2000m
+                    memory: 4Gi
+    target:
+      kind: StatefulSet
+      name: argocd-application-controller
+
+configMapGenerator:
+  - name: argocd-notifications-cm
+    behavior: merge
+    literals:
+      - context=|
+          argocdUrl: https://argocd.example.com
+
+# Production-specific replicas
+replicas:
+  - name: argocd-server
+    count: 2
+  - name: argocd-repo-server
+    count: 2
+
+labels:
+  - pairs:
+      environment: prod
+    includeSelectors: false

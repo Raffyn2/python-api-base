@@ -1,0 +1,52 @@
+{{- if and .Values.dapr.enabled .Values.dapr.resiliency.enabled }}
+apiVersion: dapr.io/v1alpha1
+kind: Resiliency
+metadata:
+  name: {{ include "my-api.fullname" . }}-resiliency
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "my-api.labels" . | nindent 4 }}
+scopes:
+  - {{ .Values.dapr.appId }}
+spec:
+  policies:
+    timeouts:
+      {{- range $name, $value := .Values.dapr.resiliency.policies.timeouts }}
+      {{ $name }}: {{ $value }}
+      {{- end }}
+    retries:
+      {{- range $name, $policy := .Values.dapr.resiliency.policies.retries }}
+      {{ $name }}:
+        policy: {{ $policy.policy }}
+        {{- if $policy.duration }}
+        duration: {{ $policy.duration }}
+        {{- end }}
+        {{- if $policy.maxInterval }}
+        maxInterval: {{ $policy.maxInterval }}
+        {{- end }}
+        maxRetries: {{ $policy.maxRetries }}
+      {{- end }}
+    circuitBreakers:
+      {{- range $name, $cb := .Values.dapr.resiliency.policies.circuitBreakers }}
+      {{ $name }}:
+        maxRequests: {{ $cb.maxRequests }}
+        timeout: {{ $cb.timeout }}
+        trip: {{ $cb.trip }}
+      {{- end }}
+  targets:
+    apps:
+      {{ .Values.dapr.appId }}:
+        timeout: general
+        retry: defaultRetry
+        circuitBreaker: defaultCB
+    components:
+      {{ .Values.dapr.components.statestore.name }}:
+        outbound:
+          timeout: general
+          retry: importantRetry
+          circuitBreaker: defaultCB
+      {{ .Values.dapr.components.pubsub.name }}:
+        outbound:
+          retry: defaultRetry
+          circuitBreaker: defaultCB
+{{- end }}

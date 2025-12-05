@@ -1,0 +1,114 @@
+{{- if .Values.dapr.enabled }}
+{{- if .Values.dapr.components.statestore.enabled }}
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.dapr.components.statestore.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "my-api.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.dapr.components.statestore.type }}
+  version: {{ .Values.dapr.components.statestore.version }}
+  metadata:
+    - name: redisHost
+      value: {{ .Values.dapr.components.statestore.metadata.redisHost | quote }}
+    - name: redisPassword
+      secretKeyRef:
+        name: {{ include "my-api.fullname" . }}-redis-secret
+        key: password
+    - name: actorStateStore
+      value: {{ .Values.dapr.components.statestore.metadata.actorStateStore | quote }}
+  scopes:
+    - {{ .Values.dapr.appId }}
+{{- end }}
+
+{{- if .Values.dapr.components.pubsub.enabled }}
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.dapr.components.pubsub.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "my-api.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.dapr.components.pubsub.type }}
+  version: {{ .Values.dapr.components.pubsub.version }}
+  metadata:
+    - name: brokers
+      value: {{ .Values.dapr.components.pubsub.metadata.brokers | quote }}
+    - name: consumerGroup
+      value: {{ .Values.dapr.components.pubsub.metadata.consumerGroup | quote }}
+    - name: authType
+      value: {{ .Values.dapr.components.pubsub.metadata.authType | quote }}
+  scopes:
+    - {{ .Values.dapr.appId }}
+{{- end }}
+
+{{- if .Values.dapr.components.secretstore.enabled }}
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.dapr.components.secretstore.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "my-api.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.dapr.components.secretstore.type }}
+  version: {{ .Values.dapr.components.secretstore.version }}
+  metadata:
+    - name: vaultAddr
+      value: {{ .Values.dapr.components.secretstore.metadata.vaultAddr | quote }}
+    - name: vaultToken
+      secretKeyRef:
+        name: {{ include "my-api.fullname" . }}-vault-token
+        key: token
+  scopes:
+    - {{ .Values.dapr.appId }}
+{{- end }}
+
+{{- if .Values.dapr.components.bindings.cron.enabled }}
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.dapr.components.bindings.cron.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "my-api.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.dapr.components.bindings.cron.type }}
+  version: {{ .Values.dapr.components.bindings.cron.version }}
+  metadata:
+    - name: schedule
+      value: {{ .Values.dapr.components.bindings.cron.metadata.schedule | quote }}
+  scopes:
+    - {{ .Values.dapr.appId }}
+{{- end }}
+
+{{- if .Values.dapr.components.bindings.kafka.enabled }}
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.dapr.components.bindings.kafka.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "my-api.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.dapr.components.bindings.kafka.type }}
+  version: {{ .Values.dapr.components.bindings.kafka.version }}
+  metadata:
+    - name: brokers
+      value: {{ .Values.dapr.components.bindings.kafka.metadata.brokers | quote }}
+    - name: topics
+      value: {{ .Values.dapr.components.bindings.kafka.metadata.topics | quote }}
+    - name: consumerGroup
+      value: {{ .Values.dapr.components.bindings.kafka.metadata.consumerGroup | quote }}
+  scopes:
+    - {{ .Values.dapr.appId }}
+{{- end }}
+{{- end }}
