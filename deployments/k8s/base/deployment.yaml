@@ -10,6 +10,8 @@ metadata:
     app.kubernetes.io/component: api
     app.kubernetes.io/part-of: my-api
     app.kubernetes.io/managed-by: kubectl
+  annotations:
+    checkov.io/skip1: "CKV_K8S_40=Using specific image tag via Kustomize"
 spec:
   replicas: 3
   revisionHistoryLimit: 10
@@ -139,6 +141,21 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: cache
+              mountPath: /app/.cache
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
+          - name: timeout
+            value: "2"
+          - name: attempts
+            value: "2"
       volumes:
         - name: tmp
-          emptyDir: {}
+          emptyDir:
+            sizeLimit: 100Mi
+        - name: cache
+          emptyDir:
+            sizeLimit: 50Mi

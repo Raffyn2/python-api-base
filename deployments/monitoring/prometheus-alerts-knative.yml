@@ -1,0 +1,123 @@
+groups:
+  - name: knative-alerts
+    rules:
+      - alert: KnativeServiceHighColdStartLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(revision_request_latencies_bucket{response_code_class="2xx"}[5m])) by (le, revision_name)
+          ) > 3000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High cold start latency for Knative service"
+          description: "Knative revision {{ $labels.revision_name }} has p95 latency > 3s for 5 minutes"
+          runbook_url: "https://docs.example.com/runbooks/knative-cold-start"
+
+      - alert: KnativeServiceScalingFailure
+        expr: |
+          increase(autoscaler_panic_mode_count[5m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Knative autoscaler in panic mode"
+          description: "Knative autoscaler entered panic mode, indicating scaling issues"
+          runbook_url: "https://docs.example.com/runbooks/knative-scaling"
+
+      - alert: KnativeServiceHighErrorRate
+        expr: |
+          sum(rate(revision_request_count{response_code_class="5xx"}[5m])) by (revision_name)
+          /
+          sum(rate(revision_request_count[5m])) by (revision_name)
+          > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: api
+        annotations:
+          summary: "High error rate for Knative service"
+          description: "Knative revision {{ $labels.revision_name }} has > 5% error rate"
+          runbook_url: "https://docs.example.com/runbooks/knative-errors"
+
+      - alert: KnativeServiceScaleToZeroStuck
+        expr: |
+          kube_pod_status_phase{namespace=~"my-api.*", phase="Running"}
+          * on(pod) group_left(revision)
+          label_replace(
+            kube_pod_labels{label_serving_knative_dev_revision!=""},
+            "revision", "$1", "label_serving_knative_dev_revision", "(.*)"
+          )
+          and
+          sum(rate(revision_request_count[10m])) by (revision_name) == 0
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Knative service not scaling to zero"
+          description: "Knative revision has no traffic but pods are still running"
+
+      - alert: KnativeActivatorHighLatency
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(activator_request_latencies_bucket[5m])) by (le)
+          ) > 5000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High latency in Knative activator"
+          description: "Knative activator p99 latency > 5s, may indicate cold start issues"
+
+      - alert: KnativeRevisionPodCrashLooping
+        expr: |
+          increase(kube_pod_container_status_restarts_total{
+            namespace=~"my-api.*",
+            container="user-container"
+          }[1h]) > 5
+        for: 5m
+        labels:
+          severity: critical
+          team: api
+        annotations:
+          summary: "Knative revision pod crash looping"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted > 5 times in 1h"
+
+      - alert: KnativeServiceMemoryPressure
+        expr: |
+          sum(container_memory_working_set_bytes{
+            namespace=~"my-api.*",
+            container="user-container"
+          }) by (pod)
+          /
+          sum(kube_pod_container_resource_limits{
+            namespace=~"my-api.*",
+            container="user-container",
+            resource="memory"
+          }) by (pod)
+          > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          team: api
+        annotations:
+          summary: "Knative pod memory pressure"
+          description: "Pod {{ $labels.pod }} is using > 90% of memory limit"
+
+      - alert: KnativeServiceCPUThrottling
+        expr: |
+          sum(rate(container_cpu_cfs_throttled_seconds_total{
+            namespace=~"my-api.*",
+            container="user-container"
+          }[5m])) by (pod) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          team: api
+        annotations:
+          summary: "Knative pod CPU throttling"
+          description: "Pod {{ $labels.pod }} is experiencing CPU throttling"

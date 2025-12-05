@@ -38,7 +38,12 @@ deployments/
 │   └── api/
 ├── k8s/                    # Kubernetes manifests
 │   └── base/
-├── serverless/             # Serverless adapters
+├── knative/                # Knative Serverless (Kubernetes-native)
+│   ├── base/               # Base Knative Service configuration
+│   ├── overlays/           # Environment overlays (dev/staging/prod)
+│   ├── eventing/           # Knative Eventing (Kafka, CloudEvents)
+│   └── traffic/            # Traffic splitting examples
+├── serverless/             # Serverless adapters (FaaS)
 │   ├── aws-lambda/
 │   └── vercel/
 └── terraform/              # Infrastructure as Code
@@ -66,6 +71,24 @@ docker compose \
   -f docker/docker-compose.dev.yml \
   -f docker/docker-compose.infra.yml up
 ```
+
+### Knative Serverless
+
+```bash
+# Deploy para desenvolvimento (scale-to-zero habilitado)
+kubectl apply -k deployments/knative/overlays/dev
+
+# Deploy para produção (minScale=2 para alta disponibilidade)
+kubectl apply -k deployments/knative/overlays/prod
+
+# Verificar status
+kubectl get ksvc -n my-api
+
+# Obter URL do serviço
+kubectl get ksvc python-api-base -n my-api -o jsonpath='{.status.url}'
+```
+
+Documentação completa: [Knative README](./knative/README.md)
 
 ### Kubernetes (Helm)
 
@@ -360,27 +383,88 @@ Automated validation on every PR:
 ### Pre-Deployment Checklist
 
 ```bash
-# 1. Validate Helm chart
+# 1. Run full validation script
+./scripts/validate-manifests.sh
+
+# 2. Validate Helm chart
 helm lint deployments/helm/api/
 
-# 2. Validate Kubernetes manifests
+# 3. Validate Kubernetes manifests
 kubectl apply --dry-run=client -f deployments/k8s/base/
 
-# 3. Validate Terraform
+# 4. Validate Terraform
 cd deployments/terraform
 terraform fmt -check -recursive
 terraform validate
 
-# 4. Security scan
+# 5. Security scan
 trivy config deployments/
 
-# 5. Test Helm install (kind cluster)
+# 6. Run property-based tests
+pytest tests/properties/deployments/ -v
+
+# 7. Test Helm install (kind cluster)
 kind create cluster --name test
 helm install test deployments/helm/api/ \
   --set postgresql.enabled=false \
   --set redis.enabled=false
 helm test test
 ```
+
+## 🔍 Validation Framework
+
+O projeto inclui um framework de validação automatizada para garantir conformidade com best practices.
+
+### Executar Validação Completa
+
+```bash
+# Validação completa (YAML, Helm, K8s, Terraform, Security)
+./scripts/validate-manifests.sh
+
+# Com correção automática (onde possível)
+./scripts/validate-manifests.sh --fix
+
+# Modo verbose
+./scripts/validate-manifests.sh --verbose
+```
+
+### Property-Based Tests
+
+45 property tests validam automaticamente:
+
+- **Segurança**: Security contexts, Network policies, mTLS, Rate limiting
+- **Recursos**: Limits/requests, Quotas, HPA behavior
+- **GitOps**: Sync waves, External secrets, Image tags
+- **Observabilidade**: ServiceMonitors, Alert severity, Tracing
+- **Alta Disponibilidade**: Topology spread, PDB, Probes
+
+```bash
+# Executar todos os property tests
+pytest tests/properties/deployments/ -v
+
+# Executar categoria específica
+pytest tests/properties/deployments/test_manifest_properties.py::TestSecurityContextProperties -v
+```
+
+### Helm Values Schema
+
+Validação de valores Helm via JSON Schema:
+
+```bash
+# Validar values.yaml contra schema
+helm lint deployments/helm/api/ --strict
+```
+
+### Ferramentas Recomendadas
+
+| Ferramenta | Propósito | Instalação |
+|------------|-----------|------------|
+| yamllint | YAML syntax | `pip install yamllint` |
+| kubeconform | K8s schema | `brew install kubeconform` |
+| checkov | Security scan | `pip install checkov` |
+| trivy | Vulnerability scan | `brew install trivy` |
+
+Documentação completa: [ADR-021: Validation Framework](../docs/architecture/adr/ADR-021-deployments-validation-framework.md)
 
 ## 🏗️ Multi-Cloud Support
 
@@ -469,16 +553,20 @@ aws dynamodb scan --table-name my-api-terraform-locks
 ## 📚 Additional Resources
 
 - [Helm Chart Documentation](./helm/api/README.md)
+- [Knative Serverless Documentation](./knative/README.md)
 - [Terraform Modules](./terraform/README.md)
 - [ADR-014: Deployment Optimizations](../docs/architecture/adr/ADR-014-deployment-optimizations.md)
 - [External Secrets Operator](https://external-secrets.io/)
 - [Vertical Pod Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler)
+- [Knative Documentation](https://knative.dev/docs/)
 
 ## 🔖 Version Compatibility
 
 | Component | Version | Notes |
 |-----------|---------|-------|
 | Kubernetes | 1.28+ | Tested on 1.28, 1.29 |
+| Knative Serving | 1.15+ | Serverless workloads |
+| Knative Eventing | 1.15+ | Event-driven architecture |
 | Helm | 3.14+ | Chart API v2 |
 | Terraform | 1.6+ | Using new validation |
 | External Secrets | 0.9+ | ClusterSecretStore |
@@ -504,5 +592,5 @@ When modifying deployments:
 
 ---
 
-**Last Updated**: 2025-12-01
+**Last Updated**: 2025-12-05
 **Maintainer**: API Team (api-team@example.com)

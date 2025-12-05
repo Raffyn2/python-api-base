@@ -2,11 +2,12 @@ version: v2
 name: buf.build/python-api-base/protos
 deps:
   - buf.build/googleapis/googleapis
+  - buf.build/bufbuild/protovalidate
 lint:
   use:
-    - DEFAULT
-  except:
-    - PACKAGE_VERSION_SUFFIX
+    - STANDARD
+    - COMMENTS
+  except: []
 breaking:
   use:
     - FILE

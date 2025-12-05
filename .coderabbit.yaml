@@ -1,6 +1,17 @@
+# CodeRabbit Configuration
+# Docs: https://docs.coderabbit.ai/guides/configure-coderabbit
+
 language: "pt-BR"
 
-tone_instructions: "Seja direto e técnico. Foque em problemas de segurança, performance e manutenibilidade. Siga OWASP Top 10 e Clean Architecture."
+tone_instructions: |
+  Seja direto e técnico. Foque em:
+  - Segurança (OWASP Top 10, CWE)
+  - Performance e complexidade ciclomática
+  - Manutenibilidade e Clean Architecture
+  - Type safety e validação de inputs
+  Evite sugestões triviais ou cosméticas.
+
+early_access: true
 
 reviews:
   auto_review:
@@ -13,11 +24,16 @@ reviews:
       - "WIP"
       - "DO NOT MERGE"
       - "DRAFT"
+      - "[skip ci]"
+      - "[no review]"
 
   high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
   poem: false
   review_status: true
   collapse_walkthrough: false
+  changed_files_summary: true
+  sequence_diagrams: true
 
   path_filters:
     - "!.venv/**"
@@ -29,94 +45,143 @@ reviews:
     - "!.pytest_cache/**"
     - "!*.egg-info/**"
     - "!uv.lock"
-    - "!.github/**"
-    - "!deployments/helm/**/*.lock"
+    - "!*.lock"
+    - "!.coverage"
+    - "!coverage.xml"
+    - "!*.min.js"
+    - "!*.min.css"
+    - "!node_modules/**"
+    - "!dist/**"
+    - "!build/**"
 
   path_instructions:
     - path: "src/**/*.py"
       instructions: |
-        Verifique:
+        Verifique rigorosamente:
+        
+        SEGURANÇA (P0):
+        - SQL injection: queries parametrizadas obrigatórias
+        - Input validation: Pydantic com constraints
+        - Secrets: nunca hardcoded, usar env vars
+        - Auth: verificar decorators de permissão
+        - XSS/CSRF: sanitização de outputs
+        
+        QUALIDADE:
         - Complexidade ciclomática < 10
-        - Funções com no máximo 50 linhas
-        - Arquivos com no máximo 400 linhas
-        - Type hints obrigatórios (strict mypy)
-        - Tratamento adequado de erros com Result pattern
-        - Princípios SOLID e Clean Architecture
-        - Sem secrets hardcoded (use env vars)
-        - SQL injection prevention (parameterized queries)
-        - Input validation com Pydantic
+        - Funções: máximo 50 linhas
+        - Arquivos: máximo 400 linhas
+        - Nesting: máximo 3 níveis
+        - Type hints: strict mypy compliance
+        
+        PADRÕES:
+        - Clean Architecture: separação de camadas
+        - SOLID principles
+        - Result pattern para erros esperados
         - Async/await correto (sem blocking calls)
+        - Logging estruturado (sem print)
 
     - path: "tests/**/*.py"
       instructions: |
         Verifique:
-        - Cobertura de edge cases
-        - Nomenclatura descritiva (test_should_*)
+        - Cobertura de edge cases e error paths
+        - Nomenclatura: test_should_<expected>_when_<condition>
         - Arrange-Act-Assert pattern
         - Sem dados sensíveis em fixtures
         - Property-based tests para lógica complexa
-        - Mocks apropriados para dependências externas
+        - Mocks apropriados (não mock demais)
+        - Assertions específicas (não apenas assertTrue)
 
     - path: "alembic/**/*.py"
       instructions: |
         Verifique:
-        - Migrations reversíveis (upgrade/downgrade)
-        - Sem dados sensíveis
+        - Migrations reversíveis (upgrade E downgrade)
+        - Sem dados sensíveis ou PII
         - Índices para foreign keys
-        - Constraints apropriados
+        - Constraints apropriados (NOT NULL, UNIQUE, CHECK)
+        - Transações atômicas
+        - Backward compatibility quando possível
 
-    - path: "terraform/**/*.tf"
+    - path: "deployments/terraform/**/*.tf"
       instructions: |
         Verifique:
-        - Sem secrets hardcoded
-        - Uso de variáveis para valores sensíveis
-        - Tags obrigatórias (Environment, Project, Owner)
+        - Sem secrets hardcoded (use variables/secrets manager)
+        - Tags obrigatórias: Environment, Project, Owner, ManagedBy
         - Encryption at rest habilitado
         - Least privilege IAM policies
+        - Logging e monitoring habilitados
+        - Backup e disaster recovery configurados
+        - Security groups restritivos
 
     - path: "deployments/**/*.yaml"
       instructions: |
         Verifique:
-        - Sem secrets em plain text
-        - Resource limits definidos
-        - Health checks configurados
-        - Security context apropriado
+        - Sem secrets em plain text (use External Secrets/Sealed Secrets)
+        - Resource limits e requests definidos
+        - Health checks (liveness, readiness, startup)
+        - Security context: runAsNonRoot, readOnlyRootFilesystem
         - Network policies restritivas
-        - Pod disruption budgets
-        - External Secrets usage
+        - Pod disruption budgets para HA
+        - Service accounts dedicados
 
     - path: ".github/workflows/**/*.yml"
       instructions: |
         Verifique:
-        - Permissions explícitas (least privilege)
-        - Secrets via GitHub Secrets (não hardcoded)
-        - Timeout configurado
+        - Permissions explícitas e mínimas (least privilege)
+        - Actions pinadas por SHA (não tags)
+        - Secrets via GitHub Secrets
+        - Timeout configurado em todos os jobs
         - Concurrency groups para evitar runs duplicados
-        - Cache de dependências
-        - Fail fast quando apropriado
+        - Cache de dependências otimizado
+        - persist-credentials: false em checkouts
 
     - path: "pyproject.toml"
       instructions: |
         Verifique:
-        - Versões de dependências pinadas ou com range seguro
+        - Versões de dependências com range seguro
         - Sem dependências não utilizadas
         - Dependências de segurança atualizadas
         - Optional dependencies bem organizados
+        - Configurações de tools consistentes
 
     - path: "src/**/config/**/*.py"
       instructions: |
         Verifique:
         - Validação de todas as configurações
-        - Defaults seguros
+        - Defaults seguros (não permissivos)
         - Documentação de cada campo
         - Sem valores padrão sensíveis
+        - Tipagem forte com Pydantic
+
+    - path: "src/infrastructure/auth/**/*.py"
+      instructions: |
+        CRÍTICO - Código de autenticação:
+        - Timing-safe comparisons
+        - Rate limiting em endpoints de auth
+        - Token expiration adequado
+        - Secure password hashing (Argon2/bcrypt)
+        - Audit logging de eventos de auth
+        - Proteção contra brute force
+
+    - path: "src/infrastructure/db/**/*.py"
+      instructions: |
+        Verifique:
+        - Connection pooling configurado
+        - Queries parametrizadas (NUNCA string interpolation)
+        - Transactions apropriadas
+        - Índices para queries frequentes
+        - N+1 query prevention
+        - Timeout de conexão
 
 chat:
   auto_reply: true
 
-early_access: true
-
 knowledge_base:
   learnings:
     scope: auto
+  issues:
+    scope: auto
+  jira:
+    project_keys: []
+  linear:
+    team_keys: []
   opt_out: false

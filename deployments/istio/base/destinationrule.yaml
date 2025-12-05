@@ -6,6 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/name: api-destinationrule
     app.kubernetes.io/part-of: python-api-base
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   host: my-api
   trafficPolicy:

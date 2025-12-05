@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package common.v1;
+
+import "buf/validate/validate.proto";
+
+option python_generic_services = true;
+
+// PageRequest contains pagination parameters for list operations.
+// Use this message in any List RPC request to enable cursor-based pagination.
+message PageRequest {
+  // Maximum number of items to return per page.
+  // Must be between 1 and 100, defaults to 20 if not specified.
+  int32 page_size = 1 [(buf.validate.field).int32 = {gte: 0, lte: 100}];
+
+  // Token for cursor-based pagination.
+  // Use the next_page_token from the previous response to get the next page.
+  // Leave empty for the first page.
+  string page_token = 2;
+}
+
+// PageResponse contains pagination metadata for list responses.
+// Include this message in any List RPC response to provide pagination info.
+message PageResponse {
+  // Token for the next page of results.
+  // Empty if there are no more pages.
+  string next_page_token = 1;
+
+  // Total count of items matching the query.
+  // May be omitted if expensive to compute.
+  int64 total_count = 2;
+
+  // Whether there are more pages available.
+  bool has_more = 3;
+}

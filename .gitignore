@@ -1,3 +1,11 @@
+# =============================================================================
+# Python API Base - .gitignore
+# Comprehensive ignore patterns for Python/FastAPI projects
+# =============================================================================
+
+# =============================================================================
+# Python
+# =============================================================================
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -20,9 +28,11 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # PyInstaller
 *.manifest
@@ -32,7 +42,9 @@ wheels/
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
+# =============================================================================
+# Testing
+# =============================================================================
 htmlcov/
 .tox/
 .nox/
@@ -45,149 +57,259 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+pytest_cache/
+test-results/
+junit*.xml
 
-# Translations
-*.mo
-*.pot
+# =============================================================================
+# Type Checking & Linting
+# =============================================================================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pytype/
+.pyre/
 
-# Environments
+# =============================================================================
+# Virtual Environments
+# =============================================================================
 .env
-.venv
+.venv/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+.python-version
 
-# IDE
+# =============================================================================
+# Package Managers
+# =============================================================================
+# uv
+.uv/
+.uv.cache/
+# Note: uv.lock IS committed for reproducible builds
+
+# pip
+pip-wheel-metadata/
+
+# =============================================================================
+# IDEs and Editors
+# =============================================================================
+# VSCode
+.vscode/settings.json
+.vscode/launch.json
+.vscode/*.code-workspace
+
+# JetBrains (PyCharm, IntelliJ)
 .idea/
-.vscode/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Vim/Neovim
 *.swp
 *.swo
 *~
+.vim/
+tags
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
 
-# Ruff
-.ruff_cache/
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Fleet
+.fleet/
 
-# pyenv
-.python-version
-
-# Local development
-*.local
+# =============================================================================
+# Operating System
+# =============================================================================
+# macOS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
 
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =============================================================================
+# Secrets and Credentials (CRITICAL - NEVER COMMIT)
+# =============================================================================
+.env
+.env.*
+!.env.example
+*.secrets
+.secrets/
+secrets/
+credentials.json
+service-account*.json
+*.pem
+*.key
+*.crt
+!deployments/**/*.crt
+*.p12
+*.pfx
+.netrc
+.npmrc
+.pypirc
+
+# =============================================================================
 # Database
+# =============================================================================
 *.db
+*.sqlite
 *.sqlite3
+*.db-journal
+*.db-shm
+*.db-wal
 
+# =============================================================================
 # Logs
+# =============================================================================
 *.log
 logs/
+log/
+*.log.*
 
-# uv
-.uv/
-# Note: uv.lock is committed for reproducible builds
+# =============================================================================
+# Temporary Files
+# =============================================================================
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*.rej
 
+# =============================================================================
+# Documentation Builds
+# =============================================================================
+docs/_build/
+docs/.doctrees/
+site/
+.mkdocs/
+
+# =============================================================================
+# Profiling
+# =============================================================================
+*.prof
+*.lprof
+*.pstats
+prof/
+profile/
+
+# =============================================================================
+# Jupyter Notebooks
+# =============================================================================
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+profile_default/
+ipython_config.py
+
+# =============================================================================
 # Terraform
+# =============================================================================
 *.tfstate
 *.tfstate.*
+*.tfstate.backup
 .terraform/
 .terraform.lock.hcl
+*.tfvars
+!*.tfvars.example
 *.tfvars.local
 backend.hcl
-terraform/secrets/
 crash.log
+crash.*.log
 override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
 .terraformrc
 terraform.rc
+**/.terraform/*
 
-# Helm
+# =============================================================================
+# Kubernetes & Helm
+# =============================================================================
 *.tgz
-.helmignore
-charts/
-
-# Kubernetes
+charts/*.tgz
 kubeconfig
 *.kubeconfig
-*.key
-*.crt
-*.pem
+kubeconfig.*
 
+# =============================================================================
 # Docker
-.dockerignore
+# =============================================================================
 docker-compose.override.yml
+docker-compose.local.yml
 .docker/
 
-# Secrets and Credentials
-*.secrets
-.secrets/
-credentials.json
-service-account.json
-*.env.local
-*.env.*.local
-
-# Uploads and temporary files
+# =============================================================================
+# Uploads and User Content
+# =============================================================================
 uploads/
-tmp/
-temp/
-*.tmp
+media/
+static/uploads/
 
-# OS specific
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-desktop.ini
+# =============================================================================
+# Node.js (if frontend exists)
+# =============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
-# Backup files
-*.bak
-*.backup
-*~
-*.swp
-*.swo
+# =============================================================================
+# gRPC Generated Code
+# =============================================================================
+src/infrastructure/grpc/generated/*_pb2*.py
+src/infrastructure/grpc/generated/*_pb2*.pyi
+!src/infrastructure/grpc/generated/__init__.py
 
-# Coverage and reports
-.coverage.*
-htmlcov/
-*.cover
-coverage/
-test-results/
-.pytest_cache/
-.hypothesis/
-
-# Documentation builds
-docs/_build/
-docs/.doctrees/
-site/
-
-# Profiling
-*.prof
-*.lprof
-prof/
-
-# IDEs
-.idea/
-*.iml
-.vscode/settings.json
-.vscode/launch.json
-*.code-workspace
-.fleet/
-.python-version
-
-# uv specific
-.uv/
-.uv.cache/
+# =============================================================================
+# Misc
+# =============================================================================
+*.pid
+*.seed
+*.pid.lock
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo

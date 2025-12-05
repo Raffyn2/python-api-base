@@ -1,0 +1,93 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: python-api-base
+  labels:
+    app.kubernetes.io/name: python-api-base
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: python-api-base
+spec:
+  template:
+    metadata:
+      annotations:
+        # Autoscaling configuration
+        autoscaling.knative.dev/class: kpa.autoscaling.knative.dev
+        autoscaling.knative.dev/metric: concurrency
+        autoscaling.knative.dev/target: "100"
+        autoscaling.knative.dev/min-scale: "0"
+        autoscaling.knative.dev/max-scale: "10"
+        autoscaling.knative.dev/scale-down-delay: "30s"
+        autoscaling.knative.dev/scale-to-zero-pod-retention-period: "1m"
+        # Istio sidecar injection
+        sidecar.istio.io/inject: "true"
+        # Prometheus metrics
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+      labels:
+        app.kubernetes.io/name: python-api-base
+        app.kubernetes.io/component: api
+    spec:
+      serviceAccountName: python-api-base
+      containerConcurrency: 100
+      timeoutSeconds: 300
+      containers:
+        - name: api
+          image: python-api-base:latest
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+              name: http1
+          env:
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: python-api-base-config
+                  key: ENVIRONMENT
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: python-api-base-config
+                  key: LOG_LEVEL
+          envFrom:
+            - configMapRef:
+                name: python-api-base-config
+            - secretRef:
+                name: python-api-base-secrets
+                optional: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault

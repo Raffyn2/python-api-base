@@ -1,0 +1,25 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: python-api-base
+spec:
+  template:
+    metadata:
+      annotations:
+        # Keep at least 1 instance warm
+        autoscaling.knative.dev/min-scale: "1"
+        autoscaling.knative.dev/max-scale: "5"
+        autoscaling.knative.dev/target: "80"
+        autoscaling.knative.dev/scale-down-delay: "30s"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 120
+      containers:
+        - name: api
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 750m
+              memory: 768Mi

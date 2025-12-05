@@ -1,0 +1,24 @@
+apiVersion: eventing.knative.dev/v1
+kind: Broker
+metadata:
+  name: python-api-base-broker
+  labels:
+    app.kubernetes.io/name: python-api-base
+    app.kubernetes.io/component: eventing
+  annotations:
+    eventing.knative.dev/broker.class: MTChannelBasedBroker
+spec:
+  config:
+    apiVersion: v1
+    kind: ConfigMap
+    name: config-br-defaults
+    namespace: knative-eventing
+  delivery:
+    deadLetterSink:
+      ref:
+        apiVersion: serving.knative.dev/v1
+        kind: Service
+        name: python-api-base-dlq-handler
+    retry: 3
+    backoffPolicy: exponential
+    backoffDelay: PT1S

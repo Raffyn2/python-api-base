@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kepler
+  namespace: kepler-system
+  labels:
+    app.kubernetes.io/name: kepler
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kepler
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kepler
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9102"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: kepler
+      hostNetwork: true
+      hostPID: true
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      containers:
+        - name: kepler
+          image: quay.io/sustainable_computing_io/kepler:release-0.7.11
+          imagePullPolicy: IfNotPresent
+          args:
+            - -v=1
+            - -kernel-source-dir=/usr/share/kepler/kernel_sources
+          ports:
+            - containerPort: 9102
+              name: metrics
+              protocol: TCP
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: KEPLER_LOG_LEVEL
+              value: "1"
+            - name: ENABLE_GPU
+              value: "false"
+            - name: ENABLE_EBPF_CGROUPID
+              value: "true"
+            - name: EXPOSE_HARDWARE_COUNTER_METRICS
+              value: "true"
+            - name: EXPOSE_IRQ_COUNTER_METRICS
+              value: "true"
+            - name: EXPOSE_KUBELET_METRICS
+              value: "true"
+            - name: ENABLE_PROCESS_METRICS
+              value: "false"
+            - name: MODEL_SERVER_ENABLE
+              value: "false"
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          resources:
+            requests:
+              cpu: 100m
+              memory: 400Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9102
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 9102
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: tracing
+              mountPath: /sys
+              readOnly: true
+            - name: kernel-src
+              mountPath: /usr/src/kernels
+              readOnly: true
+            - name: proc
+              mountPath: /proc
+              readOnly: true
+      volumes:
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+            type: Directory
+        - name: tracing
+          hostPath:
+            path: /sys
+            type: Directory
+        - name: kernel-src
+          hostPath:
+            path: /usr/src/kernels
+            type: Directory
+        - name: proc
+          hostPath:
+            path: /proc
+            type: Directory

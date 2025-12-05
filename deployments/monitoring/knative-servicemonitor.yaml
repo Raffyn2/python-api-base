@@ -1,0 +1,64 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: python-api-base-knative
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: python-api-base
+    app.kubernetes.io/component: knative
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - my-api
+      - my-api-dev
+      - my-api-staging
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: python-api-base
+  endpoints:
+    - port: http1
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      scheme: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: knative-serving-metrics
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: knative-serving
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - knative-serving
+  selector:
+    matchLabels:
+      app: activator
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: knative-autoscaler-metrics
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: knative-autoscaler
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - knative-serving
+  selector:
+    matchLabels:
+      app: autoscaler
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 15s

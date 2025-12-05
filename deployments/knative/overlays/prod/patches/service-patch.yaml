@@ -1,0 +1,26 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: python-api-base
+spec:
+  template:
+    metadata:
+      annotations:
+        # High availability - always keep 2 instances
+        autoscaling.knative.dev/min-scale: "2"
+        autoscaling.knative.dev/max-scale: "20"
+        autoscaling.knative.dev/target: "100"
+        autoscaling.knative.dev/scale-down-delay: "60s"
+        autoscaling.knative.dev/scale-to-zero-pod-retention-period: "5m"
+    spec:
+      containerConcurrency: 100
+      timeoutSeconds: 300
+      containers:
+        - name: api
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi

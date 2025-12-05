@@ -1,0 +1,25 @@
+# Blue-Green Deployment Example
+# Routes traffic to either blue or green revision
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: python-api-base
+  labels:
+    app.kubernetes.io/name: python-api-base
+spec:
+  template:
+    metadata:
+      name: python-api-base-green
+    spec:
+      containers:
+        - name: api
+          image: python-api-base:v2.0.0
+  traffic:
+    # Current production (blue)
+    - revisionName: python-api-base-blue
+      percent: 100
+      tag: blue
+    # New version (green) - accessible via tagged URL only
+    - revisionName: python-api-base-green
+      percent: 0
+      tag: green

@@ -34,7 +34,7 @@ __all__ = [
     "LockAcquisitionTimeoutError",
     "PatternValidationError",
     "Phase2ModuleError",
-    "PoolInvariantViolation",
+    "PoolInvariantViolationError",
     "RollbackError",
     "SecurityModuleError",
     "SharedModuleError",

@@ -1,0 +1,43 @@
+apiVersion: sources.knative.dev/v1beta1
+kind: KafkaSource
+metadata:
+  name: python-api-base-kafka-source
+  labels:
+    app.kubernetes.io/name: python-api-base
+    app.kubernetes.io/component: eventing
+spec:
+  consumerGroup: python-api-base-consumer
+  bootstrapServers:
+    - kafka-bootstrap.kafka.svc.cluster.local:9092
+  topics:
+    - api-events
+    - domain-events
+  sink:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: python-api-base
+  net:
+    sasl:
+      enable: false
+    tls:
+      enable: false
+---
+apiVersion: sources.knative.dev/v1beta1
+kind: KafkaSource
+metadata:
+  name: python-api-base-kafka-source-dlq
+  labels:
+    app.kubernetes.io/name: python-api-base
+    app.kubernetes.io/component: eventing
+spec:
+  consumerGroup: python-api-base-dlq-consumer
+  bootstrapServers:
+    - kafka-bootstrap.kafka.svc.cluster.local:9092
+  topics:
+    - api-events-dlq
+  sink:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: python-api-base

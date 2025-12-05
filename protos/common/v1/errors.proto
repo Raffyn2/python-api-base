@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package common.v1;
+
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+
+option python_generic_services = true;
+
+// ErrorCode represents semantic error categories.
+// Maps to gRPC status codes and HTTP status codes.
+enum ErrorCode {
+  // Unspecified error code, should not be used.
+  ERROR_CODE_UNSPECIFIED = 0;
+  // Validation error - invalid input data.
+  ERROR_CODE_VALIDATION = 1;
+  // Resource not found.
+  ERROR_CODE_NOT_FOUND = 2;
+  // Resource already exists.
+  ERROR_CODE_ALREADY_EXISTS = 3;
+  // Permission denied for the operation.
+  ERROR_CODE_PERMISSION_DENIED = 4;
+  // Authentication required or failed.
+  ERROR_CODE_UNAUTHENTICATED = 5;
+  // Rate limit or quota exceeded.
+  ERROR_CODE_RESOURCE_EXHAUSTED = 6;
+  // Internal server error.
+  ERROR_CODE_INTERNAL = 7;
+  // Service temporarily unavailable.
+  ERROR_CODE_UNAVAILABLE = 8;
+  // Operation deadline exceeded.
+  ERROR_CODE_DEADLINE_EXCEEDED = 9;
+}
+
+// ErrorDetail represents a single error detail with context.
+// Used for field-level validation errors and additional error information.
+message ErrorDetail {
+  // Error code identifier (e.g., "FIELD_REQUIRED", "INVALID_FORMAT").
+  string code = 1 [(buf.validate.field).string.min_len = 1];
+
+  // Human-readable error message describing the issue.
+  string message = 2 [(buf.validate.field).string.min_len = 1];
+
+  // Field path that caused the error (for validation errors).
+  // Uses dot notation for nested fields (e.g., "item.price_cents").
+  string field = 3;
+
+  // Additional metadata about the error.
+  // Can include constraint values, expected formats, etc.
+  map<string, string> metadata = 4;
+}
+
+// ErrorResponse represents a complete error response.
+// All error responses from the API follow this structure.
+message ErrorResponse {
+  // Unique error identifier for tracking and support (UUID format).
+  string error_id = 1 [(buf.validate.field).string.uuid = true];
+
+  // Semantic error code category.
+  ErrorCode error_code = 2;
+
+  // Main error message describing the overall issue.
+  string message = 3 [(buf.validate.field).string.min_len = 1];
+
+  // Detailed error information for each specific issue.
+  repeated ErrorDetail details = 4;
+
+  // Trace ID for distributed tracing correlation (UUID format).
+  string trace_id = 5;
+
+  // Timestamp when the error occurred.
+  google.protobuf.Timestamp timestamp = 6;
+}

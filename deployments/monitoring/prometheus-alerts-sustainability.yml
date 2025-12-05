@@ -1,0 +1,93 @@
+groups:
+  - name: sustainability-alerts
+    rules:
+      - alert: SustainabilityHighEnergyConsumption
+        expr: |
+          sum(rate(kepler_container_joules_total[5m])) / 3600000 > 100
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          component: sustainability
+        annotations:
+          summary: "High energy consumption detected"
+          description: "Cluster energy consumption exceeds 100 kWh/h for more than 5 minutes."
+          runbook_url: "https://docs.example.com/runbooks/sustainability/energy-threshold"
+
+      - alert: SustainabilityCriticalEnergyConsumption
+        expr: |
+          sum(rate(kepler_container_joules_total[5m])) / 3600000 > 500
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          component: sustainability
+        annotations:
+          summary: "Critical energy consumption detected"
+          description: "Cluster energy consumption exceeds 500 kWh/h for more than 5 minutes."
+          runbook_url: "https://docs.example.com/runbooks/sustainability/energy-threshold"
+
+      - alert: SustainabilityHighCarbonEmissions
+        expr: |
+          (sum(rate(kepler_container_joules_total[5m])) / 3600000) * 400 > 40000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          component: sustainability
+        annotations:
+          summary: "High carbon emissions detected"
+          description: "Cluster carbon emissions exceed 40 kgCO2/h for more than 5 minutes."
+          runbook_url: "https://docs.example.com/runbooks/sustainability/carbon-threshold"
+
+      - alert: SustainabilityCriticalCarbonEmissions
+        expr: |
+          (sum(rate(kepler_container_joules_total[5m])) / 3600000) * 400 > 200000
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          component: sustainability
+        annotations:
+          summary: "Critical carbon emissions detected"
+          description: "Cluster carbon emissions exceed 200 kgCO2/h for more than 5 minutes."
+          runbook_url: "https://docs.example.com/runbooks/sustainability/carbon-threshold"
+
+      - alert: SustainabilityHighEnergyCost
+        expr: |
+          (sum(rate(kepler_container_joules_total[5m])) / 3600000) * 0.12 > 12
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          component: sustainability
+        annotations:
+          summary: "High energy cost detected"
+          description: "Cluster energy cost exceeds $12/h for more than 5 minutes."
+          runbook_url: "https://docs.example.com/runbooks/sustainability/cost-threshold"
+
+      - alert: SustainabilityKeplerDown
+        expr: |
+          absent(kepler_container_joules_total) == 1
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          component: sustainability
+        annotations:
+          summary: "Kepler metrics unavailable"
+          description: "Kepler energy metrics have been unavailable for more than 5 minutes."
+          runbook_url: "https://docs.example.com/runbooks/sustainability/kepler-down"
+
+      - alert: SustainabilityNamespaceHighEnergy
+        expr: |
+          sum by (namespace) (rate(kepler_container_joules_total[5m])) / 3600000 > 50
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          component: sustainability
+        annotations:
+          summary: "Namespace {{ $labels.namespace }} has high energy consumption"
+          description: "Namespace {{ $labels.namespace }} energy consumption exceeds 50 kWh/h."
+          runbook_url: "https://docs.example.com/runbooks/sustainability/namespace-energy"

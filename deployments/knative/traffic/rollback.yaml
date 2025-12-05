@@ -1,0 +1,16 @@
+# Rollback Example
+# Routes 100% traffic to previous stable revision
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: python-api-base
+  labels:
+    app.kubernetes.io/name: python-api-base
+spec:
+  traffic:
+    - revisionName: python-api-base-stable
+      percent: 100
+      tag: stable
+    - revisionName: python-api-base-canary
+      percent: 0
+      tag: canary

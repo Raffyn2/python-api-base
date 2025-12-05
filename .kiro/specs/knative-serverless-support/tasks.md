@@ -1,0 +1,219 @@
+# Implementation Plan
+
+- [x] 1. Set up Knative directory structure and base manifests
+  - [x] 1.1 Create deployments/knative directory structure
+    - Create base/, overlays/, eventing/ directories
+    - Create placeholder kustomization.yaml files
+    - _Requirements: 1.1, 4.1_
+  - [x] 1.2 Implement base Knative Service manifest
+    - Create service.yaml with Python API Base container
+    - Configure health probes for /health/live and /health/ready
+    - Add resource limits and requests
+    - _Requirements: 1.1, 1.2_
+  - [x] 1.3 Create ConfigMap and ServiceAccount manifests
+    - Create configmap.yaml for application configuration
+    - Create serviceaccount.yaml with RBAC
+    - _Requirements: 1.4_
+  - [x] 1.4 Create base kustomization.yaml
+    - Define resources and common labels
+    - Configure namespace and name prefix
+    - _Requirements: 1.1_
+
+- [x] 2. Implement autoscaling configuration
+  - [x] 2.1 Add autoscaling annotations to service manifest
+    - Configure KPA autoscaling class
+    - Set concurrency target, min/max scale
+    - Add scale-down delay annotation
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+  - [x] 2.2 Write property test for autoscaling configuration
+    - **Property 9: Autoscaling Annotation Generation**
+    - **Validates: Requirements 2.3**
+
+- [x] 3. Implement traffic splitting configuration
+  - [x] 3.1 Create Python models for traffic configuration
+    - Implement TrafficTarget dataclass
+    - Implement TrafficConfig with validation
+    - Add percentage sum validation
+    - _Requirements: 3.1, 3.2, 3.5_
+  - [x] 3.2 Write property test for traffic percentage validation
+    - **Property 2: Traffic Percentage Validation**
+    - **Validates: Requirements 3.2, 3.5**
+  - [x] 3.3 Create traffic splitting manifest examples
+    - Add canary deployment example
+    - Add rollback example
+    - Add tagged revision example
+    - _Requirements: 3.1, 3.3, 3.4_
+  - [x] 3.4 Write property test for traffic configuration generation
+    - **Property 3: Traffic Configuration Generation**
+    - **Validates: Requirements 3.1**
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 5. Implement Kustomize overlays for environments
+  - [x] 5.1 Create development overlay
+    - Set minScale=0 for scale-to-zero
+    - Configure relaxed resource limits
+    - Add dev-specific environment variables
+    - _Requirements: 4.1_
+  - [x] 5.2 Create staging overlay
+    - Set minScale=1 for warm instances
+    - Configure moderate resource limits
+    - Add staging-specific configuration
+    - _Requirements: 4.2_
+  - [x] 5.3 Create production overlay
+    - Set minScale=2 for high availability
+    - Configure strict resource limits
+    - Add production-specific configuration
+    - _Requirements: 4.3_
+  - [x] 5.4 Write property test for overlay validation
+    - **Property 4: Kustomize Overlay Produces Valid Manifest**
+    - **Validates: Requirements 4.4, 4.5**
+
+- [x] 6. Implement Istio integration
+  - [x] 6.1 Add Istio sidecar injection annotations
+    - Configure sidecar.istio.io/inject annotation
+    - Add Istio-specific labels
+    - _Requirements: 5.1_
+  - [x] 6.2 Create Istio integration documentation
+    - Document mTLS configuration
+    - Document VirtualService integration
+    - Add troubleshooting guide
+    - _Requirements: 5.2, 5.3, 5.4, 5.5_
+
+- [x] 7. Implement ArgoCD integration
+  - [x] 7.1 Create ArgoCD Application manifest for Knative
+    - Define Application for each environment
+    - Configure sync policy
+    - Add health checks
+    - _Requirements: 6.1, 6.2, 6.3_
+  - [x] 7.2 Create ApplicationSet for dynamic generation
+    - Define generator for environments
+    - Configure template
+    - _Requirements: 6.4_
+  - [x] 7.3 Write property test for ArgoCD ApplicationSet
+    - **Property 5: ArgoCD ApplicationSet Generation**
+    - **Validates: Requirements 6.4, 6.5**
+
+- [x] 8. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 9. Implement CloudEvents Python adapter
+  - [x] 9.1 Create CloudEvent Pydantic models
+    - Implement CloudEvent model with required attributes
+    - Add validation for specversion, id, source, type
+    - Support optional attributes
+    - _Requirements: 10.1, 10.2_
+  - [x] 9.2 Write property test for CloudEvent validation
+    - **Property 6: CloudEvent Validation**
+    - **Validates: Requirements 10.2**
+  - [x] 9.3 Implement CloudEvent parser
+    - Parse structured content mode (JSON body)
+    - Parse binary content mode (headers + body)
+    - Handle content type detection
+    - _Requirements: 10.1, 10.3_
+  - [x] 9.4 Implement CloudEvent serializer
+    - Serialize to structured content mode
+    - Serialize to binary content mode
+    - Support custom extensions
+    - _Requirements: 10.3_
+  - [x] 9.5 Write property test for CloudEvent round-trip
+    - **Property 7: CloudEvent Round-Trip**
+    - **Validates: Requirements 8.5, 10.5**
+  - [x] 9.6 Write property test for CloudEvent serialization modes
+    - **Property 8: CloudEvent Serialization Modes**
+    - **Validates: Requirements 10.3**
+  - [x] 9.7 Create FastAPI dependencies for CloudEvent handling
+    - Implement CloudEvent dependency injection
+    - Add request parsing middleware
+    - _Requirements: 10.4_
+
+- [x] 10. Implement Knative Eventing configuration
+  - [x] 10.1 Create KafkaSource manifest
+    - Configure Kafka bootstrap servers
+    - Define topic subscription
+    - Set sink to Knative Service
+    - _Requirements: 8.1_
+  - [x] 10.2 Create Broker and Trigger manifests
+    - Define event broker
+    - Create trigger with filters
+    - _Requirements: 8.3, 8.4_
+  - [x] 10.3 Add CloudEvents formatting documentation
+    - Document CloudEvents v1.0 compliance
+    - Add examples for event types
+    - _Requirements: 8.2_
+
+- [x] 11. Implement Knative Service generator (Python)
+  - [x] 11.1 Create KnativeServiceConfig dataclass
+    - Define all configuration options
+    - Add validation methods
+    - _Requirements: 1.1, 2.3_
+  - [x] 11.2 Implement manifest serializer
+    - Generate YAML from config
+    - Support all Knative annotations
+    - _Requirements: 1.5_
+  - [x] 11.3 Implement manifest deserializer
+    - Parse YAML to config
+    - Validate against schema
+    - _Requirements: 1.5_
+  - [x] 11.4 Write property test for manifest round-trip
+    - **Property 1: Knative Service Manifest Round-Trip**
+    - **Validates: Requirements 1.5, 2.5**
+
+- [x] 12. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 13. Implement monitoring and observability
+  - [x] 13.1 Create ServiceMonitor for Knative metrics
+    - Configure Prometheus scraping
+    - Add Knative-specific labels
+    - _Requirements: 9.1, 9.5_
+  - [x] 13.2 Create Grafana dashboard for Knative
+    - Add request count, latency, error rate panels
+    - Add scaling events panel
+    - Add cold start latency panel
+    - _Requirements: 9.3_
+  - [x] 13.3 Create Prometheus alerts for Knative
+    - Alert on high cold start latency
+    - Alert on scaling failures
+    - _Requirements: 9.4_
+
+- [x] 14. Create comprehensive documentation
+  - [x] 14.1 Create Knative README.md
+    - Document installation prerequisites
+    - Add quick start guide
+    - Document configuration options
+    - _Requirements: 7.1, 7.2_
+  - [x] 14.2 Add troubleshooting guide
+    - Document common issues
+    - Add debugging commands
+    - _Requirements: 7.3_
+  - [x] 14.3 Add comparison with other serverless options
+    - Compare with AWS Lambda
+    - Compare with Vercel
+    - Add decision matrix
+    - _Requirements: 7.4_
+  - [x] 14.4 Update main deployments README.md
+    - Add Knative section
+    - Update quick start
+    - Update version compatibility table
+    - _Requirements: 7.5_
+
+- [x] 15. Code review and final validation
+  - [x] 15.1 Run comprehensive code review
+    - Review all manifests for best practices
+    - Validate YAML syntax
+    - Check security configurations
+    - _Requirements: All_
+  - [x] 15.2 Validate Kustomize builds
+    - Test kustomize build for all overlays
+    - Verify output manifests
+    - _Requirements: 4.4, 4.5_
+  - [x] 15.3 Update project README.md
+    - Add Knative to deployment options
+    - Update features list
+    - _Requirements: 7.5_
+
+- [x] 16. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+

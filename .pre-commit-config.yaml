@@ -1,51 +1,67 @@
 # Pre-commit hooks configuration
-# Install: pre-commit install
+# Install: pre-commit install && pre-commit install --hook-type commit-msg
 # Run manually: pre-commit run --all-files
 # Update hooks: pre-commit autoupdate
+# Docs: https://pre-commit.com/
 
 default_language_version:
   python: python3.12
 
+default_stages: [pre-commit]
+
 repos:
-  # Ruff - Fast Python linter and formatter
+  # =============================================================================
+  # Code Quality - Ruff (Fast Python linter and formatter)
+  # =============================================================================
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.4
     hooks:
       - id: ruff
+        name: ruff-lint
         args: [--fix, --exit-non-zero-on-fix]
         types_or: [python, pyi]
       - id: ruff-format
+        name: ruff-format
         types_or: [python, pyi]
 
-  # MyPy - Static type checking
+  # =============================================================================
+  # Type Checking - MyPy
+  # =============================================================================
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.13.0
     hooks:
       - id: mypy
+        name: mypy-typecheck
         additional_dependencies:
           - pydantic>=2.9.0
           - pydantic-settings>=2.6.0
           - sqlmodel>=0.0.22
           - fastapi>=0.115.0
           - types-passlib
+          - types-redis
         args: [--config-file=pyproject.toml]
         pass_filenames: false
         entry: mypy src/
+        stages: [pre-commit]
 
-  # General pre-commit hooks
+  # =============================================================================
+  # General Hooks - File hygiene
+  # =============================================================================
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^(.*\.md|.*\.lock)$
+        exclude: ^(.*\.md|.*\.lock|.*\.snap)$
       - id: end-of-file-fixer
-        exclude: ^(.*\.lock)$
+        exclude: ^(.*\.lock|.*\.snap)$
       - id: check-yaml
         args: [--unsafe]
+        exclude: ^(deployments/helm/.*|\.github/workflows/.*)$
       - id: check-toml
       - id: check-json
+        exclude: ^(.*\.postman_.*)$
       - id: check-added-large-files
-        args: [--maxkb=500]
+        args: [--maxkb=1000]
       - id: check-merge-conflict
       - id: detect-private-key
       - id: debug-statements
@@ -54,66 +70,141 @@ repos:
       - id: check-docstring-first
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: destroyed-symlinks
+      - id: mixed-line-ending
+        args: [--fix=lf]
       - id: no-commit-to-branch
-        args: [--branch, main, --branch, master]
+        args: [--branch, main, --branch, master, --branch, production]
 
-  # Security checks
+  # =============================================================================
+  # Security - Bandit SAST
+  # =============================================================================
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.10
+    rev: 1.8.0
     hooks:
       - id: bandit
-        args: [-c, pyproject.toml, -r, src/]
+        name: bandit-security
+        args: [-c, pyproject.toml, -r, src/, -ll]
         additional_dependencies: ["bandit[toml]"]
 
-  # Commit message linting
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.1.0
-    hooks:
-      - id: commitizen
-        stages: [commit-msg]
-
-  # YAML/JSON/TOML validation
-  - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.29.4
-    hooks:
-      - id: check-github-workflows
-        args: [--verbose]
-      - id: check-github-actions
-        args: [--verbose]
-
-  # Security - detect secrets
+  # =============================================================================
+  # Security - Detect Secrets
+  # =============================================================================
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
       - id: detect-secrets
+        name: detect-secrets
         args: [--baseline, .secrets.baseline]
         exclude: |
           (?x)^(
-            uv.lock|
-            .*/snapshots/.*|
-            tests/.*/.*
+            uv\.lock|
+            .*\.postman_.*\.json|
+            tests/.*|
+            \.secrets\.baseline
           )$
 
-  # Markdown linting
+  # =============================================================================
+  # Commit Message - Conventional Commits
+  # =============================================================================
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.1.0
+    hooks:
+      - id: commitizen
+        name: commitizen-check
+        stages: [commit-msg]
+
+  # =============================================================================
+  # GitHub Actions/Workflows Validation
+  # =============================================================================
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.30.0
+    hooks:
+      - id: check-github-workflows
+        name: validate-github-workflows
+        args: [--verbose]
+      - id: check-github-actions
+        name: validate-github-actions
+        args: [--verbose]
+
+  # =============================================================================
+  # Markdown Linting
+  # =============================================================================
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.43.0
     hooks:
       - id: markdownlint
-        args: [--fix]
+        name: markdownlint
+        args: [--fix, --disable, MD013, MD033, MD041, --]
         exclude: |
           (?x)^(
-            CHANGELOG.md
+            CHANGELOG\.md|
+            docs/.*
           )$
 
-  # Dockerfile linting
+  # =============================================================================
+  # Dockerfile Linting
+  # =============================================================================
   - repo: https://github.com/hadolint/hadolint
     rev: v2.12.0
     hooks:
       - id: hadolint-docker
-        args: [--ignore, DL3008, --ignore, DL3009]
+        name: hadolint
+        args: [--ignore, DL3008, --ignore, DL3009, --ignore, DL3013]
+
+  # =============================================================================
+  # YAML Linting
+  # =============================================================================
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        name: yamllint
+        args: [-c, .yamllint.yml]
+        exclude: |
+          (?x)^(
+            deployments/helm/.*|
+            \.github/workflows/.*
+          )$
+
+  # =============================================================================
+  # Shell Script Linting
+  # =============================================================================
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        name: shellcheck
+        args: [--severity=warning]
+
+  # =============================================================================
+  # Terraform Validation (if applicable)
+  # =============================================================================
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.2
+    hooks:
+      - id: terraform_fmt
+        name: terraform-fmt
+      - id: terraform_validate
+        name: terraform-validate
+        args: [--hook-config=--retry-once-with-cleanup=true]
+      - id: terraform_tflint
+        name: terraform-tflint
+        args: [--args=--config=__GIT_WORKING_DIR__/.tflint.hcl]
+
+  # =============================================================================
+  # Python Import Sorting (backup if ruff misses)
+  # =============================================================================
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort-imports
+        args: [--profile, black, --skip-glob, "**/generated/*"]
 
 ci:
-  autofix_commit_msg: "style: auto-fix by pre-commit hooks"
-  autoupdate_commit_msg: "chore: update pre-commit hooks"
-  skip: [no-commit-to-branch]
+  autofix_commit_msg: "style: auto-fix by pre-commit hooks [skip ci]"
+  autoupdate_commit_msg: "chore(deps): update pre-commit hooks"
+  skip: [no-commit-to-branch, mypy, terraform_validate, terraform_tflint]
   autoupdate_schedule: weekly

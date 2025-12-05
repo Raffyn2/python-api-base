@@ -4,10 +4,13 @@ This directory contains adapters for deploying the Python API Base to serverless
 
 ## Supported Platforms
 
-| Platform | Directory | Status |
-|----------|-----------|--------|
-| AWS Lambda | `aws-lambda/` | ✅ Ready |
-| Vercel | `vercel/` | ✅ Ready |
+| Platform | Directory | Status | Type |
+|----------|-----------|--------|------|
+| Knative | `../knative/` | ✅ Ready | Kubernetes-native |
+| AWS Lambda | `aws-lambda/` | ✅ Ready | FaaS |
+| Vercel | `vercel/` | ✅ Ready | FaaS |
+
+> **Note**: Knative is the recommended serverless option for Kubernetes environments. See [Knative README](../knative/README.md) for details.
 
 ## Quick Reference
 
@@ -32,14 +35,18 @@ vercel --prod
 
 ## Architecture Comparison
 
-| Feature | AWS Lambda | Vercel |
-|---------|------------|--------|
-| Cold Start | ~1-3s | ~500ms-2s |
-| Max Duration | 15min | 30s (Pro) |
-| Max Memory | 10GB | 3GB |
-| VPC Support | ✅ | ❌ |
-| Edge Functions | Via CloudFront | ✅ Native |
-| Pricing | Pay per invocation | Free tier + usage |
+| Feature | Knative | AWS Lambda | Vercel |
+|---------|---------|------------|--------|
+| Cold Start | ~1-5s | ~1-3s | ~500ms-2s |
+| Max Duration | Configurable | 15min | 30s (Pro) |
+| Max Memory | Configurable | 10GB | 3GB |
+| Scale-to-Zero | ✅ | ✅ | ✅ |
+| VPC Support | ✅ (K8s) | ✅ | ❌ |
+| Edge Functions | Via Istio | Via CloudFront | ✅ Native |
+| Vendor Lock-in | None | High | Medium |
+| Traffic Splitting | ✅ Native | Via ALB | ✅ Native |
+| Event Sources | Kafka, HTTP | AWS Services | HTTP |
+| Pricing | K8s infra | Pay per invocation | Free tier + usage |
 
 ## Common Considerations
 
@@ -93,3 +100,24 @@ npm i -g vercel
 # Run locally
 vercel dev
 ```
+
+
+## Knative (Kubernetes-native Serverless)
+
+For Kubernetes environments, Knative provides a powerful serverless platform with:
+
+- Auto-scaling including scale-to-zero
+- Traffic splitting for canary deployments
+- CloudEvents support for event-driven architectures
+- Integration with Istio for mTLS and observability
+- No vendor lock-in
+
+```bash
+# Deploy to Kubernetes with Knative
+kubectl apply -k ../knative/overlays/prod
+
+# Get service URL
+kubectl get ksvc python-api-base -n my-api -o jsonpath='{.status.url}'
+```
+
+See [Knative README](../knative/README.md) for complete documentation.

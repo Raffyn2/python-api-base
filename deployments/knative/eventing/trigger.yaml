@@ -1,0 +1,51 @@
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: python-api-base-user-events
+  labels:
+    app.kubernetes.io/name: python-api-base
+    app.kubernetes.io/component: eventing
+spec:
+  broker: python-api-base-broker
+  filter:
+    attributes:
+      type: com.example.user.created
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: python-api-base
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: python-api-base-order-events
+  labels:
+    app.kubernetes.io/name: python-api-base
+    app.kubernetes.io/component: eventing
+spec:
+  broker: python-api-base-broker
+  filter:
+    attributes:
+      type: com.example.order.placed
+      source: /orders
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: python-api-base
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: python-api-base-all-events
+  labels:
+    app.kubernetes.io/name: python-api-base
+    app.kubernetes.io/component: eventing
+spec:
+  broker: python-api-base-broker
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: python-api-base

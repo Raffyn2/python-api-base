@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/example/my-api/security/advisories/new
+    about: Report security vulnerabilities privately
+  - name: Documentation
+    url: https://example.github.io/my-api
+    about: Check the documentation before opening an issue
+  - name: Discussions
+    url: https://github.com/example/my-api/discussions
+    about: Ask questions and discuss ideas

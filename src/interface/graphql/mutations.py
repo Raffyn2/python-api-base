@@ -21,7 +21,10 @@ from application.examples.pedido.commands import (
     CreatePedidoCommand,
 )
 from core.base.patterns.result import Err, Ok
-from interface.graphql.mappers import map_item_dto_to_type, map_pedido_dto_to_type
+from application.mappers.graphql import (
+    map_item_dto_to_type,
+    map_pedido_dto_to_type,
+)
 from interface.graphql.types import (
     ItemCreateInput,
     ItemMutationResult,

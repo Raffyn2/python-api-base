@@ -1,8 +1,16 @@
 version: v2
 managed:
   enabled: true
+  override:
+    - file_option: python_generic_services
+      value: true
 plugins:
+  # Standard Python protobuf
   - remote: buf.build/protocolbuffers/python
     out: src/infrastructure/grpc/generated
+  # gRPC Python
   - remote: buf.build/grpc/python
+    out: src/infrastructure/grpc/generated
+  # Type stubs for mypy
+  - remote: buf.build/protocolbuffers/pyi
     out: src/infrastructure/grpc/generated

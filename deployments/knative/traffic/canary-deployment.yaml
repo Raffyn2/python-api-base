@@ -1,0 +1,23 @@
+# Canary Deployment Example
+# Routes 90% traffic to stable, 10% to canary
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: python-api-base
+  labels:
+    app.kubernetes.io/name: python-api-base
+spec:
+  template:
+    metadata:
+      name: python-api-base-canary
+    spec:
+      containers:
+        - name: api
+          image: python-api-base:canary
+  traffic:
+    - revisionName: python-api-base-stable
+      percent: 90
+      tag: stable
+    - revisionName: python-api-base-canary
+      percent: 10
+      tag: canary

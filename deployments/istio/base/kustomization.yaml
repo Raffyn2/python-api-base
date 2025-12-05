@@ -13,6 +13,7 @@ resources:
   - authorizationpolicy.yaml
   - requestauthentication.yaml
   - serviceentry.yaml
+  - envoyfilter-ratelimit.yaml
 
 commonLabels:
   app.kubernetes.io/managed-by: kustomize

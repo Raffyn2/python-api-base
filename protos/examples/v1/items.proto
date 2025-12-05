@@ -1,0 +1,210 @@
+syntax = "proto3";
+
+package examples.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+import "common/v1/errors.proto";
+import "common/v1/pagination.proto";
+
+option python_generic_services = true;
+
+// ItemService provides CRUD operations for items.
+// Supports standard CRUD, pagination, batch operations, and bidirectional streaming.
+service ItemService {
+  // GetItem retrieves a single item by its unique identifier.
+  rpc GetItem(GetItemRequest) returns (GetItemResponse);
+
+  // CreateItem creates a new item in the system.
+  rpc CreateItem(CreateItemRequest) returns (CreateItemResponse);
+
+  // UpdateItem updates an existing item with field mask support for partial updates.
+  rpc UpdateItem(UpdateItemRequest) returns (UpdateItemResponse);
+
+  // DeleteItem removes an item from the system by its identifier.
+  rpc DeleteItem(DeleteItemRequest) returns (google.protobuf.Empty);
+
+  // ListItems returns a paginated list of items with optional filtering and sorting.
+  rpc ListItems(ListItemsRequest) returns (ListItemsResponse);
+
+  // BatchCreateItems creates multiple items in a single streaming request.
+  rpc BatchCreateItems(stream CreateItemRequest) returns (BatchCreateItemsResponse);
+
+  // SyncItems provides bidirectional streaming for real-time item synchronization.
+  rpc SyncItems(stream ItemSyncRequest) returns (stream ItemSyncResponse);
+}
+
+// Item represents a domain item entity.
+// Contains all item attributes including pricing, inventory, and metadata.
+message Item {
+  // Unique identifier in UUID format.
+  string id = 1 [(buf.validate.field).string.uuid = true];
+
+  // Resource name following AIP-122 pattern (e.g., "items/550e8400-e29b-41d4-a716-446655440000").
+  string name = 2 [(buf.validate.field).string.pattern = "^items/[a-zA-Z0-9-]+$"];
+
+  // Human-readable display name (1-255 characters).
+  string display_name = 3 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+
+  // Detailed description of the item (max 2000 characters).
+  string description = 4 [(buf.validate.field).string.max_len = 2000];
+
+  // Stock Keeping Unit - unique product identifier (1-50 characters).
+  string sku = 5 [(buf.validate.field).string = {min_len: 1, max_len: 50}];
+
+  // Quantity available in stock (non-negative).
+  int32 quantity = 6 [(buf.validate.field).int32.gte = 0];
+
+  // Price in smallest currency unit (e.g., cents for USD).
+  int64 price_cents = 7 [(buf.validate.field).int64.gte = 0];
+
+  // ISO 4217 currency code (exactly 3 characters, e.g., "USD", "EUR").
+  string currency = 8 [(buf.validate.field).string.len = 3];
+
+  // Whether the item is currently active and available.
+  bool is_active = 9;
+
+  // Timestamp when the item was created.
+  google.protobuf.Timestamp create_time = 10;
+
+  // Timestamp when the item was last updated.
+  google.protobuf.Timestamp update_time = 11;
+}
+
+// GetItemRequest is the request to retrieve a single item.
+message GetItemRequest {
+  // Item ID to retrieve (UUID format, required).
+  string id = 1 [(buf.validate.field) = {required: true, string: {uuid: true}}];
+}
+
+// GetItemResponse is the response containing the requested item.
+message GetItemResponse {
+  // The requested item.
+  Item item = 1;
+}
+
+// CreateItemRequest is the request to create a new item.
+message CreateItemRequest {
+  // Display name for the item (required, 1-255 characters).
+  string display_name = 1 [(buf.validate.field) = {required: true, string: {min_len: 1, max_len: 255}}];
+
+  // Description of the item (max 2000 characters).
+  string description = 2 [(buf.validate.field).string.max_len = 2000];
+
+  // Stock Keeping Unit (required, 1-50 characters).
+  string sku = 3 [(buf.validate.field) = {required: true, string: {min_len: 1, max_len: 50}}];
+
+  // Initial quantity in stock (non-negative, defaults to 0).
+  int32 quantity = 4 [(buf.validate.field).int32.gte = 0];
+
+  // Price in smallest currency unit (non-negative).
+  int64 price_cents = 5 [(buf.validate.field).int64.gte = 0];
+
+  // ISO 4217 currency code (required, exactly 3 characters).
+  string currency = 6 [(buf.validate.field) = {required: true, string: {len: 3}}];
+}
+
+// CreateItemResponse is the response after creating an item.
+message CreateItemResponse {
+  // The newly created item with generated ID and timestamps.
+  Item item = 1;
+}
+
+// UpdateItemRequest is the request to update an existing item.
+message UpdateItemRequest {
+  // The item with updated field values (required).
+  Item item = 1 [(buf.validate.field).required = true];
+
+  // Field mask specifying which fields to update.
+  // If empty, all non-empty fields in the item are updated (full replace).
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// UpdateItemResponse is the response after updating an item.
+message UpdateItemResponse {
+  // The updated item with new update_time.
+  Item item = 1;
+}
+
+// DeleteItemRequest is the request to delete an item.
+message DeleteItemRequest {
+  // Item ID to delete (UUID format, required).
+  string id = 1 [(buf.validate.field) = {required: true, string: {uuid: true}}];
+}
+
+// ListItemsRequest is the request to list items with pagination.
+message ListItemsRequest {
+  // Pagination parameters (page_size 1-100, page_token for continuation).
+  common.v1.PageRequest page = 1;
+
+  // Filter expression in AIP-160 format (max 1000 characters).
+  // Example: "is_active = true AND price_cents > 1000"
+  string filter = 2 [(buf.validate.field).string.max_len = 1000];
+
+  // Order by expression (max 100 characters).
+  // Example: "create_time desc" or "display_name asc"
+  string order_by = 3 [(buf.validate.field).string.max_len = 100];
+}
+
+// ListItemsResponse is the response containing a paginated list of items.
+message ListItemsResponse {
+  // List of items for the current page.
+  repeated Item items = 1;
+
+  // Pagination metadata including next_page_token and total_count.
+  common.v1.PageResponse page = 2;
+}
+
+// BatchCreateItemsResponse is the response for batch item creation.
+message BatchCreateItemsResponse {
+  // Number of items successfully created.
+  int32 created_count = 1;
+
+  // IDs of successfully created items.
+  repeated string created_ids = 2;
+
+  // Errors for items that failed to create.
+  repeated common.v1.ErrorDetail errors = 3;
+}
+
+// ItemSyncAction represents the type of synchronization action.
+enum ItemSyncAction {
+  // Unspecified action, should not be used.
+  ITEM_SYNC_ACTION_UNSPECIFIED = 0;
+  // Upsert (create or update) an item.
+  ITEM_SYNC_ACTION_UPSERT = 1;
+  // Delete an item.
+  ITEM_SYNC_ACTION_DELETE = 2;
+}
+
+// ItemSyncRequest is the request for bidirectional item synchronization.
+message ItemSyncRequest {
+  // Type of sync action to perform.
+  ItemSyncAction action = 1;
+
+  // Item to upsert (required for ITEM_SYNC_ACTION_UPSERT).
+  Item item = 2;
+
+  // Item ID to delete (required for ITEM_SYNC_ACTION_DELETE, UUID format).
+  string delete_id = 3 [(buf.validate.field).string.uuid = true];
+
+  // Client-generated request ID for correlation (UUID format, required).
+  string request_id = 4 [(buf.validate.field) = {required: true, string: {uuid: true}}];
+}
+
+// ItemSyncResponse is the response for bidirectional item synchronization.
+message ItemSyncResponse {
+  // ID of the affected item.
+  string id = 1;
+
+  // Whether the operation succeeded.
+  bool success = 2;
+
+  // Error details if the operation failed.
+  common.v1.ErrorDetail error = 3;
+
+  // Correlation request ID from the original request.
+  string request_id = 4;
+}

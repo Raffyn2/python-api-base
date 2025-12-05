@@ -1,0 +1,212 @@
+# Implementation Plan
+
+- [ ] 1. Set up Kepler deployment manifests
+  - [ ] 1.1 Create Kepler namespace and base Kustomization
+    - Create `deployments/kepler/base/namespace.yaml` with kepler-system namespace
+    - Create `deployments/kepler/base/kustomization.yaml` with resource references
+    - _Requirements: 1.1, 1.2_
+  - [ ] 1.2 Create Kepler DaemonSet and RBAC
+    - Create `deployments/kepler/base/daemonset.yaml` with Kepler container spec
+    - Create `deployments/kepler/base/serviceaccount.yaml`, `clusterrole.yaml`, `clusterrolebinding.yaml`
+    - Configure port 9102 for metrics endpoint
+    - _Requirements: 1.1, 1.3, 1.4_
+  - [ ] 1.3 Create Kepler Service and ServiceMonitor
+    - Create `deployments/kepler/base/service.yaml` exposing metrics port
+    - Create `deployments/monitoring/kepler-servicemonitor.yaml` for Prometheus integration
+    - _Requirements: 1.1, 8.2, 8.3_
+  - [ ] 1.4 Write property test for ServiceMonitor configuration
+    - **Property 12: ServiceMonitor Configuration**
+    - **Validates: Requirements 8.2**
+  - [ ] 1.5 Create environment overlays
+    - Create `deployments/kepler/overlays/development/kustomization.yaml`
+    - Create `deployments/kepler/overlays/production/kustomization.yaml`
+    - _Requirements: 1.1_
+
+- [ ] 2. Implement sustainability data models
+  - [ ] 2.1 Create core data models
+    - Create `src/infrastructure/sustainability/__init__.py`
+    - Create `src/infrastructure/sustainability/models.py` with EnergyMetric, CarbonIntensity, CarbonMetric
+    - Implement frozen dataclasses with validation
+    - _Requirements: 3.1, 3.2, 7.1_
+  - [ ] 2.2 Create cost and report models
+    - Add EnergyCost, SustainabilityReport, EnergyEfficiency to models.py
+    - Implement progress_percentage property
+    - _Requirements: 6.1, 6.3, 3.5_
+  - [ ] 2.3 Create alert configuration models
+    - Add AlertThreshold, AlertRule dataclasses
+    - _Requirements: 5.1, 5.3_
+  - [ ] 2.4 Write unit tests for data models
+    - Test model instantiation and validation
+    - Test computed properties
+    - _Requirements: 3.1, 6.1_
+
+- [ ] 3. Implement carbon and cost calculator
+  - [ ] 3.1 Create calculator module
+    - Create `src/infrastructure/sustainability/calculator.py`
+    - Implement `calculate_emissions(energy_kwh, intensity)` function
+    - Implement `calculate_cost(energy_kwh, price)` function
+    - _Requirements: 3.1, 6.1_
+  - [ ] 3.2 Write property test for carbon emission calculation
+    - **Property 2: Carbon Emission Calculation**
+    - **Validates: Requirements 3.1**
+  - [ ] 3.3 Write property test for energy cost calculation
+    - **Property 3: Energy Cost Calculation**
+    - **Validates: Requirements 6.1**
+  - [ ] 3.4 Implement aggregation functions
+    - Implement `aggregate_emissions(metrics, group_by)` function
+    - Implement `calculate_efficiency(energy, requests, transactions)` function
+    - _Requirements: 3.3, 2.4_
+  - [ ] 3.5 Write property test for emissions aggregation
+    - **Property 4: Emissions Aggregation Consistency**
+    - **Validates: Requirements 3.3**
+  - [ ] 3.6 Write property test for energy efficiency calculation
+    - **Property 6: Energy Efficiency Calculation**
+    - **Validates: Requirements 2.4**
+  - [ ] 3.7 Implement goal tracking functions
+    - Implement `calculate_progress(baseline, current, target)` function
+    - Implement `calculate_savings(baseline_cost, current_cost)` function
+    - Implement `calculate_trend(previous, current)` function
+    - _Requirements: 3.5, 6.3, 6.4_
+  - [ ] 3.8 Write property tests for goal tracking
+    - **Property 5: Goal Progress Calculation**
+    - **Property 7: Cost Savings Calculation**
+    - **Property 8: Trend Calculation**
+    - **Validates: Requirements 3.5, 6.3, 6.4**
+
+- [ ] 4. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 5. Implement JSON serializer
+  - [ ] 5.1 Create serializer module
+    - Create `src/infrastructure/sustainability/serializer.py`
+    - Implement `serialize_carbon_metric(metric)` function
+    - Implement `deserialize_carbon_metric(json_str)` function
+    - Handle Decimal precision and datetime formatting
+    - _Requirements: 7.1, 7.2, 7.3_
+  - [ ] 5.2 Write property test for round-trip serialization
+    - **Property 1: Carbon Metrics Round-Trip Serialization**
+    - **Validates: Requirements 7.1, 7.2, 7.3**
+  - [ ] 5.3 Implement export functions
+    - Implement `export_to_csv(data)` function
+    - Implement `export_to_json(data)` function
+    - _Requirements: 2.5_
+  - [ ] 5.4 Write property test for export format validity
+    - **Property 14: Export Format Validity**
+    - **Validates: Requirements 2.5**
+  - [ ] 5.5 Implement error handling for malformed JSON
+    - Raise ValidationError with descriptive messages
+    - _Requirements: 7.4_
+  - [ ] 5.6 Write property test for malformed JSON rejection
+    - **Property 15: Malformed JSON Rejection**
+    - **Validates: Requirements 7.4**
+
+- [ ] 6. Implement external API clients
+  - [ ] 6.1 Create configuration module
+    - Create `src/infrastructure/sustainability/config.py`
+    - Define SustainabilitySettings with electricity price, default intensity, API URLs
+    - _Requirements: 3.4, 6.1_
+  - [ ] 6.2 Create carbon intensity client
+    - Create `src/infrastructure/sustainability/client.py`
+    - Implement `CarbonIntensityClient` with circuit breaker
+    - Implement fallback to default values
+    - _Requirements: 3.1, 3.4_
+  - [ ] 6.3 Create Prometheus query client
+    - Implement `PrometheusClient` for querying Kepler metrics
+    - Support PromQL queries for energy data
+    - _Requirements: 8.4_
+  - [ ] 6.4 Write unit tests for clients
+    - Test circuit breaker behavior
+    - Test fallback to defaults
+    - _Requirements: 3.4_
+
+- [ ] 7. Implement sustainability service
+  - [ ] 7.1 Create main service
+    - Create `src/infrastructure/sustainability/service.py`
+    - Implement `SustainabilityService` class
+    - Orchestrate calculator, clients, and serializer
+    - _Requirements: 4.1, 4.2_
+  - [ ] 7.2 Implement report generation
+    - Implement `generate_report(namespace, period)` method
+    - Aggregate metrics and calculate totals
+    - _Requirements: 3.3, 6.3_
+  - [ ] 7.3 Write unit tests for service
+    - Test service orchestration
+    - Test error handling
+    - _Requirements: 4.1_
+
+- [ ] 8. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 9. Implement API router
+  - [ ] 9.1 Create sustainability router
+    - Create `src/interface/v1/sustainability_router.py`
+    - Implement GET `/api/v1/sustainability/metrics` endpoint
+    - Implement GET `/api/v1/sustainability/emissions` endpoint
+    - Implement GET `/api/v1/sustainability/reports` endpoint
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [ ] 9.2 Write property test for API response structure
+    - **Property 10: API Response Structure**
+    - **Validates: Requirements 4.1, 4.2**
+  - [ ] 9.3 Implement authentication and rate limiting
+    - Add JWT authentication dependency
+    - Add rate limiting middleware
+    - _Requirements: 4.4, 4.5_
+  - [ ] 9.4 Write property test for JWT authentication
+    - **Property 16: JWT Authentication Enforcement**
+    - **Validates: Requirements 4.4**
+  - [ ] 9.5 Register router in main application
+    - Add sustainability router to main router
+    - Update OpenAPI documentation
+    - _Requirements: 4.1_
+
+- [ ] 10. Implement alert rule generator
+  - [ ] 10.1 Create alert generator module
+    - Create `src/infrastructure/sustainability/alerts.py`
+    - Implement `generate_alert_rule(threshold)` function
+    - Generate valid Prometheus alert expressions
+    - _Requirements: 5.1, 5.3_
+  - [ ] 10.2 Write property test for alert rule generation
+    - **Property 9: Alert Rule Generation**
+    - **Validates: Requirements 5.1, 5.3**
+  - [ ] 10.3 Create Prometheus alerts YAML
+    - Create `deployments/monitoring/prometheus-alerts-sustainability.yml`
+    - Define energy and carbon threshold alerts
+    - _Requirements: 5.1, 5.2_
+
+- [ ] 11. Create Grafana dashboard
+  - [ ] 11.1 Create sustainability dashboard JSON
+    - Create `deployments/monitoring/grafana-dashboard-sustainability.json`
+    - Add panels for energy consumption by namespace/pod
+    - Add panels for carbon emissions
+    - Add panels for cost tracking
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+  - [ ] 11.2 Write property test for dashboard panel configuration
+    - **Property 13: Dashboard Panel Configuration**
+    - **Validates: Requirements 2.1**
+
+- [ ] 12. Implement Prometheus metrics exporter
+  - [ ] 12.1 Create metrics exporter
+    - Create `src/infrastructure/sustainability/metrics.py`
+    - Implement custom Prometheus metrics for sustainability data
+    - Ensure consistent labels (namespace, pod, container)
+    - _Requirements: 8.1, 8.3_
+  - [ ] 12.2 Write property test for Prometheus metrics format
+    - **Property 11: Prometheus Metrics Format**
+    - **Validates: Requirements 8.1, 8.3**
+
+- [ ] 13. Create documentation and ADR
+  - [ ] 13.1 Create ADR for Kepler integration
+    - Create `docs/architecture/adr/ADR-019-kepler-greenops.md`
+    - Document decision rationale, alternatives, consequences
+    - _Requirements: All_
+  - [ ] 13.2 Create Kepler deployment README
+    - Create `deployments/kepler/README.md`
+    - Document installation, configuration, troubleshooting
+    - _Requirements: 1.1, 1.5_
+  - [ ] 13.3 Update main README
+    - Add sustainability/GreenOps section to README.md
+    - Document API endpoints and usage
+    - _Requirements: All_
+
+- [ ] 14. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.

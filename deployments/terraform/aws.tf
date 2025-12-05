@@ -142,4 +142,27 @@ resource "helm_release" "my_api" {
   ]
 
   depends_on = [module.aws_eks]
+
+  lifecycle {
+    prevent_destroy = false  # Set to true in production
+  }
+}
+
+# CloudWatch Log Group for EKS
+resource "aws_cloudwatch_log_group" "eks" {
+  count = var.cloud_provider == "aws" ? 1 : 0
+
+  name              = "/aws/eks/${local.name_prefix}/cluster"
+  retention_in_days = var.environment == "prod" ? 90 : 30
+
+  tags = local.common_tags
+}
+
+# SNS Topic for Alerts
+resource "aws_sns_topic" "alerts" {
+  count = var.cloud_provider == "aws" ? 1 : 0
+
+  name = "${local.name_prefix}-alerts"
+
+  tags = local.common_tags
 }

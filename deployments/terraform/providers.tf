@@ -50,3 +50,6 @@ provider "helm" {
     }
   }
 }
+
+# Random Provider for secure password generation
+provider "random" {}

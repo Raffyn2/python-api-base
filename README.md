@@ -1194,6 +1194,7 @@ O projeto suporta múltiplas estratégias de deploy:
 | **Docker** | `deployments/docker/` | Docker Compose para dev/staging/prod |
 | **Kubernetes** | `deployments/k8s/` | Manifests K8s com Kustomize |
 | **Helm** | `deployments/helm/` | Helm charts para K8s |
+| **Knative** | `deployments/knative/` | Serverless Kubernetes-native (scale-to-zero) |
 | **ArgoCD** | `deployments/argocd/` | GitOps continuous delivery |
 | **Terraform** | `deployments/terraform/` | IaC para AWS/GCP/Azure |
 | **Serverless** | `deployments/serverless/` | AWS Lambda, Vercel |
@@ -1247,6 +1248,33 @@ terraform plan -var-file=environments/production.tfvars
 # Aplicar
 terraform apply -var-file=environments/production.tfvars
 ```
+
+### Knative Serverless
+
+Deploy serverless nativo para Kubernetes com auto-scaling e scale-to-zero:
+
+```bash
+# Deploy para desenvolvimento (scale-to-zero habilitado)
+kubectl apply -k deployments/knative/overlays/dev
+
+# Deploy para produção (minScale=2 para alta disponibilidade)
+kubectl apply -k deployments/knative/overlays/prod
+
+# Verificar status
+kubectl get ksvc -n my-api
+
+# Obter URL do serviço
+kubectl get ksvc python-api-base -n my-api -o jsonpath='{.status.url}'
+```
+
+Recursos inclusos:
+- Auto-scaling com scale-to-zero
+- Traffic splitting para canary deployments
+- CloudEvents para event-driven architecture
+- Integração com Istio (mTLS, observability)
+- Integração com Kafka via Knative Eventing
+
+Documentação completa: [Knative README](deployments/knative/README.md)
 
 ### ArgoCD (GitOps)
 
@@ -1808,6 +1836,84 @@ MIT License - veja [LICENSE](LICENSE) para detalhes.
   Desenvolvido com ❤️ usando Python e FastAPI
 </p>
 
+
+---
+
+## Sustainability & GreenOps
+
+O Python API Base inclui suporte completo para monitoramento de sustentabilidade e práticas GreenOps usando Kepler (CNCF Sandbox).
+
+### Visão Geral
+
+| Componente | Descrição |
+|------------|-----------|
+| **Kepler** | Coleta métricas de energia via eBPF/RAPL |
+| **Carbon Calculator** | Calcula emissões de CO2 baseado em intensidade regional |
+| **Cost Tracker** | Correlaciona custos energéticos com gastos cloud |
+| **Grafana Dashboard** | Visualização de consumo e emissões |
+| **Prometheus Alerts** | Alertas para anomalias de consumo |
+
+### Quick Start
+
+```bash
+# Deploy Kepler
+kubectl apply -k deployments/kepler/overlays/production
+
+# Verificar métricas
+kubectl port-forward -n kepler-system daemonset/kepler 9102:9102
+curl http://localhost:9102/metrics | grep kepler_container_joules
+```
+
+### API Endpoints
+
+| Endpoint | Descrição |
+|----------|-----------|
+| `GET /api/v1/sustainability/metrics` | Métricas de energia |
+| `GET /api/v1/sustainability/emissions` | Emissões de carbono |
+| `GET /api/v1/sustainability/reports/{namespace}` | Relatório de sustentabilidade |
+| `GET /api/v1/sustainability/costs` | Custos energéticos |
+| `GET /api/v1/sustainability/export/csv` | Exportar CSV |
+| `GET /api/v1/sustainability/export/json` | Exportar JSON |
+
+### Exemplo de Uso
+
+```python
+from infrastructure.sustainability import SustainabilityService
+
+service = SustainabilityService()
+
+# Obter métricas de carbono
+metrics = await service.get_carbon_metrics(namespace="production")
+
+# Gerar relatório
+report = await service.generate_report(
+    namespace="production",
+    period_start=datetime(2024, 1, 1),
+    period_end=datetime(2024, 1, 31),
+    baseline_emissions=Decimal("50000"),
+    target_emissions=Decimal("40000"),
+)
+
+print(f"Progress: {report.progress_percentage}%")
+```
+
+### Métricas Prometheus
+
+```promql
+# Consumo de energia por namespace (kWh/h)
+sum by (namespace) (rate(kepler_container_joules_total[5m])) / 3600000
+
+# Emissões de carbono estimadas (gCO2/h)
+(sum(rate(kepler_container_joules_total[5m])) / 3600000) * 400
+
+# Top 10 pods por consumo
+topk(10, sum by (pod) (rate(kepler_container_joules_total[5m])))
+```
+
+### Documentação
+
+- [ADR-019: Kepler GreenOps](docs/architecture/adr/ADR-019-kepler-greenops.md)
+- [Kepler Deployment](deployments/kepler/README.md)
 
 ---
 

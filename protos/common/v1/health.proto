@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package common.v1;
+
+option python_generic_services = true;
+
+// HealthCheckRequest is the request message for health check operations.
+// Compatible with the standard gRPC health checking protocol.
+message HealthCheckRequest {
+  // Service name to check health for.
+  // Empty string checks overall service health.
+  string service = 1;
+}
+
+// HealthCheckResponse is the response message for health check operations.
+// Contains the serving status of the requested service.
+message HealthCheckResponse {
+  // ServingStatus represents the health status of a service.
+  enum ServingStatus {
+    // Status is unknown or not yet determined.
+    SERVING_STATUS_UNKNOWN = 0;
+    // Service is healthy and serving requests.
+    SERVING_STATUS_SERVING = 1;
+    // Service is not healthy and not serving requests.
+    SERVING_STATUS_NOT_SERVING = 2;
+    // The requested service is not known.
+    SERVING_STATUS_SERVICE_UNKNOWN = 3;
+  }
+
+  // Current serving status of the service.
+  ServingStatus status = 1;
+}
+
+// Health service provides health check operations.
+// Compatible with the standard gRPC health checking protocol (grpc.health.v1).
+service Health {
+  // Check returns the serving status of the specified service.
+  // Returns SERVING_STATUS_SERVING if healthy, SERVING_STATUS_NOT_SERVING otherwise.
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+
+  // Watch streams health status updates for the specified service.
+  // Sends a new response whenever the service status changes.
+  rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);
+}

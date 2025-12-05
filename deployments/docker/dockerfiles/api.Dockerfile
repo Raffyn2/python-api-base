@@ -70,6 +70,8 @@ ENV PYTHONUNBUFFERED=1
 
 # Copy application code
 COPY --chown=appuser:appgroup src/ ./src/
+COPY --chown=appuser:appgroup alembic/ ./alembic/
+COPY --chown=appuser:appgroup alembic.ini ./
 
 # Switch to non-root user
 USER appuser
@@ -82,10 +84,14 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8000/health/live || exit 1
 
 # Run with optimized settings
-CMD ["uvicorn", "main:app", \
+# Workers calculated based on CPU cores: 2 * cores + 1
+# For container with 1 CPU limit, 4 workers is optimal
+CMD ["uvicorn", "src.main:app", \
      "--host", "0.0.0.0", \
      "--port", "8000", \
      "--workers", "4", \
      "--loop", "uvloop", \
      "--http", "httptools", \
+     "--proxy-headers", \
+     "--forwarded-allow-ips", "*", \
      "--no-access-log"]

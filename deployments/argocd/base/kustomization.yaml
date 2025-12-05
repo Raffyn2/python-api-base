@@ -10,6 +10,10 @@ resources:
   - argocd-rbac-cm.yaml
   - ingress.yaml
 
+commonLabels:
+  app.kubernetes.io/managed-by: argocd
+  app.kubernetes.io/part-of: argocd
+
 patches:
   - path: argocd-cm.yaml
     target:
