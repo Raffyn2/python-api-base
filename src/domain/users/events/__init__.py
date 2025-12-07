@@ -8,11 +8,21 @@ Contains domain events for user aggregate.
 from domain.users.events.events import (
     UserDeactivatedEvent,
     UserEmailChangedEvent,
+    UserEmailVerifiedEvent,
+    UserLoggedInEvent,
+    UserPasswordChangedEvent,
+    UserProfileUpdatedEvent,
+    UserReactivatedEvent,
     UserRegisteredEvent,
 )
 
 __all__ = [
     "UserDeactivatedEvent",
     "UserEmailChangedEvent",
+    "UserEmailVerifiedEvent",
+    "UserLoggedInEvent",
+    "UserPasswordChangedEvent",
+    "UserProfileUpdatedEvent",
+    "UserReactivatedEvent",
     "UserRegisteredEvent",
 ]

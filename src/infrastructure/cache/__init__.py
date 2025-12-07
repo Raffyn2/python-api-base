@@ -2,6 +2,7 @@
 
 **Refactored: 2025 - Split into focused modules**
 **Feature: infrastructure-modules-integration-analysis**
+**Feature: test-coverage-80-percent-v2**
 """
 
 from infrastructure.cache.decorators import (
@@ -11,8 +12,8 @@ from infrastructure.cache.decorators import (
     invalidate_pattern,
     set_default_cache,
 )
-from infrastructure.cache.models import CacheStats
-from infrastructure.cache.protocols import (
+from infrastructure.cache.core.models import CacheStats
+from infrastructure.cache.core.protocols import (
     CacheEntry,
     CacheKey,
     CacheProvider,

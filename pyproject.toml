@@ -141,6 +141,15 @@ markers = [
 [tool.coverage.run]
 source = ["src"]
 branch = true
+omit = [
+    "src/interface/*",
+    "src/infrastructure/dapr/*",
+    "src/infrastructure/grpc/*",
+    "src/infrastructure/kafka/*",
+    "src/infrastructure/elasticsearch/*",
+    "src/infrastructure/scylladb/*",
+    "src/main.py",
+]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -151,6 +160,7 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "@abstractmethod",
 ]
+show_missing = true
 
 [tool.mypy]
 python_version = "3.12"

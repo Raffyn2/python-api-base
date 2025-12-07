@@ -4,17 +4,17 @@
 """
 
 from application.examples.item.handlers.handlers import (
-    CreateItemHandler,
-    DeleteItemHandler,
-    GetItemByIdHandler,
-    ListItemsHandler,
-    UpdateItemHandler,
+    CreateItemCommandHandler,
+    DeleteItemCommandHandler,
+    GetItemQueryHandler,
+    ListItemsQueryHandler,
+    UpdateItemCommandHandler,
 )
 
 __all__ = [
-    "CreateItemHandler",
-    "UpdateItemHandler",
-    "DeleteItemHandler",
-    "GetItemByIdHandler",
-    "ListItemsHandler",
+    "CreateItemCommandHandler",
+    "UpdateItemCommandHandler",
+    "DeleteItemCommandHandler",
+    "GetItemQueryHandler",
+    "ListItemsQueryHandler",
 ]

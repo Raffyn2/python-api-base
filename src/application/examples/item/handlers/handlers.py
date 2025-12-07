@@ -7,7 +7,7 @@
 from typing import Any, Protocol
 
 from application.common.dto import PaginatedResponse
-from application.common.cqrs.event_bus import TypedEventBus
+from application.common.cqrs.events.event_bus import TypedEventBus
 from application.common.cqrs.handlers import CommandHandler, QueryHandler
 from application.examples.item.commands import (
     CreateItemCommand,
@@ -15,7 +15,7 @@ from application.examples.item.commands import (
     UpdateItemCommand,
 )
 from application.examples.item.dtos import ItemExampleResponse
-from application.examples.item.mapper import ItemExampleMapper
+from application.examples.item.mappers.mapper import ItemExampleMapper
 from application.examples.item.queries import GetItemQuery, ListItemsQuery
 from application.examples.shared.errors import (
     NotFoundError,

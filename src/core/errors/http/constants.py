@@ -50,6 +50,7 @@ class ErrorCode(str, Enum):
     """
 
     NOT_FOUND = "NOT_FOUND"
+    ENTITY_NOT_FOUND = "ENTITY_NOT_FOUND"
     VALIDATION_ERROR = "VALIDATION_ERROR"
     UNAUTHORIZED = "UNAUTHORIZED"
     FORBIDDEN = "FORBIDDEN"
@@ -57,11 +58,14 @@ class ErrorCode(str, Enum):
     INTERNAL_ERROR = "INTERNAL_ERROR"
     TIMEOUT = "TIMEOUT"
     RATE_LIMITED = "RATE_LIMITED"
+    RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED"
     BAD_REQUEST = "BAD_REQUEST"
     SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
     NETWORK_ERROR = "NETWORK_ERROR"
     CONFIGURATION_ERROR = "CONFIGURATION_ERROR"
     AUTHENTICATION_FAILED = "AUTHENTICATION_FAILED"
+    AUTHENTICATION_ERROR = "AUTHENTICATION_ERROR"
+    AUTHORIZATION_ERROR = "AUTHORIZATION_ERROR"
     PERMISSION_DENIED = "PERMISSION_DENIED"
     RESOURCE_EXHAUSTED = "RESOURCE_EXHAUSTED"
     PRECONDITION_FAILED = "PRECONDITION_FAILED"
@@ -69,6 +73,7 @@ class ErrorCode(str, Enum):
     METHOD_NOT_FOUND = "METHOD_NOT_FOUND"
     INVALID_PARAMS = "INVALID_PARAMS"
     PARSE_ERROR = "PARSE_ERROR"
+    BUSINESS_RULE_VIOLATION = "BUSINESS_RULE_VIOLATION"
 
 
 # Alias for backward compatibility
@@ -83,10 +88,13 @@ class ErrorMessages:
     TOKEN_EXPIRED = "Authentication token has expired"  # noqa: S105 - Error message
     TOKEN_INVALID = "Invalid authentication token"  # noqa: S105 - Error message
     UNAUTHORIZED = "Authentication required"
+    AUTHENTICATION_REQUIRED = "Authentication required"
 
     # Authorization errors
     FORBIDDEN = "Access denied"
     INSUFFICIENT_PERMISSIONS = "Insufficient permissions for this operation"
+    PERMISSION_DENIED = "Permission denied"
+    PERMISSION_REQUIRED = "Permission '{permission}' is required"
 
     # Validation errors
     VALIDATION_FAILED = "Validation failed"
@@ -96,11 +104,16 @@ class ErrorMessages:
 
     # Resource errors
     NOT_FOUND = "Resource not found"
+    ENTITY_NOT_FOUND = "{entity_type} with id '{entity_id}' not found"
     ALREADY_EXISTS = "Resource already exists"
     CONFLICT = "Resource conflict"
+    CONFLICT_RESOURCE = "{resource_type} with id '{resource_id}' already exists"
+
+    # Business rules
+    BUSINESS_RULE_VIOLATED = "Business rule '{rule}' violated: {message}"
 
     # Rate limiting
-    RATE_LIMIT_EXCEEDED = "Rate limit exceeded"
+    RATE_LIMIT_EXCEEDED = "Rate limit exceeded. Retry after {retry_after} seconds"
 
     # Server errors
     INTERNAL_ERROR = "An internal error occurred"

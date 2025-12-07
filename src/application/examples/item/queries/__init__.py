@@ -4,11 +4,11 @@
 """
 
 from application.examples.item.queries.queries import (
-    GetItemByIdQuery,
+    GetItemQuery,
     ListItemsQuery,
 )
 
 __all__ = [
-    "GetItemByIdQuery",
+    "GetItemQuery",
     "ListItemsQuery",
 ]

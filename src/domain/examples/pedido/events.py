@@ -29,6 +29,10 @@ class PedidoCreated(DomainEvent):
     customer_id: str
     occurred_at: datetime = field(default_factory=utc_now)
 
+    @property
+    def event_type(self) -> str:
+        return "pedido.created"
+
 
 @dataclass(frozen=True, kw_only=True)
 class PedidoItemAdded(DomainEvent):
@@ -40,6 +44,10 @@ class PedidoItemAdded(DomainEvent):
     unit_price: Decimal
     occurred_at: datetime = field(default_factory=utc_now)
 
+    @property
+    def event_type(self) -> str:
+        return "pedido.item_added"
+
 
 @dataclass(frozen=True, kw_only=True)
 class PedidoCompleted(DomainEvent):
@@ -50,6 +58,10 @@ class PedidoCompleted(DomainEvent):
     items_count: int
     occurred_at: datetime = field(default_factory=utc_now)
 
+    @property
+    def event_type(self) -> str:
+        return "pedido.completed"
+
 
 @dataclass(frozen=True, kw_only=True)
 class PedidoCancelled(DomainEvent):
@@ -58,3 +70,7 @@ class PedidoCancelled(DomainEvent):
     pedido_id: str
     reason: str
     occurred_at: datetime = field(default_factory=utc_now)
+
+    @property
+    def event_type(self) -> str:
+        return "pedido.cancelled"

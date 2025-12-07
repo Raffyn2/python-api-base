@@ -1,0 +1,1 @@
+"""DTO responses tests."""

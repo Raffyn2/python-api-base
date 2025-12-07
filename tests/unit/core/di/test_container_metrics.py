@@ -9,7 +9,7 @@ Tests verify that the Container correctly tracks:
 - Singleton instance creation
 """
 
-from core.di.container import Container, Lifetime
+from core.di import Container, Lifetime
 
 
 class Database:

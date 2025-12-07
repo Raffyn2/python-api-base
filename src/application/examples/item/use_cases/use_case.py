@@ -19,14 +19,14 @@ import logging
 from typing import Any
 
 from application.common.mixins.event_publishing import EventPublishingMixin
-from application.common.services.cache_service import CacheService
-from application.common.services.kafka_event_service import KafkaEventService
+from application.common.services.cache import CacheService
+from application.common.services.events import KafkaEventService
 from application.examples.item.dtos import (
     ItemExampleCreate,
     ItemExampleResponse,
     ItemExampleUpdate,
 )
-from application.examples.item.mapper import ItemExampleMapper
+from application.examples.item.mappers import ItemExampleMapper
 from application.examples.shared.errors import (
     NotFoundError,
     UseCaseError,

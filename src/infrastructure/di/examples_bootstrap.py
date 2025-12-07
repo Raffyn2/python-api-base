@@ -12,7 +12,7 @@ import re
 from typing import Any
 
 from application.common.cqrs import CommandBus, QueryBus
-from application.common.cqrs.event_bus import TypedEventBus
+from application.common.cqrs.events.event_bus import TypedEventBus
 from application.common.middleware.circuit_breaker import (
     CircuitBreakerConfig,
     CircuitBreakerMiddleware,

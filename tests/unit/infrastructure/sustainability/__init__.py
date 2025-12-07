@@ -1,1 +1,1 @@
-"""Unit tests for sustainability module."""
+# Sustainability tests

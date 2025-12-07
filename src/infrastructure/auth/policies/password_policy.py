@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Final
 
 from core.shared.utils.password import hash_password, verify_password
-from infrastructure.auth.common_passwords import COMMON_PASSWORDS
+from infrastructure.auth.policies.common_passwords import COMMON_PASSWORDS
 
 # Password strength scoring constants
 SCORE_PER_REQUIREMENT: Final[int] = 20  # Points per met requirement

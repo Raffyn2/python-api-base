@@ -8,6 +8,7 @@ Contains value objects for user aggregate.
 from domain.users.value_objects.value_objects import (
     Email,
     PasswordHash,
+    PhoneNumber,
     UserId,
     Username,
 )
@@ -15,6 +16,7 @@ from domain.users.value_objects.value_objects import (
 __all__ = [
     "Email",
     "PasswordHash",
+    "PhoneNumber",
     "UserId",
     "Username",
 ]

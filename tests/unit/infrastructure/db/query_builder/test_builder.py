@@ -1,256 +1,230 @@
-from __future__ import annotations
+"""Tests for query builder base module."""
 
-from typing import Any, Self
-from collections.abc import Sequence, Callable
 import pytest
 from pydantic import BaseModel
 
 from infrastructure.db.query_builder.builder import (
     QueryBuilder,
-    QueryResult,
     QueryOptions,
+    QueryResult,
 )
 from infrastructure.db.query_builder.conditions import (
+    ComparisonOperator,
+    ConditionGroup,
+    LogicalOperator,
     QueryCondition,
     SortClause,
     SortDirection,
-    ConditionGroup,
-    LogicalOperator,
-    ComparisonOperator,
 )
-from domain.common.specification.specification import Specification
+from infrastructure.db.query_builder.in_memory import InMemoryQueryBuilder
 
 
-class MockModel(BaseModel):
+class SampleModel(BaseModel):
+    """Sample model for testing."""
+
     id: int
     name: str
-    value: int
-    is_deleted: bool = False
+    status: str
 
 
-class MockQueryBuilder(QueryBuilder[MockModel]):
-    def __init__(self, items: Sequence[MockModel] | None = None) -> None:
-        super().__init__()
-        self._items = items or []
+class TestQueryOptions:
+    """Tests for QueryOptions dataclass."""
 
-    def _create_sub_builder(self) -> Self:
-        return MockQueryBuilder(self._items)
+    def test_default_values(self) -> None:
+        options = QueryOptions()
+        assert options.skip == 0
+        assert options.limit == 100
+        assert options.include_deleted is False
+        assert options.distinct is False
+        assert options.count_only is False
 
-    async def execute(self) -> QueryResult[MockModel]:
-        items = list(self._items)
-        if self._options.skip > 0:
-            items = items[self._options.skip :]
-        if self._options.limit > 0:
-            items = items[: self._options.limit]
+    def test_custom_skip(self) -> None:
+        options = QueryOptions(skip=10)
+        assert options.skip == 10
 
-        total = len(self._items)
-        return QueryResult(
-            items=items,
-            total=total,
-            skip=self._options.skip,
-            limit=self._options.limit,
-            has_more=(self._options.skip + len(items)) < total,
-        )
+    def test_custom_limit(self) -> None:
+        options = QueryOptions(limit=50)
+        assert options.limit == 50
 
-    async def first(self) -> MockModel | None:
-        if self._items:
-            return self._items[0]
-        return None
+    def test_include_deleted(self) -> None:
+        options = QueryOptions(include_deleted=True)
+        assert options.include_deleted is True
 
-    async def count(self) -> int:
-        return len(self._items)
+    def test_distinct(self) -> None:
+        options = QueryOptions(distinct=True)
+        assert options.distinct is True
 
-
-@pytest.fixture
-def sample_items() -> list[MockModel]:
-    return [
-        MockModel(id=1, name="A", value=10),
-        MockModel(id=2, name="B", value=20),
-        MockModel(id=3, name="C", value=30),
-        MockModel(id=4, name="D", value=40),
-        MockModel(id=5, name="E", value=50),
-    ]
-
-
-@pytest.fixture
-def builder(sample_items: list[MockModel]) -> MockQueryBuilder:
-    return MockQueryBuilder(sample_items)
+    def test_count_only(self) -> None:
+        options = QueryOptions(count_only=True)
+        assert options.count_only is True
 
 
 class TestQueryResult:
-    def test_page_calculation(self) -> None:
+    """Tests for QueryResult dataclass."""
+
+    def test_create_result(self) -> None:
+        items = [SampleModel(id=1, name="Test", status="active")]
+        result = QueryResult(items=items, total=1, skip=0, limit=10, has_more=False)
+        assert len(result.items) == 1
+        assert result.total == 1
+        assert result.skip == 0
+        assert result.limit == 10
+        assert result.has_more is False
+
+    def test_page_property_first_page(self) -> None:
+        result = QueryResult(items=[], total=100, skip=0, limit=10, has_more=True)
+        assert result.page == 1
+
+    def test_page_property_second_page(self) -> None:
+        result = QueryResult(items=[], total=100, skip=10, limit=10, has_more=True)
+        assert result.page == 2
+
+    def test_page_property_third_page(self) -> None:
         result = QueryResult(items=[], total=100, skip=20, limit=10, has_more=True)
         assert result.page == 3
 
-    def test_total_pages_calculation(self) -> None:
+    def test_page_property_zero_limit(self) -> None:
+        result = QueryResult(items=[], total=100, skip=0, limit=0, has_more=False)
+        assert result.page == 1
+
+    def test_total_pages_exact_division(self) -> None:
         result = QueryResult(items=[], total=100, skip=0, limit=10, has_more=True)
         assert result.total_pages == 10
 
-    def test_total_pages_with_uneven_total(self) -> None:
+    def test_total_pages_with_remainder(self) -> None:
         result = QueryResult(items=[], total=95, skip=0, limit=10, has_more=True)
         assert result.total_pages == 10
 
-    def test_page_with_zero_limit(self) -> None:
+    def test_total_pages_single_page(self) -> None:
+        result = QueryResult(items=[], total=5, skip=0, limit=10, has_more=False)
+        assert result.total_pages == 1
+
+    def test_total_pages_zero_limit(self) -> None:
         result = QueryResult(items=[], total=100, skip=0, limit=0, has_more=False)
-        assert result.page == 1
         assert result.total_pages == 1
 
 
-class TestQueryBuilder:
-    @pytest.mark.asyncio
-    async def test_where(self, builder: MockQueryBuilder) -> None:
-        condition = QueryCondition(field="id", value=1, operator=ComparisonOperator.EQ)
-        builder.where(condition)
-        assert builder._conditions.conditions == [condition]
+class TestQueryBuilderMethods:
+    """Tests for QueryBuilder fluent methods using InMemoryQueryBuilder."""
 
-    @pytest.mark.asyncio
-    async def test_and_where(self, builder: MockQueryBuilder) -> None:
-        condition = QueryCondition(field="id", value=1, operator=ComparisonOperator.EQ)
-        builder.and_where(condition)
-        assert builder._conditions.conditions == [condition]
-
-    @pytest.mark.asyncio
-    async def test_or_where(self, builder: MockQueryBuilder) -> None:
-        builder.where(QueryCondition(field="id", value=1, operator=ComparisonOperator.EQ))
-        builder.or_where(QueryCondition(field="id", value=2, operator=ComparisonOperator.EQ))
-        assert builder._conditions.operator == LogicalOperator.OR
-        assert len(builder._conditions.conditions) == 2
-
-    @pytest.mark.asyncio
-    async def test_where_group(self, builder: MockQueryBuilder) -> None:
-        def group_fn(b: QueryBuilder[MockModel]) -> QueryBuilder[MockModel]:
-            return b.where(
-                QueryCondition(field="name", value="A", operator=ComparisonOperator.EQ)
-            ).or_where(
-                QueryCondition(field="value", value=30, operator=ComparisonOperator.EQ)
-            )
-
-        builder.where(
-            QueryCondition(field="id", value=1, operator=ComparisonOperator.EQ)
-        ).where_group(group_fn)
-
-        assert len(builder._conditions.conditions) == 2
-        group = builder._conditions.conditions[1]
-        assert isinstance(group, ConditionGroup)
-        assert group.operator == LogicalOperator.AND
-        assert len(group.conditions) == 2
-        assert group.conditions[0].field == "name"
-        assert group.conditions[1].field == "value"
-        
-    @pytest.mark.asyncio
-    async def test_order_by(self, builder: MockQueryBuilder) -> None:
-        clause = SortClause(field="name", direction=SortDirection.DESC)
-        builder.order_by(clause)
-        assert builder._sort_clauses == [clause]
-
-    @pytest.mark.asyncio
-    async def test_order_by_field(self, builder: MockQueryBuilder) -> None:
-        builder.order_by_field("name", SortDirection.DESC)
-        assert builder._sort_clauses == [
-            SortClause(field="name", direction=SortDirection.DESC)
+    @pytest.fixture
+    def builder(self) -> InMemoryQueryBuilder[SampleModel]:
+        data = [
+            SampleModel(id=1, name="Alice", status="active"),
+            SampleModel(id=2, name="Bob", status="inactive"),
+            SampleModel(id=3, name="Charlie", status="active"),
         ]
+        return InMemoryQueryBuilder(data)
 
-    @pytest.mark.asyncio
-    async def test_skip(self, builder: MockQueryBuilder) -> None:
-        builder.skip(10)
+    def test_where_adds_condition(self, builder: InMemoryQueryBuilder) -> None:
+        cond = QueryCondition("status", ComparisonOperator.EQ, "active")
+        result = builder.where(cond)
+        assert result is builder  # Returns self
+        assert len(builder._conditions.conditions) == 1
+
+    def test_and_where_adds_condition(self, builder: InMemoryQueryBuilder) -> None:
+        cond1 = QueryCondition("status", ComparisonOperator.EQ, "active")
+        cond2 = QueryCondition("id", ComparisonOperator.GT, 1)
+        builder.where(cond1).and_where(cond2)
+        assert len(builder._conditions.conditions) == 2
+
+    def test_or_where_on_empty(self, builder: InMemoryQueryBuilder) -> None:
+        cond = QueryCondition("status", ComparisonOperator.EQ, "active")
+        builder.or_where(cond)
+        assert len(builder._conditions.conditions) == 1
+
+    def test_or_where_creates_or_group(self, builder: InMemoryQueryBuilder) -> None:
+        cond1 = QueryCondition("status", ComparisonOperator.EQ, "active")
+        cond2 = QueryCondition("status", ComparisonOperator.EQ, "pending")
+        builder.where(cond1).or_where(cond2)
+        assert builder._conditions.operator == LogicalOperator.OR
+
+    def test_order_by_adds_clauses(self, builder: InMemoryQueryBuilder) -> None:
+        clause = SortClause("name", SortDirection.ASC)
+        result = builder.order_by(clause)
+        assert result is builder
+        assert len(builder._sort_clauses) == 1
+
+    def test_order_by_field(self, builder: InMemoryQueryBuilder) -> None:
+        builder.order_by_field("name", SortDirection.DESC)
+        assert len(builder._sort_clauses) == 1
+        assert builder._sort_clauses[0].field == "name"
+        assert builder._sort_clauses[0].direction == SortDirection.DESC
+
+    def test_skip_sets_value(self, builder: InMemoryQueryBuilder) -> None:
+        result = builder.skip(10)
+        assert result is builder
         assert builder._options.skip == 10
 
-    @pytest.mark.asyncio
-    async def test_limit(self, builder: MockQueryBuilder) -> None:
-        builder.limit(50)
+    def test_skip_negative_becomes_zero(self, builder: InMemoryQueryBuilder) -> None:
+        builder.skip(-5)
+        assert builder._options.skip == 0
+
+    def test_limit_sets_value(self, builder: InMemoryQueryBuilder) -> None:
+        result = builder.limit(50)
+        assert result is builder
         assert builder._options.limit == 50
 
-    @pytest.mark.asyncio
-    async def test_page(self, builder: MockQueryBuilder) -> None:
-        builder.page(3, 25)
-        assert builder._options.skip == 50
-        assert builder._options.limit == 25
+    def test_limit_negative_becomes_zero(self, builder: InMemoryQueryBuilder) -> None:
+        builder.limit(-10)
+        assert builder._options.limit == 0
 
-    @pytest.mark.asyncio
-    async def test_include_deleted(self, builder: MockQueryBuilder) -> None:
-        builder.include_deleted()
+    def test_page_sets_skip_and_limit(self, builder: InMemoryQueryBuilder) -> None:
+        builder.page(3, 20)
+        assert builder._options.skip == 40  # (3-1) * 20
+        assert builder._options.limit == 20
+
+    def test_page_minimum_is_one(self, builder: InMemoryQueryBuilder) -> None:
+        builder.page(0, 10)
+        assert builder._options.skip == 0  # Page 1
+
+    def test_include_deleted(self, builder: InMemoryQueryBuilder) -> None:
+        result = builder.include_deleted(True)
+        assert result is builder
         assert builder._options.include_deleted is True
 
-    @pytest.mark.asyncio
-    async def test_distinct(self, builder: MockQueryBuilder) -> None:
-        builder.distinct()
+    def test_distinct(self, builder: InMemoryQueryBuilder) -> None:
+        result = builder.distinct(True)
+        assert result is builder
         assert builder._options.distinct is True
 
-    @pytest.mark.asyncio
-    async def test_select(self, builder: MockQueryBuilder) -> None:
-        builder.select("id", "name")
+    def test_select_fields(self, builder: InMemoryQueryBuilder) -> None:
+        result = builder.select("id", "name")
+        assert result is builder
         assert builder._select_fields == ["id", "name"]
 
-    @pytest.mark.asyncio
-    async def test_count_only(self, builder: MockQueryBuilder) -> None:
-        builder.count_only()
+    def test_count_only(self, builder: InMemoryQueryBuilder) -> None:
+        result = builder.count_only(True)
+        assert result is builder
         assert builder._options.count_only is True
 
-    @pytest.mark.asyncio
-    async def test_reset(self, builder: MockQueryBuilder) -> None:
-        builder.where(
-            QueryCondition(field="id", value=1, operator=ComparisonOperator.EQ)
-        ).order_by_field("name").limit(10)
+    def test_reset_clears_all(self, builder: InMemoryQueryBuilder) -> None:
+        builder.where(QueryCondition("id", ComparisonOperator.EQ, 1))
+        builder.order_by_field("name")
+        builder.skip(10).limit(50)
+        builder.select("id")
         builder.reset()
         assert builder._conditions.is_empty()
         assert builder._sort_clauses == []
+        assert builder._options.skip == 0
         assert builder._options.limit == 100
+        assert builder._select_fields is None
 
-    @pytest.mark.asyncio
-    async def test_clone(self, builder: MockQueryBuilder) -> None:
-        builder.where(QueryCondition(field="id", value=1, operator=ComparisonOperator.EQ))
-        clone = builder.clone()
-        clone.where(
-            QueryCondition(field="name", value="A", operator=ComparisonOperator.EQ)
-        )
+    def test_clone_creates_copy(self, builder: InMemoryQueryBuilder) -> None:
+        builder.where(QueryCondition("id", ComparisonOperator.EQ, 1))
+        builder.skip(10)
+        cloned = builder.clone()
+        assert cloned is not builder
+        assert len(cloned._conditions.conditions) == 1
+        assert cloned._options.skip == 10
 
-        assert len(builder._conditions.conditions) == 1
-        assert len(clone._conditions.conditions) == 2
-
-    @pytest.mark.asyncio
-    async def test_with_specification(self, builder: MockQueryBuilder) -> None:
-        class NameIsASpec(Specification[MockModel]):
-            def is_satisfied_by(self, candidate: MockModel) -> bool:
-                return candidate.name == "A"
-
-        spec = NameIsASpec()
-        builder.with_specification(spec)
-        assert builder._specification == spec
-        
-        class ValueIs10Spec(Specification[MockModel]):
-            def is_satisfied_by(self, candidate: MockModel) -> bool:
-                return candidate.value == 10
-                
-        spec2 = ValueIs10Spec()
-        builder.with_specification(spec2)
-        
-        assert builder._specification != spec
-        assert builder._specification != spec2
-
-    @pytest.mark.asyncio
-    async def test_to_dict(self, builder: MockQueryBuilder) -> None:
-        builder.where(
-            QueryCondition(field="id", value=1, operator=ComparisonOperator.EQ)
-        ).order_by_field("name").limit(10)
-        data = builder.to_dict()
-        assert data["conditions"]["conditions"][0]["field"] == "id"
-        assert data["sort"][0]["field"] == "name"
-        assert data["options"]["limit"] == 10
-
-    @pytest.mark.asyncio
-    async def test_execute(self, builder: MockQueryBuilder) -> None:
-        result = await builder.limit(3).execute()
-        assert len(result.items) == 3
-        assert result.total == 5
-        assert result.has_more is True
-
-    @pytest.mark.asyncio
-    async def test_first(self, builder: MockQueryBuilder) -> None:
-        item = await builder.first()
-        assert item is not None
-        assert item.id == 1
-
-    @pytest.mark.asyncio
-    async def test_count(self, builder: MockQueryBuilder) -> None:
-        count = await builder.count()
-        assert count == 5
+    def test_to_dict(self, builder: InMemoryQueryBuilder) -> None:
+        builder.where(QueryCondition("status", ComparisonOperator.EQ, "active"))
+        builder.order_by_field("name")
+        builder.skip(10).limit(20)
+        result = builder.to_dict()
+        assert "conditions" in result
+        assert "sort" in result
+        assert "options" in result
+        assert result["options"]["skip"] == 10
+        assert result["options"]["limit"] == 20

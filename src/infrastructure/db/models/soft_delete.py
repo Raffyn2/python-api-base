@@ -5,6 +5,31 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Protocol
 
+from sqlalchemy import Boolean, DateTime
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column
+
+
+class SoftDeleteMixin:
+    """SQLAlchemy mixin for soft delete capability."""
+
+    @declared_attr
+    def is_deleted(cls) -> Mapped[bool]:
+        return mapped_column(Boolean, default=False, nullable=False, index=True)
+
+    @declared_attr
+    def deleted_at(cls) -> Mapped[datetime | None]:
+        return mapped_column(DateTime(timezone=True), nullable=True)
+
+    def soft_delete(self) -> None:
+        """Mark record as deleted."""
+        self.is_deleted = True
+        self.deleted_at = datetime.now(UTC)
+
+    def restore(self) -> None:
+        """Restore soft-deleted record."""
+        self.is_deleted = False
+        self.deleted_at = None
+
 
 @dataclass
 class SoftDeleteConfig:

@@ -12,7 +12,7 @@ Tests verify that hooks are called at the correct times:
 import pytest
 from unittest.mock import Mock
 
-from core.di.container import Container, Lifetime, ServiceNotRegisteredError
+from core.di import Container, Lifetime, ServiceNotRegisteredError
 
 
 class Database:
@@ -175,17 +175,6 @@ class TestContainerHooks:
         assert isinstance(call_args.kwargs["error"], RuntimeError)
         assert call_args.kwargs["resolution_stack"] == [BrokenService]
 
-    def test_hook_resolution_stack_includes_dependencies(
-        self, container: Container, mock_hooks: Mock
-    ) -> None:
-        """Test that resolution_stack includes the full dependency chain on error."""
-        container.register_singleton(BrokenService)
-        container.register(UserService)  # Depends on BrokenService - WRONG! Depends on Database
-        container.add_hooks(mock_hooks)
-
-        # This should work since UserService depends on Database, not BrokenService
-        # Let me fix this test:
-
     def test_multiple_hooks_all_called(
         self, container: Container
     ) -> None:
@@ -273,7 +262,7 @@ class TestContainerHooks:
         self, container: Container
     ) -> None:
         """Test that hook receives the full resolution stack on error."""
-        from core.di.exceptions import DependencyResolutionError
+        from core.di import DependencyResolutionError
 
         hooks = Mock()
         hooks.on_resolution_error = Mock()

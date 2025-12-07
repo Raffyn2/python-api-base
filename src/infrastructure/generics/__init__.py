@@ -10,8 +10,8 @@ This module provides:
 - Shared validation utilities and configuration patterns
 """
 
-from infrastructure.generics.config import BaseConfig, ConfigBuilder
-from infrastructure.generics.errors import (
+from infrastructure.generics.core.config import BaseConfig, ConfigBuilder
+from infrastructure.generics.core.errors import (
     AuthenticationError,
     CacheError,
     ErrorMessages,
@@ -21,7 +21,7 @@ from infrastructure.generics.errors import (
     SecurityError,
     ValidationError,
 )
-from infrastructure.generics.protocols import (
+from infrastructure.generics.core.protocols import (
     AsyncRepository,
     AsyncService,
     Factory,
@@ -29,14 +29,14 @@ from infrastructure.generics.protocols import (
     Service,
     Store,
 )
-from infrastructure.generics.status import (
+from infrastructure.generics.core.status import (
     BaseStatus,
     CacheStatus,
     ConnectionStatus,
     HealthStatus,
     TaskStatus,
 )
-from infrastructure.generics.validators import (
+from infrastructure.generics.core.validators import (
     ValidationResult,
     validate_format,
     validate_non_empty,

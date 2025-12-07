@@ -1,1 +1,1 @@
-"""Rate limiter unit tests."""
+"""Unit tests for rate limiting module."""

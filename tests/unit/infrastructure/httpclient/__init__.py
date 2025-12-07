@@ -1,1 +1,1 @@
-"""HTTP client unit tests."""
+"""Unit tests for HTTP client module."""

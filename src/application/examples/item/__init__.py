@@ -37,15 +37,15 @@ from application.examples.item.export import (
     ItemExampleImportService,
 )
 from application.examples.item.handlers import (
-    CreateItemHandler,
-    DeleteItemHandler,
-    GetItemByIdHandler,
-    ListItemsHandler,
-    UpdateItemHandler,
+    CreateItemCommandHandler,
+    DeleteItemCommandHandler,
+    GetItemQueryHandler,
+    ListItemsQueryHandler,
+    UpdateItemCommandHandler,
 )
 from application.examples.item.mappers import ItemExampleMapper
 from application.examples.item.queries import (
-    GetItemByIdQuery,
+    GetItemQuery,
     ListItemsQuery,
 )
 from application.examples.item.use_cases import ItemExampleUseCase
@@ -56,14 +56,14 @@ __all__ = [
     "UpdateItemCommand",
     "DeleteItemCommand",
     # Queries
-    "GetItemByIdQuery",
+    "GetItemQuery",
     "ListItemsQuery",
     # Handlers
-    "CreateItemHandler",
-    "UpdateItemHandler",
-    "DeleteItemHandler",
-    "GetItemByIdHandler",
-    "ListItemsHandler",
+    "CreateItemCommandHandler",
+    "UpdateItemCommandHandler",
+    "DeleteItemCommandHandler",
+    "GetItemQueryHandler",
+    "ListItemsQueryHandler",
     # DTOs
     "ItemExampleCreate",
     "ItemExampleUpdate",

@@ -7,7 +7,7 @@
 from typing import Any, Protocol
 
 from application.common.dto import PaginatedResponse
-from application.common.cqrs.event_bus import TypedEventBus
+from application.common.cqrs.events.event_bus import TypedEventBus
 from application.common.cqrs.handlers import CommandHandler, QueryHandler
 from application.examples.pedido.commands import (
     AddItemToPedidoCommand,
