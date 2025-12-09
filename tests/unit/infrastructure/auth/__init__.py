@@ -1,1 +1,1 @@
-"""Unit tests for infrastructure auth."""
+"""Unit tests for infrastructure/auth modules."""

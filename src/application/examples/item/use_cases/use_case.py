@@ -136,20 +136,18 @@ class ItemExampleUseCase(EventPublishingMixin):
         updated_by: str,
     ) -> None:
         """Apply update fields to item entity."""
-        if data.name is not None:
-            item.name = data.name
-        if data.description is not None:
-            item.description = data.description
-        if data.price is not None:
-            item.update_price(Money(data.price.amount, data.price.currency), updated_by)
-        if data.quantity is not None:
-            item.update_quantity(data.quantity, updated_by)
-        if data.category is not None:
-            item.category = data.category
+        # Use entity's update method for tracked changes
+        item.update(
+            name=data.name,
+            description=data.description,
+            price=Money(data.price.amount, data.price.currency) if data.price else None,
+            quantity=data.quantity,
+            category=data.category,
+            updated_by=updated_by,
+        )
+        # Handle fields not in update method
         if data.tags is not None:
             item.tags = data.tags
-        if data.metadata is not None:
-            item.metadata = data.metadata
 
     async def update(
         self,
@@ -204,7 +202,7 @@ class ItemExampleUseCase(EventPublishingMixin):
         if not item:
             return Err(NotFoundError("ItemExample", item_id))
 
-        item.delete(deleted_by)
+        item.soft_delete(deleted_by)
         await self._repo.update(item)
 
         await self._publish_events(item)

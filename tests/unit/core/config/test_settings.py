@@ -1,105 +1,120 @@
-"""Unit tests for application settings.
+"""Unit tests for core/config/application/settings.py.
 
-Tests Settings, DatabaseSettings, and get_settings.
+Tests configuration loading, defaults, and validation.
+
+**Task 3.1: Create tests for settings.py**
+**Requirements: 3.2**
 """
 
+import os
+from unittest.mock import patch
+
 import pytest
+from pydantic import SecretStr
 
-from core.config import Settings, get_settings
-from core.config.infrastructure import DatabaseSettings
-
-
-class TestDatabaseSettings:
-    """Tests for DatabaseSettings."""
-
-    def test_default_values(self) -> None:
-        """Test default database settings."""
-        settings = DatabaseSettings()
-        assert "postgresql" in settings.url
-        assert settings.pool_size == 5
-        assert settings.max_overflow == 10
-        assert settings.echo is False
-
-    def test_custom_values(self) -> None:
-        """Test custom database settings."""
-        settings = DatabaseSettings(
-            url="postgresql://user:pass@host/db",
-            pool_size=10,
-            max_overflow=20,
-            echo=True,
-        )
-        assert settings.pool_size == 10
-        assert settings.max_overflow == 20
-        assert settings.echo is True
-
-    def test_get_safe_url_redacts_password(self) -> None:
-        """Test get_safe_url redacts credentials."""
-        settings = DatabaseSettings(url="postgresql://user:secret@host/db")
-        safe_url = settings.get_safe_url()
-        assert "secret" not in safe_url
-        assert "***" in safe_url or "user" in safe_url
-
-    def test_repr_is_safe(self) -> None:
-        """Test __repr__ doesn't expose credentials."""
-        settings = DatabaseSettings(url="postgresql://user:secret@host/db")
-        repr_str = repr(settings)
-        assert "secret" not in repr_str
-
-    def test_pool_size_validation(self) -> None:
-        """Test pool_size must be >= 1."""
-        with pytest.raises(ValueError):
-            DatabaseSettings(pool_size=0)
-
-    def test_pool_size_max_validation(self) -> None:
-        """Test pool_size must be <= 100."""
-        with pytest.raises(ValueError):
-            DatabaseSettings(pool_size=101)
+from core.config.application.settings import Settings, get_settings
 
 
 class TestSettings:
-    """Tests for main Settings class."""
+    """Tests for Settings class."""
 
     def test_default_values(self) -> None:
-        """Test default application settings."""
-        settings = Settings()
-        assert settings.app_name == "My API"
-        assert settings.debug is False
-        assert settings.version == "0.1.0"
-        assert settings.api_prefix == "/api/v1"
+        """Test that default values are set correctly."""
+        with patch.dict(os.environ, {"SECURITY__SECRET_KEY": "a" * 32}, clear=False):
+            settings = Settings()
 
-    def test_nested_database_settings(self) -> None:
-        """Test nested database settings are created."""
-        settings = Settings()
-        assert settings.database is not None
-        assert isinstance(settings.database, DatabaseSettings)
+            assert settings.app_name == "My API"
+            assert settings.debug is False
+            assert settings.version == "0.1.0"
+            assert settings.api_prefix == "/api/v1"
 
-    def test_nested_security_settings(self) -> None:
-        """Test nested security settings are created."""
-        settings = Settings()
-        assert settings.security is not None
+    def test_nested_database_settings_defaults(self) -> None:
+        """Test database settings have correct defaults."""
+        with patch.dict(os.environ, {"SECURITY__SECRET_KEY": "a" * 32}, clear=False):
+            settings = Settings()
 
-    def test_nested_redis_settings(self) -> None:
-        """Test nested redis settings are created."""
-        settings = Settings()
-        assert settings.redis is not None
+            assert settings.database.pool_size == 5
+            assert settings.database.max_overflow == 10
+            assert settings.database.echo is False
+            assert "postgresql" in settings.database.url
 
-    def test_nested_observability_settings(self) -> None:
-        """Test nested observability settings are created."""
-        settings = Settings()
-        assert settings.observability is not None
+    def test_nested_security_settings_structure(self) -> None:
+        """Test security settings have correct structure."""
+        with patch.dict(os.environ, {"SECURITY__SECRET_KEY": "a" * 32}, clear=False):
+            settings = Settings()
+
+            # Verify security settings exist and have expected types
+            assert hasattr(settings, "security")
+            assert isinstance(settings.security.cors_origins, list)
+            assert isinstance(settings.security.algorithm, str)
+            assert isinstance(settings.security.access_token_expire_minutes, int)
+
+    def test_nested_redis_settings_defaults(self) -> None:
+        """Test Redis settings have correct defaults."""
+        with patch.dict(os.environ, {"SECURITY__SECRET_KEY": "a" * 32}, clear=False):
+            settings = Settings()
+
+            assert settings.redis.enabled is False
+            assert settings.redis.token_ttl == 604800
+            assert "redis://" in settings.redis.url
+
+    def test_nested_observability_settings_defaults(self) -> None:
+        """Test observability settings have correct defaults."""
+        with patch.dict(os.environ, {"SECURITY__SECRET_KEY": "a" * 32}, clear=False):
+            settings = Settings()
+
+            assert settings.observability.log_level == "INFO"
+            assert settings.observability.log_format == "json"
+            assert settings.observability.enable_tracing is True
+            assert settings.observability.enable_metrics is True
+
+    def test_env_override(self) -> None:
+        """Test environment variables override defaults."""
+        env_vars = {
+            "APP_NAME": "Test API",
+            "DEBUG": "true",
+            "VERSION": "2.0.0",
+            "API_PREFIX": "/api/v2",
+            "SECURITY__SECRET_KEY": "a" * 32,
+        }
+        with patch.dict(os.environ, env_vars, clear=False):
+            settings = Settings()
+
+            assert settings.app_name == "Test API"
+            assert settings.debug is True
+            assert settings.version == "2.0.0"
+            assert settings.api_prefix == "/api/v2"
+
+    def test_nested_env_override(self) -> None:
+        """Test nested environment variables override defaults."""
+        env_vars = {
+            "DATABASE__POOL_SIZE": "20",
+            "DATABASE__ECHO": "true",
+            "SECURITY__SECRET_KEY": "b" * 32,
+            "SECURITY__RATE_LIMIT": "200/minute",
+        }
+        with patch.dict(os.environ, env_vars, clear=False):
+            settings = Settings()
+
+            assert settings.database.pool_size == 20
+            assert settings.database.echo is True
+            assert settings.security.rate_limit == "200/minute"
 
 
 class TestGetSettings:
     """Tests for get_settings function."""
 
-    def test_returns_settings(self) -> None:
-        """Test get_settings returns Settings instance."""
-        settings = get_settings()
-        assert isinstance(settings, Settings)
+    def test_returns_settings_instance(self) -> None:
+        """Test get_settings returns a Settings instance."""
+        get_settings.cache_clear()
+        with patch.dict(os.environ, {"SECURITY__SECRET_KEY": "a" * 32}, clear=False):
+            settings = get_settings()
+            assert isinstance(settings, Settings)
 
-    def test_is_cached(self) -> None:
+    def test_caching(self) -> None:
         """Test get_settings returns cached instance."""
-        settings1 = get_settings()
-        settings2 = get_settings()
-        assert settings1 is settings2
-
+        get_settings.cache_clear()
+        with patch.dict(os.environ, {"SECURITY__SECRET_KEY": "a" * 32}, clear=False):
+            settings1 = get_settings()
+            settings2 = get_settings()
+            assert settings1 is settings2

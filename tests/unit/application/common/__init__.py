@@ -1,1 +1,1 @@
-"""Unit tests for application/common module."""
+"""Unit tests for application/common modules."""

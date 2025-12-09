@@ -3,6 +3,6 @@
 **Feature: example-system-demo**
 """
 
-from application.examples.pedido.use_cases.use_case import PedidoUseCase
+from application.examples.pedido.use_cases.use_case import PedidoExampleUseCase
 
-__all__ = ["PedidoUseCase"]
+__all__ = ["PedidoExampleUseCase"]

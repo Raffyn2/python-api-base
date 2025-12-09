@@ -193,3 +193,154 @@ class TestCacheMetricsExporter:
         metrics.record_eviction()
         exporter.export_metrics(metrics)
         assert exporter._last_evictions == 1
+
+
+class TestMetricsAwareCacheWrapper:
+    """Tests for MetricsAwareCacheWrapper."""
+
+    @pytest.fixture
+    def mock_provider(self) -> "MockCacheProvider":
+        """Create a mock cache provider."""
+        return MockCacheProvider()
+
+    @pytest.mark.asyncio
+    async def test_get_hit_records_metric(self, mock_provider: "MockCacheProvider") -> None:
+        """Test that get records hit when value exists."""
+        from infrastructure.observability.metrics import MetricsAwareCacheWrapper
+
+        mock_provider.data["key"] = "value"
+        wrapper = MetricsAwareCacheWrapper(mock_provider)
+
+        result = await wrapper.get("key")
+
+        assert result == "value"
+        assert wrapper.metrics.hits == 1
+        assert wrapper.metrics.misses == 0
+
+    @pytest.mark.asyncio
+    async def test_get_miss_records_metric(self, mock_provider: "MockCacheProvider") -> None:
+        """Test that get records miss when value doesn't exist."""
+        from infrastructure.observability.metrics import MetricsAwareCacheWrapper
+
+        wrapper = MetricsAwareCacheWrapper(mock_provider)
+
+        result = await wrapper.get("nonexistent")
+
+        assert result is None
+        assert wrapper.metrics.hits == 0
+        assert wrapper.metrics.misses == 1
+
+    @pytest.mark.asyncio
+    async def test_set_stores_value(self, mock_provider: "MockCacheProvider") -> None:
+        """Test that set stores value in provider."""
+        from infrastructure.observability.metrics import MetricsAwareCacheWrapper
+
+        wrapper = MetricsAwareCacheWrapper(mock_provider)
+
+        await wrapper.set("key", "value")
+
+        assert mock_provider.data["key"] == "value"
+
+    @pytest.mark.asyncio
+    async def test_delete_removes_value(self, mock_provider: "MockCacheProvider") -> None:
+        """Test that delete removes value from provider."""
+        from infrastructure.observability.metrics import MetricsAwareCacheWrapper
+
+        mock_provider.data["key"] = "value"
+        wrapper = MetricsAwareCacheWrapper(mock_provider)
+
+        result = await wrapper.delete("key")
+
+        assert result is True
+        assert "key" not in mock_provider.data
+
+    @pytest.mark.asyncio
+    async def test_exists_checks_provider(self, mock_provider: "MockCacheProvider") -> None:
+        """Test that exists checks provider."""
+        from infrastructure.observability.metrics import MetricsAwareCacheWrapper
+
+        mock_provider.data["key"] = "value"
+        wrapper = MetricsAwareCacheWrapper(mock_provider)
+
+        assert await wrapper.exists("key") is True
+        assert await wrapper.exists("nonexistent") is False
+
+    @pytest.mark.asyncio
+    async def test_clear_clears_provider(self, mock_provider: "MockCacheProvider") -> None:
+        """Test that clear clears provider."""
+        from infrastructure.observability.metrics import MetricsAwareCacheWrapper
+
+        mock_provider.data["key1"] = "value1"
+        mock_provider.data["key2"] = "value2"
+        wrapper = MetricsAwareCacheWrapper(mock_provider)
+
+        await wrapper.clear()
+
+        assert len(mock_provider.data) == 0
+
+    @pytest.mark.asyncio
+    async def test_size_returns_provider_size(self, mock_provider: "MockCacheProvider") -> None:
+        """Test that size returns provider size."""
+        from infrastructure.observability.metrics import MetricsAwareCacheWrapper
+
+        mock_provider.data["key1"] = "value1"
+        mock_provider.data["key2"] = "value2"
+        wrapper = MetricsAwareCacheWrapper(mock_provider)
+
+        assert await wrapper.size() == 2
+
+    def test_get_metrics_returns_metrics(self, mock_provider: "MockCacheProvider") -> None:
+        """Test that get_metrics returns metrics instance."""
+        from infrastructure.observability.metrics import MetricsAwareCacheWrapper
+
+        wrapper = MetricsAwareCacheWrapper(mock_provider)
+        metrics = wrapper.get_metrics()
+
+        assert metrics is wrapper.metrics
+
+    @pytest.mark.asyncio
+    async def test_maybe_export_with_exporter(self, mock_provider: "MockCacheProvider") -> None:
+        """Test that metrics are exported at interval."""
+        from infrastructure.observability.metrics import (
+            CacheMetricsExporter,
+            MetricsAwareCacheWrapper,
+        )
+
+        exporter = CacheMetricsExporter()
+        wrapper = MetricsAwareCacheWrapper(mock_provider, exporter=exporter, export_interval=2)
+
+        # First request - no export
+        await wrapper.get("key1")
+        assert wrapper._request_count == 1
+
+        # Second request - should export
+        await wrapper.get("key2")
+        assert wrapper._request_count == 2
+
+
+class MockCacheProvider:
+    """Mock cache provider for testing."""
+
+    def __init__(self) -> None:
+        self.data: dict[str, str] = {}
+
+    async def get(self, key: str) -> str | None:
+        return self.data.get(key)
+
+    async def set(self, key: str, value: str, ttl: int | None = None) -> None:
+        self.data[key] = value
+
+    async def delete(self, key: str) -> bool:
+        if key in self.data:
+            del self.data[key]
+            return True
+        return False
+
+    async def exists(self, key: str) -> bool:
+        return key in self.data
+
+    async def clear(self) -> None:
+        self.data.clear()
+
+    async def size(self) -> int:
+        return len(self.data)

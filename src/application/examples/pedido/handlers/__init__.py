@@ -4,17 +4,19 @@
 """
 
 from application.examples.pedido.handlers.handlers import (
-    CreatePedidoHandler,
-    DeletePedidoHandler,
-    GetPedidoByIdHandler,
-    ListPedidosHandler,
-    UpdatePedidoHandler,
+    AddItemToPedidoCommandHandler,
+    CancelPedidoCommandHandler,
+    ConfirmPedidoCommandHandler,
+    CreatePedidoCommandHandler,
+    GetPedidoQueryHandler,
+    ListPedidosQueryHandler,
 )
 
 __all__ = [
-    "CreatePedidoHandler",
-    "UpdatePedidoHandler",
-    "DeletePedidoHandler",
-    "GetPedidoByIdHandler",
-    "ListPedidosHandler",
+    "CreatePedidoCommandHandler",
+    "AddItemToPedidoCommandHandler",
+    "ConfirmPedidoCommandHandler",
+    "CancelPedidoCommandHandler",
+    "GetPedidoQueryHandler",
+    "ListPedidosQueryHandler",
 ]

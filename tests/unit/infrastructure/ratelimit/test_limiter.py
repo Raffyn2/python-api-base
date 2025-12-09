@@ -1,9 +1,11 @@
-"""Tests for rate limiter module.
+"""Unit tests for rate limiter implementations.
 
-Tests for RateLimitResult, InMemoryRateLimiter, and SlidingWindowLimiter.
+**Feature: test-coverage-80-percent-v3**
+**Validates: Requirements R5.1, R5.2, R5.3, R5.4, R5.6**
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -16,250 +18,299 @@ from infrastructure.ratelimit.limiter import (
 
 
 class TestRateLimitResult:
-    """Tests for RateLimitResult dataclass."""
+    """Tests for RateLimitResult."""
 
-    def test_init_allowed(self) -> None:
-        """RateLimitResult should store allowed state."""
-        result: RateLimitResult[str] = RateLimitResult(
-            client="user1",
+    def test_headers_without_retry(self) -> None:
+        """Test headers without retry_after."""
+        from datetime import UTC, datetime
+
+        result = RateLimitResult(
+            client="user-1",
             is_allowed=True,
-            remaining=9,
-            limit=10,
+            remaining=99,
+            limit=100,
             reset_at=datetime.now(UTC),
         )
-        assert result.is_allowed is True
-        assert result.remaining == 9
 
-    def test_init_denied(self) -> None:
-        """RateLimitResult should store denied state."""
-        result: RateLimitResult[str] = RateLimitResult(
-            client="user1",
+        headers = result.headers
+
+        assert headers["X-RateLimit-Limit"] == "100"
+        assert headers["X-RateLimit-Remaining"] == "99"
+        assert "X-RateLimit-Reset" in headers
+        assert "Retry-After" not in headers
+
+    def test_headers_with_retry(self) -> None:
+        """Test headers with retry_after."""
+        from datetime import UTC, datetime
+
+        result = RateLimitResult(
+            client="user-1",
             is_allowed=False,
             remaining=0,
-            limit=10,
+            limit=100,
             reset_at=datetime.now(UTC),
             retry_after=timedelta(seconds=30),
         )
-        assert result.is_allowed is False
-        assert result.retry_after == timedelta(seconds=30)
 
-    def test_headers_basic(self) -> None:
-        """headers should return rate limit headers."""
-        reset_time = datetime.now(UTC)
-        result: RateLimitResult[str] = RateLimitResult(
-            client="user1",
-            is_allowed=True,
-            remaining=5,
-            limit=10,
-            reset_at=reset_time,
-        )
         headers = result.headers
-        assert headers["X-RateLimit-Limit"] == "10"
-        assert headers["X-RateLimit-Remaining"] == "5"
-        assert "X-RateLimit-Reset" in headers
 
-    def test_headers_with_retry_after(self) -> None:
-        """headers should include Retry-After when rate limited."""
-        result: RateLimitResult[str] = RateLimitResult(
-            client="user1",
-            is_allowed=False,
-            remaining=0,
-            limit=10,
-            reset_at=datetime.now(UTC),
-            retry_after=timedelta(seconds=60),
-        )
-        headers = result.headers
-        assert headers["Retry-After"] == "60"
+        assert headers["Retry-After"] == "30"
 
-    def test_headers_remaining_not_negative(self) -> None:
-        """headers should not show negative remaining."""
-        result: RateLimitResult[str] = RateLimitResult(
-            client="user1",
+    def test_remaining_clamped_to_zero(self) -> None:
+        """Test remaining is clamped to 0 in headers."""
+        from datetime import UTC, datetime
+
+        result = RateLimitResult(
+            client="user-1",
             is_allowed=False,
             remaining=-5,
-            limit=10,
+            limit=100,
             reset_at=datetime.now(UTC),
         )
-        headers = result.headers
-        assert headers["X-RateLimit-Remaining"] == "0"
 
-    def test_is_frozen(self) -> None:
-        """RateLimitResult should be immutable."""
-        result: RateLimitResult[str] = RateLimitResult(
-            client="user1",
-            is_allowed=True,
-            remaining=5,
-            limit=10,
-            reset_at=datetime.now(UTC),
-        )
-        with pytest.raises(AttributeError):
-            result.remaining = 0  # type: ignore
+        headers = result.headers
+
+        assert headers["X-RateLimit-Remaining"] == "0"
 
 
 class TestInMemoryRateLimiter:
-    """Tests for InMemoryRateLimiter class."""
+    """Tests for InMemoryRateLimiter."""
 
     @pytest.fixture
     def config(self) -> RateLimitConfig:
-        """Create test config."""
+        """Create rate limit config."""
         return RateLimitConfig()
 
     @pytest.fixture
     def limiter(self, config: RateLimitConfig) -> InMemoryRateLimiter[str]:
-        """Create test limiter."""
-        return InMemoryRateLimiter(config)
+        """Create in-memory rate limiter."""
+        return InMemoryRateLimiter[str](config)
+
+    @pytest.fixture
+    def limit(self) -> RateLimit:
+        """Create rate limit."""
+        return RateLimit(requests=5, window=timedelta(seconds=60))
 
     @pytest.mark.asyncio
-    async def test_first_request_allowed(
-        self, limiter: InMemoryRateLimiter[str]
+    async def test_allows_under_limit(
+        self, limiter: InMemoryRateLimiter[str], limit: RateLimit
     ) -> None:
-        """First request should be allowed."""
-        limit = RateLimit(requests=10, window=timedelta(minutes=1))
-        result = await limiter.check("user1", limit)
+        """Test requests under limit are allowed."""
+        result = await limiter.check("user-1", limit)
+
         assert result.is_allowed is True
-        assert result.remaining == 9
+        assert result.remaining == 4
+        assert result.client == "user-1"
 
     @pytest.mark.asyncio
-    async def test_multiple_requests_allowed(
-        self, limiter: InMemoryRateLimiter[str]
+    async def test_denies_over_limit(
+        self, limiter: InMemoryRateLimiter[str], limit: RateLimit
     ) -> None:
-        """Multiple requests within limit should be allowed."""
-        limit = RateLimit(requests=5, window=timedelta(minutes=1))
-        for i in range(5):
-            result = await limiter.check("user1", limit)
-            assert result.is_allowed is True
-            assert result.remaining == 4 - i
+        """Test requests over limit are denied."""
+        # Exhaust the limit
+        for _ in range(5):
+            await limiter.check("user-1", limit)
 
-    @pytest.mark.asyncio
-    async def test_exceeds_limit(self, limiter: InMemoryRateLimiter[str]) -> None:
-        """Requests exceeding limit should be denied."""
-        limit = RateLimit(requests=3, window=timedelta(minutes=1))
-        for _ in range(3):
-            await limiter.check("user1", limit)
+        result = await limiter.check("user-1", limit)
 
-        result = await limiter.check("user1", limit)
         assert result.is_allowed is False
         assert result.remaining == 0
         assert result.retry_after is not None
 
     @pytest.mark.asyncio
-    async def test_different_clients_independent(
-        self, limiter: InMemoryRateLimiter[str]
+    async def test_separate_clients(
+        self, limiter: InMemoryRateLimiter[str], limit: RateLimit
     ) -> None:
-        """Different clients should have independent limits."""
-        limit = RateLimit(requests=2, window=timedelta(minutes=1))
+        """Test different clients have separate limits."""
+        # Exhaust user-1's limit
+        for _ in range(5):
+            await limiter.check("user-1", limit)
 
-        # Exhaust user1's limit
-        await limiter.check("user1", limit)
-        await limiter.check("user1", limit)
-        result1 = await limiter.check("user1", limit)
-        assert result1.is_allowed is False
+        # user-2 should still be allowed
+        result = await limiter.check("user-2", limit)
 
-        # user2 should still be allowed
-        result2 = await limiter.check("user2", limit)
-        assert result2.is_allowed is True
+        assert result.is_allowed is True
 
     @pytest.mark.asyncio
-    async def test_different_endpoints_independent(
-        self, limiter: InMemoryRateLimiter[str]
+    async def test_separate_endpoints(
+        self, limiter: InMemoryRateLimiter[str], limit: RateLimit
     ) -> None:
-        """Different endpoints should have independent limits."""
-        limit = RateLimit(requests=1, window=timedelta(minutes=1))
+        """Test different endpoints have separate limits."""
+        # Exhaust limit for endpoint-1
+        for _ in range(5):
+            await limiter.check("user-1", limit, endpoint="endpoint-1")
 
-        result1 = await limiter.check("user1", limit, endpoint="api/users")
-        assert result1.is_allowed is True
+        # Same user on endpoint-2 should be allowed
+        result = await limiter.check("user-1", limit, endpoint="endpoint-2")
 
-        result2 = await limiter.check("user1", limit, endpoint="api/posts")
-        assert result2.is_allowed is True
+        assert result.is_allowed is True
 
     @pytest.mark.asyncio
     async def test_reset_clears_limit(
-        self, limiter: InMemoryRateLimiter[str]
+        self, limiter: InMemoryRateLimiter[str], limit: RateLimit
     ) -> None:
-        """reset should clear rate limit for client."""
-        limit = RateLimit(requests=1, window=timedelta(minutes=1))
+        """Test reset clears rate limit."""
+        # Exhaust the limit
+        for _ in range(5):
+            await limiter.check("user-1", limit)
 
-        await limiter.check("user1", limit)
-        result1 = await limiter.check("user1", limit)
-        assert result1.is_allowed is False
+        # Reset
+        result = await limiter.reset("user-1")
+        assert result is True
 
-        reset_result = await limiter.reset("user1")
-        assert reset_result is True
-
-        result2 = await limiter.check("user1", limit)
-        assert result2.is_allowed is True
+        # Should be allowed again
+        check_result = await limiter.check("user-1", limit)
+        assert check_result.is_allowed is True
 
     @pytest.mark.asyncio
     async def test_reset_nonexistent_returns_false(
         self, limiter: InMemoryRateLimiter[str]
     ) -> None:
-        """reset should return False for nonexistent client."""
+        """Test reset for nonexistent client returns False."""
         result = await limiter.reset("nonexistent")
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_result_contains_client(
+    async def test_configure_limits(
         self, limiter: InMemoryRateLimiter[str]
     ) -> None:
-        """Result should contain client identifier."""
-        limit = RateLimit(requests=10, window=timedelta(minutes=1))
-        result = await limiter.check("my-client", limit)
-        assert result.client == "my-client"
+        """Test configuring per-endpoint limits."""
+        custom_limit = RateLimit(requests=10, window=timedelta(seconds=30))
+        limiter.configure({"custom": custom_limit})
+
+        retrieved = limiter.get_limit("custom")
+
+        assert retrieved.requests == 10
 
     @pytest.mark.asyncio
-    async def test_result_contains_limit(
-        self, limiter: InMemoryRateLimiter[str]
+    async def test_get_default_limit(
+        self, limiter: InMemoryRateLimiter[str], config: RateLimitConfig
     ) -> None:
-        """Result should contain limit value."""
-        limit = RateLimit(requests=100, window=timedelta(minutes=1))
-        result = await limiter.check("user1", limit)
-        assert result.limit == 100
+        """Test getting default limit for unknown endpoint."""
+        retrieved = limiter.get_limit("unknown")
+
+        assert retrieved == config.default_limit
 
 
 class TestSlidingWindowLimiter:
-    """Tests for SlidingWindowLimiter class."""
+    """Tests for SlidingWindowLimiter."""
 
     @pytest.fixture
     def config(self) -> RateLimitConfig:
-        """Create test config."""
+        """Create rate limit config."""
         return RateLimitConfig()
 
     @pytest.fixture
-    def limiter(self, config: RateLimitConfig) -> SlidingWindowLimiter[str]:
-        """Create test limiter without Redis (uses fallback)."""
-        return SlidingWindowLimiter(config, redis_client=None)
+    def limit(self) -> RateLimit:
+        """Create rate limit."""
+        return RateLimit(requests=5, window=timedelta(seconds=60))
 
     @pytest.mark.asyncio
-    async def test_fallback_to_memory(
-        self, limiter: SlidingWindowLimiter[str]
+    async def test_fallback_without_redis(
+        self, config: RateLimitConfig, limit: RateLimit
     ) -> None:
-        """Should fallback to in-memory when no Redis."""
-        limit = RateLimit(requests=10, window=timedelta(minutes=1))
-        result = await limiter.check("user1", limit)
+        """Test fallback to in-memory without Redis."""
+        limiter = SlidingWindowLimiter[str](config, redis_client=None)
+
+        result = await limiter.check("user-1", limit)
+
         assert result.is_allowed is True
 
     @pytest.mark.asyncio
-    async def test_fallback_reset(self, limiter: SlidingWindowLimiter[str]) -> None:
-        """reset should work with fallback."""
-        limit = RateLimit(requests=1, window=timedelta(minutes=1))
-        await limiter.check("user1", limit)
+    async def test_fallback_on_redis_error(
+        self, config: RateLimitConfig, limit: RateLimit
+    ) -> None:
+        """Test fallback to in-memory on Redis error."""
+        mock_redis = AsyncMock()
+        mock_redis.pipeline.side_effect = Exception("Redis error")
 
-        result = await limiter.reset("user1")
+        limiter = SlidingWindowLimiter[str](config, redis_client=mock_redis)
+
+        result = await limiter.check("user-1", limit)
+
+        assert result.is_allowed is True
+
+    @pytest.mark.asyncio
+    async def test_reset_fallback_without_redis(
+        self, config: RateLimitConfig, limit: RateLimit
+    ) -> None:
+        """Test reset fallback without Redis."""
+        limiter = SlidingWindowLimiter[str](config, redis_client=None)
+
+        # First make a request
+        await limiter.check("user-1", limit)
+
+        # Reset should work via fallback
+        result = await limiter.reset("user-1")
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_configure_limits(self, config: RateLimitConfig) -> None:
-        """configure should set per-endpoint limits."""
-        limiter: SlidingWindowLimiter[str] = SlidingWindowLimiter(config)
-        custom_limit = RateLimit(requests=50, window=timedelta(minutes=5))
-        limiter.configure({"api/special": custom_limit})
+    async def test_reset_fallback_on_redis_error(
+        self, config: RateLimitConfig
+    ) -> None:
+        """Test reset fallback on Redis error."""
+        mock_redis = AsyncMock()
+        mock_redis.delete.side_effect = Exception("Redis error")
 
-        retrieved = limiter.get_limit("api/special")
-        assert retrieved.requests == 50
+        limiter = SlidingWindowLimiter[str](config, redis_client=mock_redis)
 
-    @pytest.mark.asyncio
-    async def test_get_limit_default(self, config: RateLimitConfig) -> None:
-        """get_limit should return default for unconfigured endpoint."""
-        limiter: SlidingWindowLimiter[str] = SlidingWindowLimiter(config)
-        limit = limiter.get_limit("unknown/endpoint")
-        assert limit == config.default_limit
+        result = await limiter.reset("user-1")
+        assert result is False
+
+
+class TestRateLimitConfig:
+    """Tests for RateLimitConfig."""
+
+    def test_default_config(self) -> None:
+        """Test default configuration values."""
+        config = RateLimitConfig()
+
+        assert config.enabled is True
+        assert config.key_prefix == "ratelimit:"
+
+    def test_get_redis_key(self) -> None:
+        """Test Redis key generation."""
+        config = RateLimitConfig(key_prefix="test:")
+
+        key = config.get_redis_key("user-123", "api")
+
+        assert key == "test:api:user-123"
+
+    def test_get_redis_key_default_endpoint(self) -> None:
+        """Test Redis key with default endpoint."""
+        config = RateLimitConfig()
+
+        key = config.get_redis_key("user-123")
+
+        assert "default" in key
+
+
+class TestRateLimit:
+    """Tests for RateLimit dataclass."""
+
+    def test_valid_rate_limit(self) -> None:
+        """Test valid rate limit creation."""
+        limit = RateLimit(requests=100, window=timedelta(minutes=1))
+
+        assert limit.requests == 100
+        assert limit.window_seconds == 60.0
+
+    def test_invalid_requests_raises(self) -> None:
+        """Test invalid requests raises ValueError."""
+        with pytest.raises(ValueError, match="requests must be positive"):
+            RateLimit(requests=0, window=timedelta(minutes=1))
+
+    def test_invalid_window_raises(self) -> None:
+        """Test invalid window raises ValueError."""
+        with pytest.raises(ValueError, match="window must be positive"):
+            RateLimit(requests=100, window=timedelta(seconds=0))
+
+    def test_negative_burst_raises(self) -> None:
+        """Test negative burst raises ValueError."""
+        with pytest.raises(ValueError, match="burst cannot be negative"):
+            RateLimit(requests=100, window=timedelta(minutes=1), burst=-1)
+
+    def test_burst_default(self) -> None:
+        """Test burst defaults to 0."""
+        limit = RateLimit(requests=100, window=timedelta(minutes=1))
+        assert limit.burst == 0

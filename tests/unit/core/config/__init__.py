@@ -1,1 +1,1 @@
-"""Config tests."""
+"""Unit tests for core/config modules."""

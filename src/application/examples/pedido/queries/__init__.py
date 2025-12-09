@@ -4,11 +4,11 @@
 """
 
 from application.examples.pedido.queries.queries import (
-    GetPedidoByIdQuery,
+    GetPedidoQuery,
     ListPedidosQuery,
 )
 
 __all__ = [
-    "GetPedidoByIdQuery",
+    "GetPedidoQuery",
     "ListPedidosQuery",
 ]

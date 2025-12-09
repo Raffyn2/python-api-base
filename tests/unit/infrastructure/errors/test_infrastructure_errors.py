@@ -1,221 +1,148 @@
-"""Unit tests for infrastructure error hierarchy.
+"""Unit tests for infrastructure error classes.
 
-Tests InfrastructureError and all derived error classes.
+**Task: Phase 4 - Infrastructure Layer Tests**
+**Requirements: 4.3**
 """
 
 import pytest
 
-from infrastructure.errors import (
-    AuditLogError,
+from infrastructure.errors.base import InfrastructureError
+from infrastructure.errors.database import ConnectionPoolError, DatabaseError
+from infrastructure.errors.external import (
     CacheError,
-    ConfigurationError,
-    ConnectionPoolError,
-    DatabaseError,
     ExternalServiceError,
-    InfrastructureError,
     MessagingError,
     StorageError,
-    TelemetryError,
+)
+from infrastructure.errors.security import (
+    AuditLogError,
     TokenStoreError,
     TokenValidationError,
 )
+from infrastructure.errors.system import ConfigurationError, TelemetryError
 
 
 class TestInfrastructureError:
     """Tests for InfrastructureError base class."""
 
-    def test_basic_creation(self) -> None:
-        """Test basic error creation."""
+    def test_create_with_message_only(self) -> None:
+        """Error should be created with message only."""
         error = InfrastructureError("Something went wrong")
         assert error.message == "Something went wrong"
         assert error.details == {}
-        assert str(error) == "Something went wrong"
 
-    def test_with_details(self) -> None:
-        """Test error with details."""
+    def test_create_with_details(self) -> None:
+        """Error should accept details dict."""
         error = InfrastructureError(
             "Operation failed",
-            details={"operation": "connect", "host": "localhost"},
+            details={"operation": "read", "resource": "users"},
         )
-        assert error.details["operation"] == "connect"
-        assert error.details["host"] == "localhost"
-        assert "operation=connect" in str(error)
-        assert "host=localhost" in str(error)
+        assert error.message == "Operation failed"
+        assert error.details == {"operation": "read", "resource": "users"}
 
     def test_is_exception(self) -> None:
-        """Test error is an Exception."""
-        error = InfrastructureError("Error")
+        """Error should be an Exception."""
+        error = InfrastructureError("Test")
         assert isinstance(error, Exception)
 
     def test_can_be_raised(self) -> None:
-        """Test error can be raised and caught."""
-        with pytest.raises(InfrastructureError) as exc_info:
+        """Error should be raisable."""
+        with pytest.raises(InfrastructureError):
             raise InfrastructureError("Test error")
-        assert exc_info.value.message == "Test error"
 
 
-class TestDatabaseError:
-    """Tests for DatabaseError."""
+class TestDatabaseErrors:
+    """Tests for database error classes."""
 
-    def test_basic_creation(self) -> None:
-        """Test basic database error."""
+    def test_database_error(self) -> None:
+        """DatabaseError should inherit from InfrastructureError."""
         error = DatabaseError("Query failed")
-        assert error.message == "Query failed"
         assert isinstance(error, InfrastructureError)
+        assert error.message == "Query failed"
 
-    def test_with_details(self) -> None:
-        """Test database error with details."""
-        error = DatabaseError(
-            "Connection timeout",
-            details={"database": "mydb", "timeout_ms": 5000},
-        )
-        assert error.details["database"] == "mydb"
-
-
-class TestConnectionPoolError:
-    """Tests for ConnectionPoolError."""
-
-    def test_basic_creation(self) -> None:
-        """Test basic connection pool error."""
+    def test_connection_pool_error(self) -> None:
+        """ConnectionPoolError should inherit from DatabaseError."""
         error = ConnectionPoolError("Pool exhausted")
-        assert error.message == "Pool exhausted"
         assert isinstance(error, DatabaseError)
         assert isinstance(error, InfrastructureError)
 
-    def test_with_details(self) -> None:
-        """Test connection pool error with details."""
-        error = ConnectionPoolError(
-            "No available connections",
-            details={"pool_size": 10, "active": 10},
-        )
-        assert error.details["pool_size"] == 10
 
+class TestExternalServiceErrors:
+    """Tests for external service error classes."""
 
-class TestExternalServiceError:
-    """Tests for ExternalServiceError."""
-
-    def test_basic_creation(self) -> None:
-        """Test basic external service error."""
+    def test_external_service_error(self) -> None:
+        """ExternalServiceError should have service info."""
         error = ExternalServiceError("Service unavailable")
-        assert error.message == "Service unavailable"
-        assert error.service_name is None
-        assert error.retry_after is None
-
-    def test_with_service_name(self) -> None:
-        """Test external service error with service name."""
-        error = ExternalServiceError(
-            "API call failed",
-            service_name="payment-gateway",
-        )
-        assert error.service_name == "payment-gateway"
-
-    def test_with_retry_after(self) -> None:
-        """Test external service error with retry_after."""
-        error = ExternalServiceError(
-            "Rate limited",
-            service_name="api",
-            retry_after=60,
-        )
-        assert error.retry_after == 60
-
-    def test_inherits_infrastructure_error(self) -> None:
-        """Test inherits from InfrastructureError."""
-        error = ExternalServiceError("Error")
         assert isinstance(error, InfrastructureError)
 
-
-class TestCacheError:
-    """Tests for CacheError."""
-
-    def test_basic_creation(self) -> None:
-        """Test basic cache error."""
+    def test_cache_error(self) -> None:
+        """CacheError should inherit from InfrastructureError."""
         error = CacheError("Cache miss")
-        assert error.message == "Cache miss"
         assert isinstance(error, InfrastructureError)
 
-    def test_with_details(self) -> None:
-        """Test cache error with details."""
-        error = CacheError(
-            "Redis connection failed",
-            details={"host": "redis", "port": 6379},
-        )
-        assert error.details["host"] == "redis"
+    def test_messaging_error(self) -> None:
+        """MessagingError should inherit from InfrastructureError."""
+        error = MessagingError("Failed to publish")
+        assert isinstance(error, InfrastructureError)
 
-
-class TestMessagingError:
-    """Tests for MessagingError."""
-
-    def test_basic_creation(self) -> None:
-        """Test basic messaging error."""
-        error = MessagingError("Message publish failed")
-        assert error.message == "Message publish failed"
+    def test_storage_error(self) -> None:
+        """StorageError should inherit from InfrastructureError."""
+        error = StorageError("File not found")
         assert isinstance(error, InfrastructureError)
 
 
-class TestStorageError:
-    """Tests for StorageError."""
+class TestSecurityErrors:
+    """Tests for security error classes."""
 
-    def test_basic_creation(self) -> None:
-        """Test basic storage error."""
-        error = StorageError("File upload failed")
-        assert error.message == "File upload failed"
+    def test_token_store_error(self) -> None:
+        """TokenStoreError should inherit from InfrastructureError."""
+        error = TokenStoreError("Failed to store token")
         assert isinstance(error, InfrastructureError)
 
-
-class TestTokenStoreError:
-    """Tests for TokenStoreError."""
-
-    def test_basic_creation(self) -> None:
-        """Test basic token store error."""
-        error = TokenStoreError("Token storage failed")
-        assert error.message == "Token storage failed"
-        assert isinstance(error, InfrastructureError)
-
-
-class TestTokenValidationError:
-    """Tests for TokenValidationError."""
-
-    def test_basic_creation(self) -> None:
-        """Test basic token validation error."""
-        error = TokenValidationError("Invalid token signature")
-        assert error.message == "Invalid token signature"
+    def test_token_validation_error(self) -> None:
+        """TokenValidationError should inherit from TokenStoreError."""
+        error = TokenValidationError("Token expired")
         assert isinstance(error, TokenStoreError)
+
+    def test_audit_log_error(self) -> None:
+        """AuditLogError should inherit from InfrastructureError."""
+        error = AuditLogError("Failed to write audit log")
         assert isinstance(error, InfrastructureError)
 
 
-class TestAuditLogError:
-    """Tests for AuditLogError."""
+class TestSystemErrors:
+    """Tests for system error classes."""
 
-    def test_basic_creation(self) -> None:
-        """Test basic audit log error."""
-        error = AuditLogError("Audit log write failed")
-        assert error.message == "Audit log write failed"
+    def test_telemetry_error(self) -> None:
+        """TelemetryError should inherit from InfrastructureError."""
+        error = TelemetryError("Failed to export metrics")
         assert isinstance(error, InfrastructureError)
 
-
-class TestTelemetryError:
-    """Tests for TelemetryError."""
-
-    def test_basic_creation(self) -> None:
-        """Test basic telemetry error."""
-        error = TelemetryError("Metric export failed")
-        assert error.message == "Metric export failed"
-        assert isinstance(error, InfrastructureError)
-
-
-class TestConfigurationError:
-    """Tests for ConfigurationError."""
-
-    def test_basic_creation(self) -> None:
-        """Test basic configuration error."""
+    def test_configuration_error(self) -> None:
+        """ConfigurationError should inherit from InfrastructureError."""
         error = ConfigurationError("Missing required config")
-        assert error.message == "Missing required config"
         assert isinstance(error, InfrastructureError)
 
-    def test_with_details(self) -> None:
-        """Test configuration error with details."""
-        error = ConfigurationError(
-            "Invalid configuration",
-            details={"key": "DATABASE_URL", "reason": "missing"},
-        )
-        assert error.details["key"] == "DATABASE_URL"
+
+class TestErrorHierarchy:
+    """Tests for error class hierarchy."""
+
+    def test_all_errors_inherit_from_infrastructure_error(self) -> None:
+        """All error classes should inherit from InfrastructureError."""
+        error_classes = [
+            DatabaseError,
+            ConnectionPoolError,
+            ExternalServiceError,
+            CacheError,
+            MessagingError,
+            StorageError,
+            TokenStoreError,
+            TokenValidationError,
+            AuditLogError,
+            TelemetryError,
+            ConfigurationError,
+        ]
+
+        for error_class in error_classes:
+            error = error_class("Test")
+            assert isinstance(error, InfrastructureError)

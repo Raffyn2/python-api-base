@@ -1,1 +1,1 @@
-"""Unit tests for application layer."""
+"""Unit tests for application modules."""

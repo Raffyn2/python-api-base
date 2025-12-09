@@ -290,3 +290,218 @@ class TestCheckPermissionSimple:
         user = MockUser(roles=["unknown"])
         perm = Permission(Resource.USER, Action.DELETE)
         assert _check_permission_simple(user, perm) is False
+
+
+class TestRequiresDecorator:
+    """Tests for requires decorator."""
+
+    @pytest.mark.asyncio
+    async def test_requires_no_request_raises_500(self) -> None:
+        """requires should raise 500 when request not found."""
+        from fastapi import HTTPException
+
+        from infrastructure.rbac.checker import requires
+
+        perm = Permission(Resource.USER, Action.READ)
+
+        @requires(perm)
+        async def handler() -> str:
+            return "ok"
+
+        with pytest.raises(HTTPException) as exc_info:
+            await handler()
+        assert exc_info.value.status_code == 500
+
+    @pytest.mark.asyncio
+    async def test_requires_no_user_raises_401(self) -> None:
+        """requires should raise 401 when user not authenticated."""
+        from fastapi import HTTPException, Request
+
+        from infrastructure.rbac.checker import requires
+
+        perm = Permission(Resource.USER, Action.READ)
+
+        @requires(perm)
+        async def handler(request: Request) -> str:
+            return "ok"
+
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        del request.state.current_user
+
+        with pytest.raises(HTTPException) as exc_info:
+            await handler(request)
+        assert exc_info.value.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_requires_permission_denied_raises_403(self) -> None:
+        """requires should raise 403 when permission denied."""
+        from fastapi import HTTPException, Request
+
+        from infrastructure.rbac.checker import requires
+
+        perm = Permission(Resource.USER, Action.DELETE)
+
+        @requires(perm)
+        async def handler(request: Request) -> str:
+            return "ok"
+
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        request.state.current_user = MockUser(roles=["viewer"])
+        request.state.rbac = None
+
+        with pytest.raises(HTTPException) as exc_info:
+            await handler(request)
+        assert exc_info.value.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_requires_permission_granted(self) -> None:
+        """requires should allow access when permission granted."""
+        from fastapi import Request
+
+        from infrastructure.rbac.checker import requires
+
+        perm = Permission(Resource.USER, Action.READ)
+
+        @requires(perm)
+        async def handler(request: Request) -> str:
+            return "ok"
+
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        request.state.current_user = MockUser(roles=["admin"])
+        request.state.rbac = None
+
+        result = await handler(request)
+        assert result == "ok"
+
+    @pytest.mark.asyncio
+    async def test_requires_with_rbac_checker(self) -> None:
+        """requires should use RBAC checker when available."""
+        from fastapi import Request
+
+        from infrastructure.rbac.checker import requires
+
+        perm = Permission(Resource.USER, Action.READ)
+
+        @requires(perm)
+        async def handler(request: Request) -> str:
+            return "ok"
+
+        registry: RoleRegistry[Resource, Action] = RoleRegistry()
+        registry.create_role("viewer", permissions={perm})
+        rbac: RBAC[MockUser, Resource, Action] = RBAC(registry)
+
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        request.state.current_user = MockUser(roles=["viewer"])
+        request.state.rbac = rbac
+
+        result = await handler(request)
+        assert result == "ok"
+
+    @pytest.mark.asyncio
+    async def test_requires_with_rbac_denied(self) -> None:
+        """requires should deny via RBAC checker."""
+        from fastapi import HTTPException, Request
+
+        from infrastructure.rbac.checker import requires
+
+        perm = Permission(Resource.USER, Action.DELETE)
+
+        @requires(perm)
+        async def handler(request: Request) -> str:
+            return "ok"
+
+        registry: RoleRegistry[Resource, Action] = RoleRegistry()
+        read_perm = Permission(Resource.USER, Action.READ)
+        registry.create_role("viewer", permissions={read_perm})
+        rbac: RBAC[MockUser, Resource, Action] = RBAC(registry)
+
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        request.state.current_user = MockUser(roles=["viewer"])
+        request.state.rbac = rbac
+
+        with pytest.raises(HTTPException) as exc_info:
+            await handler(request)
+        assert exc_info.value.status_code == 403
+
+
+class TestHelperFunctions:
+    """Tests for helper functions."""
+
+    def test_find_request_in_args(self) -> None:
+        """_find_request_in_args should find request in args."""
+        from fastapi import Request
+
+        from infrastructure.rbac.checker import _find_request_in_args
+
+        request = MagicMock(spec=Request)
+        result = _find_request_in_args((request,), {})
+        assert result is request
+
+    def test_find_request_in_kwargs(self) -> None:
+        """_find_request_in_args should find request in kwargs."""
+        from fastapi import Request
+
+        from infrastructure.rbac.checker import _find_request_in_args
+
+        request = MagicMock(spec=Request)
+        result = _find_request_in_args((), {"request": request})
+        assert result is request
+
+    def test_find_request_not_found(self) -> None:
+        """_find_request_in_args should return None when not found."""
+        from infrastructure.rbac.checker import _find_request_in_args
+
+        result = _find_request_in_args(("not_request",), {"key": "value"})
+        assert result is None
+
+    def test_get_user_from_request(self) -> None:
+        """_get_user_from_request should get user from state."""
+        from fastapi import Request
+
+        from infrastructure.rbac.checker import _get_user_from_request
+
+        request = MagicMock(spec=Request)
+        user = MockUser(roles=["admin"])
+        request.state.current_user = user
+
+        result = _get_user_from_request(request, "current_user")
+        assert result is user
+
+    def test_get_user_from_request_not_found(self) -> None:
+        """_get_user_from_request should raise 401 when user not found."""
+        from fastapi import HTTPException, Request
+
+        from infrastructure.rbac.checker import _get_user_from_request
+
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        del request.state.current_user
+
+        with pytest.raises(HTTPException) as exc_info:
+            _get_user_from_request(request, "current_user")
+        assert exc_info.value.status_code == 401
+
+    def test_check_user_permission_no_rbac_no_roles(self) -> None:
+        """_check_user_permission should raise 500 when no RBAC and no roles."""
+        from fastapi import HTTPException, Request
+
+        from infrastructure.rbac.checker import _check_user_permission
+
+        request = MagicMock(spec=Request)
+        request.state = MagicMock()
+        request.state.rbac = None
+
+        class NoRolesUser:
+            pass
+
+        user = NoRolesUser()
+        perm = Permission(Resource.USER, Action.READ)
+
+        with pytest.raises(HTTPException) as exc_info:
+            _check_user_permission(request, user, perm, "rbac")
+        assert exc_info.value.status_code == 500

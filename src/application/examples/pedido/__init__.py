@@ -12,49 +12,53 @@ Organized into subpackages by responsibility:
 """
 
 from application.examples.pedido.commands import (
+    AddItemToPedidoCommand,
+    CancelPedidoCommand,
+    ConfirmPedidoCommand,
     CreatePedidoCommand,
-    DeletePedidoCommand,
-    UpdatePedidoCommand,
 )
 from application.examples.pedido.dtos import (
-    PedidoCreate,
-    PedidoResponse,
-    PedidoUpdate,
+    PedidoExampleCreate,
+    PedidoExampleResponse,
+    PedidoExampleUpdate,
 )
 from application.examples.pedido.handlers import (
-    CreatePedidoHandler,
-    DeletePedidoHandler,
-    GetPedidoByIdHandler,
-    ListPedidosHandler,
-    UpdatePedidoHandler,
+    AddItemToPedidoCommandHandler,
+    CancelPedidoCommandHandler,
+    ConfirmPedidoCommandHandler,
+    CreatePedidoCommandHandler,
+    GetPedidoQueryHandler,
+    ListPedidosQueryHandler,
 )
-from application.examples.pedido.mappers import PedidoMapper
+from application.examples.pedido.mappers import PedidoExampleMapper
 from application.examples.pedido.queries import (
-    GetPedidoByIdQuery,
+    GetPedidoQuery,
     ListPedidosQuery,
 )
-from application.examples.pedido.use_cases import PedidoUseCase
+from application.examples.pedido.use_cases import PedidoExampleUseCase
 
 __all__ = [
     # Commands
     "CreatePedidoCommand",
-    "UpdatePedidoCommand",
-    "DeletePedidoCommand",
+    "AddItemToPedidoCommand",
+    "ConfirmPedidoCommand",
+    "CancelPedidoCommand",
     # Queries
-    "GetPedidoByIdQuery",
+    "GetPedidoQuery",
     "ListPedidosQuery",
     # Handlers
-    "CreatePedidoHandler",
-    "UpdatePedidoHandler",
-    "DeletePedidoHandler",
-    "GetPedidoByIdHandler",
-    "ListPedidosHandler",
+    "CreatePedidoCommandHandler",
+    "AddItemToPedidoCommandHandler",
+    "ConfirmPedidoCommandHandler",
+    "CancelPedidoCommandHandler",
+    "GetPedidoQueryHandler",
+    "ListPedidosQueryHandler",
     # DTOs
-    "PedidoCreate",
-    "PedidoUpdate",
-    "PedidoResponse",
+    "PedidoExampleCreate",
+    "PedidoExampleUpdate",
+    "PedidoExampleResponse",
     # Mapper
-    "PedidoMapper",
+    "PedidoExampleMapper",
     # Use Case
-    "PedidoUseCase",
+    "PedidoExampleUseCase",
 ]

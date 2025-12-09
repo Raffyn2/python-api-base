@@ -4,13 +4,15 @@
 """
 
 from application.examples.pedido.commands.commands import (
+    AddItemToPedidoCommand,
+    CancelPedidoCommand,
+    ConfirmPedidoCommand,
     CreatePedidoCommand,
-    DeletePedidoCommand,
-    UpdatePedidoCommand,
 )
 
 __all__ = [
     "CreatePedidoCommand",
-    "UpdatePedidoCommand",
-    "DeletePedidoCommand",
+    "AddItemToPedidoCommand",
+    "ConfirmPedidoCommand",
+    "CancelPedidoCommand",
 ]

@@ -16,7 +16,7 @@ from application.examples.pedido.commands import (
     CreatePedidoCommand,
 )
 from application.examples.pedido.dtos import PedidoExampleResponse
-from application.examples.pedido.mapper import PedidoExampleMapper
+from application.examples.pedido.mappers import PedidoExampleMapper
 from application.examples.pedido.queries import GetPedidoQuery, ListPedidosQuery
 from application.examples.shared.errors import (
     NotFoundError,

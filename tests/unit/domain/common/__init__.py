@@ -1,1 +1,1 @@
-"""Domain common tests."""
+"""Unit tests for domain/common modules."""

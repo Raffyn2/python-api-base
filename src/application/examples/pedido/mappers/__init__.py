@@ -3,6 +3,9 @@
 **Feature: example-system-demo**
 """
 
-from application.examples.pedido.mappers.mapper import PedidoMapper
+from application.examples.pedido.mappers.mapper import (
+    PedidoExampleMapper,
+    PedidoItemMapper,
+)
 
-__all__ = ["PedidoMapper"]
+__all__ = ["PedidoExampleMapper", "PedidoItemMapper"]

@@ -196,13 +196,17 @@ class TestContainerHooks:
         self, container: Container, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Test that hook exceptions are caught and logged."""
+        import logging
+
         hooks = Mock()
         hooks.on_service_registered = Mock(side_effect=RuntimeError("Hook failed"))
 
         container.add_hooks(hooks)
 
-        # Should not raise, hook exception should be caught
-        container.register_singleton(Database)
+        # Capture warnings from the di module
+        with caplog.at_level(logging.WARNING, logger="core.di.observability.metrics"):
+            # Should not raise, hook exception should be caught
+            container.register_singleton(Database)
 
         # Verify hook was called
         hooks.on_service_registered.assert_called_once()

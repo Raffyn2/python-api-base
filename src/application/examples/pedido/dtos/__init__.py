@@ -4,13 +4,23 @@
 """
 
 from application.examples.pedido.dtos.dtos import (
-    PedidoCreate,
-    PedidoResponse,
-    PedidoUpdate,
+    AddItemRequest,
+    CancelPedidoRequest,
+    ConfirmPedidoRequest,
+    PedidoExampleCreate,
+    PedidoExampleResponse,
+    PedidoExampleUpdate,
+    PedidoItemResponse,
+    UpdateStatusRequest,
 )
 
 __all__ = [
-    "PedidoCreate",
-    "PedidoUpdate",
-    "PedidoResponse",
+    "AddItemRequest",
+    "CancelPedidoRequest",
+    "ConfirmPedidoRequest",
+    "PedidoExampleCreate",
+    "PedidoExampleUpdate",
+    "PedidoExampleResponse",
+    "PedidoItemResponse",
+    "UpdateStatusRequest",
 ]

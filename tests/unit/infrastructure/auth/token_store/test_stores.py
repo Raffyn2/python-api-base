@@ -1,15 +1,18 @@
-"""Tests for token store implementations.
+"""Unit tests for token store implementations.
 
-**Feature: realistic-test-coverage**
-**Validates: Requirements 8.2, 8.3, 8.5**
+**Feature: test-coverage-80-percent-v3**
+**Validates: Requirements 4.2, 8.2, 8.3, 8.5**
 """
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from infrastructure.auth.token_store.models import StoredToken
 from infrastructure.auth.token_store.stores import (
     InMemoryTokenStore,
+    RedisTokenStore,
     _validate_token_input,
     get_token_store_sync,
 )
@@ -20,161 +23,269 @@ class TestValidateTokenInput:
 
     def test_valid_input(self) -> None:
         """Test valid input passes."""
-        expires = datetime.now(UTC) + timedelta(hours=1)
-        # Should not raise
-        _validate_token_input("jti-123", "user-456", expires)
+        _validate_token_input(
+            jti="token-123",
+            user_id="user-456",
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+        )
 
-    def test_empty_jti_fails(self) -> None:
-        """Test empty jti fails."""
-        expires = datetime.now(UTC) + timedelta(hours=1)
-        with pytest.raises(ValueError, match="jti"):
-            _validate_token_input("", "user-456", expires)
+    def test_empty_jti_raises(self) -> None:
+        """Test empty jti raises ValueError."""
+        with pytest.raises(ValueError, match="jti cannot be empty"):
+            _validate_token_input(
+                jti="",
+                user_id="user-456",
+                expires_at=datetime.now(UTC),
+            )
 
-    def test_whitespace_jti_fails(self) -> None:
-        """Test whitespace jti fails."""
-        expires = datetime.now(UTC) + timedelta(hours=1)
-        with pytest.raises(ValueError, match="jti"):
-            _validate_token_input("   ", "user-456", expires)
+    def test_whitespace_jti_raises(self) -> None:
+        """Test whitespace jti raises ValueError."""
+        with pytest.raises(ValueError, match="jti cannot be empty"):
+            _validate_token_input(
+                jti="   ",
+                user_id="user-456",
+                expires_at=datetime.now(UTC),
+            )
 
-    def test_empty_user_id_fails(self) -> None:
-        """Test empty user_id fails."""
-        expires = datetime.now(UTC) + timedelta(hours=1)
-        with pytest.raises(ValueError, match="user_id"):
-            _validate_token_input("jti-123", "", expires)
+    def test_empty_user_id_raises(self) -> None:
+        """Test empty user_id raises ValueError."""
+        with pytest.raises(ValueError, match="user_id cannot be empty"):
+            _validate_token_input(
+                jti="token-123",
+                user_id="",
+                expires_at=datetime.now(UTC),
+            )
 
-    def test_naive_datetime_fails(self) -> None:
-        """Test naive datetime fails."""
-        expires = datetime.now() + timedelta(hours=1)  # No timezone
-        with pytest.raises(ValueError, match="timezone"):
-            _validate_token_input("jti-123", "user-456", expires)
+    def test_naive_datetime_raises(self) -> None:
+        """Test naive datetime raises ValueError."""
+        with pytest.raises(ValueError, match="timezone-aware"):
+            _validate_token_input(
+                jti="token-123",
+                user_id="user-456",
+                expires_at=datetime.now(),  # Naive datetime
+            )
 
 
 class TestInMemoryTokenStore:
     """Tests for InMemoryTokenStore."""
 
-    @pytest.mark.asyncio
-    async def test_store_and_get(self) -> None:
-        """Test storing and retrieving token."""
-        store = InMemoryTokenStore()
-        expires = datetime.now(UTC) + timedelta(hours=1)
-        
-        await store.store("jti-123", "user-456", expires)
-        token = await store.get("jti-123")
-        
-        assert token is not None
-        assert token.jti == "jti-123"
-        assert token.user_id == "user-456"
+    @pytest.fixture
+    def store(self) -> InMemoryTokenStore:
+        """Create in-memory token store."""
+        return InMemoryTokenStore()
+
+    @pytest.fixture
+    def future_time(self) -> datetime:
+        """Create future expiration time."""
+        return datetime.now(UTC) + timedelta(hours=1)
 
     @pytest.mark.asyncio
-    async def test_get_not_found(self) -> None:
-        """Test getting non-existent token."""
-        store = InMemoryTokenStore()
-        token = await store.get("non-existent")
+    async def test_store_and_get(
+        self, store: InMemoryTokenStore, future_time: datetime
+    ) -> None:
+        """Test storing and retrieving token."""
+        await store.store("jti-1", "user-1", future_time)
+        
+        token = await store.get("jti-1")
+        
+        assert token is not None
+        assert token.jti == "jti-1"
+        assert token.user_id == "user-1"
+        assert token.revoked is False
+
+    @pytest.mark.asyncio
+    async def test_get_nonexistent_returns_none(
+        self, store: InMemoryTokenStore
+    ) -> None:
+        """Test getting nonexistent token returns None."""
+        token = await store.get("nonexistent")
         assert token is None
 
     @pytest.mark.asyncio
-    async def test_revoke(self) -> None:
+    async def test_revoke_token(
+        self, store: InMemoryTokenStore, future_time: datetime
+    ) -> None:
         """Test revoking token."""
-        store = InMemoryTokenStore()
-        expires = datetime.now(UTC) + timedelta(hours=1)
+        await store.store("jti-1", "user-1", future_time)
         
-        await store.store("jti-123", "user-456", expires)
-        result = await store.revoke("jti-123")
+        result = await store.revoke("jti-1")
         
         assert result is True
-        token = await store.get("jti-123")
+        token = await store.get("jti-1")
         assert token is not None
         assert token.revoked is True
 
     @pytest.mark.asyncio
-    async def test_revoke_not_found(self) -> None:
-        """Test revoking non-existent token."""
-        store = InMemoryTokenStore()
-        result = await store.revoke("non-existent")
+    async def test_revoke_nonexistent_returns_false(
+        self, store: InMemoryTokenStore
+    ) -> None:
+        """Test revoking nonexistent token returns False."""
+        result = await store.revoke("nonexistent")
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_revoke_all_for_user(self) -> None:
+    async def test_revoke_all_for_user(
+        self, store: InMemoryTokenStore, future_time: datetime
+    ) -> None:
         """Test revoking all tokens for user."""
-        store = InMemoryTokenStore()
-        expires = datetime.now(UTC) + timedelta(hours=1)
+        await store.store("jti-1", "user-1", future_time)
+        await store.store("jti-2", "user-1", future_time)
+        await store.store("jti-3", "user-2", future_time)
         
-        await store.store("jti-1", "user-456", expires)
-        await store.store("jti-2", "user-456", expires)
-        await store.store("jti-3", "user-789", expires)
-        
-        count = await store.revoke_all_for_user("user-456")
+        count = await store.revoke_all_for_user("user-1")
         
         assert count == 2
-        
-        token1 = await store.get("jti-1")
-        token2 = await store.get("jti-2")
-        token3 = await store.get("jti-3")
-        
-        assert token1.revoked is True
-        assert token2.revoked is True
-        assert token3.revoked is False
+        assert (await store.get("jti-1")).revoked is True
+        assert (await store.get("jti-2")).revoked is True
+        assert (await store.get("jti-3")).revoked is False
 
     @pytest.mark.asyncio
-    async def test_is_valid_true(self) -> None:
+    async def test_is_valid_for_valid_token(
+        self, store: InMemoryTokenStore, future_time: datetime
+    ) -> None:
         """Test is_valid returns True for valid token."""
-        store = InMemoryTokenStore()
-        expires = datetime.now(UTC) + timedelta(hours=1)
+        await store.store("jti-1", "user-1", future_time)
         
-        await store.store("jti-123", "user-456", expires)
-        result = await store.is_valid("jti-123")
-        
-        assert result is True
+        assert await store.is_valid("jti-1") is True
 
     @pytest.mark.asyncio
-    async def test_is_valid_false_revoked(self) -> None:
+    async def test_is_valid_for_revoked_token(
+        self, store: InMemoryTokenStore, future_time: datetime
+    ) -> None:
         """Test is_valid returns False for revoked token."""
-        store = InMemoryTokenStore()
-        expires = datetime.now(UTC) + timedelta(hours=1)
+        await store.store("jti-1", "user-1", future_time)
+        await store.revoke("jti-1")
         
-        await store.store("jti-123", "user-456", expires)
-        await store.revoke("jti-123")
-        result = await store.is_valid("jti-123")
-        
-        assert result is False
+        assert await store.is_valid("jti-1") is False
 
     @pytest.mark.asyncio
-    async def test_is_valid_false_not_found(self) -> None:
-        """Test is_valid returns False for non-existent token."""
-        store = InMemoryTokenStore()
-        result = await store.is_valid("non-existent")
-        assert result is False
+    async def test_is_valid_for_nonexistent_token(
+        self, store: InMemoryTokenStore
+    ) -> None:
+        """Test is_valid returns False for nonexistent token."""
+        assert await store.is_valid("nonexistent") is False
 
     @pytest.mark.asyncio
-    async def test_cleanup_expired(self) -> None:
-        """Test cleaning up expired tokens."""
-        store = InMemoryTokenStore()
+    async def test_cleanup_expired(self, store: InMemoryTokenStore) -> None:
+        """Test cleanup removes expired tokens."""
+        past_time = datetime.now(UTC) - timedelta(hours=1)
+        future_time = datetime.now(UTC) + timedelta(hours=1)
         
-        # Store expired token
-        expired = datetime.now(UTC) - timedelta(hours=1)
-        await store.store("jti-expired", "user-456", expired)
-        
-        # Store valid token
-        valid = datetime.now(UTC) + timedelta(hours=1)
-        await store.store("jti-valid", "user-456", valid)
+        await store.store("expired-1", "user-1", past_time)
+        await store.store("valid-1", "user-1", future_time)
         
         count = await store.cleanup_expired()
         
         assert count == 1
-        assert await store.get("jti-expired") is None
-        assert await store.get("jti-valid") is not None
+        assert await store.get("expired-1") is None
+        assert await store.get("valid-1") is not None
 
     @pytest.mark.asyncio
     async def test_max_entries_eviction(self) -> None:
         """Test eviction when max entries exceeded."""
         store = InMemoryTokenStore(max_entries=3)
-        expires = datetime.now(UTC) + timedelta(hours=1)
+        future_time = datetime.now(UTC) + timedelta(hours=1)
         
         for i in range(5):
-            await store.store(f"jti-{i}", "user-456", expires)
+            await store.store(f"jti-{i}", "user-1", future_time)
         
         # Should have evicted oldest entries
-        assert len(store._tokens) <= 3
+        assert await store.get("jti-0") is None
+        assert await store.get("jti-1") is None
+        assert await store.get("jti-4") is not None
+
+
+class TestRedisTokenStore:
+    """Tests for RedisTokenStore."""
+
+    @pytest.fixture
+    def mock_redis(self) -> AsyncMock:
+        """Create mock Redis client."""
+        redis = AsyncMock()
+        redis.exists = AsyncMock(return_value=0)
+        redis.get = AsyncMock(return_value=None)
+        redis.setex = AsyncMock()
+        redis.sadd = AsyncMock()
+        redis.smembers = AsyncMock(return_value=set())
+        redis.ttl = AsyncMock(return_value=3600)
+        redis.delete = AsyncMock()
+        redis.pipeline = MagicMock()
+        return redis
+
+    @pytest.fixture
+    def store(self, mock_redis: AsyncMock) -> RedisTokenStore:
+        """Create Redis token store."""
+        return RedisTokenStore(mock_redis)
+
+    @pytest.fixture
+    def future_time(self) -> datetime:
+        """Create future expiration time."""
+        return datetime.now(UTC) + timedelta(hours=1)
+
+    @pytest.mark.asyncio
+    async def test_store_token(
+        self, store: RedisTokenStore, mock_redis: AsyncMock, future_time: datetime
+    ) -> None:
+        """Test storing token in Redis."""
+        await store.store("jti-1", "user-1", future_time)
+        
+        mock_redis.setex.assert_called()
+        mock_redis.sadd.assert_called()
+
+    @pytest.mark.asyncio
+    async def test_get_nonexistent_returns_none(
+        self, store: RedisTokenStore
+    ) -> None:
+        """Test getting nonexistent token returns None."""
+        token = await store.get("nonexistent")
+        assert token is None
+
+    @pytest.mark.asyncio
+    async def test_is_revoked_false(
+        self, store: RedisTokenStore, mock_redis: AsyncMock
+    ) -> None:
+        """Test is_revoked returns False when not revoked."""
+        mock_redis.exists.return_value = 0
+        
+        result = await store.is_revoked("jti-1")
+        
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_is_revoked_true(
+        self, store: RedisTokenStore, mock_redis: AsyncMock
+    ) -> None:
+        """Test is_revoked returns True when revoked."""
+        mock_redis.exists.return_value = 1
+        
+        result = await store.is_revoked("jti-1")
+        
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_add_to_blacklist(
+        self, store: RedisTokenStore, mock_redis: AsyncMock
+    ) -> None:
+        """Test adding token to blacklist."""
+        await store.add_to_blacklist("jti-1", 3600)
+        
+        mock_redis.setex.assert_called_with("revoked:jti-1", 3600, "1")
+
+    @pytest.mark.asyncio
+    async def test_cleanup_expired_returns_zero(
+        self, store: RedisTokenStore
+    ) -> None:
+        """Test cleanup returns 0 (Redis handles TTL)."""
+        count = await store.cleanup_expired()
+        assert count == 0
+
+    @pytest.mark.asyncio
+    async def test_is_valid_nonexistent(
+        self, store: RedisTokenStore
+    ) -> None:
+        """Test is_valid returns False for nonexistent token."""
+        result = await store.is_valid("nonexistent")
+        assert result is False
 
 
 class TestGetTokenStoreSync:

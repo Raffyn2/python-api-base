@@ -319,3 +319,112 @@ class TestResultRoundTrip:
         d = original.to_dict()
         restored = result_from_dict(d)
         assert restored.error == original.error
+
+
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
+
+class TestResultMonadLawsProperties:
+    """Property-based tests for Result monad laws.
+
+    **Feature: test-coverage-80-percent-v3, Property 11: Result Type Monad Laws**
+    **Validates: Requirements 4.3**
+    """
+
+    @given(value=st.integers())
+    @settings(max_examples=100, deadline=5000)
+    def test_left_identity(self, value: int) -> None:
+        """Property: Left identity - return a >>= f ≡ f a.
+
+        **Feature: test-coverage-80-percent-v3, Property 11: Result Type Monad Laws**
+        **Validates: Requirements 4.3**
+        """
+        f = lambda x: Ok(x * 2)
+
+        # return a >>= f
+        left = Ok(value).bind(f)
+        # f a
+        right = f(value)
+
+        assert left.unwrap() == right.unwrap()
+
+    @given(value=st.integers())
+    @settings(max_examples=100, deadline=5000)
+    def test_right_identity(self, value: int) -> None:
+        """Property: Right identity - m >>= return ≡ m.
+
+        **Feature: test-coverage-80-percent-v3, Property 11: Result Type Monad Laws**
+        **Validates: Requirements 4.3**
+        """
+        m = Ok(value)
+
+        # m >>= return
+        result = m.bind(lambda x: Ok(x))
+
+        assert result.unwrap() == m.unwrap()
+
+    @given(value=st.integers())
+    @settings(max_examples=100, deadline=5000)
+    def test_associativity(self, value: int) -> None:
+        """Property: Associativity - (m >>= f) >>= g ≡ m >>= (λx → f x >>= g).
+
+        **Feature: test-coverage-80-percent-v3, Property 11: Result Type Monad Laws**
+        **Validates: Requirements 4.3**
+        """
+        f = lambda x: Ok(x + 1)
+        g = lambda x: Ok(x * 2)
+        m = Ok(value)
+
+        # (m >>= f) >>= g
+        left = m.bind(f).bind(g)
+        # m >>= (λx → f x >>= g)
+        right = m.bind(lambda x: f(x).bind(g))
+
+        assert left.unwrap() == right.unwrap()
+
+    @given(value=st.integers(), error=st.text(min_size=1, max_size=20))
+    @settings(max_examples=100, deadline=5000)
+    def test_err_propagation(self, value: int, error: str) -> None:
+        """Property: Err propagates through bind operations.
+
+        **Feature: test-coverage-80-percent-v3, Property 11: Result Type Monad Laws**
+        **Validates: Requirements 4.3**
+        """
+        err_result = Err(error)
+        f = lambda x: Ok(x * 2)
+
+        result = err_result.bind(f)
+
+        assert result.is_err()
+        assert result.error == error
+
+    @given(value=st.integers())
+    @settings(max_examples=100, deadline=5000)
+    def test_map_preserves_ok(self, value: int) -> None:
+        """Property: map preserves Ok structure.
+
+        **Feature: test-coverage-80-percent-v3, Property 11: Result Type Monad Laws**
+        **Validates: Requirements 4.3**
+        """
+        result = Ok(value).map(lambda x: x * 2)
+
+        assert result.is_ok()
+        assert result.unwrap() == value * 2
+
+    @given(
+        value=st.one_of(st.integers(), st.text(max_size=50)),
+    )
+    @settings(max_examples=100, deadline=5000)
+    def test_round_trip_serialization(self, value) -> None:
+        """Property: to_dict/from_dict round-trip preserves value.
+
+        **Feature: test-coverage-80-percent-v3, Property 11: Result Type Monad Laws**
+        **Validates: Requirements 4.3**
+        """
+        original = Ok(value)
+        serialized = original.to_dict()
+        restored = result_from_dict(serialized)
+
+        assert restored.is_ok()
+        assert restored.unwrap() == value

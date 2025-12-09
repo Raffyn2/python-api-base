@@ -79,7 +79,10 @@ class ItemExampleCreated(DomainEvent):
     item_id: str
     name: str
     price_amount: Decimal
-    occurred_at: datetime = field(default_factory=utc_now)
+
+    @property
+    def event_type(self) -> str:
+        return "item_example.created"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -88,7 +91,10 @@ class ItemExampleUpdated(DomainEvent):
 
     item_id: str
     changes: dict[str, Any]
-    occurred_at: datetime = field(default_factory=utc_now)
+
+    @property
+    def event_type(self) -> str:
+        return "item_example.updated"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -96,7 +102,10 @@ class ItemExampleDeleted(DomainEvent):
     """Event raised when an ItemExample is soft-deleted."""
 
     item_id: str
-    occurred_at: datetime = field(default_factory=utc_now)
+
+    @property
+    def event_type(self) -> str:
+        return "item_example.deleted"
 
 
 # === Entity ===
