@@ -48,13 +48,13 @@ class TestUpdateUserCommand:
 class TestUpdateUserHandler:
     """Tests for UpdateUserHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repository(self) -> AsyncMock:
         """Create mock user repository."""
         repo = AsyncMock()
         return repo
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, mock_repository: AsyncMock) -> UpdateUserHandler:
         """Create handler with mocked dependencies."""
         return UpdateUserHandler(user_repository=mock_repository)

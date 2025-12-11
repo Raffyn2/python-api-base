@@ -4,19 +4,10 @@
 **Requirements: Repository caching with automatic invalidation**
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
-
 from infrastructure.cache.repository import (
-    CACHED_METHODS,
-    INVALIDATING_METHODS,
     RepositoryCacheConfig,
     _get_entity_name,
-    _get_invalidation_pattern,
     _make_cache_key,
-    cached_repository,
-    invalidate_repository_cache,
 )
 
 
@@ -87,4 +78,3 @@ class TestMakeCacheKey:
 
     def test_get_all_key_with_args(self) -> None:
         """Should create key for get_all with args."""
-        result = _make_cache_key

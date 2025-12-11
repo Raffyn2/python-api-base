@@ -8,10 +8,10 @@ Demonstrates Redis cache usage with TTL and pattern operations.
 
 from __future__ import annotations
 
-import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+import structlog
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from core.config import (
@@ -20,7 +20,10 @@ from core.config import (
     STORAGE_TTL_MIN_SECONDS,
 )
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from fastapi import Request
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/cache", tags=["Cache"])
 
@@ -34,9 +37,7 @@ class CacheSetRequest(BaseModel):
     """Request to set cache value."""
 
     key: str = Field(..., min_length=1, max_length=256, examples=["user:123"])
-    value: dict[str, Any] = Field(
-        ..., examples=[{"name": "John", "email": "john@example.com"}]
-    )
+    value: dict[str, Any] = Field(..., examples=[{"name": "John", "email": "john@example.com"}])
     ttl: int | None = Field(
         default=STORAGE_TTL_DEFAULT_SECONDS,
         ge=STORAGE_TTL_MIN_SECONDS,

@@ -35,9 +35,7 @@ class TestFingerprintComponentExclusion:
         ip=st.ip_addresses(v=4).map(str),
         user_agent=st.text(min_size=1, max_size=100),
     )
-    def test_excluded_components_not_in_fingerprint(
-        self, ip: str, user_agent: str
-    ) -> None:
+    def test_excluded_components_not_in_fingerprint(self, ip: str, user_agent: str) -> None:
         """Excluded components should not appear in fingerprint."""
         config = FingerprintConfig(
             components={
@@ -71,9 +69,7 @@ class TestFingerprintValidityWithoutIP:
         user_agent=st.text(min_size=1, max_size=100),
         accept_language=st.text(min_size=1, max_size=50),
     )
-    def test_fingerprint_valid_without_ip(
-        self, user_agent: str, accept_language: str
-    ) -> None:
+    def test_fingerprint_valid_without_ip(self, user_agent: str, accept_language: str) -> None:
         """Fingerprint should be valid even without IP component."""
         config = FingerprintConfig(
             components={

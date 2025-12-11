@@ -8,16 +8,11 @@ or with external systems, unlike domain events which are internal.
 """
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
-try:
-    from core.shared.utils.time import utc_now
-except ImportError:
-
-    def utc_now() -> datetime:
-        return datetime.now(UTC)
+from core.shared.utils.time import utc_now
 
 
 @dataclass(frozen=True, slots=True)

@@ -6,15 +6,10 @@ Tests error serialization consistency using Hypothesis.
 **Requirements: 2.2**
 """
 
-import pytest
 from hypothesis import given, settings, strategies as st
 
 from core.errors.base.domain_errors import (
     AppError,
-    AuthenticationError,
-    AuthorizationError,
-    BusinessRuleViolationError,
-    ConflictError,
     EntityNotFoundError,
     ErrorContext,
     RateLimitExceededError,
@@ -30,9 +25,7 @@ class TestErrorContextProperties:
         request_path=st.text(min_size=1, max_size=100).filter(str.strip),
     )
     @settings(max_examples=100)
-    def test_to_dict_preserves_values(
-        self, correlation_id: str, request_path: str
-    ) -> None:
+    def test_to_dict_preserves_values(self, correlation_id: str, request_path: str) -> None:
         """Property: to_dict preserves all context values."""
         ctx = ErrorContext(
             correlation_id=correlation_id,
@@ -58,9 +51,7 @@ class TestAppErrorProperties:
         status_code=st.integers(min_value=400, max_value=599),
     )
     @settings(max_examples=100)
-    def test_to_dict_contains_all_fields(
-        self, message: str, error_code: str, status_code: int
-    ) -> None:
+    def test_to_dict_contains_all_fields(self, message: str, error_code: str, status_code: int) -> None:
         """Property: to_dict contains all required fields."""
         error = AppError(
             message=message,
@@ -101,9 +92,7 @@ class TestEntityNotFoundErrorProperties:
         entity_id=st.text(min_size=1, max_size=50).filter(str.strip),
     )
     @settings(max_examples=100)
-    def test_message_contains_entity_info(
-        self, entity_type: str, entity_id: str
-    ) -> None:
+    def test_message_contains_entity_info(self, entity_type: str, entity_id: str) -> None:
         """Property: Message contains entity type and ID."""
         error = EntityNotFoundError(entity_type=entity_type, entity_id=entity_id)
 

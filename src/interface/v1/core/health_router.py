@@ -12,19 +12,19 @@ Provides Kubernetes-compatible health probes:
 """
 
 import asyncio
-import logging
 import time
 from collections.abc import Callable, Coroutine
 from enum import Enum
 from typing import Any
 
+import structlog
 from fastapi import APIRouter, Query, Request, Response
 from pydantic import BaseModel
 from sqlalchemy import text
 
 from infrastructure.observability.telemetry import get_telemetry
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 router = APIRouter(tags=["Health"])
 
 # Default timeout for health checks (seconds)
@@ -92,7 +92,12 @@ def _emit_status_change_metric(
     global _last_status
 
     if old_status != new_status:
-        logger.info(f"Health status changed: {old_status} -> {new_status}")
+        logger.info(
+            "Health status changed",
+            old_status=str(old_status),
+            new_status=new_status.value,
+            operation="HEALTH_STATUS_CHANGE",
+        )
         if _health_counter:
             _health_counter.add(
                 1,

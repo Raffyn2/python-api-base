@@ -94,11 +94,7 @@ class InMemoryAuditStore:
         limit: int = 100,
     ) -> Sequence[AuditRecord[Any]]:
         """Get audit records for an entity."""
-        records = [
-            r
-            for r in self._records.values()
-            if r.entity_type == entity_type and r.entity_id == entity_id
-        ]
+        records = [r for r in self._records.values() if r.entity_type == entity_type and r.entity_id == entity_id]
         records.sort(key=lambda r: r.timestamp, reverse=True)
         return records[:limit]
 

@@ -7,18 +7,20 @@ for Prometheus monitoring.
 from __future__ import annotations
 
 import time
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from grpc import StatusCode, aio
+from grpc import aio
 from structlog import get_logger
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = get_logger(__name__)
 
 
 class MetricsInterceptor(aio.ServerInterceptor):
     """Prometheus metrics interceptor.
-    
+
     Records request count, latency, and status for gRPC calls.
     """
 
@@ -28,7 +30,7 @@ class MetricsInterceptor(aio.ServerInterceptor):
         subsystem: str = "server",
     ) -> None:
         """Initialize metrics interceptor.
-        
+
         Args:
             namespace: Prometheus metric namespace
             subsystem: Prometheus metric subsystem
@@ -41,7 +43,7 @@ class MetricsInterceptor(aio.ServerInterceptor):
         """Create Prometheus metrics."""
         try:
             from prometheus_client import Counter, Histogram
-            
+
             return {
                 "requests_total": Counter(
                     f"{self._namespace}_{self._subsystem}_requests_total",
@@ -66,11 +68,11 @@ class MetricsInterceptor(aio.ServerInterceptor):
         handler_call_details: aio.HandlerCallDetails,
     ) -> aio.RpcMethodHandler:
         """Intercept and record metrics for gRPC requests.
-        
+
         Args:
             continuation: The next handler in chain
             handler_call_details: Details about the RPC call
-            
+
         Returns:
             The RPC method handler
         """
@@ -133,14 +135,14 @@ class MetricsInterceptor(aio.ServerInterceptor):
     ) -> None:
         """Record metrics for a completed request."""
         duration = time.perf_counter() - start_time
-        
-        if "requests_total" in self._metrics and self._metrics["requests_total"]:
+
+        if self._metrics.get("requests_total"):
             self._metrics["requests_total"].labels(
                 method=method,
                 status=status,
             ).inc()
-        
-        if "request_duration_seconds" in self._metrics and self._metrics["request_duration_seconds"]:
+
+        if self._metrics.get("request_duration_seconds"):
             self._metrics["request_duration_seconds"].labels(
                 method=method,
             ).observe(duration)

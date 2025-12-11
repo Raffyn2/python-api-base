@@ -26,7 +26,7 @@ class ExportFormat(str, Enum):
     JSONL = "jsonl"
 
 
-@dataclass
+@dataclass(slots=True)
 class ExportMetadata:
     """Metadata for export operations."""
 
@@ -37,7 +37,7 @@ class ExportMetadata:
     version: str = "1.0"
 
 
-@dataclass
+@dataclass(slots=True)
 class ExportResult:
     """Result of an export operation."""
 
@@ -46,7 +46,7 @@ class ExportResult:
     content_type: str
 
 
-@dataclass
+@dataclass(slots=True)
 class ImportResult:
     """Result of an import operation."""
 
@@ -150,21 +150,23 @@ class ItemExampleExportService:
             writer.writeheader()
 
             for dto in dtos:
-                writer.writerow({
-                    "id": dto.id,
-                    "name": dto.name,
-                    "description": dto.description,
-                    "sku": dto.sku,
-                    "price_amount": str(dto.price.amount),
-                    "price_currency": dto.price.currency,
-                    "quantity": dto.quantity,
-                    "status": dto.status,
-                    "category": dto.category,
-                    "tags": ",".join(dto.tags),
-                    "is_available": dto.is_available,
-                    "created_at": dto.created_at.isoformat() if dto.created_at else "",
-                    "updated_at": dto.updated_at.isoformat() if dto.updated_at else "",
-                })
+                writer.writerow(
+                    {
+                        "id": dto.id,
+                        "name": dto.name,
+                        "description": dto.description,
+                        "sku": dto.sku,
+                        "price_amount": str(dto.price.amount),
+                        "price_currency": dto.price.currency,
+                        "quantity": dto.quantity,
+                        "status": dto.status,
+                        "category": dto.category,
+                        "tags": ",".join(dto.tags),
+                        "is_available": dto.is_available,
+                        "created_at": dto.created_at.isoformat() if dto.created_at else "",
+                        "updated_at": dto.updated_at.isoformat() if dto.updated_at else "",
+                    }
+                )
 
         csv_str = output.getvalue()
         checksum = self._compute_checksum(csv_str)

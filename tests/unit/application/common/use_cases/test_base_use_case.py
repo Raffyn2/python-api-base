@@ -10,9 +10,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from application.common.dto import PaginatedResponse
-from application.common.errors import NotFoundError, ValidationError
-from application.common.use_cases import BaseUseCase
-from core.base.patterns.result import Err, Ok
+from application.common.errors import NotFoundError
+from application.common.use_cases.base.use_case import BaseUseCase
 
 
 @dataclass
@@ -43,12 +42,12 @@ class SampleUseCase(BaseUseCase[SampleEntity, str]):
 class TestBaseUseCaseGet:
     """Tests for get operations."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repo(self) -> AsyncMock:
         """Create mock repository."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_uow(self) -> MagicMock:
         """Create mock unit of work."""
         uow = MagicMock()
@@ -57,15 +56,13 @@ class TestBaseUseCaseGet:
         uow.commit = AsyncMock()
         return uow
 
-    @pytest.fixture
+    @pytest.fixture()
     def use_case(self, mock_repo: AsyncMock, mock_uow: MagicMock) -> SampleUseCase:
         """Create use case instance."""
         return SampleUseCase(mock_repo, mock_uow)
 
     @pytest.mark.asyncio
-    async def test_get_returns_entity(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_get_returns_entity(self, use_case: SampleUseCase, mock_repo: AsyncMock) -> None:
         """Test get returns entity when found."""
         entity = SampleEntity(id="1", name="Test")
         mock_repo.get_by_id = AsyncMock(return_value=entity)
@@ -76,9 +73,7 @@ class TestBaseUseCaseGet:
         mock_repo.get_by_id.assert_called_once_with("1")
 
     @pytest.mark.asyncio
-    async def test_get_raises_not_found(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_get_raises_not_found(self, use_case: SampleUseCase, mock_repo: AsyncMock) -> None:
         """Test get raises NotFoundError when not found."""
         mock_repo.get_by_id = AsyncMock(return_value=None)
 
@@ -86,9 +81,7 @@ class TestBaseUseCaseGet:
             await use_case.get("1", raise_on_missing=True)
 
     @pytest.mark.asyncio
-    async def test_get_returns_none_when_not_raising(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_get_returns_none_when_not_raising(self, use_case: SampleUseCase, mock_repo: AsyncMock) -> None:
         """Test get returns None when raise_on_missing=False."""
         mock_repo.get_by_id = AsyncMock(return_value=None)
 
@@ -97,9 +90,7 @@ class TestBaseUseCaseGet:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_result_returns_ok(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_get_result_returns_ok(self, use_case: SampleUseCase, mock_repo: AsyncMock) -> None:
         """Test get_result returns Ok when found."""
         entity = SampleEntity(id="1", name="Test")
         mock_repo.get_by_id = AsyncMock(return_value=entity)
@@ -110,9 +101,7 @@ class TestBaseUseCaseGet:
         assert result.value == entity
 
     @pytest.mark.asyncio
-    async def test_get_result_returns_err(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_get_result_returns_err(self, use_case: SampleUseCase, mock_repo: AsyncMock) -> None:
         """Test get_result returns Err when not found."""
         mock_repo.get_by_id = AsyncMock(return_value=None)
 
@@ -124,12 +113,12 @@ class TestBaseUseCaseGet:
 class TestBaseUseCaseList:
     """Tests for list operations."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repo(self) -> AsyncMock:
         """Create mock repository."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_uow(self) -> MagicMock:
         """Create mock unit of work."""
         uow = MagicMock()
@@ -138,15 +127,13 @@ class TestBaseUseCaseList:
         uow.commit = AsyncMock()
         return uow
 
-    @pytest.fixture
+    @pytest.fixture()
     def use_case(self, mock_repo: AsyncMock, mock_uow: MagicMock) -> SampleUseCase:
         """Create use case instance."""
         return SampleUseCase(mock_repo, mock_uow)
 
     @pytest.mark.asyncio
-    async def test_list_returns_paginated_response(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_list_returns_paginated_response(self, use_case: SampleUseCase, mock_repo: AsyncMock) -> None:
         """Test list returns PaginatedResponse."""
         entities = [SampleEntity(id="1", name="One"), SampleEntity(id="2", name="Two")]
         mock_repo.get_all = AsyncMock(return_value=(entities, 2))
@@ -160,9 +147,7 @@ class TestBaseUseCaseList:
         assert result.size == 10
 
     @pytest.mark.asyncio
-    async def test_list_calculates_skip(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_list_calculates_skip(self, use_case: SampleUseCase, mock_repo: AsyncMock) -> None:
         """Test list calculates skip correctly."""
         mock_repo.get_all = AsyncMock(return_value=([], 0))
 
@@ -174,9 +159,7 @@ class TestBaseUseCaseList:
         assert call_kwargs["limit"] == 10
 
     @pytest.mark.asyncio
-    async def test_list_passes_filters(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_list_passes_filters(self, use_case: SampleUseCase, mock_repo: AsyncMock) -> None:
         """Test list passes filters to repository."""
         mock_repo.get_all = AsyncMock(return_value=([], 0))
         filters = {"status": "active"}
@@ -190,12 +173,12 @@ class TestBaseUseCaseList:
 class TestBaseUseCaseCreate:
     """Tests for create operations."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repo(self) -> AsyncMock:
         """Create mock repository."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_uow(self) -> MagicMock:
         """Create mock unit of work."""
         uow = MagicMock()
@@ -204,15 +187,13 @@ class TestBaseUseCaseCreate:
         uow.commit = AsyncMock()
         return uow
 
-    @pytest.fixture
+    @pytest.fixture()
     def use_case(self, mock_repo: AsyncMock, mock_uow: MagicMock) -> SampleUseCase:
         """Create use case instance."""
         return SampleUseCase(mock_repo, mock_uow)
 
     @pytest.mark.asyncio
-    async def test_create_returns_ok(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock, mock_uow: MagicMock
-    ) -> None:
+    async def test_create_returns_ok(self, use_case: SampleUseCase, mock_repo: AsyncMock, mock_uow: MagicMock) -> None:
         """Test create returns Ok on success."""
         entity = SampleEntity(id="1", name="Test")
         mock_repo.create = AsyncMock(return_value=entity)
@@ -240,12 +221,12 @@ class TestBaseUseCaseCreate:
 class TestBaseUseCaseUpdate:
     """Tests for update operations."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repo(self) -> AsyncMock:
         """Create mock repository."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_uow(self) -> MagicMock:
         """Create mock unit of work."""
         uow = MagicMock()
@@ -254,15 +235,13 @@ class TestBaseUseCaseUpdate:
         uow.commit = AsyncMock()
         return uow
 
-    @pytest.fixture
+    @pytest.fixture()
     def use_case(self, mock_repo: AsyncMock, mock_uow: MagicMock) -> SampleUseCase:
         """Create use case instance."""
         return SampleUseCase(mock_repo, mock_uow)
 
     @pytest.mark.asyncio
-    async def test_update_returns_ok(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock, mock_uow: MagicMock
-    ) -> None:
+    async def test_update_returns_ok(self, use_case: SampleUseCase, mock_repo: AsyncMock, mock_uow: MagicMock) -> None:
         """Test update returns Ok on success."""
         entity = SampleEntity(id="1", name="Updated")
         mock_repo.update = AsyncMock(return_value=entity)
@@ -273,9 +252,7 @@ class TestBaseUseCaseUpdate:
         assert result.value == entity
 
     @pytest.mark.asyncio
-    async def test_update_returns_err_not_found(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_update_returns_err_not_found(self, use_case: SampleUseCase, mock_repo: AsyncMock) -> None:
         """Test update returns Err when not found."""
         mock_repo.update = AsyncMock(return_value=None)
 
@@ -287,12 +264,12 @@ class TestBaseUseCaseUpdate:
 class TestBaseUseCaseDelete:
     """Tests for delete operations."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repo(self) -> AsyncMock:
         """Create mock repository."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_uow(self) -> MagicMock:
         """Create mock unit of work."""
         uow = MagicMock()
@@ -301,15 +278,13 @@ class TestBaseUseCaseDelete:
         uow.commit = AsyncMock()
         return uow
 
-    @pytest.fixture
+    @pytest.fixture()
     def use_case(self, mock_repo: AsyncMock, mock_uow: MagicMock) -> SampleUseCase:
         """Create use case instance."""
         return SampleUseCase(mock_repo, mock_uow)
 
     @pytest.mark.asyncio
-    async def test_delete_returns_ok(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock, mock_uow: MagicMock
-    ) -> None:
+    async def test_delete_returns_ok(self, use_case: SampleUseCase, mock_repo: AsyncMock, mock_uow: MagicMock) -> None:
         """Test delete returns Ok on success."""
         mock_repo.delete = AsyncMock(return_value=True)
 
@@ -319,9 +294,7 @@ class TestBaseUseCaseDelete:
         assert result.value is True
 
     @pytest.mark.asyncio
-    async def test_delete_returns_err_not_found(
-        self, use_case: SampleUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_delete_returns_err_not_found(self, use_case: SampleUseCase, mock_repo: AsyncMock) -> None:
         """Test delete returns Err when not found."""
         mock_repo.delete = AsyncMock(return_value=False)
 

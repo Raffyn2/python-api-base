@@ -41,15 +41,20 @@ from core.types.data.string_types import (
 )
 
 __all__ = [
+    # String Types
+    "Email",
     # JSON Types
     "FilterDict",
     "Headers",
+    "HttpUrl",
+    "ISODateStr",
     "JSONArray",
     "JSONObject",
     "JSONPrimitive",
     "JSONValue",
-    "QueryParams",
-    "SortOrder",
+    "LongStr",
+    "MediumStr",
+    "NonEmptyStr",
     # Numeric Types
     "NonNegativeFloat",
     "NonNegativeInt",
@@ -57,18 +62,13 @@ __all__ = [
     "PageSize",
     "Percentage",
     "PercentageRange",
+    "PhoneNumber",
     "PositiveFloat",
     "PositiveInt",
-    # String Types
-    "Email",
-    "HttpUrl",
-    "ISODateStr",
-    "LongStr",
-    "MediumStr",
-    "NonEmptyStr",
-    "PhoneNumber",
+    "QueryParams",
     "ShortStr",
     "Slug",
+    "SortOrder",
     "TrimmedStr",
     "URLPath",
     "VersionStr",

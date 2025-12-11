@@ -8,17 +8,24 @@ This module provides:
 
 **Feature: python-api-base-2025-state-of-art**
 **Validates: Requirements 2.1, 2.2, 2.3**
+**Refactored: 2025 - Fixed logging, added validation, improved type safety**
 """
 
-import logging
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+import structlog
+
 from application.common.cqrs.exceptions.exceptions import HandlerNotFoundError
 from core.base.patterns.result import Ok, Result
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+
+# Module constants
+_LOG_OP_REGISTER = "COMMAND_REGISTER"
+_LOG_OP_DISPATCH = "COMMAND_DISPATCH"
+_LOG_OP_EVENT = "EVENT_EMISSION"
 
 
 # =============================================================================
@@ -64,13 +71,14 @@ class Command[T, E](ABC):
 # Command Handler Types
 # =============================================================================
 
-CommandHandler = Callable[[Any], Awaitable[Any]]
+type CommandHandlerFunc = Callable[[Any], Awaitable[Any]]
 """Type alias for command handler functions.
 
 A command handler is an async function that takes a command and returns a Result.
+Note: Named CommandHandlerFunc to avoid conflict with CommandHandler class in handlers.py.
 """
 
-MiddlewareFunc = Callable[[Any, Callable[..., Awaitable[Any]]], Awaitable[Any]]
+type MiddlewareFunc = Callable[[Any, Callable[..., Awaitable[Any]]], Awaitable[Any]]
 """Type alias for middleware functions.
 
 Middleware wraps command execution for cross-cutting concerns like logging,
@@ -100,14 +108,14 @@ class CommandBus:
 
     def __init__(self) -> None:
         """Initialize command bus."""
-        self._handlers: dict[type, CommandHandler] = {}
+        self._handlers: dict[type, CommandHandlerFunc] = {}
         self._middleware: list[MiddlewareFunc] = []
         self._event_handlers: list[Callable[[Any], Any]] = []
 
     def register(
         self,
         command_type: type[Command[Any, Any]],
-        handler: CommandHandler,
+        handler: CommandHandlerFunc,
     ) -> None:
         """Register a handler for a command type.
 
@@ -119,9 +127,14 @@ class CommandBus:
             ValueError: If handler is already registered for this type.
         """
         if command_type in self._handlers:
-            raise ValueError(f"Handler already registered for {command_type.__name__}")
+            msg = f"Handler already registered for {command_type.__name__}"
+            raise ValueError(msg)
         self._handlers[command_type] = handler
-        logger.debug(f"Registered handler for {command_type.__name__}")
+        logger.debug(
+            "Registered command handler",
+            command_type=command_type.__name__,
+            operation=_LOG_OP_REGISTER,
+        )
 
     def unregister(self, command_type: type[Command[Any, Any]]) -> None:
         """Unregister a handler for a command type.
@@ -130,7 +143,10 @@ class CommandBus:
             command_type: The command class to unregister.
         """
         self._handlers.pop(command_type, None)
-        logger.debug(f"Unregistered handler for {command_type.__name__}")
+        logger.debug(
+            "Unregistered command handler",
+            command_type=command_type.__name__,
+        )
 
     def add_middleware(self, middleware: MiddlewareFunc) -> None:
         """Add middleware to the command pipeline.
@@ -139,9 +155,18 @@ class CommandBus:
 
         Args:
             middleware: Async function (command, next) -> result.
+
+        Raises:
+            TypeError: If middleware is not callable.
         """
+        if not callable(middleware):
+            msg = "Middleware must be callable"
+            raise TypeError(msg)
         self._middleware.append(middleware)
-        logger.debug("Added middleware to command bus")
+        logger.debug(
+            "Added middleware to command bus",
+            middleware_count=len(self._middleware),
+        )
 
     def add_transaction_middleware(self, uow_factory: Callable[[], Any]) -> None:
         """Add transaction middleware for automatic UoW management.
@@ -153,6 +178,7 @@ class CommandBus:
             This method provides a hook for transaction management.
             Implement custom middleware using add_middleware() for UoW handling.
         """
+
         async def transaction_middleware(
             command: Any,
             next_handler: Callable[..., Awaitable[Any]],
@@ -179,9 +205,18 @@ class CommandBus:
 
         Args:
             handler: Async function that handles events.
+
+        Raises:
+            TypeError: If handler is not callable.
         """
+        if not callable(handler):
+            msg = "Event handler must be callable"
+            raise TypeError(msg)
         self._event_handlers.append(handler)
-        logger.debug("Registered event handler")
+        logger.debug(
+            "Registered event handler",
+            handler_count=len(self._event_handlers),
+        )
 
     async def dispatch[T, E](
         self,
@@ -213,7 +248,11 @@ class CommandBus:
             chain = self._wrap_middleware(middleware, chain)
 
         # Execute command through middleware chain
-        logger.debug(f"Dispatching command {command_type.__name__}")
+        logger.debug(
+            "Dispatching command",
+            command_type=command_type.__name__,
+            operation=_LOG_OP_DISPATCH,
+        )
         result = await chain(command)
 
         # Emit events on success
@@ -259,7 +298,11 @@ class CommandBus:
             return []
 
         errors: list[Exception] = []
-        logger.debug(f"Emitting {len(events)} events")
+        logger.debug(
+            "Emitting domain events",
+            event_count=len(events),
+            operation=_LOG_OP_EVENT,
+        )
 
         for event in events:
             event_type = type(event).__name__
@@ -267,16 +310,18 @@ class CommandBus:
                 handler_name = getattr(handler, "__name__", type(handler).__name__)
                 try:
                     await handler(event)
-                    logger.debug(f"Event {event_type} handled by {handler_name}")
+                    logger.debug(
+                        "Event handled successfully",
+                        event_type=event_type,
+                        handler=handler_name,
+                        operation=_LOG_OP_EVENT,
+                    )
                 except Exception as e:
-                    logger.error(
-                        f"Event handler {handler_name} failed for {event_type}: {e}",
-                        exc_info=True,
-                        extra={
-                            "event_type": event_type,
-                            "handler": handler_name,
-                            "operation": "EVENT_EMISSION",
-                        },
+                    logger.exception(
+                        "Event handler failed",
+                        event_type=event_type,
+                        handler=handler_name,
+                        operation=_LOG_OP_EVENT,
                     )
                     errors.append(e)
                     if raise_on_error:

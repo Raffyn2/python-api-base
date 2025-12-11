@@ -106,11 +106,11 @@ class SampleCacheInvalidationStrategy(CacheInvalidationStrategy):
 class TestCacheInvalidationStrategy:
     """Tests for CacheInvalidationStrategy."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def cache(self) -> MockQueryCache:
         return MockQueryCache()
 
-    @pytest.fixture
+    @pytest.fixture()
     def strategy(self, cache: MockQueryCache) -> SampleCacheInvalidationStrategy:
         return SampleCacheInvalidationStrategy(cache)
 
@@ -151,7 +151,7 @@ class TestCacheInvalidationStrategy:
 class TestCompositeCacheInvalidationStrategy:
     """Tests for CompositeCacheInvalidationStrategy."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def cache(self) -> MockQueryCache:
         return MockQueryCache()
 
@@ -163,9 +163,7 @@ class TestCompositeCacheInvalidationStrategy:
         assert len(composite._strategies) == 1
 
     @pytest.mark.asyncio
-    async def test_on_event_delegates_to_strategies(
-        self, cache: MockQueryCache
-    ) -> None:
+    async def test_on_event_delegates_to_strategies(self, cache: MockQueryCache) -> None:
         composite = CompositeCacheInvalidationStrategy(cache)
         strategy = SampleCacheInvalidationStrategy(cache)
         composite.add_strategy(strategy)
@@ -195,7 +193,7 @@ class TestCompositeCacheInvalidationStrategy:
 class TestCacheInvalidationMiddleware:
     """Tests for CacheInvalidationMiddleware."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def cache(self) -> MockQueryCache:
         return MockQueryCache()
 
@@ -252,9 +250,7 @@ class TestCacheInvalidationMiddleware:
         assert "query_cache:ListUsers:*" in cache.clear_pattern_calls
 
     @pytest.mark.asyncio
-    async def test_no_invalidation_for_unmapped_command(
-        self, cache: MockQueryCache
-    ) -> None:
+    async def test_no_invalidation_for_unmapped_command(self, cache: MockQueryCache) -> None:
         middleware = CacheInvalidationMiddleware(
             cache,
             invalidation_map={
@@ -279,9 +275,7 @@ class TestHelperFunctions:
         assert pattern == "query_cache:GetUserQuery:*user-123*"
 
     def test_create_entity_specific_pattern_custom_prefix(self) -> None:
-        pattern = create_entity_specific_pattern(
-            "GetUserQuery", "user-123", prefix="custom"
-        )
+        pattern = create_entity_specific_pattern("GetUserQuery", "user-123", prefix="custom")
         assert pattern == "custom:GetUserQuery:*user-123*"
 
     def test_create_query_type_pattern(self) -> None:

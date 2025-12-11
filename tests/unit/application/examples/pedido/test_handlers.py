@@ -11,10 +11,10 @@ from unittest.mock import AsyncMock
 import pytest
 
 from application.examples.pedido.commands import (
-    CreatePedidoCommand,
     AddItemToPedidoCommand,
-    ConfirmPedidoCommand,
     CancelPedidoCommand,
+    ConfirmPedidoCommand,
+    CreatePedidoCommand,
 )
 from application.examples.pedido.handlers import (
     CreatePedidoCommandHandler,
@@ -71,17 +71,17 @@ class MockItemRepository:
 class TestGetPedidoQueryHandler:
     """Tests for GetPedidoQueryHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockPedidoRepository:
         """Create mock repository."""
         return MockPedidoRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, repository: MockPedidoRepository) -> GetPedidoQueryHandler:
         """Create handler with mock repository."""
         return GetPedidoQueryHandler(repository=repository)
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_pedido(self, repository: MockPedidoRepository) -> PedidoExample:
         """Create existing pedido in repository."""
         pedido = PedidoExample.create(
@@ -107,11 +107,8 @@ class TestGetPedidoQueryHandler:
         response = result.unwrap()
         assert response.customer_name == "Test Customer"
 
-
     @pytest.mark.asyncio
-    async def test_get_nonexistent_pedido_fails(
-        self, handler: GetPedidoQueryHandler
-    ) -> None:
+    async def test_get_nonexistent_pedido_fails(self, handler: GetPedidoQueryHandler) -> None:
         """Test getting non-existent pedido fails."""
         query = GetPedidoQuery(pedido_id="nonexistent-id")
 
@@ -123,12 +120,12 @@ class TestGetPedidoQueryHandler:
 class TestListPedidosQueryHandler:
     """Tests for ListPedidosQueryHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockPedidoRepository:
         """Create mock repository."""
         return MockPedidoRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, repository: MockPedidoRepository) -> ListPedidosQueryHandler:
         """Create handler with mock repository."""
         return ListPedidosQueryHandler(repository=repository)
@@ -171,22 +168,22 @@ class TestListPedidosQueryHandler:
 class TestCreatePedidoCommandHandler:
     """Tests for CreatePedidoCommandHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def pedido_repository(self) -> MockPedidoRepository:
         """Create mock pedido repository."""
         return MockPedidoRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def item_repository(self) -> MockItemRepository:
         """Create mock item repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def event_bus(self) -> AsyncMock:
         """Create mock event bus."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(
         self,
         pedido_repository: MockPedidoRepository,
@@ -200,7 +197,7 @@ class TestCreatePedidoCommandHandler:
             event_bus=event_bus,
         )
 
-    @pytest.fixture
+    @pytest.fixture()
     def available_item(self, item_repository: MockItemRepository) -> ItemExample:
         """Create available item in repository."""
         item = ItemExample.create(
@@ -281,17 +278,17 @@ class TestCreatePedidoCommandHandler:
 class TestAddItemToPedidoCommandHandler:
     """Tests for AddItemToPedidoCommandHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def pedido_repository(self) -> MockPedidoRepository:
         """Create mock pedido repository."""
         return MockPedidoRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def item_repository(self) -> MockItemRepository:
         """Create mock item repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(
         self,
         pedido_repository: MockPedidoRepository,
@@ -299,12 +296,13 @@ class TestAddItemToPedidoCommandHandler:
     ) -> "AddItemToPedidoCommandHandler":
         """Create handler with mocks."""
         from application.examples.pedido.handlers import AddItemToPedidoCommandHandler
+
         return AddItemToPedidoCommandHandler(
             pedido_repository=pedido_repository,
             item_repository=item_repository,
         )
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_pedido(self, pedido_repository: MockPedidoRepository) -> PedidoExample:
         """Create existing pedido."""
         pedido = PedidoExample.create(
@@ -315,7 +313,7 @@ class TestAddItemToPedidoCommandHandler:
         pedido_repository.add_pedido(pedido)
         return pedido
 
-    @pytest.fixture
+    @pytest.fixture()
     def available_item(self, item_repository: MockItemRepository) -> ItemExample:
         """Create available item."""
         item = ItemExample.create(
@@ -384,18 +382,19 @@ class TestAddItemToPedidoCommandHandler:
 class TestConfirmPedidoCommandHandler:
     """Tests for ConfirmPedidoCommandHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockPedidoRepository:
         """Create mock repository."""
         return MockPedidoRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, repository: MockPedidoRepository) -> "ConfirmPedidoCommandHandler":
         """Create handler."""
         from application.examples.pedido.handlers import ConfirmPedidoCommandHandler
+
         return ConfirmPedidoCommandHandler(repository=repository)
 
-    @pytest.fixture
+    @pytest.fixture()
     def pedido_with_items(self, repository: MockPedidoRepository) -> PedidoExample:
         """Create pedido with items."""
         pedido = PedidoExample.create(
@@ -449,18 +448,19 @@ class TestConfirmPedidoCommandHandler:
 class TestCancelPedidoCommandHandler:
     """Tests for CancelPedidoCommandHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockPedidoRepository:
         """Create mock repository."""
         return MockPedidoRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, repository: MockPedidoRepository) -> "CancelPedidoCommandHandler":
         """Create handler."""
         from application.examples.pedido.handlers import CancelPedidoCommandHandler
+
         return CancelPedidoCommandHandler(repository=repository)
 
-    @pytest.fixture
+    @pytest.fixture()
     def pending_pedido(self, repository: MockPedidoRepository) -> PedidoExample:
         """Create pending pedido."""
         pedido = PedidoExample.create(

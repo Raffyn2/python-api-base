@@ -84,54 +84,38 @@ class TestInMemoryLeaderElectionBackend:
     async def test_try_acquire_leadership_success(self):
         """try_acquire_leadership should succeed when no leader."""
         backend = InMemoryLeaderElectionBackend()
-        result = await backend.try_acquire_leadership(
-            "election1", "node1", timedelta(seconds=30)
-        )
+        result = await backend.try_acquire_leadership("election1", "node1", timedelta(seconds=30))
         assert result is True
 
     @pytest.mark.asyncio
     async def test_try_acquire_leadership_fails_when_leader_exists(self):
         """try_acquire_leadership should fail when leader exists."""
         backend = InMemoryLeaderElectionBackend()
-        await backend.try_acquire_leadership(
-            "election1", "node1", timedelta(seconds=30)
-        )
-        result = await backend.try_acquire_leadership(
-            "election1", "node2", timedelta(seconds=30)
-        )
+        await backend.try_acquire_leadership("election1", "node1", timedelta(seconds=30))
+        result = await backend.try_acquire_leadership("election1", "node2", timedelta(seconds=30))
         assert result is False
 
     @pytest.mark.asyncio
     async def test_renew_leadership_success(self):
         """renew_leadership should succeed for current leader."""
         backend = InMemoryLeaderElectionBackend()
-        await backend.try_acquire_leadership(
-            "election1", "node1", timedelta(seconds=30)
-        )
-        result = await backend.renew_leadership(
-            "election1", "node1", timedelta(seconds=30)
-        )
+        await backend.try_acquire_leadership("election1", "node1", timedelta(seconds=30))
+        result = await backend.renew_leadership("election1", "node1", timedelta(seconds=30))
         assert result is True
 
     @pytest.mark.asyncio
     async def test_renew_leadership_fails_for_non_leader(self):
         """renew_leadership should fail for non-leader."""
         backend = InMemoryLeaderElectionBackend()
-        await backend.try_acquire_leadership(
-            "election1", "node1", timedelta(seconds=30)
-        )
-        result = await backend.renew_leadership(
-            "election1", "node2", timedelta(seconds=30)
-        )
+        await backend.try_acquire_leadership("election1", "node1", timedelta(seconds=30))
+        result = await backend.renew_leadership("election1", "node2", timedelta(seconds=30))
         assert result is False
 
     @pytest.mark.asyncio
     async def test_release_leadership(self):
         """release_leadership should release leadership."""
         backend = InMemoryLeaderElectionBackend()
-        await backend.try_acquire_leadership(
-            "election1", "node1", timedelta(seconds=30)
-        )
+        await backend.try_acquire_leadership("election1", "node1", timedelta(seconds=30))
         result = await backend.release_leadership("election1", "node1")
         assert result is True
         leader = await backend.get_leader("election1")
@@ -141,9 +125,7 @@ class TestInMemoryLeaderElectionBackend:
     async def test_get_leader(self):
         """get_leader should return current leader."""
         backend = InMemoryLeaderElectionBackend()
-        await backend.try_acquire_leadership(
-            "election1", "node1", timedelta(seconds=30)
-        )
+        await backend.try_acquire_leadership("election1", "node1", timedelta(seconds=30))
         leader = await backend.get_leader("election1")
         assert leader is not None
         assert leader.node_id == "node1"

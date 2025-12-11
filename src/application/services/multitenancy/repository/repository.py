@@ -5,11 +5,11 @@
 **Split from: service.py for SRP compliance**
 """
 
-import logging
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 
+import structlog
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from application.services.multitenancy.models import get_current_tenant
 from core.base.repository import IRepository
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class TenantAware(BaseModel):
@@ -30,9 +30,7 @@ class TenantAware(BaseModel):
     tenant_id: str = Field(description="Tenant identifier")
 
 
-class TenantRepository[T, CreateT: BaseModel, UpdateT: BaseModel](
-    IRepository[T, CreateT, UpdateT]
-):
+class TenantRepository[T, CreateT: BaseModel, UpdateT: BaseModel](IRepository[T, CreateT, UpdateT]):
     """Repository with automatic tenant filtering.
 
     All queries are automatically filtered by tenant_id.
@@ -117,9 +115,7 @@ class TenantRepository[T, CreateT: BaseModel, UpdateT: BaseModel](
         # Apply sorting
         if sort_by and hasattr(self._model_class, sort_by):
             order_col = getattr(self._model_class, sort_by)
-            query = query.order_by(
-                order_col.desc() if sort_order == "desc" else order_col
-            )
+            query = query.order_by(order_col.desc() if sort_order == "desc" else order_col)
 
         # Apply pagination
         query = query.offset(skip).limit(limit)
@@ -167,17 +163,19 @@ class TenantRepository[T, CreateT: BaseModel, UpdateT: BaseModel](
                 entity.updated_at = datetime.now(tz=UTC)
             await self._session.flush()
             logger.info(
-                f"Soft deleted {self._model_class.__name__} {id} for tenant {self.tenant_id}"
+                "Entity soft deleted",
+                entity_type=self._model_class.__name__,
+                entity_id=id,
+                tenant_id=self.tenant_id,
+                operation="SOFT_DELETE",
             )
         else:
             logger.warning(
-                f"Hard delete: {self._model_class.__name__} {id} for tenant {self.tenant_id}",
-                extra={
-                    "entity_type": self._model_class.__name__,
-                    "entity_id": id,
-                    "tenant_id": self.tenant_id,
-                    "operation": "HARD_DELETE",
-                },
+                "Entity hard deleted",
+                entity_type=self._model_class.__name__,
+                entity_id=id,
+                tenant_id=self.tenant_id,
+                operation="HARD_DELETE",
             )
             await self._session.delete(entity)
             await self._session.flush()

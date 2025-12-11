@@ -259,9 +259,7 @@ class TestSpecificationComposition:
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, t1=threshold_strategy, t2=threshold_strategy)
-    def test_and_composition_consistency(
-        self, entity: SampleEntity, t1: int, t2: int
-    ) -> None:
+    def test_and_composition_consistency(self, entity: SampleEntity, t1: int, t2: int) -> None:
         """AND composition SHALL match manual AND.
 
         **Feature: api-best-practices-review-2025, Property 6**
@@ -277,9 +275,7 @@ class TestSpecificationComposition:
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, t1=threshold_strategy, t2=threshold_strategy)
-    def test_or_composition_consistency(
-        self, entity: SampleEntity, t1: int, t2: int
-    ) -> None:
+    def test_or_composition_consistency(self, entity: SampleEntity, t1: int, t2: int) -> None:
         """OR composition SHALL match manual OR.
 
         **Feature: api-best-practices-review-2025, Property 6**
@@ -295,9 +291,7 @@ class TestSpecificationComposition:
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, threshold=threshold_strategy)
-    def test_not_composition_consistency(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_not_composition_consistency(self, entity: SampleEntity, threshold: int) -> None:
         """NOT composition SHALL match manual NOT.
 
         **Feature: api-best-practices-review-2025, Property 6**
@@ -320,15 +314,16 @@ class TestPredicateSpecification:
 
     @settings(max_examples=50, deadline=None)
     @given(entity=entity_strategy, threshold=threshold_strategy)
-    def test_predicate_spec_matches_lambda(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_predicate_spec_matches_lambda(self, entity: SampleEntity, threshold: int) -> None:
         """PredicateSpecification SHALL match lambda behavior.
 
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 11.4**
         """
-        predicate = lambda e: e.value > threshold
+
+        def predicate(e):
+            return e.value > threshold
+
         spec = PredicateSpecification[SampleEntity](predicate)
 
         assert spec.is_satisfied_by(entity) == predicate(entity)

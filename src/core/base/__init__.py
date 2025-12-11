@@ -16,11 +16,18 @@ from core.base.cqrs import BaseCommand, BaseQuery
 from core.base.domain import (
     AggregateRoot,
     AuditableEntity,
+    AuditableULIDEntity,
     AuditableVersionedEntity,
+    AuditLogId,
     BaseEntity,
     BaseValueObject,
+    EntityId,
+    ItemId,
+    RoleId,
     ULIDEntity,
+    UserId,
     VersionedEntity,
+    VersionedULIDEntity,
 )
 
 # Events
@@ -35,9 +42,12 @@ from core.base.events import (
 
 # Patterns
 from core.base.patterns import (
+    AlternativeValidator,
     AndSpecification,
     AttributeSpecification,
+    BaseUseCase,
     ChainedValidator,
+    CompositeSpecification,
     CompositeValidator,
     # Pagination
     CursorPage,
@@ -45,6 +55,7 @@ from core.base.patterns import (
     Err,
     FalseSpecification,
     FieldError,
+    NotEmptyValidator,
     NotSpecification,
     Ok,
     OrSpecification,
@@ -62,6 +73,11 @@ from core.base.patterns import (
     # Validation
     Validator,
     collect_results,
+    err,
+    ok,
+    result_from_dict,
+    try_catch,
+    try_catch_async,
     validate_all,
 )
 
@@ -73,17 +89,23 @@ from core.base.repository import (
 
 __all__ = [
     "AggregateRoot",
+    "AlternativeValidator",
     "AndSpecification",
     "AttributeSpecification",
+    "AuditLogId",
     "AuditableEntity",
+    "AuditableULIDEntity",
     "AuditableVersionedEntity",
     # CQRS
     "BaseCommand",
     # Domain
     "BaseEntity",
     "BaseQuery",
+    # UseCase
+    "BaseUseCase",
     "BaseValueObject",
     "ChainedValidator",
+    "CompositeSpecification",
     "CompositeValidator",
     # Pagination
     "CursorPage",
@@ -92,6 +114,8 @@ __all__ = [
     "DomainEvent",
     "EntityCreatedEvent",
     "EntityDeletedEvent",
+    # Typed IDs
+    "EntityId",
     "EntityUpdatedEvent",
     "Err",
     "EventBus",
@@ -101,6 +125,8 @@ __all__ = [
     "IRepository",
     "InMemoryRepository",
     "IntegrationEvent",
+    "ItemId",
+    "NotEmptyValidator",
     "NotSpecification",
     "Ok",
     "OrSpecification",
@@ -109,16 +135,24 @@ __all__ = [
     "RangeValidator",
     # Result
     "Result",
+    "RoleId",
     # Specification
     "Specification",
     "TrueSpecification",
     "ULIDEntity",
     # UoW
     "UnitOfWork",
+    "UserId",
     "ValidationError",
     # Validation
     "Validator",
     "VersionedEntity",
+    "VersionedULIDEntity",
     "collect_results",
+    "err",
+    "ok",
+    "result_from_dict",
+    "try_catch",
+    "try_catch_async",
     "validate_all",
 ]

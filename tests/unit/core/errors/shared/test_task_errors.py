@@ -4,8 +4,6 @@
 **Validates: Requirements 4.2**
 """
 
-import pytest
-
 from core.errors.shared.task_errors import (
     BanOperationError,
     LockAcquisitionTimeoutError,
@@ -100,7 +98,7 @@ class TestRollbackError:
     def test_message_contains_both_errors(self) -> None:
         """Test that message contains both error descriptions."""
         original = ValueError("Data corruption")
-        rollback = IOError("Disk full")
+        rollback = OSError("Disk full")
         error = RollbackError(original, rollback)
         message = str(error)
         assert "Rollback failed" in message
@@ -117,7 +115,7 @@ class TestRollbackError:
         inner = ValueError("Inner error")
         original = RuntimeError("Outer error")
         original.__cause__ = inner
-        rollback = IOError("Rollback error")
+        rollback = OSError("Rollback error")
         error = RollbackError(original, rollback)
         assert error.original_error is original
         assert error.rollback_error is rollback

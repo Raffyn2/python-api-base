@@ -9,15 +9,17 @@ and cache invalidation strategies.
 
 import hashlib
 import json
-import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
+@runtime_checkable
 class QueryCache(Protocol):
     """Protocol for query cache implementations."""
 
@@ -131,6 +133,7 @@ class InMemoryQueryCache:
             matching_keys = [key for key in self._cache if key.startswith(prefix)]
         else:
             import fnmatch
+
             matching_keys = [key for key in self._cache if fnmatch.fnmatch(key, pattern)]
 
         for key in matching_keys:
@@ -285,24 +288,20 @@ class QueryCacheMiddleware:
         if cached is not None:
             if self._config.log_hits:
                 logger.info(
-                    f"Query cache HIT for {query_type}",
-                    extra={
-                        "query_type": query_type,
-                        "cache_key": query_cache_key,
-                        "operation": "QUERY_CACHE_HIT",
-                    },
+                    "Query cache HIT",
+                    query_type=query_type,
+                    cache_key=query_cache_key,
+                    operation="QUERY_CACHE_HIT",
                 )
             return cached
 
         # Cache miss
         if self._config.log_misses:
             logger.debug(
-                f"Query cache MISS for {query_type}",
-                extra={
-                    "query_type": query_type,
-                    "cache_key": query_cache_key,
-                    "operation": "QUERY_CACHE_MISS",
-                },
+                "Query cache MISS",
+                query_type=query_type,
+                cache_key=query_cache_key,
+                operation="QUERY_CACHE_MISS",
             )
 
         # Execute query
@@ -312,13 +311,11 @@ class QueryCacheMiddleware:
         await self._cache.set(cache_key, result, self._config.ttl_seconds)
 
         logger.debug(
-            f"Cached result for {query_type}",
-            extra={
-                "query_type": query_type,
-                "cache_key": query_cache_key,
-                "ttl_seconds": self._config.ttl_seconds,
-                "operation": "QUERY_CACHE_SET",
-            },
+            "Cached result",
+            query_type=query_type,
+            cache_key=query_cache_key,
+            ttl_seconds=self._config.ttl_seconds,
+            operation="QUERY_CACHE_SET",
         )
 
         return result

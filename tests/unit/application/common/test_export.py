@@ -12,8 +12,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from application.common.export.config.export_config import ExportConfig
 from application.common.export.exporters.data_exporter import DataExporter
@@ -21,7 +20,6 @@ from application.common.export.formats.export_format import ExportFormat
 from application.common.export.importers.data_importer import DataImporter
 from application.common.export.results.export_result import ExportResult
 from application.common.export.results.import_result import ImportResult
-from application.common.export.serializers.data_serializer import DataSerializer
 
 
 # Test data model
@@ -187,12 +185,12 @@ class TestImportResult:
 class TestDataExporter:
     """Tests for DataExporter class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def exporter(self) -> DataExporter[TestRecord]:
         """Create exporter with test serializer."""
         return DataExporter(TestRecordSerializer())
 
-    @pytest.fixture
+    @pytest.fixture()
     def sample_records(self) -> list[TestRecord]:
         """Create sample test records."""
         return [
@@ -223,7 +221,7 @@ class TestDataExporter:
     ) -> None:
         """Test JSON export without metadata."""
         config = ExportConfig(format=ExportFormat.JSON, include_metadata=False)
-        content, result = exporter.export_json(sample_records, config)
+        content, _result = exporter.export_json(sample_records, config)
 
         data = json.loads(content.decode())
         assert isinstance(data, list)
@@ -238,7 +236,7 @@ class TestDataExporter:
             include_fields=["id", "name"],
             include_metadata=False,
         )
-        content, result = exporter.export_json(sample_records, config)
+        content, _result = exporter.export_json(sample_records, config)
 
         data = json.loads(content.decode())
         for item in data:
@@ -255,7 +253,7 @@ class TestDataExporter:
             exclude_fields=["value"],
             include_metadata=False,
         )
-        content, result = exporter.export_json(sample_records, config)
+        content, _result = exporter.export_json(sample_records, config)
 
         data = json.loads(content.decode())
         for item in data:
@@ -263,9 +261,7 @@ class TestDataExporter:
             assert "name" in item
             assert "value" not in item
 
-    def test_export_csv(
-        self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]
-    ) -> None:
+    def test_export_csv(self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]) -> None:
         """Test CSV export."""
         config = ExportConfig(format=ExportFormat.CSV)
         content, result = exporter.export_csv(sample_records, config)
@@ -286,9 +282,7 @@ class TestDataExporter:
         assert result.file_size_bytes == 0
         assert content == b""
 
-    def test_export_jsonl(
-        self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]
-    ) -> None:
+    def test_export_jsonl(self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]) -> None:
         """Test JSONL export."""
         config = ExportConfig(format=ExportFormat.JSONL)
         content, result = exporter.export_jsonl(sample_records, config)
@@ -304,28 +298,22 @@ class TestDataExporter:
             assert "name" in data
             assert "value" in data
 
-    def test_export_generic_json(
-        self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]
-    ) -> None:
+    def test_export_generic_json(self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]) -> None:
         """Test generic export method with JSON format."""
         config = ExportConfig(format=ExportFormat.JSON)
-        content, result = exporter.export(sample_records, config)
+        _content, result = exporter.export(sample_records, config)
         assert result.format == ExportFormat.JSON
 
-    def test_export_generic_csv(
-        self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]
-    ) -> None:
+    def test_export_generic_csv(self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]) -> None:
         """Test generic export method with CSV format."""
         config = ExportConfig(format=ExportFormat.CSV)
-        content, result = exporter.export(sample_records, config)
+        _content, result = exporter.export(sample_records, config)
         assert result.format == ExportFormat.CSV
 
-    def test_export_generic_jsonl(
-        self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]
-    ) -> None:
+    def test_export_generic_jsonl(self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]) -> None:
         """Test generic export method with JSONL format."""
         config = ExportConfig(format=ExportFormat.JSONL)
-        content, result = exporter.export(sample_records, config)
+        _content, result = exporter.export(sample_records, config)
         assert result.format == ExportFormat.JSONL
 
     def test_export_unsupported_format(
@@ -336,9 +324,7 @@ class TestDataExporter:
         with pytest.raises(ValueError, match="Unsupported format"):
             exporter.export(sample_records, config)
 
-    def test_checksum_consistency(
-        self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]
-    ) -> None:
+    def test_checksum_consistency(self, exporter: DataExporter[TestRecord], sample_records: list[TestRecord]) -> None:
         """Test that same data produces same checksum."""
         config = ExportConfig(format=ExportFormat.JSON, include_metadata=False)
         _, result1 = exporter.export_json(sample_records, config)
@@ -349,12 +335,12 @@ class TestDataExporter:
 class TestDataImporter:
     """Tests for DataImporter class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def importer(self) -> DataImporter[TestRecord]:
         """Create importer with test serializer."""
         return DataImporter(TestRecordSerializer())
 
-    @pytest.fixture
+    @pytest.fixture()
     def exporter(self) -> DataExporter[TestRecord]:
         """Create exporter for round-trip tests."""
         return DataExporter(TestRecordSerializer())
@@ -371,9 +357,7 @@ class TestDataImporter:
         assert result.records_imported == 1
         assert result.records_failed == 0
 
-    def test_import_json_with_metadata(
-        self, importer: DataImporter[TestRecord]
-    ) -> None:
+    def test_import_json_with_metadata(self, importer: DataImporter[TestRecord]) -> None:
         """Test JSON import with metadata wrapper."""
         content = b'{"metadata": {}, "data": [{"id": "1", "name": "Test", "value": 100}]}'
         records, result = importer.import_json(content)
@@ -389,12 +373,10 @@ class TestDataImporter:
         assert len(records) == 0
         assert len(result.errors) > 0
 
-    def test_import_json_invalid_record(
-        self, importer: DataImporter[TestRecord]
-    ) -> None:
+    def test_import_json_invalid_record(self, importer: DataImporter[TestRecord]) -> None:
         """Test JSON import with invalid record data."""
         content = b'[{"id": "1", "name": "Test", "value": "not_a_number"}]'
-        records, result = importer.import_json(content)
+        _records, result = importer.import_json(content)
 
         assert result.records_failed == 1
         assert len(result.errors) > 0
@@ -411,7 +393,7 @@ class TestDataImporter:
     def test_import_csv_invalid(self, importer: DataImporter[TestRecord]) -> None:
         """Test CSV import with invalid data."""
         content = b"id,name,value\n1,Test,not_a_number"
-        records, result = importer.import_csv(content)
+        _records, result = importer.import_csv(content)
 
         assert result.records_failed == 1
 
@@ -423,21 +405,17 @@ class TestDataImporter:
         assert len(records) == 2
         assert result.records_imported == 2
 
-    def test_import_jsonl_with_empty_lines(
-        self, importer: DataImporter[TestRecord]
-    ) -> None:
+    def test_import_jsonl_with_empty_lines(self, importer: DataImporter[TestRecord]) -> None:
         """Test JSONL import ignores empty lines."""
         content = b'{"id": "1", "name": "Test", "value": 100}\n\n'
-        records, result = importer.import_jsonl(content)
+        records, _result = importer.import_jsonl(content)
 
         assert len(records) == 1
 
-    def test_import_jsonl_invalid_line(
-        self, importer: DataImporter[TestRecord]
-    ) -> None:
+    def test_import_jsonl_invalid_line(self, importer: DataImporter[TestRecord]) -> None:
         """Test JSONL import with invalid line."""
         content = b'{"id": "1", "name": "Test", "value": 100}\nnot json'
-        records, result = importer.import_jsonl(content)
+        _records, result = importer.import_jsonl(content)
 
         assert result.records_imported == 1
         assert result.records_failed == 1
@@ -445,24 +423,22 @@ class TestDataImporter:
     def test_import_data_json(self, importer: DataImporter[TestRecord]) -> None:
         """Test generic import with JSON format."""
         content = b'[{"id": "1", "name": "Test", "value": 100}]'
-        records, result = importer.import_data(content, ExportFormat.JSON)
+        records, _result = importer.import_data(content, ExportFormat.JSON)
         assert len(records) == 1
 
     def test_import_data_csv(self, importer: DataImporter[TestRecord]) -> None:
         """Test generic import with CSV format."""
         content = b"id,name,value\n1,Test,100"
-        records, result = importer.import_data(content, ExportFormat.CSV)
+        records, _result = importer.import_data(content, ExportFormat.CSV)
         assert len(records) == 1
 
     def test_import_data_jsonl(self, importer: DataImporter[TestRecord]) -> None:
         """Test generic import with JSONL format."""
         content = b'{"id": "1", "name": "Test", "value": 100}'
-        records, result = importer.import_data(content, ExportFormat.JSONL)
+        records, _result = importer.import_data(content, ExportFormat.JSONL)
         assert len(records) == 1
 
-    def test_import_data_unsupported(
-        self, importer: DataImporter[TestRecord]
-    ) -> None:
+    def test_import_data_unsupported(self, importer: DataImporter[TestRecord]) -> None:
         """Test import with unsupported format raises error."""
         with pytest.raises(ValueError, match="Unsupported format"):
             importer.import_data(b"", ExportFormat.PARQUET)
@@ -475,11 +451,11 @@ class TestExportImportRoundTrip:
     **Validates: Requirements 6.1, 6.2, 6.3**
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     def exporter(self) -> DataExporter[TestRecord]:
         return DataExporter(TestRecordSerializer())
 
-    @pytest.fixture
+    @pytest.fixture()
     def importer(self) -> DataImporter[TestRecord]:
         return DataImporter(TestRecordSerializer())
 
@@ -496,7 +472,7 @@ class TestExportImportRoundTrip:
         config = ExportConfig(format=ExportFormat.JSON, include_metadata=False)
 
         content, _ = exporter.export_json(original, config)
-        imported, result = importer.import_json(content)
+        imported, _result = importer.import_json(content)
 
         assert len(imported) == len(original)
         for orig, imp in zip(original, imported):
@@ -517,7 +493,7 @@ class TestExportImportRoundTrip:
         config = ExportConfig(format=ExportFormat.CSV)
 
         content, _ = exporter.export_csv(original, config)
-        imported, result = importer.import_csv(content)
+        imported, _result = importer.import_csv(content)
 
         assert len(imported) == len(original)
         for orig, imp in zip(original, imported):
@@ -538,7 +514,7 @@ class TestExportImportRoundTrip:
         config = ExportConfig(format=ExportFormat.JSONL)
 
         content, _ = exporter.export_jsonl(original, config)
-        imported, result = importer.import_jsonl(content)
+        imported, _result = importer.import_jsonl(content)
 
         assert len(imported) == len(original)
         for orig, imp in zip(original, imported):
@@ -570,7 +546,7 @@ class TestExportImportRoundTrip:
         config = ExportConfig(format=ExportFormat.JSON, include_metadata=False)
 
         content, _ = exporter.export_json(records, config)
-        imported, result = importer.import_json(content)
+        imported, _result = importer.import_json(content)
 
         assert len(imported) == len(records)
         for orig, imp in zip(records, imported):
@@ -602,7 +578,7 @@ class TestExportImportRoundTrip:
         config = ExportConfig(format=ExportFormat.CSV)
 
         content, _ = exporter.export_csv(records, config)
-        imported, result = importer.import_csv(content)
+        imported, _result = importer.import_csv(content)
 
         assert len(imported) == len(records)
         for orig, imp in zip(records, imported):

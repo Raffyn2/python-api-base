@@ -6,11 +6,7 @@ Tests user domain services.
 **Requirements: 2.2**
 """
 
-import pytest
-
 from domain.users.services.services import (
-    EmailValidator,
-    PasswordHasher,
     UserDomainService,
 )
 
@@ -97,9 +93,7 @@ class TestUserDomainServiceValidateEmail:
     def test_valid_email_with_validator(self) -> None:
         """Test valid email with custom validator."""
         validator = MockEmailValidator()
-        service = UserDomainService(
-            password_hasher=MockPasswordHasher(), email_validator=validator
-        )
+        service = UserDomainService(password_hasher=MockPasswordHasher(), email_validator=validator)
 
         is_valid, error = service.validate_email("user@example.com")
 
@@ -109,9 +103,7 @@ class TestUserDomainServiceValidateEmail:
     def test_disposable_email_rejected(self) -> None:
         """Test disposable email is rejected."""
         validator = MockEmailValidator(disposable_domains=["tempmail.com"])
-        service = UserDomainService(
-            password_hasher=MockPasswordHasher(), email_validator=validator
-        )
+        service = UserDomainService(password_hasher=MockPasswordHasher(), email_validator=validator)
 
         is_valid, error = service.validate_email("user@tempmail.com")
 

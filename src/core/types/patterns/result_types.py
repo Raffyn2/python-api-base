@@ -11,8 +11,7 @@ __all__ = [
     "AsyncCallback",
     # Specification
     "CompositeSpec",
-    # Entity
-    "EntityId",
+    # Entity (re-exported from identity)
     "EventCallback",
     # Result Pattern
     "Failure",
@@ -58,11 +57,11 @@ type Middleware = "Callable[[Request, Callable], Awaitable[Response]]"
 """Type alias for ASGI middleware callable."""
 
 # =============================================================================
-# Entity and ID Type Aliases
+# Entity and Timestamp Type Aliases
 # =============================================================================
 
-type EntityId = str | int
-"""Type alias for entity identifier (ULID string or integer)."""
+# NOTE: EntityId is defined in core.types.identity.id_types
+# Re-exported here for convenience but canonical source is identity module
 
 type Timestamp = "datetime"
 """Type alias for timestamp fields."""

@@ -4,14 +4,10 @@
 **Validates: Requirements 2.2, 8.3**
 """
 
-from typing import Any
-
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from pydantic import BaseModel
 
-from application.common.mappers.errors.mapper_error import MapperError
 from application.common.mappers.implementations.generic_mapper import GenericMapper
 
 
@@ -51,7 +47,7 @@ class RenamedTargetModel(BaseModel):
 class TestGenericMapper:
     """Tests for GenericMapper class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mapper(self) -> GenericMapper[SourceModel, TargetModel]:
         """Create basic mapper."""
         return GenericMapper(SourceModel, TargetModel)
@@ -74,18 +70,14 @@ class TestGenericMapper:
         assert result.name == "Test"
         assert result.value == 100
 
-    def test_to_dto_with_optional_field(
-        self, mapper: GenericMapper[SourceModel, TargetModel]
-    ) -> None:
+    def test_to_dto_with_optional_field(self, mapper: GenericMapper[SourceModel, TargetModel]) -> None:
         """Test conversion with optional field present."""
         source = SourceModel(id="1", name="Test", value=100, optional_field="extra")
         result = mapper.to_dto(source)
 
         assert result.optional_field == "extra"
 
-    def test_to_dto_with_optional_field_none(
-        self, mapper: GenericMapper[SourceModel, TargetModel]
-    ) -> None:
+    def test_to_dto_with_optional_field_none(self, mapper: GenericMapper[SourceModel, TargetModel]) -> None:
         """Test conversion with optional field as None."""
         source = SourceModel(id="1", name="Test", value=100, optional_field=None)
         result = mapper.to_dto(source)
@@ -133,30 +125,22 @@ class TestGenericMapper:
         assert result.name == "Test"
         assert result.value == 100
 
-    def test_map_value_with_none(
-        self, mapper: GenericMapper[SourceModel, TargetModel]
-    ) -> None:
+    def test_map_value_with_none(self, mapper: GenericMapper[SourceModel, TargetModel]) -> None:
         """Test _map_value handles None correctly."""
         result = mapper._map_value(None)
         assert result is None
 
-    def test_map_value_with_list(
-        self, mapper: GenericMapper[SourceModel, TargetModel]
-    ) -> None:
+    def test_map_value_with_list(self, mapper: GenericMapper[SourceModel, TargetModel]) -> None:
         """Test _map_value handles lists correctly."""
         result = mapper._map_value([1, 2, 3])
         assert result == [1, 2, 3]
 
-    def test_map_value_with_dict(
-        self, mapper: GenericMapper[SourceModel, TargetModel]
-    ) -> None:
+    def test_map_value_with_dict(self, mapper: GenericMapper[SourceModel, TargetModel]) -> None:
         """Test _map_value handles dicts correctly."""
         result = mapper._map_value({"key": "value"})
         assert result == {"key": "value"}
 
-    def test_map_value_with_nested_model(
-        self, mapper: GenericMapper[SourceModel, TargetModel]
-    ) -> None:
+    def test_map_value_with_nested_model(self, mapper: GenericMapper[SourceModel, TargetModel]) -> None:
         """Test _map_value handles nested BaseModel correctly."""
         nested = SourceModel(id="1", name="Nested", value=50)
         result = mapper._map_value(nested)

@@ -150,9 +150,7 @@ class TestObservabilitySettingsCredentialValidation:
 
     def test_keycloak_with_secret(self) -> None:
         """Test Keycloak with valid client secret."""
-        settings = ObservabilitySettings(
-            keycloak_enabled=True, keycloak_client_secret=SecretStr("secret")
-        )
+        settings = ObservabilitySettings(keycloak_enabled=True, keycloak_client_secret=SecretStr("secret"))
         assert settings.keycloak_enabled is True
 
 

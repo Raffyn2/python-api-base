@@ -29,11 +29,13 @@ class TestAPIPlaygroundProperties:
             max_size=20,
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
-        base_url=st.sampled_from([
-            "http://localhost:8000",
-            "http://api:8000",
-            "https://api.example.com",
-        ]),
+        base_url=st.sampled_from(
+            [
+                "http://localhost:8000",
+                "http://api:8000",
+                "https://api.example.com",
+            ]
+        ),
     )
     def test_environment_round_trip(self, env_name: str, base_url: str) -> None:
         """
@@ -83,9 +85,7 @@ class TestAPIPlaygroundProperties:
             alphabet=st.characters(whitelist_categories=("L", "N", "P")),
         ).map(lambda x: f"/{x}"),
     )
-    def test_request_building_preserves_method_and_path(
-        self, method: HttpMethod, path: str
-    ) -> None:
+    def test_request_building_preserves_method_and_path(self, method: HttpMethod, path: str) -> None:
         """
         For any method and path, build_request SHALL preserve them in the result.
         """
@@ -123,9 +123,7 @@ class TestAPIPlaygroundProperties:
         max_history=st.integers(min_value=5, max_value=20),
         num_entries=st.integers(min_value=1, max_value=30),
     )
-    def test_history_respects_max_limit(
-        self, max_history: int, num_entries: int
-    ) -> None:
+    def test_history_respects_max_limit(self, max_history: int, num_entries: int) -> None:
         """
         History SHALL not exceed max_history entries.
         """
@@ -154,9 +152,7 @@ class TestAPIPlaygroundProperties:
             max_size=3,
         ),
     )
-    def test_curl_export_contains_method_and_url(
-        self, method: HttpMethod, path: str, headers: dict[str, str]
-    ) -> None:
+    def test_curl_export_contains_method_and_url(self, method: HttpMethod, path: str, headers: dict[str, str]) -> None:
         """
         Curl export SHALL contain the HTTP method and full URL.
         """

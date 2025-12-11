@@ -29,9 +29,7 @@ from infrastructure.security.secrets_manager.providers import LocalSecretsProvid
 @settings(max_examples=100)
 @given(
     secret_name=st.text(
-        alphabet=st.characters(
-            whitelist_categories=("L", "N"), whitelist_characters="_-"
-        ),
+        alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_-"),
         min_size=1,
         max_size=50,
     ),
@@ -50,9 +48,7 @@ def test_secret_crud_round_trip(secret_name: str, secret_value: str) -> None:
         provider = LocalSecretsProvider()
 
         # Create secret
-        metadata = await provider.create_secret(
-            secret_name, secret_value, SecretType.STRING
-        )
+        metadata = await provider.create_secret(secret_name, secret_value, SecretType.STRING)
 
         # Verify metadata has valid timestamps
         assert metadata.name == secret_name
@@ -89,9 +85,7 @@ def test_secret_crud_round_trip(secret_name: str, secret_value: str) -> None:
 @settings(max_examples=100)
 @given(
     secret_name=st.text(
-        alphabet=st.characters(
-            whitelist_categories=("L", "N"), whitelist_characters="_-"
-        ),
+        alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_-"),
         min_size=1,
         max_size=50,
     ),
@@ -228,7 +222,7 @@ def test_redos_protection_bounded_matching(padding_length: int) -> None:
     from infrastructure.security.waf.patterns import SQL_INJECTION_PATTERNS
 
     # Create a test input with lots of padding (not actual SQL injection)
-    test_input = "SELECT " + "a" * padding_length + " FROM users"  # noqa: S608
+    test_input = "SELECT " + "a" * padding_length + " FROM users"
 
     for pattern in SQL_INJECTION_PATTERNS:
         compiled = re.compile(pattern, re.IGNORECASE)

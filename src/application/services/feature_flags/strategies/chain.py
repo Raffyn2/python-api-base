@@ -4,12 +4,13 @@
 **Refactored: Split from strategies.py for one-class-per-file compliance**
 """
 
-import logging
 from typing import Any
 
+import structlog
+
 from application.services.feature_flags.config import FlagConfig
-from application.services.feature_flags.models import EvaluationContext
 from application.services.feature_flags.core.base import EvaluationStrategy
+from application.services.feature_flags.models import EvaluationContext
 from application.services.feature_flags.strategies.custom_rule import CustomRuleStrategy
 from application.services.feature_flags.strategies.fallback import DefaultValueStrategy
 from application.services.feature_flags.strategies.rollout import PercentageRolloutStrategy
@@ -19,7 +20,7 @@ from application.services.feature_flags.strategies.targeting import (
     UserTargetingStrategy,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class StrategyChain:
@@ -56,9 +57,7 @@ class StrategyChain:
             True if strategy was removed.
         """
         original_len = len(self._strategies)
-        self._strategies = [
-            s for s in self._strategies if not isinstance(s, strategy_type)
-        ]
+        self._strategies = [s for s in self._strategies if not isinstance(s, strategy_type)]
         return len(self._strategies) < original_len
 
     def get_strategies(self) -> list[EvaluationStrategy]:
@@ -88,25 +87,21 @@ class StrategyChain:
             if result.matched:
                 logger.debug(
                     "flag_evaluation_matched",
-                    extra={
-                        "flag_key": flag.key,
-                        "strategy": type(strategy).__name__,
-                        "value": result.value,
-                        "reason": result.reason,
-                        "user_id": context.user_id,
-                        "operation": "FLAG_EVALUATION",
-                    },
+                    flag_key=flag.key,
+                    strategy=type(strategy).__name__,
+                    value=result.value,
+                    reason=result.reason,
+                    user_id=context.user_id,
+                    operation="FLAG_EVALUATION",
                 )
                 return result.value, result.reason
 
         # Should never reach here if DefaultValueStrategy is in chain
         logger.warning(
             "flag_evaluation_no_match",
-            extra={
-                "flag_key": flag.key,
-                "strategies_count": len(self._strategies),
-                "operation": "FLAG_EVALUATION_WARNING",
-            },
+            flag_key=flag.key,
+            strategies_count=len(self._strategies),
+            operation="FLAG_EVALUATION_WARNING",
         )
         return flag.default_value, "No strategies matched"
 
@@ -135,4 +130,3 @@ def create_default_strategy_chain(seed: int = 0) -> StrategyChain:
             DefaultValueStrategy(),  # Priority 100 (fallback)
         ]
     )
-

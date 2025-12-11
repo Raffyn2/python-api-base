@@ -6,9 +6,9 @@
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
+import structlog
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from infrastructure.ratelimit.config import RateLimit
     from infrastructure.ratelimit.limiter import RateLimiter, RateLimitResult
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
@@ -180,8 +180,7 @@ class RateLimitMiddleware[TClient](BaseHTTPMiddleware):
         extractor: ClientExtractor[TClient],
         endpoint_limits: dict[str, RateLimit] | None = None,
         exclude_paths: set[str] | None = None,
-        on_rate_limited: Callable[[RateLimitResult[TClient]], Awaitable[Response]]
-        | None = None,
+        on_rate_limited: Callable[[RateLimitResult[TClient]], Awaitable[Response]] | None = None,
     ) -> None:
         """Initialize middleware.
 
@@ -228,8 +227,13 @@ class RateLimitMiddleware[TClient](BaseHTTPMiddleware):
         # Extract client identifier
         try:
             client = await self._extractor.extract(request)
-        except Exception as e:
-            logger.warning(f"Failed to extract client: {e}")
+        except Exception:
+            logger.warning(
+                "Failed to extract client",
+                path=request.url.path,
+                operation="RATELIMIT_EXTRACT",
+                exc_info=True,
+            )
             return await call_next(request)
 
         # Get endpoint-specific limit
@@ -277,8 +281,16 @@ class RateLimitMiddleware[TClient](BaseHTTPMiddleware):
 
     @staticmethod
     def _is_uuid(value: str) -> bool:
-        """Check if value looks like a UUID."""
-        return len(value) == 36 and value.count("-") == 4
+        """Check if value is a valid UUID format."""
+        if len(value) != 36 or value.count("-") != 4:
+            return False
+        # Validate UUID structure: 8-4-4-4-12 hex chars
+        parts = value.split("-")
+        expected_lengths = [8, 4, 4, 4, 12]
+        return all(
+            len(part) == expected and all(c in "0123456789abcdefABCDEF" for c in part)
+            for part, expected in zip(parts, expected_lengths, strict=True)
+        )
 
     async def _handle_rate_limited(
         self,
@@ -350,7 +362,7 @@ def rate_limit[TClient](
 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Find request in args
             request = None
             for arg in args:

@@ -28,7 +28,7 @@ async def get_subscriptions() -> list[dict[str, Any]]:
         if hasattr(client, "_pubsub_manager") and client._pubsub_manager:
             return client._pubsub_manager.get_subscriptions()
     except Exception:
-        pass
+        logger.debug("Failed to get Dapr subscriptions, returning empty list")
 
     return []
 
@@ -51,7 +51,7 @@ async def dapr_health_check() -> Response:
 
     Returns 204 if healthy, 503 if unhealthy.
     """
-    from core.config.dapr import get_dapr_settings
+    from core.config.infrastructure.dapr import get_dapr_settings
 
     settings = get_dapr_settings()
     checker = HealthChecker(settings.http_endpoint)
@@ -65,7 +65,7 @@ async def dapr_health_check() -> Response:
 @dapr_router.get("/health")
 async def dapr_health_details() -> dict[str, Any]:
     """Get detailed Dapr health information."""
-    from core.config.dapr import get_dapr_settings
+    from core.config.infrastructure.dapr import get_dapr_settings
 
     settings = get_dapr_settings()
     checker = HealthChecker(settings.http_endpoint)
@@ -116,12 +116,11 @@ async def handle_subscription(
             return {"status": status.value}
 
         return {"status": MessageStatus.DROP.value}
-    except Exception as e:
-        logger.error(
+    except Exception:
+        logger.exception(
             "subscription_handler_error",
             pubsub=pubsub,
             topic=topic,
-            error=str(e),
         )
         return {"status": "RETRY"}
 
@@ -148,16 +147,13 @@ async def handle_binding(
 
         client = get_dapr_client()
         if hasattr(client, "_bindings_manager") and client._bindings_manager:
-            return await client._bindings_manager.handle_event(
-                binding_name, body, metadata
-            )
+            return await client._bindings_manager.handle_event(binding_name, body, metadata)
 
         return None
-    except Exception as e:
-        logger.error(
+    except Exception:
+        logger.exception(
             "binding_handler_error",
             binding=binding_name,
-            error=str(e),
         )
         raise
 

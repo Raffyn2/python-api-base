@@ -49,9 +49,7 @@ class FeatureFlagService:
         hash_bytes = hashlib.sha256(combined.encode()).digest()
         return int.from_bytes(hash_bytes[:4], "big") % 100
 
-    def evaluate(
-        self, flag_key: str, context: EvaluationContext, default: bool = False
-    ) -> bool:
+    def evaluate(self, flag_key: str, context: EvaluationContext, default: bool = False) -> bool:
         """Evaluate a feature flag."""
         flag = self._flags.get(flag_key)
         if flag is None:
@@ -69,9 +67,7 @@ class FeatureFlagService:
         user_hash = self._hash_user(flag_key, context.user_id)
         return user_hash < flag.rollout_percentage
 
-    def get_variant(
-        self, flag_key: str, context: EvaluationContext, default: str = "control"
-    ) -> str:
+    def get_variant(self, flag_key: str, context: EvaluationContext, default: str = "control") -> str:
         """Get variant assignment for user."""
         flag = self._flags.get(flag_key)
         if flag is None or not flag.is_enabled:
@@ -149,9 +145,7 @@ class TestPercentageRollout:
 
     @given(flag_key=flag_keys, user_id=user_ids)
     @settings(max_examples=50)
-    def test_hundred_percentage_always_enabled(
-        self, flag_key: str, user_id: str
-    ) -> None:
+    def test_hundred_percentage_always_enabled(self, flag_key: str, user_id: str) -> None:
         """100% rollout is always enabled."""
         service = FeatureFlagService()
         flag = FeatureFlag(key=flag_key, is_enabled=True, rollout_percentage=100)
@@ -177,9 +171,7 @@ class TestVariantConsistency:
         ),
     )
     @settings(max_examples=100)
-    def test_same_user_gets_same_variant(
-        self, flag_key: str, user_id: str, variants: list[str]
-    ) -> None:
+    def test_same_user_gets_same_variant(self, flag_key: str, user_id: str, variants: list[str]) -> None:
         """Same user always gets the same variant."""
         service = FeatureFlagService()
         flag = FeatureFlag(
@@ -204,9 +196,7 @@ class TestVariantConsistency:
         user_ids_list=st.lists(user_ids, min_size=50, max_size=100, unique=True),
     )
     @settings(max_examples=20)
-    def test_variants_distributed_across_users(
-        self, flag_key: str, user_ids_list: list[str]
-    ) -> None:
+    def test_variants_distributed_across_users(self, flag_key: str, user_ids_list: list[str]) -> None:
         """Variants are distributed across users."""
         variants = ("control", "treatment")
         service = FeatureFlagService()
@@ -230,9 +220,7 @@ class TestVariantConsistency:
 
     @given(flag_key=flag_keys, user_id=user_ids)
     @settings(max_examples=50)
-    def test_disabled_flag_returns_default_variant(
-        self, flag_key: str, user_id: str
-    ) -> None:
+    def test_disabled_flag_returns_default_variant(self, flag_key: str, user_id: str) -> None:
         """Disabled flag returns default variant."""
         service = FeatureFlagService()
         flag = FeatureFlag(
@@ -254,9 +242,7 @@ class TestFlagEvaluation:
 
     @given(flag_key=flag_keys, user_id=user_ids)
     @settings(max_examples=50)
-    def test_nonexistent_flag_returns_default(
-        self, flag_key: str, user_id: str
-    ) -> None:
+    def test_nonexistent_flag_returns_default(self, flag_key: str, user_id: str) -> None:
         """Non-existent flag returns default value."""
         service = FeatureFlagService()
         context = EvaluationContext(user_id=user_id)

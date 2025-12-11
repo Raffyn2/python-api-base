@@ -80,9 +80,7 @@ class TestErrorHierarchyInheritance:
         ]
 
         for error_class in error_classes:
-            assert issubclass(error_class, InterfaceError), (
-                f"{error_class.__name__} should inherit from InterfaceError"
-            )
+            assert issubclass(error_class, InterfaceError), f"{error_class.__name__} should inherit from InterfaceError"
 
     @given(resource=resource_strategy, id=id_strategy)
     @settings(max_examples=100)
@@ -99,9 +97,7 @@ class TestErrorHierarchyInheritance:
         code=st.text(min_size=1, max_size=20),
     )
     @settings(max_examples=100)
-    def test_validation_error_is_interface_error(
-        self, field: str, message: str, code: str
-    ) -> None:
+    def test_validation_error_is_interface_error(self, field: str, message: str, code: str) -> None:
         """ValidationError instances are InterfaceError instances."""
         assume(len(field.strip()) > 0)
         field_error = FieldError(field, message, code)
@@ -131,9 +127,7 @@ class TestErrorMessageFactoryMethods:
 
     @given(field=field_strategy, reason=message_strategy)
     @settings(max_examples=100)
-    def test_validation_error_produces_validation_code(
-        self, field: str, reason: str
-    ) -> None:
+    def test_validation_error_produces_validation_code(self, field: str, reason: str) -> None:
         """validation_error factory produces VALIDATION_ERROR code."""
         assume(len(field.strip()) > 0)
         error = ErrorMessage.validation_error(field, reason)
@@ -148,9 +142,7 @@ class TestErrorMessageFactoryMethods:
 
     @given(resource=resource_strategy, action=message_strategy)
     @settings(max_examples=100)
-    def test_forbidden_produces_forbidden_code(
-        self, resource: str, action: str
-    ) -> None:
+    def test_forbidden_produces_forbidden_code(self, resource: str, action: str) -> None:
         """forbidden factory produces FORBIDDEN code."""
         assume(len(resource.strip()) > 0)
         error = ErrorMessage.forbidden(resource, action)
@@ -176,9 +168,7 @@ class TestErrorMessageFactoryMethods:
         duration_ms=st.integers(min_value=1, max_value=100000),
     )
     @settings(max_examples=100)
-    def test_timeout_produces_timeout_code(
-        self, operation: str, duration_ms: int
-    ) -> None:
+    def test_timeout_produces_timeout_code(self, operation: str, duration_ms: int) -> None:
         """timeout factory produces TIMEOUT code."""
         assume(len(operation.strip()) > 0)
         error = ErrorMessage.timeout(operation, duration_ms)
@@ -189,9 +179,7 @@ class TestErrorMessageFactoryMethods:
         window_seconds=st.integers(min_value=1, max_value=3600),
     )
     @settings(max_examples=100)
-    def test_rate_limited_produces_rate_limited_code(
-        self, limit: int, window_seconds: int
-    ) -> None:
+    def test_rate_limited_produces_rate_limited_code(self, limit: int, window_seconds: int) -> None:
         """rate_limited factory produces RATE_LIMITED code."""
         error = ErrorMessage.rate_limited(limit, window_seconds)
         assert error.code == ErrorCode.RATE_LIMITED
@@ -205,9 +193,7 @@ class TestErrorMessageFactoryMethods:
 
     @given(service=resource_strategy)
     @settings(max_examples=100)
-    def test_service_unavailable_produces_service_unavailable_code(
-        self, service: str
-    ) -> None:
+    def test_service_unavailable_produces_service_unavailable_code(self, service: str) -> None:
         """service_unavailable factory produces SERVICE_UNAVAILABLE code."""
         assume(len(service.strip()) > 0)
         error = ErrorMessage.service_unavailable(service)
@@ -228,9 +214,7 @@ class TestRFC7807ProblemDetails:
 
     @given(code=error_code_strategy, message=message_strategy)
     @settings(max_examples=100)
-    def test_problem_details_has_required_fields(
-        self, code: ErrorCode, message: str
-    ) -> None:
+    def test_problem_details_has_required_fields(self, code: ErrorCode, message: str) -> None:
         """to_problem_details SHALL produce dict with type, title, status, detail."""
         error = ErrorMessage(code=code, message=message)
         problem = error.to_problem_details()
@@ -242,9 +226,7 @@ class TestRFC7807ProblemDetails:
 
     @given(code=error_code_strategy, message=message_strategy)
     @settings(max_examples=100)
-    def test_problem_details_status_is_integer(
-        self, code: ErrorCode, message: str
-    ) -> None:
+    def test_problem_details_status_is_integer(self, code: ErrorCode, message: str) -> None:
         """status field SHALL be an integer HTTP status code."""
         error = ErrorMessage(code=code, message=message)
         problem = error.to_problem_details()
@@ -258,9 +240,7 @@ class TestRFC7807ProblemDetails:
         type_uri=st.text(min_size=1, max_size=100),
     )
     @settings(max_examples=100)
-    def test_problem_details_preserves_type_uri(
-        self, code: ErrorCode, message: str, type_uri: str
-    ) -> None:
+    def test_problem_details_preserves_type_uri(self, code: ErrorCode, message: str, type_uri: str) -> None:
         """type_uri parameter SHALL be preserved in output."""
         assume(len(type_uri.strip()) > 0)
         error = ErrorMessage(code=code, message=message)
@@ -300,9 +280,7 @@ class TestErrorMessageToDict:
 
     @given(code=error_code_strategy, message=message_strategy)
     @settings(max_examples=100)
-    def test_to_dict_contains_code_and_message(
-        self, code: ErrorCode, message: str
-    ) -> None:
+    def test_to_dict_contains_code_and_message(self, code: ErrorCode, message: str) -> None:
         """to_dict SHALL return dict with code and message."""
         error = ErrorMessage(code=code, message=message)
         result = error.to_dict()
@@ -323,9 +301,7 @@ class TestErrorMessageToDict:
         ),
     )
     @settings(max_examples=100)
-    def test_to_dict_includes_details_when_present(
-        self, code: ErrorCode, message: str, details: dict
-    ) -> None:
+    def test_to_dict_includes_details_when_present(self, code: ErrorCode, message: str, details: dict) -> None:
         """to_dict SHALL include details when present."""
         error = ErrorMessage(code=code, message=message, details=details)
         result = error.to_dict()
@@ -425,9 +401,7 @@ class TestFieldErrorToDict:
         code=st.text(min_size=1, max_size=20),
     )
     @settings(max_examples=100)
-    def test_to_dict_contains_all_fields(
-        self, field: str, message: str, code: str
-    ) -> None:
+    def test_to_dict_contains_all_fields(self, field: str, message: str, code: str) -> None:
         """to_dict SHALL return dict with field, message, and code keys."""
         assume(len(field.strip()) > 0 and len(code.strip()) > 0)
         error = FieldError(field, message, code)
@@ -455,17 +429,13 @@ class TestValidationErrorCount:
 
     @given(
         errors=st.lists(
-            st.tuples(
-                field_strategy, message_strategy, st.text(min_size=1, max_size=20)
-            ),
+            st.tuples(field_strategy, message_strategy, st.text(min_size=1, max_size=20)),
             min_size=1,
             max_size=10,
         )
     )
     @settings(max_examples=100)
-    def test_errors_list_has_correct_count(
-        self, errors: list[tuple[str, str, str]]
-    ) -> None:
+    def test_errors_list_has_correct_count(self, errors: list[tuple[str, str, str]]) -> None:
         """ValidationError errors list SHALL have exactly N elements."""
         field_errors = [
             FieldError(field, message, code)

@@ -1,6 +1,7 @@
 """Database Migration Manager with rollback support."""
 
 import hashlib
+import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -17,7 +18,7 @@ class MigrationStatus(Enum):
     FAILED = "failed"
 
 
-@dataclass
+@dataclass(slots=True)
 class Migration:
     """Migration definition."""
 
@@ -38,7 +39,7 @@ class Migration:
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
 
-@dataclass
+@dataclass(slots=True)
 class MigrationResult:
     """Result of migration execution."""
 
@@ -60,7 +61,7 @@ class MigrationBackend(Protocol):
     async def rollback_transaction(self) -> None: ...
 
 
-@dataclass
+@dataclass(slots=True)
 class SchemaDiff:
     """Schema difference between two states."""
 
@@ -88,9 +89,7 @@ class SchemaDiff:
         """Generate SQL for applying changes."""
         statements: list[str] = [f"-- CREATE TABLE {table}" for table in self.added_tables]
         statements.extend(
-            f"ALTER TABLE {table} ADD COLUMN {col};"
-            for table, columns in self.added_columns.items()
-            for col in columns
+            f"ALTER TABLE {table} ADD COLUMN {col};" for table, columns in self.added_columns.items() for col in columns
         )
         statements.extend(f"-- CREATE INDEX {idx}" for idx in self.added_indexes)
         return "\n".join(statements)
@@ -124,9 +123,7 @@ class MigrationManager:
         """Register a migration."""
         self._migrations[migration.version] = migration
 
-    def register_hook(
-        self, event: str, callback: Callable[[Migration], Awaitable[None]]
-    ) -> None:
+    def register_hook(self, event: str, callback: Callable[[Migration], Awaitable[None]]) -> None:
         """Register a hook for migration events."""
         if event in self._hooks:
             self._hooks[event].append(callback)
@@ -138,9 +135,7 @@ class MigrationManager:
     def get_pending_migrations(self, applied: list[Migration]) -> list[Migration]:
         """Get migrations that haven't been applied."""
         applied_versions = {m.version for m in applied}
-        return [
-            m for v, m in sorted(self._migrations.items()) if v not in applied_versions
-        ]
+        return [m for v, m in sorted(self._migrations.items()) if v not in applied_versions]
 
     async def migrate(self, target_version: str | None = None) -> list[MigrationResult]:
         """Apply pending migrations up to target version."""
@@ -162,8 +157,6 @@ class MigrationManager:
 
     async def _apply_migration(self, migration: Migration) -> MigrationResult:
         """Apply a single migration."""
-        import time
-
         start = time.perf_counter()
 
         try:
@@ -208,8 +201,6 @@ class MigrationManager:
 
     async def _rollback_migration(self, migration: Migration) -> MigrationResult:
         """Rollback a single migration."""
-        import time
-
         start = time.perf_counter()
 
         try:
@@ -242,9 +233,7 @@ class MigrationManager:
 
         return status
 
-    def diff_schemas(
-        self, current_schema: dict[str, list[str]], target_schema: dict[str, list[str]]
-    ) -> SchemaDiff:
+    def diff_schemas(self, current_schema: dict[str, list[str]], target_schema: dict[str, list[str]]) -> SchemaDiff:
         """Compare two schemas and generate diff."""
         diff = SchemaDiff()
 

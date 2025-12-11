@@ -69,7 +69,7 @@ class TestValidateIdentifier:
 class TestScyllaDBRepository:
     """Tests for ScyllaDBRepository."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_client(self) -> MagicMock:
         """Create mock ScyllaDB client."""
         client = MagicMock()
@@ -77,7 +77,7 @@ class TestScyllaDBRepository:
         client.prepare = AsyncMock(return_value=MagicMock())
         return client
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self, mock_client: MagicMock) -> ScyllaDBRepository[UserEntity]:
         """Create repository with mock client."""
         return ScyllaDBRepository[UserEntity](mock_client, UserEntity)
@@ -91,17 +91,13 @@ class TestScyllaDBRepository:
         valid = repository._validate_columns(["id", "name", "email"])
         assert valid == ["id", "name", "email"]
 
-    def test_validate_columns_rejects_invalid(
-        self, repository: ScyllaDBRepository
-    ) -> None:
+    def test_validate_columns_rejects_invalid(self, repository: ScyllaDBRepository) -> None:
         """Invalid column names should raise ValueError."""
         with pytest.raises(ValueError, match="Invalid CQL"):
             repository._validate_columns(["id", "name; DROP TABLE", "email"])
 
     @pytest.mark.asyncio
-    async def test_create_entity(
-        self, repository: ScyllaDBRepository, mock_client: MagicMock
-    ) -> None:
+    async def test_create_entity(self, repository: ScyllaDBRepository, mock_client: MagicMock) -> None:
         """Create should insert entity with prepared statement."""
         user = UserEntity(name="John", email="john@example.com")
 
@@ -112,9 +108,7 @@ class TestScyllaDBRepository:
         mock_client.execute.assert_called()
 
     @pytest.mark.asyncio
-    async def test_get_entity_found(
-        self, repository: ScyllaDBRepository, mock_client: MagicMock
-    ) -> None:
+    async def test_get_entity_found(self, repository: ScyllaDBRepository, mock_client: MagicMock) -> None:
         """Get should return entity when found."""
         user_id = uuid4()
         mock_row = MagicMock()
@@ -133,9 +127,7 @@ class TestScyllaDBRepository:
         assert result.name == "John"
 
     @pytest.mark.asyncio
-    async def test_get_entity_not_found(
-        self, repository: ScyllaDBRepository, mock_client: MagicMock
-    ) -> None:
+    async def test_get_entity_not_found(self, repository: ScyllaDBRepository, mock_client: MagicMock) -> None:
         """Get should return None when not found."""
         mock_client.execute = AsyncMock(return_value=[])
 
@@ -144,9 +136,7 @@ class TestScyllaDBRepository:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_delete_entity(
-        self, repository: ScyllaDBRepository, mock_client: MagicMock
-    ) -> None:
+    async def test_delete_entity(self, repository: ScyllaDBRepository, mock_client: MagicMock) -> None:
         """Delete should execute delete statement."""
         await repository.delete(uuid4())
 
@@ -154,9 +144,7 @@ class TestScyllaDBRepository:
         mock_client.execute.assert_called()
 
     @pytest.mark.asyncio
-    async def test_find_all_with_limit(
-        self, repository: ScyllaDBRepository, mock_client: MagicMock
-    ) -> None:
+    async def test_find_all_with_limit(self, repository: ScyllaDBRepository, mock_client: MagicMock) -> None:
         """Find all should respect limit parameter."""
         mock_client.execute = AsyncMock(return_value=[])
 
@@ -167,9 +155,7 @@ class TestScyllaDBRepository:
         assert 50 in call_args[0][1]
 
     @pytest.mark.asyncio
-    async def test_count_entities(
-        self, repository: ScyllaDBRepository, mock_client: MagicMock
-    ) -> None:
+    async def test_count_entities(self, repository: ScyllaDBRepository, mock_client: MagicMock) -> None:
         """Count should return entity count."""
         mock_row = MagicMock()
         mock_row.count = 42

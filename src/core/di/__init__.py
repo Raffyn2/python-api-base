@@ -24,14 +24,15 @@ Example:
 """
 
 from core.di.container import Container, Scope
+from core.di.lifecycle import Lifetime, Registration
+from core.di.observability import ContainerHooks, ContainerStats, MetricsTracker
 from core.di.resolution import (
     CircularDependencyError,
     DependencyResolutionError,
     InvalidFactoryError,
+    Resolver,
     ServiceNotRegisteredError,
 )
-from core.di.lifecycle import Lifetime, Registration
-from core.di.observability import ContainerHooks, ContainerStats, MetricsTracker
 
 __all__ = [
     "CircularDependencyError",
@@ -47,6 +48,8 @@ __all__ = [
     "Lifetime",
     "MetricsTracker",
     "Registration",
+    # Resolution
+    "Resolver",
     "Scope",
     "ServiceNotRegisteredError",
 ]

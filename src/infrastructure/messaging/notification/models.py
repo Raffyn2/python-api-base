@@ -5,7 +5,7 @@
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol
 
@@ -43,7 +43,7 @@ class Notification:
     template_id: str
     context: dict[str, Any]
     status: NotificationStatus = NotificationStatus.PENDING
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     sent_at: datetime | None = None
     error: NotificationError | None = None
 
@@ -62,9 +62,7 @@ class UserPreferences:
 class NotificationChannel[TPayload](Protocol):
     """Protocol for notification channels."""
 
-    async def send(
-        self, recipient: str, payload: TPayload
-    ) -> Result[NotificationStatus, NotificationError]:
+    async def send(self, recipient: str, payload: TPayload) -> Result[NotificationStatus, NotificationError]:
         """Send a notification."""
         ...
 

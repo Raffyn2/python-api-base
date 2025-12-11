@@ -34,9 +34,7 @@ def secret_name_strategy(draw: st.DrawFn) -> str:
         st.text(
             min_size=3,
             max_size=50,
-            alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-/"
-            ),
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-/"),
         )
     )
 
@@ -51,12 +49,14 @@ def secret_string_value_strategy(draw: st.DrawFn) -> str:
 def secret_json_value_strategy(draw: st.DrawFn) -> dict:
     """Generate secret JSON values."""
     return draw(
-        st.fixed_dictionaries({
-            "username": st.text(min_size=1, max_size=50),
-            "password": st.text(min_size=8, max_size=100),
-            "host": st.just("localhost"),
-            "port": st.integers(min_value=1, max_value=65535),
-        })
+        st.fixed_dictionaries(
+            {
+                "username": st.text(min_size=1, max_size=50),
+                "password": st.text(min_size=8, max_size=100),
+                "host": st.just("localhost"),
+                "port": st.integers(min_value=1, max_value=65535),
+            }
+        )
     )
 
 

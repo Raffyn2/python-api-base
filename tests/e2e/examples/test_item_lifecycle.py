@@ -44,9 +44,7 @@ class TestItemLifecycle:
                 headers=admin_headers,
             )
 
-            assert create_response.status_code == 201, (
-                f"Create failed: {create_response.text}"
-            )
+            assert create_response.status_code == 201, f"Create failed: {create_response.text}"
             created_item = create_response.json()["data"]
             item_id = created_item["id"]
 
@@ -59,9 +57,7 @@ class TestItemLifecycle:
                 headers=admin_headers,
             )
 
-            assert read_response.status_code == 200, (
-                f"Read failed: {read_response.text}"
-            )
+            assert read_response.status_code == 200, f"Read failed: {read_response.text}"
             read_item = read_response.json()["data"]
 
             assert read_item["id"] == item_id
@@ -75,9 +71,7 @@ class TestItemLifecycle:
                 headers=admin_headers,
             )
 
-            assert update_response.status_code == 200, (
-                f"Update failed: {update_response.text}"
-            )
+            assert update_response.status_code == 200, f"Update failed: {update_response.text}"
             updated_item = update_response.json()["data"]
 
             assert updated_item["name"] == "Updated Lifecycle Item"
@@ -88,9 +82,7 @@ class TestItemLifecycle:
                 headers=admin_headers,
             )
 
-            assert delete_response.status_code == 204, (
-                f"Delete failed: {delete_response.text}"
-            )
+            assert delete_response.status_code == 204, f"Delete failed: {delete_response.text}"
 
             # 5. VERIFY DELETED
             verify_response = client.get(

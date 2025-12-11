@@ -184,7 +184,6 @@ def get_domain_files() -> list[Path]:
 
 def get_module_files() -> list[Path]:
     """Get module files that should have corresponding tests."""
-    excluded_dirs = {"__pycache__", "__init__"}
     files = []
     for py_file in SRC_ROOT.rglob("*.py"):
         if "__pycache__" not in str(py_file) and py_file.stem != "__init__":
@@ -257,9 +256,7 @@ def calculate_cyclomatic_complexity(
             complexity += 1
         elif isinstance(child, ast.BoolOp):
             complexity += len(child.values) - 1
-        elif isinstance(child, ast.ExceptHandler) or isinstance(
-            child, (ast.Assert, ast.comprehension)
-        ):
+        elif isinstance(child, ast.ExceptHandler) or isinstance(child, (ast.Assert, ast.comprehension)):
             complexity += 1
 
     return complexity
@@ -297,11 +294,7 @@ def has_docstring(
     if not node.body:
         return False
     first = node.body[0]
-    return (
-        isinstance(first, ast.Expr)
-        and isinstance(first.value, ast.Constant)
-        and isinstance(first.value.value, str)
-    )
+    return isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str)
 
 
 def has_type_annotations(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
@@ -349,9 +342,8 @@ def test_function_size_compliance(file_path: Path) -> None:
             if lines > MAX_FUNCTION_LINES:
                 violations.append(f"{node.name}: {lines} lines")
 
-    assert not violations, (
-        f"Functions exceeding {MAX_FUNCTION_LINES} lines in {file_path.name}:\n"
-        + "\n".join(violations)
+    assert not violations, f"Functions exceeding {MAX_FUNCTION_LINES} lines in {file_path.name}:\n" + "\n".join(
+        violations
     )
 
 
@@ -375,10 +367,7 @@ def test_class_size_compliance(file_path: Path) -> None:
             if lines > MAX_CLASS_LINES:
                 violations.append(f"{node.name}: {lines} lines")
 
-    assert not violations, (
-        f"Classes exceeding {MAX_CLASS_LINES} lines in {file_path.name}:\n"
-        + "\n".join(violations)
-    )
+    assert not violations, f"Classes exceeding {MAX_CLASS_LINES} lines in {file_path.name}:\n" + "\n".join(violations)
 
 
 @pytest.mark.parametrize("file_path", ALL_PYTHON_FILES)
@@ -403,9 +392,8 @@ def test_nesting_depth_compliance(file_path: Path) -> None:
             if depth > MAX_NESTING_DEPTH:
                 violations.append(f"{node.name}: depth {depth}")
 
-    assert not violations, (
-        f"Functions exceeding nesting depth {MAX_NESTING_DEPTH} in {file_path.name}:\n"
-        + "\n".join(violations)
+    assert not violations, f"Functions exceeding nesting depth {MAX_NESTING_DEPTH} in {file_path.name}:\n" + "\n".join(
+        violations
     )
 
 
@@ -432,8 +420,7 @@ def test_cyclomatic_complexity_compliance(file_path: Path) -> None:
                 violations.append(f"{node.name}: complexity {complexity}")
 
     assert not violations, (
-        f"Functions exceeding complexity {MAX_CYCLOMATIC_COMPLEXITY} in {file_path.name}:\n"
-        + "\n".join(violations)
+        f"Functions exceeding complexity {MAX_CYCLOMATIC_COMPLEXITY} in {file_path.name}:\n" + "\n".join(violations)
     )
 
 
@@ -459,9 +446,8 @@ def test_parameter_count_compliance(file_path: Path) -> None:
             if params > MAX_PARAMETERS:
                 violations.append(f"{node.name}: {params} parameters")
 
-    assert not violations, (
-        f"Functions exceeding {MAX_PARAMETERS} parameters in {file_path.name}:\n"
-        + "\n".join(violations)
+    assert not violations, f"Functions exceeding {MAX_PARAMETERS} parameters in {file_path.name}:\n" + "\n".join(
+        violations
     )
 
 
@@ -493,9 +479,8 @@ def test_domain_layer_isolation(file_path: Path) -> None:
             if imp.startswith(prefix):
                 violations.append(imp)
 
-    assert not violations, (
-        f"Domain layer file {file_path.name} imports from forbidden layers:\n"
-        + "\n".join(violations)
+    assert not violations, f"Domain layer file {file_path.name} imports from forbidden layers:\n" + "\n".join(
+        violations
     )
 
 
@@ -635,9 +620,7 @@ def test_no_hardcoded_secrets(file_path: Path) -> None:
     for pattern in SECRET_PATTERNS:
         matches = re.findall(pattern, content, re.IGNORECASE)
         for match in matches:
-            is_excluded = any(
-                re.search(exc, match, re.IGNORECASE) for exc in EXCLUDED_SECRET_PATTERNS
-            )
+            is_excluded = any(re.search(exc, match, re.IGNORECASE) for exc in EXCLUDED_SECRET_PATTERNS)
             if not is_excluded:
                 safe_values = [
                     "example",
@@ -652,9 +635,7 @@ def test_no_hardcoded_secrets(file_path: Path) -> None:
                 if not any(p in match.lower() for p in safe_values):
                     violations.append(match[:50] + "..." if len(match) > 50 else match)
 
-    assert not violations, (
-        f"Potential hardcoded secrets in {file_path.name}:\n" + "\n".join(violations)
-    )
+    assert not violations, f"Potential hardcoded secrets in {file_path.name}:\n" + "\n".join(violations)
 
 
 def test_test_file_existence() -> None:
@@ -674,7 +655,6 @@ def test_test_file_existence() -> None:
         "adapters/repositories/sqlmodel_repository.py",
     ]
 
-    missing_tests = []
     for module in key_modules:
         module_path = SRC_ROOT / module
         if module_path.exists():

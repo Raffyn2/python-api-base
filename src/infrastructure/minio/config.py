@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 
-@dataclass
+@dataclass(slots=True)
 class MinIOConfig:
     """Configuration for MinIO client.
 
@@ -33,7 +33,7 @@ class MinIOConfig:
 
     endpoint: str = "localhost:9000"
     access_key: str = "minioadmin"
-    secret_key: str = "minioadmin"  # noqa: S105 - Default for local dev only
+    secret_key: str = "minioadmin"
     bucket: str = "uploads"
     secure: bool = False
     region: str | None = None

@@ -15,7 +15,7 @@ from infrastructure.rbac.checker import (
     _check_permission_simple,
 )
 from infrastructure.rbac.permission import Permission
-from infrastructure.rbac.role import Role, RoleRegistry
+from infrastructure.rbac.role import RoleRegistry
 
 
 class Resource(Enum):
@@ -68,7 +68,7 @@ class TestRBACUserProtocol:
 class TestRBAC:
     """Tests for RBAC class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def registry(self) -> RoleRegistry[Resource, Action]:
         """Create test role registry."""
         registry: RoleRegistry[Resource, Action] = RoleRegistry()
@@ -81,48 +81,36 @@ class TestRBAC:
         registry.create_role("admin", permissions={read_perm, create_perm, delete_perm})
         return registry
 
-    @pytest.fixture
-    def rbac(
-        self, registry: RoleRegistry[Resource, Action]
-    ) -> RBAC[MockUser, Resource, Action]:
+    @pytest.fixture()
+    def rbac(self, registry: RoleRegistry[Resource, Action]) -> RBAC[MockUser, Resource, Action]:
         """Create test RBAC checker."""
         return RBAC(registry)
 
-    def test_has_permission_with_role(
-        self, rbac: RBAC[MockUser, Resource, Action]
-    ) -> None:
+    def test_has_permission_with_role(self, rbac: RBAC[MockUser, Resource, Action]) -> None:
         """has_permission should return True when user has permission."""
         user = MockUser(roles=["viewer"])
         perm = Permission(Resource.USER, Action.READ)
         assert rbac.has_permission(user, perm) is True
 
-    def test_has_permission_without_role(
-        self, rbac: RBAC[MockUser, Resource, Action]
-    ) -> None:
+    def test_has_permission_without_role(self, rbac: RBAC[MockUser, Resource, Action]) -> None:
         """has_permission should return False when user lacks permission."""
         user = MockUser(roles=["viewer"])
         perm = Permission(Resource.USER, Action.DELETE)
         assert rbac.has_permission(user, perm) is False
 
-    def test_has_permission_no_roles(
-        self, rbac: RBAC[MockUser, Resource, Action]
-    ) -> None:
+    def test_has_permission_no_roles(self, rbac: RBAC[MockUser, Resource, Action]) -> None:
         """has_permission should return False for user with no roles."""
         user = MockUser(roles=[])
         perm = Permission(Resource.USER, Action.READ)
         assert rbac.has_permission(user, perm) is False
 
-    def test_has_permission_unknown_role(
-        self, rbac: RBAC[MockUser, Resource, Action]
-    ) -> None:
+    def test_has_permission_unknown_role(self, rbac: RBAC[MockUser, Resource, Action]) -> None:
         """has_permission should return False for unknown role."""
         user = MockUser(roles=["unknown_role"])
         perm = Permission(Resource.USER, Action.READ)
         assert rbac.has_permission(user, perm) is False
 
-    def test_has_permission_multiple_roles(
-        self, rbac: RBAC[MockUser, Resource, Action]
-    ) -> None:
+    def test_has_permission_multiple_roles(self, rbac: RBAC[MockUser, Resource, Action]) -> None:
         """has_permission should check all user roles."""
         user = MockUser(roles=["viewer", "admin"])
         perm = Permission(Resource.USER, Action.DELETE)
@@ -134,44 +122,34 @@ class TestRBAC:
         assert rbac.check_permission(user, Resource.USER, Action.READ) is True
         assert rbac.check_permission(user, Resource.USER, Action.DELETE) is False
 
-    def test_get_user_permissions(
-        self, rbac: RBAC[MockUser, Resource, Action]
-    ) -> None:
+    def test_get_user_permissions(self, rbac: RBAC[MockUser, Resource, Action]) -> None:
         """get_user_permissions should return all permissions."""
         user = MockUser(roles=["viewer"])
         perms = rbac.get_user_permissions(user)
         assert Permission(Resource.USER, Action.READ) in perms
 
-    def test_get_user_permissions_multiple_roles(
-        self, rbac: RBAC[MockUser, Resource, Action]
-    ) -> None:
+    def test_get_user_permissions_multiple_roles(self, rbac: RBAC[MockUser, Resource, Action]) -> None:
         """get_user_permissions should combine permissions from all roles."""
         user = MockUser(roles=["viewer", "editor"])
         perms = rbac.get_user_permissions(user)
         assert Permission(Resource.USER, Action.READ) in perms
         assert Permission(Resource.USER, Action.CREATE) in perms
 
-    def test_get_user_permissions_no_roles(
-        self, rbac: RBAC[MockUser, Resource, Action]
-    ) -> None:
+    def test_get_user_permissions_no_roles(self, rbac: RBAC[MockUser, Resource, Action]) -> None:
         """get_user_permissions should return empty set for no roles."""
         user = MockUser(roles=[])
         perms = rbac.get_user_permissions(user)
         assert perms == set()
 
     @pytest.mark.asyncio
-    async def test_require_permission_granted(
-        self, rbac: RBAC[MockUser, Resource, Action]
-    ) -> None:
+    async def test_require_permission_granted(self, rbac: RBAC[MockUser, Resource, Action]) -> None:
         """require_permission should not raise when permission granted."""
         user = MockUser(roles=["viewer"])
         perm = Permission(Resource.USER, Action.READ)
         await rbac.require_permission(user, perm)  # Should not raise
 
     @pytest.mark.asyncio
-    async def test_require_permission_denied(
-        self, rbac: RBAC[MockUser, Resource, Action]
-    ) -> None:
+    async def test_require_permission_denied(self, rbac: RBAC[MockUser, Resource, Action]) -> None:
         """require_permission should raise when permission denied."""
         user = MockUser(roles=["viewer"])
         perm = Permission(Resource.USER, Action.DELETE)
@@ -179,9 +157,7 @@ class TestRBAC:
             await rbac.require_permission(user, perm)
 
     @pytest.mark.asyncio
-    async def test_require_permission_with_audit_logger(
-        self, registry: RoleRegistry[Resource, Action]
-    ) -> None:
+    async def test_require_permission_with_audit_logger(self, registry: RoleRegistry[Resource, Action]) -> None:
         """require_permission should call audit logger."""
         audit_logger = AsyncMock()
         rbac: RBAC[MockUser, Resource, Action] = RBAC(registry, audit_logger)
@@ -196,9 +172,7 @@ class TestRBAC:
         assert call_args["resource_id"] == "123"
 
     @pytest.mark.asyncio
-    async def test_require_permission_denied_with_audit(
-        self, registry: RoleRegistry[Resource, Action]
-    ) -> None:
+    async def test_require_permission_denied_with_audit(self, registry: RoleRegistry[Resource, Action]) -> None:
         """require_permission should audit denied access."""
         audit_logger = AsyncMock()
         rbac: RBAC[MockUser, Resource, Action] = RBAC(registry, audit_logger)

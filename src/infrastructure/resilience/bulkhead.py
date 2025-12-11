@@ -5,7 +5,7 @@
 """
 
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
@@ -32,7 +32,7 @@ class BulkheadRejectedError(Exception):
         super().__init__(f"{message}: {name}")
 
 
-@dataclass
+@dataclass(slots=True)
 class BulkheadConfig:
     """Bulkhead configuration for resource isolation."""
 
@@ -40,7 +40,7 @@ class BulkheadConfig:
     max_wait_seconds: float = 5.0
 
 
-@dataclass
+@dataclass(slots=True)
 class BulkheadStats:
     """Statistics for a bulkhead."""
 
@@ -175,7 +175,7 @@ class Bulkhead[T]:
             self._semaphore.release()
 
     @asynccontextmanager
-    async def acquire_context(self):
+    async def acquire_context(self) -> AsyncIterator[None]:
         """Context manager for acquiring and releasing permits."""
         acquired = await self.acquire()
         if not acquired:

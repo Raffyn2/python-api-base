@@ -8,17 +8,17 @@ Provides abstraction for publishing domain events to Kafka topics.
 
 from __future__ import annotations
 
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
+import structlog
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 
-@dataclass
-class DomainEvent(Generic[T]):
+@dataclass(slots=True)
+class DomainEvent[T: BaseModel]:
     """Base domain event with typed payload.
 
     Type Parameters:
@@ -128,7 +128,11 @@ class KafkaEventPublisher(EventPublisher):
         **Validates: Requirements 3.4, 3.5**
         """
         if self._producer is None:
-            logger.debug(f"Kafka disabled, skipping event: {event.event_type}")
+            logger.debug(
+                "Kafka disabled, skipping event",
+                event_type=event.event_type,
+                operation="KAFKA_SKIP",
+            )
             return
 
         try:
@@ -144,22 +148,19 @@ class KafkaEventPublisher(EventPublisher):
                 topic=topic,
             )
             logger.info(
-                f"Event published: {event.event_type}",
-                extra={
-                    "topic": topic,
-                    "entity_id": event.entity_id,
-                    "event_type": event.event_type,
-                },
+                "Event published",
+                topic=topic,
+                entity_id=event.entity_id,
+                event_type=event.event_type,
+                operation="KAFKA_PUBLISH",
             )
-        except Exception as e:
+        except Exception:
             # Fire-and-forget: log error but don't fail main operation
-            logger.error(
-                f"Failed to publish event: {e}",
-                extra={
-                    "event_type": event.event_type,
-                    "entity_id": event.entity_id,
-                    "error": str(e),
-                },
+            logger.exception(
+                "Failed to publish event",
+                event_type=event.event_type,
+                entity_id=event.entity_id,
+                operation="KAFKA_PUBLISH",
             )
 
 

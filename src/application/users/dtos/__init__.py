@@ -23,16 +23,16 @@ from application.users.dtos.read_model import (
 )
 
 __all__ = [
-    # Commands
-    "UserDTO",
+    "ChangeEmailDTO",
+    "ChangePasswordDTO",
     "CreateUserDTO",
     "UpdateUserDTO",
-    "ChangePasswordDTO",
-    "ChangeEmailDTO",
+    "UserActivityReadDTO",
+    # Commands
+    "UserDTO",
     "UserListDTO",
+    "UserListReadDTO",
     # Read Model
     "UserReadDTO",
-    "UserListReadDTO",
     "UserSearchResultDTO",
-    "UserActivityReadDTO",
 ]

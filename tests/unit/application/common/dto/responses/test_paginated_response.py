@@ -155,7 +155,7 @@ class TestPaginatedResponse:
             size=10,
         )
         data = response.model_dump()
-        
+
         assert data["items"] == [{"id": "1"}]
         assert data["total"] == 50
         assert data["page"] == 2

@@ -87,7 +87,7 @@ class MockItemRepository:
         return len(self._items)
 
 
-@pytest.fixture
+@pytest.fixture()
 def auth_headers() -> dict[str, str]:
     """Headers for authenticated requests with admin role."""
     return {
@@ -97,7 +97,7 @@ def auth_headers() -> dict[str, str]:
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def viewer_headers() -> dict[str, str]:
     """Headers for viewer role (read-only)."""
     return {
@@ -106,7 +106,7 @@ def viewer_headers() -> dict[str, str]:
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def item_create_data() -> dict[str, Any]:
     """Valid item creation data."""
     return {

@@ -8,11 +8,21 @@ Provides GraphQL queries and mutations for ItemExample and PedidoExample.
 """
 
 import strawberry
+from strawberry.extensions import QueryDepthLimiter
 
 from interface.graphql.mutations import Mutation
 from interface.graphql.queries import Query
 
-schema = strawberry.Schema(query=Query, mutation=Mutation)
+# Security: Limit query depth to prevent DoS attacks
+_MAX_QUERY_DEPTH = 10
+
+schema = strawberry.Schema(
+    query=Query,
+    mutation=Mutation,
+    extensions=[
+        QueryDepthLimiter(max_depth=_MAX_QUERY_DEPTH),
+    ],
+)
 
 # Re-export for backward compatibility
 __all__ = ["Mutation", "Query", "schema"]

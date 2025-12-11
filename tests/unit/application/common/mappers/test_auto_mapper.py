@@ -1,6 +1,5 @@
 """Tests for auto mapper module."""
 
-import pytest
 from pydantic import BaseModel
 
 from application.common.mappers.implementations.auto_mapper import AutoMapper

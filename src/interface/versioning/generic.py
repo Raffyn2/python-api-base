@@ -42,7 +42,7 @@ class ApiVersion[TVersion]:
     successor: TVersion | None = None
 
 
-@dataclass
+@dataclass(slots=True)
 class VersionConfig[TVersion]:
     """Configuration for API versioning.
 
@@ -130,9 +130,7 @@ class VersionedRouter[TVersion]:
                     resp: Response = kwargs["response"]
                     resp.headers["Deprecation"] = "true"
                     if sunset_date:
-                        resp.headers["Sunset"] = sunset_date.strftime(
-                            "%a, %d %b %Y %H:%M:%S GMT"
-                        )
+                        resp.headers["Sunset"] = sunset_date.strftime("%a, %d %b %Y %H:%M:%S GMT")
                     if message:
                         resp.headers["X-Deprecation-Notice"] = message
 

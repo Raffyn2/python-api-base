@@ -1,14 +1,17 @@
 """Redis-based distributed cache."""
 
-import logging
 from dataclasses import dataclass
 from typing import Any
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class RedisConfig:
+    """Configuration for Redis cache connection."""
+
     host: str = "localhost"
     port: int = 6379
     db: int = 0
@@ -16,35 +19,42 @@ class RedisConfig:
 
 
 class RedisCache:
+    """Redis-based distributed cache implementation."""
+
     def __init__(self, config: RedisConfig | None = None) -> None:
         self._config = config or RedisConfig()
         self._client = None
 
     async def connect(self) -> None:
-        logger.info(f"Connecting to Redis: {self._config.host}:{self._config.port}")
+        logger.info(
+            "Connecting to Redis",
+            operation="REDIS_CONNECT",
+            host=self._config.host,
+            port=self._config.port,
+        )
 
     async def get(self, key: str) -> Any | None:
         try:
             if self._client is None:
                 return None
             return None
-        except Exception as e:
-            logger.error(f"Redis get error: {e}")
+        except Exception:
+            logger.exception("Redis get error", operation="REDIS_GET")
             return None
 
     async def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         try:
-            logger.debug(f"Redis set: {key}")
+            logger.debug("Redis set", operation="REDIS_SET", key=key)
             return True
-        except Exception as e:
-            logger.error(f"Redis set error: {e}")
+        except Exception:
+            logger.exception("Redis set error", operation="REDIS_SET")
             return False
 
     async def delete(self, key: str) -> bool:
         try:
             return True
-        except Exception as e:
-            logger.error(f"Redis delete error: {e}")
+        except Exception:
+            logger.exception("Redis delete error", operation="REDIS_DELETE")
             return False
 
     async def close(self) -> None:

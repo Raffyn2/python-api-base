@@ -41,12 +41,10 @@ class ExponentialBackoff:
 
     def get_delay(self, attempt: int) -> float:
         """Calculate delay with exponential backoff."""
-        delay = self._config.base_delay_seconds * (
-            self._config.exponential_base ** (attempt - 1)
-        )
+        delay = self._config.base_delay_seconds * (self._config.exponential_base ** (attempt - 1))
         delay = min(delay, self._config.max_delay_seconds)
         if self._config.jitter:
-            delay = delay * (0.5 + random.random())  # noqa: S311
+            delay = delay * (0.5 + random.random())
         return delay
 
 

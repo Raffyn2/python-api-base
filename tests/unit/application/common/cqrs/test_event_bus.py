@@ -8,7 +8,6 @@ from dataclasses import dataclass
 import pytest
 
 from application.common.cqrs import (
-    EventHandler,
     EventHandlerError,
     TypedEventBus,
 )

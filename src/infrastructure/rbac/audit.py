@@ -6,14 +6,15 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol
 from uuid import uuid4
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
@@ -130,7 +131,7 @@ class AuditLogger[TUser, TResource: Enum, TAction: Enum]:
             logger_name: Python logger name.
             sink: Optional external sink (e.g., Elasticsearch, database).
         """
-        self._logger = logging.getLogger(logger_name)
+        self._logger = structlog.get_logger(logger_name)
         self._sink = sink
         self._handlers: list[Any] = []
 
@@ -149,27 +150,35 @@ class AuditLogger[TUser, TResource: Enum, TAction: Enum]:
         if event.granted:
             self._logger.info(
                 "Access granted",
-                extra={"audit_event": event_dict},
+                audit_event=event_dict,
             )
         else:
             self._logger.warning(
                 "Access denied",
-                extra={"audit_event": event_dict},
+                audit_event=event_dict,
             )
 
         # Send to external sink if configured
         if self._sink:
             try:
                 await self._sink.write(event_dict)
-            except Exception as e:
-                self._logger.error(f"Failed to write to audit sink: {e}")
+            except Exception:
+                self._logger.exception(
+                    "Failed to write to audit sink",
+                    event_id=event.event_id,
+                    operation="AUDIT_SINK_WRITE",
+                )
 
         # Call registered handlers
         for handler in self._handlers:
             try:
                 await handler(event)
-            except Exception as e:
-                self._logger.error(f"Audit handler failed: {e}")
+            except Exception:
+                self._logger.exception(
+                    "Audit handler failed",
+                    event_id=event.event_id,
+                    operation="AUDIT_HANDLER",
+                )
 
     async def log_access(
         self,

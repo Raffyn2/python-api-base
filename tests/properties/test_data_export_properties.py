@@ -6,9 +6,7 @@
 
 import pytest
 
-pytest.skip(
-    "Module application.common.data_export not implemented", allow_module_level=True
-)
+pytest.skip("Module application.common.data_export not implemented", allow_module_level=True)
 
 from dataclasses import dataclass
 from typing import Any
@@ -39,23 +37,15 @@ class ExportRecordSerializer:
         return {"id": obj.id, "name": obj.name, "value": obj.value}
 
     def from_dict(self, data: dict[str, Any]) -> ExportRecord:
-        return ExportRecord(
-            id=str(data["id"]), name=str(data["name"]), value=int(data["value"])
-        )
+        return ExportRecord(id=str(data["id"]), name=str(data["name"]), value=int(data["value"]))
 
 
 @st.composite
 def export_record_strategy(draw: st.DrawFn) -> ExportRecord:
     """Generate valid export records."""
     return ExportRecord(
-        id=draw(
-            st.text(
-                alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=1, max_size=20
-            )
-        ),
-        name=draw(
-            st.text(alphabet="abcdefghijklmnopqrstuvwxyz ", min_size=1, max_size=50)
-        ),
+        id=draw(st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=1, max_size=20)),
+        name=draw(st.text(alphabet="abcdefghijklmnopqrstuvwxyz ", min_size=1, max_size=50)),
         value=draw(st.integers(min_value=0, max_value=10000)),
     )
 
@@ -72,9 +62,9 @@ class TestExportImportProperties:
         importer: DataImporter[ExportRecord] = DataImporter(serializer)
 
         config = ExportConfig(format=ExportFormat.JSON)
-        content, result = exporter.export(records, config)
+        content, _result = exporter.export(records, config)
 
-        imported, import_result = importer.import_json(content)
+        imported, _import_result = importer.import_json(content)
 
         assert len(imported) == len(records)
         for orig, imp in zip(records, imported, strict=False):
@@ -91,9 +81,9 @@ class TestExportImportProperties:
         importer: DataImporter[ExportRecord] = DataImporter(serializer)
 
         config = ExportConfig(format=ExportFormat.JSONL)
-        content, result = exporter.export(records, config)
+        content, _result = exporter.export(records, config)
 
-        imported, import_result = importer.import_jsonl(content)
+        imported, _import_result = importer.import_jsonl(content)
 
         assert len(imported) == len(records)
 
@@ -106,9 +96,9 @@ class TestExportImportProperties:
         importer: DataImporter[ExportRecord] = DataImporter(serializer)
 
         config = ExportConfig(format=ExportFormat.CSV)
-        content, result = exporter.export(records, config)
+        content, _result = exporter.export(records, config)
 
-        imported, import_result = importer.import_csv(content)
+        imported, _import_result = importer.import_csv(content)
 
         assert len(imported) == len(records)
 
@@ -134,9 +124,7 @@ class TestExportImportProperties:
         ),
     )
     @settings(max_examples=50)
-    def test_include_fields_filters(
-        self, records: list[ExportRecord], include_fields: list[str]
-    ) -> None:
+    def test_include_fields_filters(self, records: list[ExportRecord], include_fields: list[str]) -> None:
         """Include fields filters output."""
         serializer = ExportRecordSerializer()
         exporter: DataExporter[ExportRecord] = DataExporter(serializer)

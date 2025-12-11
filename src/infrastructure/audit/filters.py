@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from infrastructure.audit.trail import AuditAction, AuditRecord
 
 
-@dataclass
+@dataclass(slots=True)
 class AuditQueryFilters:
     """Filters for audit queries."""
 
@@ -144,7 +144,7 @@ class AuditExporter[TFormat](Protocol):
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class JsonExportConfig:
     """JSON export configuration."""
 
@@ -176,7 +176,7 @@ class JsonAuditExporter:
         return json.dumps(data, indent=indent, default=str).encode("utf-8")
 
 
-@dataclass
+@dataclass(slots=True)
 class CsvExportConfig:
     """CSV export configuration."""
 

@@ -3,8 +3,7 @@
 Tests for EventSourcedRepository class.
 """
 
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from dataclasses import dataclass
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 

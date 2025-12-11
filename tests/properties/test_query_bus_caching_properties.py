@@ -159,9 +159,7 @@ class TestQueryBusCachingProperties:
             unique=True,
         )
     )
-    def test_different_queries_have_different_cache_keys(
-        self, query_ids: list[str]
-    ) -> None:
+    def test_different_queries_have_different_cache_keys(self, query_ids: list[str]) -> None:
         """
         For any set of queries with different parameters, each SHALL have
         a unique cache key.

@@ -1,5 +1,4 @@
-"""
-Calculator module for sustainability metrics.
+"""Calculator module for sustainability metrics.
 
 Provides functions for carbon emission calculations, cost calculations,
 aggregation, efficiency metrics, and goal tracking.
@@ -9,7 +8,7 @@ from collections.abc import Sequence
 from decimal import Decimal
 from typing import Literal
 
-from src.infrastructure.sustainability.models import (
+from infrastructure.sustainability.models import (
     CarbonIntensity,
     CarbonMetric,
     EnergyMetric,
@@ -17,11 +16,10 @@ from src.infrastructure.sustainability.models import (
 
 
 def calculate_emissions(energy_kwh: Decimal, intensity_gco2_per_kwh: Decimal) -> Decimal:
-    """
-    Calculate carbon emissions from energy consumption.
+    """Calculate carbon emissions from energy consumption.
 
     Property 2: Carbon Emission Calculation
-    For any energy (kWh) and intensity (gCO2/kWh), emissions = energy × intensity.
+    For any energy (kWh) and intensity (gCO2/kWh), emissions = energy * intensity.
 
     Args:
         energy_kwh: Energy consumption in kilowatt-hours
@@ -38,11 +36,10 @@ def calculate_emissions(energy_kwh: Decimal, intensity_gco2_per_kwh: Decimal) ->
 
 
 def calculate_cost(energy_kwh: Decimal, price_per_kwh: Decimal) -> Decimal:
-    """
-    Calculate energy cost from consumption.
+    """Calculate energy cost from consumption.
 
     Property 3: Energy Cost Calculation
-    For any energy (kWh) and price ($/kWh), cost = energy × price.
+    For any energy (kWh) and price ($/kWh), cost = energy * price.
 
     Args:
         energy_kwh: Energy consumption in kilowatt-hours
@@ -62,8 +59,7 @@ def aggregate_emissions(
     metrics: Sequence[CarbonMetric],
     group_by: Literal["namespace", "pod", "container"] = "namespace",
 ) -> dict[str, Decimal]:
-    """
-    Aggregate carbon emissions by grouping key.
+    """Aggregate carbon emissions by grouping key.
 
     Property 4: Emissions Aggregation Consistency
     Sum of individual emissions equals aggregated total.
@@ -79,7 +75,7 @@ def aggregate_emissions(
     for metric in metrics:
         key = getattr(metric, group_by)
         if key not in aggregated:
-            aggregated[key] = Decimal("0")
+            aggregated[key] = Decimal(0)
         aggregated[key] += metric.emissions_gco2
     return aggregated
 
@@ -89,8 +85,7 @@ def calculate_efficiency(
     requests_count: int,
     transactions_count: int,
 ) -> tuple[Decimal | None, Decimal | None]:
-    """
-    Calculate energy efficiency metrics.
+    """Calculate energy efficiency metrics.
 
     Property 6: Energy Efficiency Calculation
     For any energy and count > 0, efficiency = energy / count.
@@ -126,11 +121,10 @@ def calculate_progress(
     current: Decimal,
     target: Decimal,
 ) -> Decimal | None:
-    """
-    Calculate progress towards emission reduction target.
+    """Calculate progress towards emission reduction target.
 
     Property 5: Goal Progress Calculation
-    progress = ((baseline - current) / (baseline - target)) × 100
+    progress = ((baseline - current) / (baseline - target)) * 100
 
     Args:
         baseline: Baseline emissions value
@@ -148,12 +142,11 @@ def calculate_progress(
         return None
 
     actual_reduction = baseline - current
-    return (actual_reduction / target_reduction) * Decimal("100")
+    return (actual_reduction / target_reduction) * Decimal(100)
 
 
 def calculate_savings(baseline_cost: Decimal, current_cost: Decimal) -> Decimal:
-    """
-    Calculate cost savings from energy optimization.
+    """Calculate cost savings from energy optimization.
 
     Property 7: Cost Savings Calculation
     savings = baseline_cost - current_cost
@@ -173,11 +166,10 @@ def calculate_savings(baseline_cost: Decimal, current_cost: Decimal) -> Decimal:
 
 
 def calculate_trend(previous: Decimal, current: Decimal) -> Decimal | None:
-    """
-    Calculate trend percentage between two periods.
+    """Calculate trend percentage between two periods.
 
     Property 8: Trend Calculation
-    trend = ((current - previous) / previous) × 100
+    trend = ((current - previous) / previous) * 100
 
     Args:
         previous: Previous period value
@@ -190,7 +182,7 @@ def calculate_trend(previous: Decimal, current: Decimal) -> Decimal | None:
         raise ValueError("Values must be non-negative")
     if previous == 0:
         return None
-    return ((current - previous) / previous) * Decimal("100")
+    return ((current - previous) / previous) * Decimal(100)
 
 
 def create_carbon_metrics(
@@ -198,8 +190,7 @@ def create_carbon_metrics(
     intensity: CarbonIntensity,
     confidence_margin: Decimal = Decimal("0.1"),
 ) -> list[CarbonMetric]:
-    """
-    Create carbon metrics from energy metrics.
+    """Create carbon metrics from energy metrics.
 
     Args:
         energy_metrics: Sequence of energy metrics
@@ -209,7 +200,4 @@ def create_carbon_metrics(
     Returns:
         List of carbon metrics
     """
-    return [
-        CarbonMetric.calculate(energy, intensity, confidence_margin)
-        for energy in energy_metrics
-    ]
+    return [CarbonMetric.calculate(energy, intensity, confidence_margin) for energy in energy_metrics]

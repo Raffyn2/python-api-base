@@ -27,9 +27,7 @@ class TestOffsetPagination:
         page=st.integers(min_value=1, max_value=20),
         size=st.integers(min_value=1, max_value=50),
     )
-    def test_pagination_returns_correct_slice(
-        self, items: list[int], page: int, size: int
-    ) -> None:
+    def test_pagination_returns_correct_slice(self, items: list[int], page: int, size: int) -> None:
         """
         **Feature: generic-fastapi-crud, Property 22: Pagination Utility Correctness**
 
@@ -52,9 +50,7 @@ class TestOffsetPagination:
         page=st.integers(min_value=1, max_value=20),
         size=st.integers(min_value=1, max_value=50),
     )
-    def test_pagination_total_equals_list_length(
-        self, items: list[int], page: int, size: int
-    ) -> None:
+    def test_pagination_total_equals_list_length(self, items: list[int], page: int, size: int) -> None:
         """
         For any list, pagination total SHALL equal the list length.
         """
@@ -170,7 +166,5 @@ class TestCursorEncoding:
         """
         encoded = encode_cursor(value)
         # URL-safe base64 uses only alphanumeric, -, _, and =
-        valid_chars = set(
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_="
-        )
+        valid_chars = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=")
         assert all(c in valid_chars for c in encoded)

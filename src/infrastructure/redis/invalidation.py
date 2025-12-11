@@ -6,20 +6,21 @@
 
 from __future__ import annotations
 
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
+
+import structlog
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Coroutine
 
     from infrastructure.redis.client import RedisClient
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class InvalidationEvent:
     """Event that triggers cache invalidation.
 
@@ -109,14 +110,12 @@ class PatternInvalidation(InvalidationStrategy):
 
         logger.info(
             "Cache invalidated",
-            extra={
-                "entity_type": event.entity_type,
-                "entity_id": event.entity_id,
-                "action": event.action,
-                "patterns": patterns,
-                "deleted": total_deleted,
-                "correlation_id": event.correlation_id,
-            },
+            entity_type=event.entity_type,
+            entity_id=event.entity_id,
+            action=event.action,
+            patterns=patterns,
+            deleted=total_deleted,
+            correlation_id=event.correlation_id,
         )
 
         return total_deleted
@@ -142,9 +141,7 @@ class CacheInvalidator:
         """
         self._client = client
         self._strategy = strategy or PatternInvalidation()
-        self._listeners: list[
-            Callable[[InvalidationEvent], Coroutine[Any, Any, None]]
-        ] = []
+        self._listeners: list[Callable[[InvalidationEvent], Coroutine[Any, Any, None]]] = []
 
     def register_patterns(self, entity_type: str, patterns: list[str]) -> None:
         """Register cache patterns for an entity type.
@@ -290,7 +287,12 @@ class CacheInvalidator:
         for listener in self._listeners:
             try:
                 await listener(event)
-            except Exception as e:
-                logger.warning(f"Invalidation listener failed: {e}")
+            except Exception:
+                logger.warning(
+                    "Invalidation listener failed",
+                    entity_type=event.entity_type,
+                    operation="REDIS_INVALIDATE",
+                    exc_info=True,
+                )
 
         return deleted

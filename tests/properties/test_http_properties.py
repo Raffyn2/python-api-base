@@ -16,9 +16,7 @@ pytest.importorskip("fastapi")
 
 # Skip if no database configured
 if not os.getenv("DATABASE__URL"):
-    pytest.skip(
-        "Database not configured for HTTP property tests", allow_module_level=True
-    )
+    pytest.skip("Database not configured for HTTP property tests", allow_module_level=True)
 
 
 class TestResponseHeadersProperties:
@@ -29,12 +27,14 @@ class TestResponseHeadersProperties:
     """
 
     @given(
-        endpoint=st.sampled_from([
-            "/api/v1/examples/items",
-            "/api/v1/examples/pedidos",
-            "/health/live",
-            "/health/ready",
-        ])
+        endpoint=st.sampled_from(
+            [
+                "/api/v1/examples/items",
+                "/api/v1/examples/pedidos",
+                "/health/live",
+                "/health/ready",
+            ]
+        )
     )
     @settings(max_examples=100)
     def test_all_endpoints_have_security_headers(self, endpoint: str) -> None:

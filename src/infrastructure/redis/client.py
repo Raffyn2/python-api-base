@@ -9,7 +9,7 @@ Main client interface that composes connection and operations management.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from infrastructure.redis.circuit_breaker import CircuitBreaker
 from infrastructure.redis.config import RedisConfig
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class RedisClient(Generic[T]):
+class RedisClient[T]:
     """Enterprise Redis client with circuit breaker.
 
     **Feature: enterprise-infrastructure-2025**

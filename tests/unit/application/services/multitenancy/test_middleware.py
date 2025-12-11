@@ -4,7 +4,7 @@
 **Requirements: 1.4**
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -18,29 +18,25 @@ from application.services.multitenancy.middleware.middleware import (
 class TestTenantMiddleware:
     """Tests for TenantMiddleware."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_app(self) -> AsyncMock:
         """Create mock ASGI app."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def middleware(self, mock_app: AsyncMock) -> TenantMiddleware:
         """Create middleware instance."""
         return TenantMiddleware(mock_app)
 
     @pytest.mark.asyncio
-    async def test_extracts_tenant_from_header(
-        self, middleware: TenantMiddleware, mock_app: AsyncMock
-    ) -> None:
+    async def test_extracts_tenant_from_header(self, middleware: TenantMiddleware, mock_app: AsyncMock) -> None:
         """Should extract tenant ID from header."""
         scope = {
             "type": "http",
             "headers": [(b"x-tenant-id", b"tenant-123")],
         }
 
-        with patch(
-            "application.services.multitenancy.middleware.middleware.TenantContext"
-        ) as mock_context:
+        with patch("application.services.multitenancy.middleware.middleware.TenantContext") as mock_context:
             mock_context.return_value.__aenter__ = AsyncMock()
             mock_context.return_value.__aexit__ = AsyncMock()
 
@@ -49,9 +45,7 @@ class TestTenantMiddleware:
             mock_context.assert_called_once_with("tenant-123")
 
     @pytest.mark.asyncio
-    async def test_passes_through_non_http(
-        self, middleware: TenantMiddleware, mock_app: AsyncMock
-    ) -> None:
+    async def test_passes_through_non_http(self, middleware: TenantMiddleware, mock_app: AsyncMock) -> None:
         """Should pass through non-HTTP requests."""
         scope = {"type": "websocket"}
 
@@ -60,9 +54,7 @@ class TestTenantMiddleware:
         mock_app.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_passes_through_without_tenant(
-        self, middleware: TenantMiddleware, mock_app: AsyncMock
-    ) -> None:
+    async def test_passes_through_without_tenant(self, middleware: TenantMiddleware, mock_app: AsyncMock) -> None:
         """Should pass through when no tenant ID found."""
         scope = {
             "type": "http",
@@ -155,12 +147,14 @@ class TestRequireTenant:
         async def protected_func() -> str:
             return "result"
 
-        with patch(
-            "application.services.multitenancy.middleware.middleware.get_current_tenant",
-            return_value=None,
+        with (
+            patch(
+                "application.services.multitenancy.middleware.middleware.get_current_tenant",
+                return_value=None,
+            ),
+            pytest.raises(ValueError, match="Tenant context required but not set"),
         ):
-            with pytest.raises(ValueError, match="Tenant context required but not set"):
-                await protected_func()
+            await protected_func()
 
     @pytest.mark.asyncio
     async def test_allows_when_tenant_set(self) -> None:

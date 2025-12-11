@@ -3,7 +3,6 @@
 Tests query registration, dispatch, and caching.
 """
 
-from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest

@@ -4,11 +4,7 @@
 **Validates: Requirements 7.1, 7.2, 7.4, 7.7**
 """
 
-import logging
-
 from infrastructure.db.search.models import SearchQuery, SearchResult
-
-logger = logging.getLogger(__name__)
 
 
 class InMemorySearchProvider[TDocument]:

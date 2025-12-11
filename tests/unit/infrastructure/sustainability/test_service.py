@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -15,23 +15,23 @@ from src.infrastructure.sustainability.models import (
 from src.infrastructure.sustainability.service import SustainabilityService
 
 
-@pytest.fixture
+@pytest.fixture()
 def settings() -> SustainabilitySettings:
     """Create test settings."""
     return SustainabilitySettings(
         electricity_price_per_kwh=Decimal("0.12"),
         currency="USD",
-        default_carbon_intensity_gco2_per_kwh=Decimal("400"),
+        default_carbon_intensity_gco2_per_kwh=Decimal(400),
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_carbon_client() -> AsyncMock:
     """Create mock carbon intensity client."""
     client = AsyncMock()
     client.get_carbon_intensity.return_value = CarbonIntensity(
         region="us-east-1",
-        intensity_gco2_per_kwh=Decimal("400"),
+        intensity_gco2_per_kwh=Decimal(400),
         timestamp=datetime.now(),
         source="test",
         is_default=False,
@@ -39,7 +39,7 @@ def mock_carbon_client() -> AsyncMock:
     return client
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_prometheus_client() -> AsyncMock:
     """Create mock Prometheus client."""
     client = AsyncMock()
@@ -48,7 +48,7 @@ def mock_prometheus_client() -> AsyncMock:
             namespace="default",
             pod="api-pod",
             container="main",
-            energy_joules=Decimal("3600000"),  # 1 kWh
+            energy_joules=Decimal(3600000),  # 1 kWh
             timestamp=datetime.now(),
             source="rapl",
         )
@@ -72,7 +72,6 @@ class TestSustainabilityServiceInit:
         service = SustainabilityService(settings=settings)
 
         assert service.settings == settings
-
 
     def test_init_with_clients(
         self,
@@ -103,9 +102,7 @@ class TestSustainabilityServiceProperties:
         assert client is not None
         assert service._carbon_client is client
 
-    def test_prometheus_client_lazy_init(
-        self, settings: SustainabilitySettings
-    ) -> None:
+    def test_prometheus_client_lazy_init(self, settings: SustainabilitySettings) -> None:
         """Test Prometheus client is lazily initialized."""
         service = SustainabilityService(settings=settings)
 
@@ -149,9 +146,7 @@ class TestSustainabilityServiceMetrics:
 
         await service.get_energy_metrics(namespace="production")
 
-        mock_prometheus_client.get_kepler_energy_metrics.assert_called_once_with(
-            "production"
-        )
+        mock_prometheus_client.get_kepler_energy_metrics.assert_called_once_with("production")
 
     @pytest.mark.asyncio
     async def test_get_carbon_metrics(
@@ -170,7 +165,7 @@ class TestSustainabilityServiceMetrics:
         metrics = await service.get_carbon_metrics()
 
         assert len(metrics) == 1
-        assert metrics[0].emissions_gco2 == Decimal("400")  # 1 kWh * 400 gCO2/kWh
+        assert metrics[0].emissions_gco2 == Decimal(400)  # 1 kWh * 400 gCO2/kWh
 
     @pytest.mark.asyncio
     async def test_get_emissions_by_namespace(
@@ -208,7 +203,7 @@ class TestSustainabilityServiceCost:
 
         cost = await service.calculate_energy_cost()
 
-        assert cost.energy_kwh == Decimal("1")  # 3600000 J = 1 kWh
+        assert cost.energy_kwh == Decimal(1)  # 3600000 J = 1 kWh
         assert cost.price_per_kwh == Decimal("0.12")
         assert cost.total_cost == Decimal("0.12")
         assert cost.currency == "USD"
@@ -259,8 +254,8 @@ class TestSustainabilityServiceReports:
         )
 
         assert report.namespace == "default"
-        assert report.total_energy_kwh == Decimal("1")
-        assert report.total_emissions_gco2 == Decimal("400")
+        assert report.total_energy_kwh == Decimal(1)
+        assert report.total_emissions_gco2 == Decimal(400)
         assert report.currency == "USD"
 
     @pytest.mark.asyncio
@@ -279,15 +274,15 @@ class TestSustainabilityServiceReports:
 
         progress = await service.get_progress(
             namespace="default",
-            baseline=Decimal("1000"),
-            target=Decimal("500"),
+            baseline=Decimal(1000),
+            target=Decimal(500),
         )
 
         # Current is 400, baseline 1000, target 500
         # Reduction = 1000 - 400 = 600
         # Target reduction = 1000 - 500 = 500
         # Progress = 600/500 * 100 = 120%
-        assert progress == Decimal("120")
+        assert progress == Decimal(120)
 
     @pytest.mark.asyncio
     async def test_get_trend(
@@ -305,12 +300,12 @@ class TestSustainabilityServiceReports:
 
         trend = await service.get_trend(
             namespace="default",
-            previous_emissions=Decimal("500"),
+            previous_emissions=Decimal(500),
         )
 
         # Current is 400, previous 500
         # Trend = (400 - 500) / 500 * 100 = -20%
-        assert trend == Decimal("-20")
+        assert trend == Decimal(-20)
 
 
 class TestSustainabilityServiceExport:
@@ -321,7 +316,7 @@ class TestSustainabilityServiceExport:
         service = SustainabilityService(settings=settings)
         intensity = CarbonIntensity(
             region="us-east-1",
-            intensity_gco2_per_kwh=Decimal("400"),
+            intensity_gco2_per_kwh=Decimal(400),
             timestamp=datetime.now(),
             source="test",
             is_default=False,
@@ -331,12 +326,12 @@ class TestSustainabilityServiceExport:
                 namespace="default",
                 pod="api-pod",
                 container="main",
-                energy_kwh=Decimal("1"),
+                energy_kwh=Decimal(1),
                 carbon_intensity=intensity,
-                emissions_gco2=Decimal("400"),
+                emissions_gco2=Decimal(400),
                 timestamp=datetime.now(),
-                confidence_lower=Decimal("360"),
-                confidence_upper=Decimal("440"),
+                confidence_lower=Decimal(360),
+                confidence_upper=Decimal(440),
             )
         ]
 
@@ -350,7 +345,7 @@ class TestSustainabilityServiceExport:
         service = SustainabilityService(settings=settings)
         intensity = CarbonIntensity(
             region="us-east-1",
-            intensity_gco2_per_kwh=Decimal("400"),
+            intensity_gco2_per_kwh=Decimal(400),
             timestamp=datetime.now(),
             source="test",
             is_default=False,
@@ -360,12 +355,12 @@ class TestSustainabilityServiceExport:
                 namespace="default",
                 pod="api-pod",
                 container="main",
-                energy_kwh=Decimal("1"),
+                energy_kwh=Decimal(1),
                 carbon_intensity=intensity,
-                emissions_gco2=Decimal("400"),
+                emissions_gco2=Decimal(400),
                 timestamp=datetime.now(),
-                confidence_lower=Decimal("360"),
-                confidence_upper=Decimal("440"),
+                confidence_lower=Decimal(360),
+                confidence_upper=Decimal(440),
             )
         ]
 
@@ -398,9 +393,7 @@ class TestSustainabilityServiceClose:
         mock_prometheus_client.close.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_close_without_clients(
-        self, settings: SustainabilitySettings
-    ) -> None:
+    async def test_close_without_clients(self, settings: SustainabilitySettings) -> None:
         """Test closing service without initialized clients."""
         service = SustainabilityService(settings=settings)
 

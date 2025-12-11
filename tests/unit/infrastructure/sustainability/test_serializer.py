@@ -27,18 +27,18 @@ from infrastructure.sustainability.serializer import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def sample_intensity() -> CarbonIntensity:
     """Create a sample CarbonIntensity."""
     return CarbonIntensity(
         region="us-west",
-        intensity_gco2_per_kwh=Decimal("400"),
+        intensity_gco2_per_kwh=Decimal(400),
         timestamp=datetime(2024, 1, 15, 10, 30, 0),
         source="test",
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def sample_metric(sample_intensity: CarbonIntensity) -> CarbonMetric:
     """Create a sample CarbonMetric."""
     return CarbonMetric(
@@ -47,10 +47,10 @@ def sample_metric(sample_intensity: CarbonIntensity) -> CarbonMetric:
         container="test-container",
         energy_kwh=Decimal("1.5"),
         carbon_intensity=sample_intensity,
-        emissions_gco2=Decimal("600"),
+        emissions_gco2=Decimal(600),
         timestamp=datetime(2024, 1, 15, 10, 30, 0),
-        confidence_lower=Decimal("540"),
-        confidence_upper=Decimal("660"),
+        confidence_lower=Decimal(540),
+        confidence_upper=Decimal(660),
     )
 
 
@@ -95,7 +95,7 @@ class TestSerializeCarbonIntensity:
         """Test serialization with is_default=True."""
         intensity = CarbonIntensity(
             region="global",
-            intensity_gco2_per_kwh=Decimal("500"),
+            intensity_gco2_per_kwh=Decimal(500),
             timestamp=datetime.now(),
             source="default",
             is_default=True,
@@ -118,7 +118,7 @@ class TestDeserializeCarbonIntensity:
         }
         result = deserialize_carbon_intensity(data)
         assert result.region == "eu-central"
-        assert result.intensity_gco2_per_kwh == Decimal("350")
+        assert result.intensity_gco2_per_kwh == Decimal(350)
         assert result.source == "api"
 
     def test_deserialize_without_is_default(self) -> None:
@@ -215,9 +215,7 @@ class TestExportToCsv:
         assert "default" in lines[1]
         assert "test-pod" in lines[1]
 
-    def test_export_multiple_metrics(
-        self, sample_metric: CarbonMetric, sample_intensity: CarbonIntensity
-    ) -> None:
+    def test_export_multiple_metrics(self, sample_metric: CarbonMetric, sample_intensity: CarbonIntensity) -> None:
         """Test exporting multiple metrics."""
         metric2 = CarbonMetric(
             namespace="production",
@@ -225,10 +223,10 @@ class TestExportToCsv:
             container="prod-container",
             energy_kwh=Decimal("2.5"),
             carbon_intensity=sample_intensity,
-            emissions_gco2=Decimal("1000"),
+            emissions_gco2=Decimal(1000),
             timestamp=datetime.now(),
-            confidence_lower=Decimal("900"),
-            confidence_upper=Decimal("1100"),
+            confidence_lower=Decimal(900),
+            confidence_upper=Decimal(1100),
         )
         result = export_to_csv([sample_metric, metric2])
         lines = result.strip().split("\n")

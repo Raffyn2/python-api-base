@@ -36,15 +36,13 @@ class FailingHandler(TaskHandler[SamplePayload, str]):
 class TestInMemoryTaskQueueBasic:
     """Basic tests for InMemoryTaskQueue."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def queue(self) -> InMemoryTaskQueue[SamplePayload, str]:
         """Create queue instance."""
         return InMemoryTaskQueue[SamplePayload, str]()
 
     @pytest.mark.asyncio
-    async def test_enqueue_returns_task_id(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_enqueue_returns_task_id(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test enqueue returns task ID."""
         task = Task[SamplePayload, str](
             name="test",
@@ -57,9 +55,7 @@ class TestInMemoryTaskQueueBasic:
         assert task_id == task.task_id
 
     @pytest.mark.asyncio
-    async def test_get_task(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_get_task(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test get_task retrieves enqueued task."""
         task = Task[SamplePayload, str](
             name="test",
@@ -74,18 +70,14 @@ class TestInMemoryTaskQueueBasic:
         assert result.task_id == task.task_id
 
     @pytest.mark.asyncio
-    async def test_get_task_not_found(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_get_task_not_found(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test get_task returns None for unknown ID."""
         result = await queue.get_task("unknown")
 
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_dequeue_returns_pending_task(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_dequeue_returns_pending_task(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test dequeue returns pending task."""
         task = Task[SamplePayload, str](
             name="test",
@@ -100,9 +92,7 @@ class TestInMemoryTaskQueueBasic:
         assert result.task_id == task.task_id
 
     @pytest.mark.asyncio
-    async def test_dequeue_empty_queue(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_dequeue_empty_queue(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test dequeue returns None for empty queue."""
         result = await queue.dequeue()
 
@@ -112,14 +102,12 @@ class TestInMemoryTaskQueueBasic:
 class TestInMemoryTaskQueueHandlers:
     """Tests for handler registration and processing."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def queue(self) -> InMemoryTaskQueue[SamplePayload, str]:
         """Create queue instance."""
         return InMemoryTaskQueue[SamplePayload, str]()
 
-    def test_register_handler(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    def test_register_handler(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test handler registration."""
         handler = SuccessHandler()
 
@@ -128,9 +116,7 @@ class TestInMemoryTaskQueueHandlers:
         assert "test_handler" in queue._handlers
 
     @pytest.mark.asyncio
-    async def test_process_next_success(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_process_next_success(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test successful task processing."""
         queue.register_handler("test_handler", SuccessHandler())
         task = Task[SamplePayload, str](
@@ -147,9 +133,7 @@ class TestInMemoryTaskQueueHandlers:
         assert result.value == "processed: hello"
 
     @pytest.mark.asyncio
-    async def test_process_next_no_handler(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_process_next_no_handler(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test processing with missing handler."""
         task = Task[SamplePayload, str](
             name="test",
@@ -165,18 +149,14 @@ class TestInMemoryTaskQueueHandlers:
         assert "Handler not found" in (result.error or "")
 
     @pytest.mark.asyncio
-    async def test_process_next_empty_queue(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_process_next_empty_queue(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test process_next with empty queue."""
         result = await queue.process_next()
 
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_process_next_with_handler_override(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_process_next_with_handler_override(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test process_next with handler override."""
         task = Task[SamplePayload, str](
             name="test",
@@ -195,15 +175,13 @@ class TestInMemoryTaskQueueHandlers:
 class TestInMemoryTaskQueueStatus:
     """Tests for task status operations."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def queue(self) -> InMemoryTaskQueue[SamplePayload, str]:
         """Create queue instance."""
         return InMemoryTaskQueue[SamplePayload, str]()
 
     @pytest.mark.asyncio
-    async def test_cancel_pending_task(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_cancel_pending_task(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test cancelling pending task."""
         task = Task[SamplePayload, str](
             name="test",
@@ -220,18 +198,14 @@ class TestInMemoryTaskQueueStatus:
         assert updated.status == TaskStatus.CANCELLED
 
     @pytest.mark.asyncio
-    async def test_cancel_nonexistent_task(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_cancel_nonexistent_task(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test cancelling nonexistent task."""
         result = await queue.cancel_task("unknown")
 
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_get_tasks_by_status(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_get_tasks_by_status(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test getting tasks by status."""
         task1 = Task[SamplePayload, str](
             name="test1",
@@ -254,15 +228,13 @@ class TestInMemoryTaskQueueStatus:
 class TestInMemoryTaskQueueCounts:
     """Tests for queue counts."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def queue(self) -> InMemoryTaskQueue[SamplePayload, str]:
         """Create queue instance."""
         return InMemoryTaskQueue[SamplePayload, str]()
 
     @pytest.mark.asyncio
-    async def test_pending_count(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_pending_count(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test pending count."""
         task = Task[SamplePayload, str](
             name="test",
@@ -274,9 +246,7 @@ class TestInMemoryTaskQueueCounts:
         assert queue.pending_count == 1
 
     @pytest.mark.asyncio
-    async def test_total_count(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_total_count(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test total count."""
         task = Task[SamplePayload, str](
             name="test",
@@ -303,15 +273,13 @@ class TestInMemoryTaskQueueCounts:
 class TestInMemoryTaskQueuePriority:
     """Tests for task priority."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def queue(self) -> InMemoryTaskQueue[SamplePayload, str]:
         """Create queue instance."""
         return InMemoryTaskQueue[SamplePayload, str]()
 
     @pytest.mark.asyncio
-    async def test_high_priority_processed_first(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_high_priority_processed_first(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test high priority tasks are processed first."""
         low_task = Task[SamplePayload, str](
             name="low",
@@ -335,19 +303,16 @@ class TestInMemoryTaskQueuePriority:
         assert first.name == "high"
 
 
-
 class TestInMemoryTaskQueueRetry:
     """Tests for task retry functionality."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def queue(self) -> InMemoryTaskQueue[SamplePayload, str]:
         """Create queue instance."""
         return InMemoryTaskQueue[SamplePayload, str]()
 
     @pytest.mark.asyncio
-    async def test_retry_failed_task(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_retry_failed_task(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test retrying a failed task."""
         task = Task[SamplePayload, str](
             name="test",
@@ -366,26 +331,22 @@ class TestInMemoryTaskQueueRetry:
         assert updated_task is not None
 
     @pytest.mark.asyncio
-    async def test_retry_nonexistent_task(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_retry_nonexistent_task(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test retrying nonexistent task returns False."""
         result = await queue.retry_task("unknown")
 
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_retry_task_not_retriable(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_retry_task_not_retriable(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test retry returns False when task cannot be retried."""
         task = Task[SamplePayload, str](
             name="test",
             payload=SamplePayload(message="hello"),
             handler="test_handler",
             max_attempts=1,  # Only one attempt allowed
+            attempt=1,  # Already attempted
         )
-        task._attempt = 1  # Already attempted
         queue._tasks[task.task_id] = task
 
         result = await queue.retry_task(task.task_id)
@@ -396,15 +357,13 @@ class TestInMemoryTaskQueueRetry:
 class TestInMemoryTaskQueueProcessAll:
     """Tests for process_all functionality."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def queue(self) -> InMemoryTaskQueue[SamplePayload, str]:
         """Create queue instance."""
         return InMemoryTaskQueue[SamplePayload, str]()
 
     @pytest.mark.asyncio
-    async def test_process_all_multiple_tasks(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_process_all_multiple_tasks(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test processing all tasks."""
         queue.register_handler("test_handler", SuccessHandler())
 
@@ -421,18 +380,14 @@ class TestInMemoryTaskQueueProcessAll:
         assert processed == 3
 
     @pytest.mark.asyncio
-    async def test_process_all_empty_queue(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_process_all_empty_queue(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test process_all with empty queue."""
         processed = await queue.process_all()
 
         assert processed == 0
 
     @pytest.mark.asyncio
-    async def test_process_all_with_max_limit(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_process_all_with_max_limit(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test process_all respects max_tasks limit."""
         queue.register_handler("test_handler", SuccessHandler())
 
@@ -449,9 +404,7 @@ class TestInMemoryTaskQueueProcessAll:
         assert processed == 2
 
     @pytest.mark.asyncio
-    async def test_process_all_with_handler_override(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_process_all_with_handler_override(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test process_all with handler override."""
         task = Task[SamplePayload, str](
             name="test",
@@ -469,15 +422,13 @@ class TestInMemoryTaskQueueProcessAll:
 class TestInMemoryTaskQueueFailure:
     """Tests for task failure handling."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def queue(self) -> InMemoryTaskQueue[SamplePayload, str]:
         """Create queue instance."""
         return InMemoryTaskQueue[SamplePayload, str]()
 
     @pytest.mark.asyncio
-    async def test_handler_failure_marks_task_failed(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_handler_failure_marks_task_failed(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test handler failure marks task as failed."""
         queue.register_handler("test_handler", FailingHandler())
         task = Task[SamplePayload, str](
@@ -495,9 +446,7 @@ class TestInMemoryTaskQueueFailure:
         assert "Handler failed" in (result.error or "")
 
     @pytest.mark.asyncio
-    async def test_update_task(
-        self, queue: InMemoryTaskQueue[SamplePayload, str]
-    ) -> None:
+    async def test_update_task(self, queue: InMemoryTaskQueue[SamplePayload, str]) -> None:
         """Test update_task updates task state."""
         task = Task[SamplePayload, str](
             name="test",

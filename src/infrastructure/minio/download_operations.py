@@ -7,8 +7,9 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import TYPE_CHECKING, Any
+
+import structlog
 
 from core.base.patterns.result import Err, Ok
 
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 
     from core.base.patterns.result import Result
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class DownloadOperations:
@@ -54,7 +55,11 @@ class DownloadOperations:
                 response.release_conn()
 
         except Exception as e:
-            logger.error(f"Download failed: {e}", extra={"key": key})
+            logger.exception(
+                "Download failed",
+                key=key,
+                operation="MINIO_DOWNLOAD",
+            )
             return Err(e)
 
     async def download_stream(
@@ -80,5 +85,8 @@ class DownloadOperations:
                 response.close()
                 response.release_conn()
 
-        except Exception as e:
-            logger.error(f"Stream download failed: {e}")
+        except Exception:
+            logger.exception(
+                "Stream download failed",
+                operation="MINIO_STREAM_DOWNLOAD",
+            )

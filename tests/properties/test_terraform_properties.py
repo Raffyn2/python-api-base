@@ -80,9 +80,7 @@ def check_try_or_coalesce(content: str) -> bool:
         escaped = re.escape(access)
         if not re.search(rf"(try|coalesce)\s*\([^)]*{escaped}", content):
             # Check if it's in a conditional that's safe
-            if not re.search(
-                rf'var\.\w+\s*==\s*"[^"]+"\s*\?\s*[^:]*{escaped}', content
-            ):
+            if not re.search(rf'var\.\w+\s*==\s*"[^"]+"\s*\?\s*[^:]*{escaped}', content):
                 return False
     return True
 
@@ -211,9 +209,7 @@ class TestNoHardcodedCredentials:
                 for pattern in self.CREDENTIAL_PATTERNS:
                     if re.search(pattern, line, re.IGNORECASE):
                         # Verify it's not a variable reference
-                        is_safe = any(
-                            re.search(safe, line) for safe in self.SAFE_PATTERNS
-                        )
+                        is_safe = any(re.search(safe, line) for safe in self.SAFE_PATTERNS)
                         if not is_safe:
                             violations.append((str(tf_file), i, line.strip()))
 
@@ -261,9 +257,7 @@ class TestSensitiveCredentialVariables:
                 if not check_sensitive_attribute(content, "variable", var):
                     violations.append(var)
 
-        assert not violations, (
-            f"Credential variables not marked sensitive: {violations}"
-        )
+        assert not violations, f"Credential variables not marked sensitive: {violations}"
 
 
 class TestSensitiveOutputs:
@@ -320,9 +314,7 @@ class TestBackendConfiguration:
         content = main_file.read_text()
         backend_attrs = parse_backend_block(content)
 
-        hardcoded = {
-            k: v for k, v in backend_attrs.items() if k in self.HARDCODED_ATTRS and v
-        }
+        hardcoded = {k: v for k, v in backend_attrs.items() if k in self.HARDCODED_ATTRS and v}
 
         assert not hardcoded, f"Backend has hardcoded values: {hardcoded}"
 
@@ -345,9 +337,7 @@ class TestCloudSpecificValidation:
         content = variables_file.read_text()
 
         # Check if gcp_project_id has a validation block
-        gcp_var_pattern = (
-            r'variable\s+"gcp_project_id"\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}'
-        )
+        gcp_var_pattern = r'variable\s+"gcp_project_id"\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}'
         match = re.search(gcp_var_pattern, content, re.DOTALL)
 
         if match:
@@ -434,9 +424,7 @@ class TestSafeConditionalAccess:
         if module_accesses:
             # Verify they're wrapped in try() or coalesce()
             uses_safe_access = "try(" in content or "coalesce(" in content
-            assert uses_safe_access, (
-                "Outputs should use try() or coalesce() for module access"
-            )
+            assert uses_safe_access, "Outputs should use try() or coalesce() for module access"
 
 
 class TestNoLatestImageTags:

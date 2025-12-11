@@ -26,7 +26,7 @@ Usage:
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 import pytest
 from pydantic import BaseModel
@@ -44,7 +44,7 @@ ResponseT = TypeVar("ResponseT", bound=BaseModel)
 
 
 @dataclass
-class TestContext(Generic[T, CreateT, UpdateT]):
+class TestContext[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel]:
     """Context for test execution with common test data."""
 
     entity: T
@@ -53,7 +53,7 @@ class TestContext(Generic[T, CreateT, UpdateT]):
     entities: list[T] = field(default_factory=list)
 
 
-class RepositoryTestCase(ABC, Generic[T, CreateT, UpdateT]):
+class RepositoryTestCase[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](ABC):
     """Base test case for repository implementations.
 
     Provides standard CRUD tests that can be reused across
@@ -84,31 +84,31 @@ class RepositoryTestCase(ABC, Generic[T, CreateT, UpdateT]):
                 return lambda: ItemUpdate(name="Updated")
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     @abstractmethod
     def repository(self) -> IRepository[T, CreateT, UpdateT]:
         """Provide repository instance for testing."""
         ...
 
-    @pytest.fixture
+    @pytest.fixture()
     @abstractmethod
     def entity_factory(self) -> Callable[[], T]:
         """Provide factory for creating test entities."""
         ...
 
-    @pytest.fixture
+    @pytest.fixture()
     @abstractmethod
     def create_factory(self) -> Callable[[], CreateT]:
         """Provide factory for creating CreateDTO instances."""
         ...
 
-    @pytest.fixture
+    @pytest.fixture()
     @abstractmethod
     def update_factory(self) -> Callable[[], UpdateT]:
         """Provide factory for creating UpdateDTO instances."""
         ...
 
-    @pytest.fixture
+    @pytest.fixture()
     def test_context(
         self,
         entity_factory: Callable[[], T],
@@ -207,7 +207,7 @@ class RepositoryTestCase(ABC, Generic[T, CreateT, UpdateT]):
         assert deleted is True
 
         # Verify entity is gone or soft-deleted
-        retrieved = await repository.get_by_id(created.id)
+        await repository.get_by_id(created.id)
         # For soft delete, entity may still exist but be marked deleted
         # For hard delete, entity should be None
 
@@ -290,7 +290,7 @@ class RepositoryTestCase(ABC, Generic[T, CreateT, UpdateT]):
             assert entity.id is not None
 
 
-class UseCaseTestCase(ABC, Generic[T, CreateT, UpdateT, ResponseT]):
+class UseCaseTestCase[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel, ResponseT: BaseModel](ABC):
     """Base test case for use case implementations.
 
     Provides standard CRUD tests for use cases that can be reused
@@ -303,19 +303,19 @@ class UseCaseTestCase(ABC, Generic[T, CreateT, UpdateT, ResponseT]):
         ResponseT: Response DTO type.
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     @abstractmethod
     def use_case(self) -> BaseUseCase[T, CreateT, UpdateT, ResponseT]:
         """Provide use case instance for testing."""
         ...
 
-    @pytest.fixture
+    @pytest.fixture()
     @abstractmethod
     def create_factory(self) -> Callable[[], CreateT]:
         """Provide factory for creating CreateDTO instances."""
         ...
 
-    @pytest.fixture
+    @pytest.fixture()
     @abstractmethod
     def update_factory(self) -> Callable[[], UpdateT]:
         """Provide factory for creating UpdateDTO instances."""
@@ -413,7 +413,7 @@ class UseCaseTestCase(ABC, Generic[T, CreateT, UpdateT, ResponseT]):
             assert deleted is True
 
 
-class MapperTestCase(ABC, Generic[T, ResponseT]):
+class MapperTestCase[T: BaseModel, ResponseT: BaseModel](ABC):
     """Base test case for mapper implementations.
 
     Provides standard mapping tests that can be reused across
@@ -424,19 +424,19 @@ class MapperTestCase(ABC, Generic[T, ResponseT]):
         ResponseT: Response DTO type.
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     @abstractmethod
     def mapper(self) -> IMapper[T, ResponseT]:
         """Provide mapper instance for testing."""
         ...
 
-    @pytest.fixture
+    @pytest.fixture()
     @abstractmethod
     def entity_factory(self) -> Callable[[], T]:
         """Provide factory for creating test entities."""
         ...
 
-    @pytest.fixture
+    @pytest.fixture()
     @abstractmethod
     def dto_factory(self) -> Callable[[], ResponseT]:
         """Provide factory for creating test DTOs."""
@@ -485,7 +485,7 @@ class MapperTestCase(ABC, Generic[T, ResponseT]):
 # =============================================================================
 
 
-def create_in_memory_repository(
+def create_in_memory_repository[T: BaseModel](
     entity_type: type[T],
 ) -> InMemoryRepository[T, Any, Any]:
     """Create an in-memory repository for testing.
@@ -499,7 +499,7 @@ def create_in_memory_repository(
     return InMemoryRepository(entity_type)
 
 
-def create_test_context(
+def create_test_context[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](
     entity_factory: Callable[[], T],
     create_factory: Callable[[], CreateT],
     update_factory: Callable[[], UpdateT],

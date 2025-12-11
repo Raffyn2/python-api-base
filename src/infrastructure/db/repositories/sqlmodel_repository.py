@@ -32,7 +32,7 @@ class SQLModelRepository[
         To prevent SQL injection through dynamic filters, subclasses MUST define
         _allowed_filter_fields containing the whitelist of fields that can be filtered.
 
-        Example:
+    Example:
             class UserRepository(SQLModelRepository[User, CreateUserDTO, UpdateUserDTO, str]):
                 _allowed_filter_fields: ClassVar[set[str]] = {"email", "username", "is_active"}
     """
@@ -110,9 +110,7 @@ class SQLModelRepository[
 
             for field, value in filters.items():
                 if hasattr(self._model_class, field):
-                    base_query = base_query.where(
-                        getattr(self._model_class, field) == value
-                    )
+                    base_query = base_query.where(getattr(self._model_class, field) == value)
 
         # Count total
         count_query = select(func.count()).select_from(base_query.subquery())

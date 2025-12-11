@@ -88,6 +88,4 @@ class RollbackError(SharedModuleError):
         """
         self.original_error = original_error
         self.rollback_error = rollback_error
-        super().__init__(
-            f"Rollback failed: {rollback_error} (original error: {original_error})"
-        )
+        super().__init__(f"Rollback failed: {rollback_error} (original error: {original_error})")

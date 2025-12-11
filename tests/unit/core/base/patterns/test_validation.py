@@ -109,9 +109,7 @@ class TestPredicateValidator:
         assert result.error.message == "Must be positive"
 
     def test_custom_error_code(self):
-        validator = PredicateValidator(
-            lambda x: x > 0, "Must be positive", "positive_required"
-        )
+        validator = PredicateValidator(lambda x: x > 0, "Must be positive", "positive_required")
         result = validator.validate(-1)
         assert result.error.errors[0].code == "positive_required"
 

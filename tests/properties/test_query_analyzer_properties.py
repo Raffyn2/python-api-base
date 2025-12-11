@@ -27,17 +27,13 @@ from infrastructure.observability.query_analyzer import (
 @st.composite
 def table_name_strategy(draw: st.DrawFn) -> str:
     """Generate valid table names."""
-    return draw(
-        st.text(min_size=3, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_")
-    )
+    return draw(st.text(min_size=3, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"))
 
 
 @st.composite
 def column_name_strategy(draw: st.DrawFn) -> str:
     """Generate valid column names."""
-    return draw(
-        st.text(min_size=2, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_")
-    )
+    return draw(st.text(min_size=2, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"))
 
 
 @st.composite

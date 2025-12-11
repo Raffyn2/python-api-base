@@ -20,9 +20,7 @@ class DatabaseSettings(BaseSettings):
         description="Database connection URL",
     )
     pool_size: int = Field(default=5, ge=1, le=100, description="Connection pool size")
-    max_overflow: int = Field(
-        default=10, ge=0, le=100, description="Max overflow connections"
-    )
+    max_overflow: int = Field(default=10, ge=0, le=100, description="Max overflow connections")
     echo: bool = Field(default=False, description="Echo SQL statements")
 
     def get_safe_url(self) -> str:
@@ -31,6 +29,4 @@ class DatabaseSettings(BaseSettings):
 
     def __repr__(self) -> str:
         """Safe representation without credentials."""
-        return (
-            f"DatabaseSettings(url='{self.get_safe_url()}', pool_size={self.pool_size})"
-        )
+        return f"DatabaseSettings(url='{self.get_safe_url()}', pool_size={self.pool_size})"

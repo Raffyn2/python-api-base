@@ -6,6 +6,7 @@
 from datetime import timedelta
 from typing import Any
 
+import structlog
 from fastapi import APIRouter
 
 from infrastructure.ratelimit import RateLimit
@@ -14,6 +15,8 @@ from interface.v1.enterprise.models import (
     RateLimitCheckRequest,
     RateLimitCheckResponse,
 )
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(tags=["Rate Limiter"])
 
@@ -28,6 +31,13 @@ async def check_rate_limit(request: RateLimitCheckRequest) -> RateLimitCheckResp
     limiter = get_rate_limiter()
     limit = RateLimit(requests=10, window=timedelta(minutes=1))
     result = await limiter.check(request.client_id, limit)
+
+    if not result.is_allowed:
+        logger.warning(
+            "rate_limit_exceeded",
+            client_id=request.client_id,
+            remaining=result.remaining,
+        )
 
     return RateLimitCheckResponse(
         client_id=request.client_id,

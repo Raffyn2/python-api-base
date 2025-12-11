@@ -3,7 +3,6 @@
 Tests structured logging with correlation IDs.
 """
 
-import logging
 from dataclasses import dataclass
 from typing import Any
 from unittest.mock import AsyncMock
@@ -105,17 +104,15 @@ class TestLoggingConfig:
 class TestLoggingMiddleware:
     """Tests for LoggingMiddleware."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def middleware(self) -> LoggingMiddleware:
         """Create middleware with default config."""
         return LoggingMiddleware()
 
-    @pytest.fixture
+    @pytest.fixture()
     def middleware_with_data(self) -> LoggingMiddleware:
         """Create middleware that logs command data."""
-        return LoggingMiddleware(
-            LoggingConfig(include_command_data=True, max_data_length=50)
-        )
+        return LoggingMiddleware(LoggingConfig(include_command_data=True, max_data_length=50))
 
     @pytest.mark.asyncio
     async def test_executes_handler(self, middleware: LoggingMiddleware) -> None:
@@ -129,9 +126,7 @@ class TestLoggingMiddleware:
         assert result == "result"
 
     @pytest.mark.asyncio
-    async def test_sets_request_id_if_missing(
-        self, middleware: LoggingMiddleware
-    ) -> None:
+    async def test_sets_request_id_if_missing(self, middleware: LoggingMiddleware) -> None:
         """Test middleware sets request ID if not present."""
         request_id_var.set(None)  # Reset
         command = SampleCommand(name="test", value=42)
@@ -142,9 +137,7 @@ class TestLoggingMiddleware:
         assert get_request_id() is not None
 
     @pytest.mark.asyncio
-    async def test_preserves_existing_request_id(
-        self, middleware: LoggingMiddleware
-    ) -> None:
+    async def test_preserves_existing_request_id(self, middleware: LoggingMiddleware) -> None:
         """Test middleware preserves existing request ID."""
         set_request_id("existing-id")
         command = SampleCommand(name="test", value=42)
@@ -155,44 +148,39 @@ class TestLoggingMiddleware:
         assert get_request_id() == "existing-id"
 
     @pytest.mark.asyncio
-    async def test_logs_request(
-        self, middleware: LoggingMiddleware, caplog: pytest.LogCaptureFixture
-    ) -> None:
+    async def test_logs_request(self, middleware: LoggingMiddleware, capsys: pytest.CaptureFixture[str]) -> None:
         """Test middleware logs request."""
         command = SampleCommand(name="test", value=42)
         handler = AsyncMock(return_value="result")
 
-        with caplog.at_level(logging.INFO):
-            await middleware(command, handler)
+        await middleware(command, handler)
 
-        assert "Executing command SampleCommand" in caplog.text
+        captured = capsys.readouterr()
+        assert "Executing command" in captured.out
+        assert "SampleCommand" in captured.out
 
     @pytest.mark.asyncio
-    async def test_logs_success_response(
-        self, middleware: LoggingMiddleware, caplog: pytest.LogCaptureFixture
-    ) -> None:
+    async def test_logs_success_response(self, middleware: LoggingMiddleware, capsys: pytest.CaptureFixture[str]) -> None:
         """Test middleware logs successful response."""
         command = SampleCommand(name="test", value=42)
         handler = AsyncMock(return_value="result")
 
-        with caplog.at_level(logging.INFO):
-            await middleware(command, handler)
+        await middleware(command, handler)
 
-        assert "completed" in caplog.text
+        captured = capsys.readouterr()
+        assert "completed" in captured.out
 
     @pytest.mark.asyncio
-    async def test_logs_error_response(
-        self, middleware: LoggingMiddleware, caplog: pytest.LogCaptureFixture
-    ) -> None:
+    async def test_logs_error_response(self, middleware: LoggingMiddleware, capsys: pytest.CaptureFixture[str]) -> None:
         """Test middleware logs error response."""
         command = SampleCommand(name="test", value=42)
         handler = AsyncMock(side_effect=ValueError("test error"))
 
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(ValueError):
-                await middleware(command, handler)
+        with pytest.raises(ValueError):
+            await middleware(command, handler)
 
-        assert "failed" in caplog.text
+        captured = capsys.readouterr()
+        assert "failed" in captured.out
 
     @pytest.mark.asyncio
     async def test_propagates_exception(self, middleware: LoggingMiddleware) -> None:
@@ -205,35 +193,32 @@ class TestLoggingMiddleware:
 
     @pytest.mark.asyncio
     async def test_logs_command_data_with_model_dump(
-        self, middleware_with_data: LoggingMiddleware, caplog: pytest.LogCaptureFixture
+        self, middleware_with_data: LoggingMiddleware, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Test middleware logs command data using model_dump."""
         command = PydanticLikeCommand(name="test")
         handler = AsyncMock(return_value="result")
 
-        with caplog.at_level(logging.INFO):
-            await middleware_with_data(command, handler)
+        await middleware_with_data(command, handler)
 
-        # Should have logged without error
-        assert "Executing command" in caplog.text
+        captured = capsys.readouterr()
+        assert "Executing command" in captured.out
 
     @pytest.mark.asyncio
     async def test_logs_command_data_with_dict(
-        self, middleware_with_data: LoggingMiddleware, caplog: pytest.LogCaptureFixture
+        self, middleware_with_data: LoggingMiddleware, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Test middleware logs command data using __dict__."""
         command = SampleCommand(name="test", value=42)
         handler = AsyncMock(return_value="result")
 
-        with caplog.at_level(logging.INFO):
-            await middleware_with_data(command, handler)
+        await middleware_with_data(command, handler)
 
-        assert "Executing command" in caplog.text
+        captured = capsys.readouterr()
+        assert "Executing command" in captured.out
 
     @pytest.mark.asyncio
-    async def test_truncates_long_command_data(
-        self, middleware_with_data: LoggingMiddleware
-    ) -> None:
+    async def test_truncates_long_command_data(self, middleware_with_data: LoggingMiddleware) -> None:
         """Test middleware truncates long command data."""
         command = SampleCommand(name="x" * 100, value=42)
         handler = AsyncMock(return_value="result")
@@ -246,25 +231,25 @@ class TestLoggingMiddlewareDisabled:
     """Tests for LoggingMiddleware with logging disabled."""
 
     @pytest.mark.asyncio
-    async def test_no_request_log(self, caplog: pytest.LogCaptureFixture) -> None:
+    async def test_no_request_log(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test no request log when disabled."""
         middleware = LoggingMiddleware(LoggingConfig(log_request=False))
         command = SampleCommand(name="test", value=42)
         handler = AsyncMock(return_value="result")
 
-        with caplog.at_level(logging.INFO):
-            await middleware(command, handler)
+        await middleware(command, handler)
 
-        assert "Executing command" not in caplog.text
+        captured = capsys.readouterr()
+        assert "Executing command" not in captured.out
 
     @pytest.mark.asyncio
-    async def test_no_response_log(self, caplog: pytest.LogCaptureFixture) -> None:
+    async def test_no_response_log(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test no response log when disabled."""
         middleware = LoggingMiddleware(LoggingConfig(log_response=False))
         command = SampleCommand(name="test", value=42)
         handler = AsyncMock(return_value="result")
 
-        with caplog.at_level(logging.INFO):
-            await middleware(command, handler)
+        await middleware(command, handler)
 
-        assert "completed" not in caplog.text
+        captured = capsys.readouterr()
+        assert "completed" not in captured.out

@@ -8,50 +8,15 @@ with specific exceptions for common error scenarios.
 
 from __future__ import annotations
 
+# Re-export FieldError from core for convenience
+from core.base.patterns.validation import FieldError
+
 
 class InterfaceError(Exception):
     """Base exception for interface layer.
 
     All interface-specific exceptions should inherit from this class.
     """
-
-
-class FieldError:
-    """Field-level validation error.
-
-    Args:
-        field: Field name that failed validation
-        message: Human-readable error message
-        code: Machine-readable error code
-    """
-
-    def __init__(self, field: str, message: str, code: str) -> None:
-        """Initialize field error.
-
-        Args:
-            field: Field name
-            message: Error message
-            code: Error code
-        """
-        self.field = field
-        self.message = message
-        self.code = code
-
-    def __repr__(self) -> str:
-        """String representation of field error."""
-        return f"FieldError(field='{self.field}', message='{self.message}', code='{self.code}')"
-
-    def to_dict(self) -> dict[str, str]:
-        """Convert to dictionary.
-
-        Returns:
-            Dictionary representation
-        """
-        return {
-            "field": self.field,
-            "message": self.message,
-            "code": self.code,
-        }
 
 
 class ValidationError(InterfaceError):
@@ -205,9 +170,7 @@ class RepositoryError(InterfaceError):
         cause: Original exception if any
     """
 
-    def __init__(
-        self, operation: str, reason: str, cause: Exception | None = None
-    ) -> None:
+    def __init__(self, operation: str, reason: str, cause: Exception | None = None) -> None:
         """Initialize repository error.
 
         Args:
@@ -230,9 +193,7 @@ class ServiceError(InterfaceError):
         field_errors: Optional field-level errors
     """
 
-    def __init__(
-        self, operation: str, reason: str, field_errors: list[FieldError] | None = None
-    ) -> None:
+    def __init__(self, operation: str, reason: str, field_errors: list[FieldError] | None = None) -> None:
         """Initialize service error.
 
         Args:

@@ -7,9 +7,9 @@
 """
 
 import copy
-import logging
 from collections.abc import Callable, Sequence
 
+import structlog
 from pydantic import BaseModel
 
 from application.common.batch.config.config import (
@@ -21,50 +21,10 @@ from application.common.batch.config.config import (
 )
 from application.common.batch.interfaces.interfaces import IBatchRepository, chunk_sequence
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
-def _process_chunk_with_progress[TItem, TResult](
-    chunk: list[TItem],
-    processor: callable,
-    progress: BatchProgress,
-    on_progress: ProgressCallback | None,
-    error_strategy: BatchErrorStrategy,
-    succeeded: list[TResult],
-    failed: list[tuple[TItem, Exception]],
-) -> bool:
-    """Process a chunk and update progress.
-
-    Returns:
-        True if should continue processing, False if should stop (fail-fast).
-    """
-    chunk_succeeded, chunk_failed = 0, 0
-
-    for item in chunk:
-        try:
-            result = processor(item)
-            succeeded.append(result)
-            chunk_succeeded += 1
-        except Exception as e:
-            failed.append((item, e))
-            chunk_failed += 1
-            if error_strategy == BatchErrorStrategy.FAIL_FAST:
-                break
-
-    progress.processed_items += chunk_succeeded + chunk_failed
-    progress.succeeded_items += chunk_succeeded
-    progress.failed_items += chunk_failed
-    progress.current_chunk += 1
-
-    if on_progress:
-        on_progress(progress)
-
-    return not (error_strategy == BatchErrorStrategy.FAIL_FAST and failed)
-
-
-class BatchRepository[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](
-    IBatchRepository[T, CreateT, UpdateT]
-):
+class BatchRepository[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](IBatchRepository[T, CreateT, UpdateT]):
     """In-memory batch repository implementation."""
 
     def __init__(
@@ -124,14 +84,13 @@ class BatchRepository[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](
         **Validates: Requirements F-02**
         """
         try:
-            return {
-                k: self._entity_type.model_validate(v.model_dump())
-                for k, v in self._storage.items()
-            }
-        except Exception as e:
+            return {k: self._entity_type.model_validate(v.model_dump()) for k, v in self._storage.items()}
+        except Exception:
             logger.warning(
-                f"Pydantic snapshot failed, using deepcopy: {e}",
-                extra={"operation": "BATCH_SNAPSHOT", "fallback": "deepcopy"},
+                "Pydantic snapshot failed, using deepcopy",
+                operation="BATCH_SNAPSHOT",
+                fallback="deepcopy",
+                exc_info=True,
             )
             return copy.deepcopy(self._storage)
 
@@ -176,21 +135,16 @@ class BatchRepository[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](
         failed: list[tuple[CreateT, Exception]] = []
 
         logger.info(
-            f"Starting bulk create: {len(items)} items in {len(chunks)} chunks",
-            extra={
-                "operation": "BULK_CREATE",
-                "total_items": len(items),
-                "chunk_size": cfg.chunk_size,
-                "error_strategy": cfg.error_strategy.value,
-            },
+            "Starting bulk create operation",
+            operation="BULK_CREATE",
+            total_items=len(items),
+            total_chunks=len(chunks),
+            chunk_size=cfg.chunk_size,
+            error_strategy=cfg.error_strategy.value,
         )
 
         # Deep copy for rollback to prevent mutation issues
-        snapshot = (
-            self._create_snapshot()
-            if cfg.error_strategy == BatchErrorStrategy.ROLLBACK
-            else None
-        )
+        snapshot = self._create_snapshot() if cfg.error_strategy == BatchErrorStrategy.ROLLBACK else None
 
         for chunk in chunks:
             chunk_succeeded, chunk_failed = 0, 0
@@ -220,13 +174,12 @@ class BatchRepository[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](
         )
 
         logger.info(
-            f"Bulk create completed: {result.total_succeeded} succeeded, {result.total_failed} failed",
-            extra={
-                "operation": "BULK_CREATE",
-                "succeeded": result.total_succeeded,
-                "failed": result.total_failed,
-                "success_rate": f"{result.success_rate:.1f}%",
-            },
+            "Bulk create operation completed",
+            operation="BULK_CREATE",
+            total_processed=result.total_processed,
+            succeeded=result.total_succeeded,
+            failed=result.total_failed,
+            success_rate=round(result.success_rate, 1),
         )
 
         return result
@@ -304,9 +257,7 @@ class BatchRepository[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](
                         if hasattr(entity, "is_deleted"):
                             entity_data = entity.model_dump()
                             entity_data["is_deleted"] = True
-                            self._storage[entity_id] = self._entity_type.model_validate(
-                                entity_data
-                            )
+                            self._storage[entity_id] = self._entity_type.model_validate(entity_data)
                         else:
                             del self._storage[entity_id]
                     else:

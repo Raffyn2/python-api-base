@@ -344,9 +344,7 @@ def test_repository_crud_consistency() -> None:
         name: str | None = None
 
     async def run_test():
-        repo = BatchRepository[TestEntity, CreateEntity, UpdateEntity](
-            entity_type=TestEntity, id_field="id"
-        )
+        repo = BatchRepository[TestEntity, CreateEntity, UpdateEntity](entity_type=TestEntity, id_field="id")
         result = await repo.bulk_create([CreateEntity(name="test")])
         assert result.total_succeeded == 1
         entity = result.succeeded[0]
@@ -424,9 +422,7 @@ def test_tenant_context_isolation(tenant_id: str) -> None:
     st.text(min_size=1, max_size=20),
     st.integers(min_value=0, max_value=100),
 )
-def test_feature_flag_consistency(
-    flag_name: str, user_id: str, percentage: int
-) -> None:
+def test_feature_flag_consistency(flag_name: str, user_id: str, percentage: int) -> None:
     """Property 15: Feature Flag Percentage Consistency. Validates: Requirements 18.1, 18.2"""
     import hashlib
 

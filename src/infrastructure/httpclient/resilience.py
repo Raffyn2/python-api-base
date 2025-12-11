@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
@@ -34,9 +35,7 @@ class RetryPolicy[TRequest]:
     base_delay: timedelta = field(default_factory=lambda: timedelta(seconds=1))
     max_delay: timedelta = field(default_factory=lambda: timedelta(seconds=30))
     exponential_base: float = 2.0
-    retry_on_status: frozenset[int] = field(
-        default_factory=lambda: frozenset({429, 500, 502, 503, 504})
-    )
+    retry_on_status: frozenset[int] = field(default_factory=lambda: frozenset({429, 500, 502, 503, 504}))
 
     def get_delay(self, attempt: int) -> timedelta:
         """Calculate delay for retry attempt.
@@ -47,9 +46,7 @@ class RetryPolicy[TRequest]:
         Returns:
             Delay before next retry.
         """
-        delay_seconds = self.base_delay.total_seconds() * (
-            self.exponential_base**attempt
-        )
+        delay_seconds = self.base_delay.total_seconds() * (self.exponential_base**attempt)
         return timedelta(seconds=min(delay_seconds, self.max_delay.total_seconds()))
 
 
@@ -62,7 +59,7 @@ class CircuitBreakerConfig:
     timeout: timedelta = field(default_factory=lambda: timedelta(seconds=30))
 
 
-@dataclass
+@dataclass(slots=True)
 class HttpClientConfig:
     """HTTP client configuration.
 
@@ -101,8 +98,6 @@ class CircuitBreaker:
         if self._state == CircuitState.OPEN:
             # Check if timeout has passed
             if self._last_failure_time is not None:
-                import time
-
                 elapsed = time.time() - self._last_failure_time
                 if elapsed >= self._config.timeout.total_seconds():
                     self._state = CircuitState.HALF_OPEN
@@ -121,8 +116,6 @@ class CircuitBreaker:
 
     def record_failure(self) -> None:
         """Record failed request."""
-        import time
-
         self._failure_count += 1
         self._last_failure_time = time.time()
 

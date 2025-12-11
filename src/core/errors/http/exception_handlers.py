@@ -6,9 +6,9 @@
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING
 
+import structlog
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError as PydanticValidationError
@@ -23,7 +23,9 @@ from core.errors.http.problem_details import (
 if TYPE_CHECKING:
     from fastapi import FastAPI, Request
 
-logger = logging.getLogger(__name__)
+    from core.errors.base.domain_errors import AppError
+
+logger = structlog.get_logger(__name__)
 
 
 def _get_correlation_id(request: Request) -> str | None:
@@ -86,12 +88,10 @@ async def http_exception_handler(
 
     logger.warning(
         "HTTP exception",
-        extra={
-            "status_code": exc.status_code,
-            "detail": exc.detail,
-            "path": request.url.path,
-            "correlation_id": correlation_id,
-        },
+        status_code=exc.status_code,
+        detail=exc.detail,
+        path=request.url.path,
+        correlation_id=correlation_id,
     )
 
     headers = {}
@@ -144,11 +144,9 @@ async def validation_exception_handler(
 
     logger.info(
         "Validation error",
-        extra={
-            "path": request.url.path,
-            "error_count": len(errors),
-            "correlation_id": correlation_id,
-        },
+        path=request.url.path,
+        error_count=len(errors),
+        correlation_id=correlation_id,
     )
 
     return _create_problem_response(problem)
@@ -213,12 +211,10 @@ async def generic_exception_handler(
     # Log full exception details
     logger.exception(
         "Unhandled exception",
-        extra={
-            "path": request.url.path,
-            "method": request.method,
-            "correlation_id": correlation_id,
-            "exception_type": type(exc).__name__,
-        },
+        path=request.url.path,
+        method=request.method,
+        correlation_id=correlation_id,
+        exception_type=type(exc).__name__,
     )
 
     # Return safe response without sensitive details
@@ -230,15 +226,59 @@ async def generic_exception_handler(
     return _create_problem_response(problem)
 
 
+async def app_error_handler(
+    request: Request,
+    exc: AppError,
+) -> JSONResponse:
+    """Handle AppError exceptions with RFC 7807 format.
+
+    Converts application-specific errors to RFC 7807 Problem Details.
+
+    Args:
+        request: FastAPI request
+        exc: Application error
+
+    Returns:
+        RFC 7807 formatted response
+    """
+    correlation_id = _get_correlation_id(request) or exc.correlation_id
+
+    problem = ProblemDetail.from_status(
+        status=exc.status_code,
+        detail=exc.message,
+        instance=str(request.url.path),
+        correlation_id=correlation_id,
+    )
+
+    # Log based on status code severity
+    log_extra = {
+        "error_code": exc.error_code,
+        "status_code": exc.status_code,
+        "path": request.url.path,
+        "correlation_id": correlation_id,
+    }
+
+    if exc.status_code >= 500:
+        logger.error("Application error", extra=log_extra)
+    else:
+        logger.warning("Application error", extra=log_extra)
+
+    return _create_problem_response(problem)
+
+
 def setup_exception_handlers(app: FastAPI) -> None:
     """Register all RFC 7807 exception handlers.
 
     Args:
         app: FastAPI application
     """
+    # Import here to avoid circular imports
+    from core.errors.base.domain_errors import AppError
+
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(PydanticValidationError, pydantic_exception_handler)
+    app.add_exception_handler(AppError, app_error_handler)
     app.add_exception_handler(Exception, generic_exception_handler)
 
     logger.info("RFC 7807 exception handlers registered")

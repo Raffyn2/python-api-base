@@ -8,10 +8,11 @@ Provides composable validators for user commands with proper error handling.
 
 from __future__ import annotations
 
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+
+import structlog
 
 from core.base.patterns.result import Err, Ok
 
@@ -21,7 +22,7 @@ if TYPE_CHECKING:
     from domain.users.repositories import IUserRepository
     from domain.users.services import UserDomainService
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
@@ -101,11 +102,9 @@ class EmailUniquenessValidator(CommandValidator["CreateUserCommand"]):
         if existing:
             logger.warning(
                 "duplicate_email_validation_failed",
-                extra={
-                    "email": command.email,
-                    "validator": "EmailUniquenessValidator",
-                    "error_code": "DUPLICATE_EMAIL",
-                },
+                email=command.email,
+                validator="EmailUniquenessValidator",
+                error_code="DUPLICATE_EMAIL",
             )
             return Err(
                 ValidationError(
@@ -148,12 +147,10 @@ class EmailFormatValidator(CommandValidator["CreateUserCommand"]):
         if not is_valid:
             logger.warning(
                 "email_format_validation_failed",
-                extra={
-                    "email": command.email,
-                    "validator": "EmailFormatValidator",
-                    "error_code": "INVALID_EMAIL_FORMAT",
-                    "error_message": error,
-                },
+                email=command.email,
+                validator="EmailFormatValidator",
+                error_code="INVALID_EMAIL_FORMAT",
+                error_message=error,
             )
             return Err(
                 ValidationError(
@@ -196,12 +193,10 @@ class PasswordStrengthValidator(CommandValidator["CreateUserCommand"]):
         if not is_strong:
             logger.warning(
                 "password_strength_validation_failed",
-                extra={
-                    "email": command.email,
-                    "validator": "PasswordStrengthValidator",
-                    "error_code": "WEAK_PASSWORD",
-                    "validation_errors": errors,
-                },
+                email=command.email,
+                validator="PasswordStrengthValidator",
+                error_code="WEAK_PASSWORD",
+                validation_errors=errors,
             )
             return Err(
                 ValidationError(
@@ -260,11 +255,9 @@ class CompositeUserValidator(CommandValidator["CreateUserCommand"]):
 
         logger.debug(
             "composite_validation_passed",
-            extra={
-                "email": command.email,
-                "validators_count": len(self._validators),
-                "validator": "CompositeUserValidator",
-            },
+            email=command.email,
+            validators_count=len(self._validators),
+            validator="CompositeUserValidator",
         )
 
         return Ok(None)

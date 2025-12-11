@@ -43,9 +43,7 @@ class TestBatchRepositoryInit:
 
     def test_init_with_defaults(self) -> None:
         """Test initialization with default values."""
-        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](
-            entity_type=SampleEntity
-        )
+        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](entity_type=SampleEntity)
 
         assert repo._entity_type == SampleEntity
         assert repo._id_field == "id"
@@ -63,9 +61,7 @@ class TestBatchRepositoryInit:
 
     def test_default_id_generator(self) -> None:
         """Test default ID generator increments."""
-        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](
-            entity_type=SampleEntity
-        )
+        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](entity_type=SampleEntity)
 
         id1 = repo._default_id_generator()
         id2 = repo._default_id_generator()
@@ -74,16 +70,13 @@ class TestBatchRepositoryInit:
         assert id2 == "2"
 
 
-
 class TestBatchRepositoryBulkCreate:
     """Tests for bulk_create operation."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repo(self) -> BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity]:
         """Create repository instance."""
-        return BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](
-            entity_type=SampleEntity
-        )
+        return BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](entity_type=SampleEntity)
 
     @pytest.mark.asyncio
     async def test_bulk_create_success(
@@ -140,6 +133,7 @@ class TestBatchRepositoryBulkCreate:
         self, repo: BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity]
     ) -> None:
         """Test bulk create with fail-fast strategy."""
+
         # Create a repo that will fail on specific item
         class FailingEntity(BaseModel):
             id: str = ""
@@ -165,12 +159,10 @@ class TestBatchRepositoryBulkCreate:
 class TestBatchRepositoryBulkUpdate:
     """Tests for bulk_update operation."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repo(self) -> BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity]:
         """Create repository with initial data."""
-        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](
-            entity_type=SampleEntity
-        )
+        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](entity_type=SampleEntity)
         repo._storage = {
             "1": SampleEntity(id="1", name="item1", value=10),
             "2": SampleEntity(id="2", name="item2", value=20),
@@ -214,12 +206,10 @@ class TestBatchRepositoryBulkUpdate:
 class TestBatchRepositoryBulkDelete:
     """Tests for bulk_delete operation."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repo(self) -> BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity]:
         """Create repository with initial data."""
-        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](
-            entity_type=SampleEntity
-        )
+        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](entity_type=SampleEntity)
         repo._storage = {
             "1": SampleEntity(id="1", name="item1"),
             "2": SampleEntity(id="2", name="item2"),
@@ -263,12 +253,10 @@ class TestBatchRepositoryBulkDelete:
 class TestBatchRepositoryBulkGet:
     """Tests for bulk_get operation."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repo(self) -> BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity]:
         """Create repository with initial data."""
-        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](
-            entity_type=SampleEntity
-        )
+        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](entity_type=SampleEntity)
         repo._storage = {
             "1": SampleEntity(id="1", name="item1"),
             "2": SampleEntity(id="2", name="item2", is_deleted=True),
@@ -290,12 +278,10 @@ class TestBatchRepositoryBulkGet:
 class TestBatchRepositoryBulkExists:
     """Tests for bulk_exists operation."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repo(self) -> BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity]:
         """Create repository with initial data."""
-        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](
-            entity_type=SampleEntity
-        )
+        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](entity_type=SampleEntity)
         repo._storage = {
             "1": SampleEntity(id="1", name="item1"),
             "2": SampleEntity(id="2", name="item2"),
@@ -317,12 +303,10 @@ class TestBatchRepositoryBulkExists:
 class TestBatchRepositoryBulkUpsert:
     """Tests for bulk_upsert operation."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repo(self) -> BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity]:
         """Create repository with initial data."""
-        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](
-            entity_type=SampleEntity
-        )
+        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](entity_type=SampleEntity)
         repo._storage = {
             "1": SampleEntity(id="1", name="existing", value=10),
         }
@@ -359,9 +343,7 @@ class TestBatchRepositoryClear:
 
     def test_clear(self) -> None:
         """Test clear removes all entities."""
-        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](
-            entity_type=SampleEntity
-        )
+        repo = BatchRepository[SampleEntity, CreateSampleEntity, UpdateSampleEntity](entity_type=SampleEntity)
         repo._storage = {"1": SampleEntity(id="1", name="item1")}
         repo._counter = 5
 
@@ -369,4 +351,3 @@ class TestBatchRepositoryClear:
 
         assert repo.count == 0
         assert repo._counter == 0
-

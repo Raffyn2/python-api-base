@@ -6,7 +6,13 @@ Provides mixin for entities that publish domain events.
 """
 
 from application.common.mixins.event_publishing.event_publishing import (
+    EventBusProtocol,
     EventPublishingMixin,
+    HasEvents,
 )
 
-__all__ = ["EventPublishingMixin"]
+__all__ = [
+    "EventBusProtocol",
+    "EventPublishingMixin",
+    "HasEvents",
+]

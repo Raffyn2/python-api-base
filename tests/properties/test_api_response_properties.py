@@ -12,7 +12,6 @@ from hypothesis import given, settings, strategies as st
 from application.common.dto.responses.api_response import ApiResponse
 from application.common.dto.responses.paginated_response import PaginatedResponse
 
-
 # =============================================================================
 # Property 23: API Response Request ID Uniqueness
 # **Feature: python-api-base-2025-validation, Property 23: API Response Request ID Uniqueness**
@@ -43,10 +42,7 @@ class TestApiResponseRequestIdUniqueness:
         from uuid import uuid4
 
         request_ids = [str(uuid4()) for _ in range(count)]
-        responses = [
-            ApiResponse(data={"index": i}, request_id=rid)
-            for i, rid in enumerate(request_ids)
-        ]
+        responses = [ApiResponse(data={"index": i}, request_id=rid) for i, rid in enumerate(request_ids)]
 
         # All request IDs should be preserved
         for i, response in enumerate(responses):
@@ -103,9 +99,7 @@ class TestPaginatedResponseNavigation:
         size=st.integers(min_value=1, max_value=100),
     )
     @settings(max_examples=100)
-    def test_total_pages_calculation(
-        self, total: int, page: int, size: int
-    ) -> None:
+    def test_total_pages_calculation(self, total: int, page: int, size: int) -> None:
         """
         **Feature: python-api-base-2025-validation, Property 24: Paginated Response Navigation**
         **Validates: Requirements 8.2**
@@ -235,9 +229,7 @@ class TestPaginatedResponseNavigation:
         size=st.integers(min_value=1, max_value=100),
     )
     @settings(max_examples=100)
-    def test_navigation_consistency(
-        self, total: int, page: int, size: int
-    ) -> None:
+    def test_navigation_consistency(self, total: int, page: int, size: int) -> None:
         """
         **Feature: python-api-base-2025-validation, Property 24: Paginated Response Navigation**
         **Validates: Requirements 8.2**

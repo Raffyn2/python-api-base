@@ -139,9 +139,7 @@ def validate_env_example(result: ValidationResult) -> None:
             missing_required.append(var)
 
     if missing_required:
-        result.add_error(
-            f".env.example missing required variables: {', '.join(missing_required)}"
-        )
+        result.add_error(f".env.example missing required variables: {', '.join(missing_required)}")
     else:
         console.print(f"  [OK] All {len(REQUIRED_ENV_VARS)} required variables present")
 
@@ -155,9 +153,7 @@ def validate_env_example(result: ValidationResult) -> None:
                     placeholder_issues.append(key)
 
     if placeholder_issues:
-        result.add_warning(
-            f"Variables with placeholder values: {', '.join(placeholder_issues)}"
-        )
+        result.add_warning(f"Variables with placeholder values: {', '.join(placeholder_issues)}")
 
     result.add_info(f"Total variables in .env.example: {len(env_vars)}")
 
@@ -203,9 +199,7 @@ def fix_env_file(result: ValidationResult) -> bool:
                         new_key = secrets.token_urlsafe(64)
                         lines[i] = f'SECURITY__SECRET_KEY="{new_key}"'
                         modified = True
-                        console.print(
-                            "[green]  [FIX] Generated new SECURITY__SECRET_KEY[/green]"
-                        )
+                        console.print("[green]  [FIX] Generated new SECURITY__SECRET_KEY[/green]")
                         break
 
             if modified:
@@ -259,17 +253,13 @@ def validate_env_file(result: ValidationResult) -> None:
         result.add_warning(f".env has empty required variables: {', '.join(empty)}")
 
     if not missing and not empty:
-        console.print(
-            f"  [OK] All {len(REQUIRED_ENV_VARS)} required variables configured"
-        )
+        console.print(f"  [OK] All {len(REQUIRED_ENV_VARS)} required variables configured")
 
     # Security check: SECURITY__SECRET_KEY length
     if "SECURITY__SECRET_KEY" in env_vars:
         secret_key = env_vars["SECURITY__SECRET_KEY"].strip("\"'")
         if len(secret_key) < 32:
-            result.add_error(
-                f"SECURITY__SECRET_KEY too short ({len(secret_key)} chars, min 32)"
-            )
+            result.add_error(f"SECURITY__SECRET_KEY too short ({len(secret_key)} chars, min 32)")
         elif secret_key in ["changeme", "CHANGE_ME", "your-secret-key-here"]:
             result.add_error("SECURITY__SECRET_KEY is placeholder, generate real key")
         else:
@@ -304,9 +294,7 @@ def validate_pyproject_toml(result: ValidationResult) -> None:
                 current = current[part]
 
         if missing_sections:
-            result.add_error(
-                f"pyproject.toml missing sections: {', '.join(missing_sections)}"
-            )
+            result.add_error(f"pyproject.toml missing sections: {', '.join(missing_sections)}")
         else:
             console.print("  [OK] All required sections present")
 
@@ -399,9 +387,7 @@ def validate_alembic_ini(result: ValidationResult) -> None:
             if not script_location:
                 result.add_error("alembic.ini: script_location not configured")
             elif not (PROJECT_ROOT / script_location).exists():
-                result.add_error(
-                    f"alembic.ini: script_location '{script_location}' not found"
-                )
+                result.add_error(f"alembic.ini: script_location '{script_location}' not found")
             else:
                 console.print(f"  [OK] script_location: {script_location}")
 
@@ -445,9 +431,7 @@ def validate_secrets_baseline(result: ValidationResult) -> None:
             ]
             missing_critical = [p for p in critical_plugins if p not in plugins]
             if missing_critical:
-                result.add_warning(
-                    f"Missing critical plugins: {', '.join(missing_critical)}"
-                )
+                result.add_warning(f"Missing critical plugins: {', '.join(missing_critical)}")
 
         # Check results
         if "results" in data:
@@ -491,10 +475,7 @@ def validate_gitignore(result: ValidationResult) -> None:
     for pattern in critical_patterns:
         # Check if pattern exists (with or without leading **)
         # Also check for equivalent patterns (e.g., *.py[cod] covers *.pyc)
-        found = any(
-            pattern in line or f"**/{pattern}" in line or f"*{pattern}" in line
-            for line in lines
-        )
+        found = any(pattern in line or f"**/{pattern}" in line or f"*{pattern}" in line for line in lines)
 
         # Special case: *.pyc is covered by *.py[cod]
         if not found and pattern == "*.pyc":
@@ -504,9 +485,7 @@ def validate_gitignore(result: ValidationResult) -> None:
             missing_critical.append(pattern)
 
     if missing_critical:
-        result.add_error(
-            f".gitignore missing critical patterns: {', '.join(missing_critical)}"
-        )
+        result.add_error(f".gitignore missing critical patterns: {', '.join(missing_critical)}")
     else:
         console.print(f"  [OK] All {len(critical_patterns)} critical patterns present")
 
@@ -541,9 +520,7 @@ def validate_precommit_config(result: ValidationResult) -> None:
             missing_critical.append(hook)
 
     if missing_critical:
-        result.add_error(
-            f".pre-commit-config.yaml missing critical hooks: {', '.join(missing_critical)}"
-        )
+        result.add_error(f".pre-commit-config.yaml missing critical hooks: {', '.join(missing_critical)}")
     else:
         console.print(f"  [OK] All {len(critical_hooks)} critical hooks configured")
 
@@ -583,9 +560,7 @@ def validate_makefile(result: ValidationResult) -> None:
             missing_critical.append(target)
 
     if missing_critical:
-        result.add_error(
-            f"Makefile missing critical targets: {', '.join(missing_critical)}"
-        )
+        result.add_error(f"Makefile missing critical targets: {', '.join(missing_critical)}")
     else:
         console.print(f"  [OK] All {len(critical_targets)} critical targets present")
 
@@ -596,9 +571,7 @@ def validate_makefile(result: ValidationResult) -> None:
 
 def validate_env_vars_documentation(result: ValidationResult) -> None:
     """Validate environment variables documentation is complete."""
-    console.print(
-        "\n[bold blue] Validating Environment Variables Documentation[/bold blue]"
-    )
+    console.print("\n[bold blue] Validating Environment Variables Documentation[/bold blue]")
 
     docs_path = PROJECT_ROOT / "docs" / "environment-variables.md"
     if not docs_path.exists():
@@ -616,13 +589,9 @@ def validate_env_vars_documentation(result: ValidationResult) -> None:
             missing_docs.append(var)
 
     if missing_docs:
-        result.add_warning(
-            f"Required variables not documented: {', '.join(missing_docs)}"
-        )
+        result.add_warning(f"Required variables not documented: {', '.join(missing_docs)}")
     else:
-        console.print(
-            f"  [OK] All {len(REQUIRED_ENV_VARS)} required variables documented"
-        )
+        console.print(f"  [OK] All {len(REQUIRED_ENV_VARS)} required variables documented")
 
     # Count total documented variables
     total_vars = content.count("### ") + content.count("## ") - content.count("## ")
@@ -678,13 +647,9 @@ def validate_readme(result: ValidationResult) -> None:
             missing_sections.append(section.replace("## ", ""))
 
     if missing_sections:
-        result.add_warning(
-            f"README.md missing recommended sections: {', '.join(missing_sections)}"
-        )
+        result.add_warning(f"README.md missing recommended sections: {', '.join(missing_sections)}")
     else:
-        console.print(
-            f"  [OK] All {len(essential_sections)} essential sections present"
-        )
+        console.print(f"  [OK] All {len(essential_sections)} essential sections present")
 
 
 def fix_license(result: ValidationResult) -> bool:
@@ -763,12 +728,7 @@ def validate_dependencies(result: ValidationResult) -> None:
 
         for dep in deps:
             # Check if dependency has version constraint
-            if (
-                ">=" not in dep
-                and "==" not in dep
-                and "~=" not in dep
-                and "<" not in dep
-            ):
+            if ">=" not in dep and "==" not in dep and "~=" not in dep and "<" not in dep:
                 # Extract package name
                 pkg_name = dep.split("[")[0].strip()
                 unpinned.append(pkg_name)
@@ -779,9 +739,7 @@ def validate_dependencies(result: ValidationResult) -> None:
                 + (f" and {len(unpinned) - 5} more" if len(unpinned) > 5 else "")
             )
         else:
-            console.print(
-                f"  [OK] All {len(deps)} dependencies have version constraints"
-            )
+            console.print(f"  [OK] All {len(deps)} dependencies have version constraints")
 
     except Exception as e:
         result.add_warning(f"Could not validate dependencies: {e}")
@@ -797,9 +755,7 @@ def validate_github_workflows(result: ValidationResult) -> None:
         return
 
     result.validations_run += 1
-    workflow_files = list(workflows_dir.glob("*.yml")) + list(
-        workflows_dir.glob("*.yaml")
-    )
+    workflow_files = list(workflows_dir.glob("*.yml")) + list(workflows_dir.glob("*.yaml"))
 
     if not workflow_files:
         result.add_warning("No workflow files found in .github/workflows")
@@ -830,14 +786,10 @@ def validate_github_workflows(result: ValidationResult) -> None:
                 result.add_warning(f"{workflow_file.name}: validation error - {e}")
 
         if valid_workflows > 0:
-            console.print(
-                f"  [OK] {valid_workflows}/{len(workflow_files)} workflows valid"
-            )
+            console.print(f"  [OK] {valid_workflows}/{len(workflow_files)} workflows valid")
 
     except ImportError:
-        result.add_info(
-            "PyYAML not installed, skipping workflow validation (install: pip install pyyaml)"
-        )
+        result.add_info("PyYAML not installed, skipping workflow validation (install: pip install pyyaml)")
 
 
 def print_summary(result: ValidationResult, strict: bool) -> None:
@@ -882,9 +834,7 @@ def print_summary(result: ValidationResult, strict: bool) -> None:
     if result.has_errors():
         console.print("[bold red][FAIL] Validation FAILED[/bold red]")
     elif strict and result.has_warnings():
-        console.print(
-            "[bold yellow][WARN]  Validation FAILED (strict mode)[/bold yellow]"
-        )
+        console.print("[bold yellow][WARN]  Validation FAILED (strict mode)[/bold yellow]")
     else:
         console.print("[bold green][OK] Validation PASSED[/bold green]")
     console.print("=" * 70 + "\n")
@@ -892,12 +842,8 @@ def print_summary(result: ValidationResult, strict: bool) -> None:
 
 @app.command()
 def main(
-    strict: bool = typer.Option(
-        False, "--strict", help="Fail on warnings (treat warnings as errors)"
-    ),
-    fix: bool = typer.Option(
-        False, "--fix", help="Auto-fix issues when possible (.env, LICENSE, SECRET_KEY)"
-    ),
+    strict: bool = typer.Option(False, "--strict", help="Fail on warnings (treat warnings as errors)"),
+    fix: bool = typer.Option(False, "--fix", help="Auto-fix issues when possible (.env, LICENSE, SECRET_KEY)"),
 ) -> None:
     """Validate all project configuration files."""
     console.print("[bold green] Configuration Validation Started[/bold green]\n")

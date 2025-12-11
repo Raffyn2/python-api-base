@@ -21,9 +21,7 @@ except ImportError:
 # Strategy for rate limit values
 requests_strategy = st.integers(min_value=1, max_value=100)
 window_strategy = st.integers(min_value=1, max_value=3600)
-key_strategy = st.text(
-    min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789:_-"
-)
+key_strategy = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789:_-")
 
 
 class TestRateLimiterCounting:
@@ -32,9 +30,7 @@ class TestRateLimiterCounting:
     @settings(max_examples=50)
     @given(max_requests=requests_strategy, key=key_strategy)
     @pytest.mark.asyncio
-    async def test_n_requests_succeed_then_rejected(
-        self, max_requests: int, key: str
-    ) -> None:
+    async def test_n_requests_succeed_then_rejected(self, max_requests: int, key: str) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 14: Rate Limiter Request Counting**
 
@@ -51,9 +47,7 @@ class TestRateLimiterCounting:
         # Make N requests - all should succeed
         for i in range(max_requests):
             result = await limiter.is_allowed(key)
-            assert result.allowed is True, (
-                f"Request {i + 1} of {max_requests} should be allowed"
-            )
+            assert result.allowed is True, f"Request {i + 1} of {max_requests} should be allowed"
 
         # (N+1)th request should be rejected
         result = await limiter.is_allowed(key)
@@ -64,9 +58,7 @@ class TestRateLimiterCounting:
     @settings(max_examples=30)
     @given(max_requests=requests_strategy, key=key_strategy)
     @pytest.mark.asyncio
-    async def test_remaining_decreases_with_requests(
-        self, max_requests: int, key: str
-    ) -> None:
+    async def test_remaining_decreases_with_requests(self, max_requests: int, key: str) -> None:
         """
         For each request, the remaining count SHALL decrease.
         **Validates: Requirements 9.4**
@@ -89,9 +81,7 @@ class TestRateLimiterCounting:
     @settings(max_examples=30)
     @given(key1=key_strategy, key2=key_strategy, max_requests=requests_strategy)
     @pytest.mark.asyncio
-    async def test_different_keys_independent(
-        self, key1: str, key2: str, max_requests: int
-    ) -> None:
+    async def test_different_keys_independent(self, key1: str, key2: str, max_requests: int) -> None:
         """
         For different keys, rate limits SHALL be tracked independently.
         **Validates: Requirements 9.4**
@@ -171,9 +161,7 @@ class TestRateLimiterCounting:
     @settings(max_examples=30)
     @given(max_requests=requests_strategy, key=key_strategy)
     @pytest.mark.asyncio
-    async def test_rejected_request_has_retry_info(
-        self, max_requests: int, key: str
-    ) -> None:
+    async def test_rejected_request_has_retry_info(self, max_requests: int, key: str) -> None:
         """
         For any rejected request, retry_after SHALL be positive.
         **Validates: Requirements 9.4**

@@ -12,8 +12,10 @@ from core.errors.http.constants import (
     HttpStatus,
 )
 from core.errors.http.exception_handlers import (
+    app_error_handler,
     generic_exception_handler,
     http_exception_handler,
+    pydantic_exception_handler,
     setup_exception_handlers,
     validation_exception_handler,
 )
@@ -33,9 +35,11 @@ __all__ = [
     # Problem Details
     "ProblemDetail",
     "ValidationErrorDetail",
+    # Exception Handlers
+    "app_error_handler",
     "generic_exception_handler",
     "http_exception_handler",
-    # Exception Handlers
+    "pydantic_exception_handler",
     "setup_exception_handlers",
     "validation_exception_handler",
 ]

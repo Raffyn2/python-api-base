@@ -7,11 +7,9 @@ within a single entity or value object.
 **Validates: Requirements 2.5**
 """
 
-import re
 from typing import Protocol
 
-# Email validation pattern (RFC 5322 simplified)
-_EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+from domain.users.value_objects import Email
 
 
 class PasswordHasher(Protocol):
@@ -138,8 +136,8 @@ class UserDomainService:
                     raise ValueError(email_error)
 
                 # 2. Validate password strength
-                is_strong, password_errors = (
-                    self._domain_service.validate_password_strength(password)
+                is_strong, password_errors = self._domain_service.validate_password_strength(
+                    password
                 )
                 if not is_strong:
                     raise ValueError(f"Weak password: {', '.join(password_errors)}")
@@ -247,10 +245,12 @@ class UserDomainService:
             ```
         """
         if not self._email_validator:
-            # Basic validation only
-            if _EMAIL_PATTERN.match(email):
+            # Use Email value object for basic validation
+            try:
+                Email.create(email)
                 return True, None
-            return False, "Invalid email format"
+            except ValueError:
+                return False, "Invalid email format"
 
         if not self._email_validator.is_valid(email):
             return False, "Invalid email format"

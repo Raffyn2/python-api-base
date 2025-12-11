@@ -4,8 +4,6 @@
 **Validates: Requirements 7.2**
 """
 
-import pytest
-
 from infrastructure.observability.telemetry.noop import (
     _NoOpCounter,
     _NoOpHistogram,

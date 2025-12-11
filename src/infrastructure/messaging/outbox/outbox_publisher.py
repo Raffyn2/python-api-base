@@ -5,19 +5,21 @@
 """
 
 import asyncio
-import logging
-import random
+import contextlib
+import secrets
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 from uuid import UUID
+
+import structlog
 
 from infrastructure.messaging.outbox.outbox_message import (
     OutboxMessage,
     OutboxMessageStatus,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class IOutboxRepository(Protocol):
@@ -28,14 +30,10 @@ class IOutboxRepository(Protocol):
 
     async def save(self, message: OutboxMessage) -> OutboxMessage: ...
     async def get_by_id(self, message_id: UUID) -> OutboxMessage | None: ...
-    async def get_pending(
-        self, limit: int = 100, include_failed: bool = True
-    ) -> Sequence[OutboxMessage]: ...
+    async def get_pending(self, limit: int = 100, include_failed: bool = True) -> Sequence[OutboxMessage]: ...
     async def update(self, message: OutboxMessage) -> OutboxMessage: ...
     async def mark_processed(self, message_id: UUID) -> bool: ...
-    async def mark_failed(
-        self, message_id: UUID, error: str, next_retry: datetime | None = None
-    ) -> bool: ...
+    async def mark_failed(self, message_id: UUID, error: str, next_retry: datetime | None = None) -> bool: ...
     async def is_duplicate(self, idempotency_key: str) -> bool: ...
     async def get_dead_letters(self, limit: int = 100) -> Sequence[OutboxMessage]: ...
 
@@ -112,10 +110,8 @@ class OutboxPublisher:
 
         if self._task:
             self._task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
             self._task = None
 
         logger.info("Outbox publisher stopped")
@@ -126,9 +122,16 @@ class OutboxPublisher:
             try:
                 published = await self.publish_pending()
                 if published > 0:
-                    logger.debug(f"Published {published} outbox messages")
-            except Exception as e:
-                logger.error(f"Error in outbox publisher: {e}")
+                    logger.debug(
+                        "Published outbox messages",
+                        count=published,
+                        operation="OUTBOX_POLL",
+                    )
+            except Exception:
+                logger.exception(
+                    "Error in outbox publisher",
+                    operation="OUTBOX_POLL",
+                )
 
             await asyncio.sleep(self._poll_interval)
 
@@ -148,8 +151,13 @@ class OutboxPublisher:
             try:
                 await self._publish_message(message)
                 published += 1
-            except Exception as e:
-                logger.warning(f"Failed to publish message {message.id}: {e}")
+            except Exception:
+                logger.warning(
+                    "Failed to publish message",
+                    message_id=str(message.id),
+                    operation="OUTBOX_PUBLISH",
+                    exc_info=True,
+                )
 
         return published
 
@@ -163,7 +171,11 @@ class OutboxPublisher:
         if message.idempotency_key:
             is_dup = await self._repository.is_duplicate(message.idempotency_key)
             if is_dup:
-                logger.debug(f"Skipping duplicate message: {message.idempotency_key}")
+                logger.debug(
+                    "Skipping duplicate message",
+                    idempotency_key=message.idempotency_key,
+                    operation="OUTBOX_DEDUP",
+                )
                 await self._repository.mark_processed(message.id)
                 return
 
@@ -191,11 +203,9 @@ class OutboxPublisher:
 
             logger.debug(
                 "Published outbox message",
-                extra={
-                    "message_id": str(message.id),
-                    "event_type": message.event_type,
-                    "correlation_id": message.correlation_id,
-                },
+                message_id=str(message.id),
+                event_type=message.event_type,
+                correlation_id=message.correlation_id,
             )
 
         except Exception as e:
@@ -215,23 +225,25 @@ class OutboxPublisher:
             if self._on_failure:
                 self._on_failure(message, e)
 
-            log_extra = {
-                "message_id": str(message.id),
-                "event_type": message.event_type,
-                "correlation_id": message.correlation_id,
-                "retry_count": message.retry_count + 1,
-                "error": str(e),
-            }
-
             if message.retry_count + 1 >= message.max_retries:
                 logger.error(
                     "Outbox message moved to dead letter",
-                    extra={**log_extra, "status": "dead_letter"},
+                    message_id=str(message.id),
+                    event_type=message.event_type,
+                    correlation_id=message.correlation_id,
+                    retry_count=message.retry_count + 1,
+                    status="dead_letter",
+                    exc_info=e,
                 )
             else:
                 logger.warning(
                     "Outbox message failed, will retry",
-                    extra={**log_extra, "next_retry_seconds": delay},
+                    message_id=str(message.id),
+                    event_type=message.event_type,
+                    correlation_id=message.correlation_id,
+                    retry_count=message.retry_count + 1,
+                    next_retry_seconds=delay,
+                    exc_info=e,
                 )
 
             raise
@@ -251,8 +263,9 @@ class OutboxPublisher:
         delay = self._base_delay * (2**retry_count)
         delay = min(delay, self._max_delay)
 
-        # Add jitter: delay * (1 ± jitter_factor)
-        jitter = delay * self._jitter_factor * (2 * random.random() - 1)
+        # Add jitter: delay * (1 ± jitter_factor) using secrets for better randomness
+        # Generate random float in range [-1, 1] then scale by jitter_factor
+        jitter = delay * self._jitter_factor * (secrets.randbelow(1000001) / 500000 - 1)
         return max(0.1, delay + jitter)  # Minimum 100ms
 
     async def publish_one(self, message: OutboxMessage) -> bool:
@@ -279,8 +292,6 @@ class OutboxPublisher:
         Returns:
             Number of messages retried.
         """
-        from infrastructure.messaging.outbox.outbox_message import OutboxMessageStatus
-
         dead_letters = await self._repository.get_dead_letters(limit)
 
         retried = 0

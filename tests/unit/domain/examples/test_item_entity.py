@@ -30,54 +30,46 @@ class TestMoney:
         assert money.currency == "USD"
 
     def test_default_currency(self) -> None:
-        """Test default currency is BRL."""
-        money = Money(Decimal("100"))
-        assert money.currency == "BRL"
+        """Test default currency is USD."""
+        money = Money(Decimal(100))
+        assert money.currency == "USD"
 
-    def test_negative_amount_raises(self) -> None:
-        """Test negative amount raises ValueError."""
-        with pytest.raises(ValueError, match="cannot be negative"):
-            Money(Decimal("-10"))
+    def test_negative_amount_allowed(self) -> None:
+        """Test negative amount is allowed (for refunds)."""
+        money = Money(Decimal(-10))
+        assert money.amount == Decimal("-10.00")
 
-    def test_invalid_currency_raises(self) -> None:
-        """Test invalid currency raises ValueError."""
-        with pytest.raises(ValueError, match="3-letter"):
-            Money(Decimal("100"), "US")
+    def test_custom_currency(self) -> None:
+        """Test custom currency is accepted."""
+        money = Money(Decimal(100), "EUR")
+        assert money.currency == "EUR"
 
     def test_add_same_currency(self) -> None:
         """Test adding money with same currency."""
-        m1 = Money(Decimal("50"), "USD")
-        m2 = Money(Decimal("30"), "USD")
+        m1 = Money(Decimal(50), "USD")
+        m2 = Money(Decimal(30), "USD")
         result = m1 + m2
-        assert result.amount == Decimal("80")
+        assert result.amount == Decimal(80)
         assert result.currency == "USD"
 
     def test_add_different_currency_raises(self) -> None:
         """Test adding different currencies raises."""
-        m1 = Money(Decimal("50"), "USD")
-        m2 = Money(Decimal("30"), "EUR")
+        m1 = Money(Decimal(50), "USD")
+        m2 = Money(Decimal(30), "EUR")
         with pytest.raises(ValueError, match="different currencies"):
             m1 + m2
 
     def test_multiply_by_quantity(self) -> None:
         """Test multiplying by quantity."""
-        money = Money(Decimal("25"), "USD")
+        money = Money(Decimal(25), "USD")
         result = money * 4
-        assert result.amount == Decimal("100")
+        assert result.amount == Decimal(100)
 
-    def test_to_dict(self) -> None:
-        """Test serialization to dict."""
+    def test_serialization(self) -> None:
+        """Test Money fields can be accessed for serialization."""
         money = Money(Decimal("99.99"), "USD")
-        result = money.to_dict()
-        assert result["amount"] == "99.99"
-        assert result["currency"] == "USD"
-
-    def test_from_dict(self) -> None:
-        """Test deserialization from dict."""
-        data = {"amount": "50.00", "currency": "EUR"}
-        money = Money.from_dict(data)
-        assert money.amount == Decimal("50.00")
-        assert money.currency == "EUR"
+        assert str(money.amount) == "99.99"
+        assert money.currency == "USD"
 
 
 class TestItemExampleCreate:
@@ -103,7 +95,7 @@ class TestItemExampleCreate:
         item = ItemExample.create(
             name="Widget",
             description="A widget",
-            price=Money(Decimal("50")),
+            price=Money(Decimal(50)),
             sku="WDG-002",
             quantity=100,
             category="Electronics",
@@ -119,7 +111,7 @@ class TestItemExampleCreate:
         item = ItemExample.create(
             name="Widget",
             description="A widget",
-            price=Money(Decimal("50")),
+            price=Money(Decimal(50)),
             sku="WDG-003",
         )
 
@@ -137,7 +129,7 @@ class TestItemExampleUpdate:
         item = ItemExample.create(
             name="Old Name",
             description="Desc",
-            price=Money(Decimal("50")),
+            price=Money(Decimal(50)),
             sku="SKU-001",
         )
         item.clear_events()
@@ -151,7 +143,7 @@ class TestItemExampleUpdate:
         item = ItemExample.create(
             name="Widget",
             description="Desc",
-            price=Money(Decimal("50")),
+            price=Money(Decimal(50)),
             sku="SKU-001",
         )
         item.clear_events()
@@ -168,7 +160,7 @@ class TestItemExampleUpdate:
         item = ItemExample.create(
             name="Widget",
             description="Desc",
-            price=Money(Decimal("50")),
+            price=Money(Decimal(50)),
             sku="SKU-001",
             quantity=10,
         )
@@ -186,7 +178,7 @@ class TestItemExampleStatusTransitions:
         item = ItemExample.create(
             name="Widget",
             description="Desc",
-            price=Money(Decimal("50")),
+            price=Money(Decimal(50)),
             sku="SKU-001",
         )
 
@@ -199,7 +191,7 @@ class TestItemExampleStatusTransitions:
         item = ItemExample.create(
             name="Widget",
             description="Desc",
-            price=Money(Decimal("50")),
+            price=Money(Decimal(50)),
             sku="SKU-001",
         )
 
@@ -212,7 +204,7 @@ class TestItemExampleStatusTransitions:
         item = ItemExample.create(
             name="Widget",
             description="Desc",
-            price=Money(Decimal("50")),
+            price=Money(Decimal(50)),
             sku="SKU-001",
         )
         item.clear_events()
@@ -232,7 +224,7 @@ class TestItemExampleProperties:
         item = ItemExample.create(
             name="Widget",
             description="Desc",
-            price=Money(Decimal("50")),
+            price=Money(Decimal(50)),
             sku="SKU-001",
             quantity=10,
         )
@@ -244,7 +236,7 @@ class TestItemExampleProperties:
         item = ItemExample.create(
             name="Widget",
             description="Desc",
-            price=Money(Decimal("50")),
+            price=Money(Decimal(50)),
             sku="SKU-001",
             quantity=0,
         )
@@ -256,9 +248,9 @@ class TestItemExampleProperties:
         item = ItemExample.create(
             name="Widget",
             description="Desc",
-            price=Money(Decimal("25")),
+            price=Money(Decimal(25)),
             sku="SKU-001",
             quantity=4,
         )
 
-        assert item.total_value.amount == Decimal("100")
+        assert item.total_value.amount == Decimal(100)

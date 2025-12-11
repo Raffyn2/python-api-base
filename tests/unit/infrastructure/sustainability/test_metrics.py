@@ -3,8 +3,6 @@
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from src.infrastructure.sustainability.metrics import (
     format_prometheus_metric,
     generate_metrics_output,
@@ -49,7 +47,7 @@ class TestFormatPrometheusMetric:
         """Test formatting metric with multiple labels."""
         result = format_prometheus_metric(
             name="carbon_emissions",
-            value=Decimal("500"),
+            value=Decimal(500),
             labels={"namespace": "prod", "pod": "api-1", "container": "main"},
         )
 
@@ -78,7 +76,6 @@ class TestFormatPrometheusMetric:
         )
 
         assert "# TYPE request_duration histogram" in result
-
 
 
 class TestValidateMetricLabels:
@@ -160,9 +157,7 @@ class TestRecordMetricFunctions:
 
     @patch("src.infrastructure.sustainability.metrics.ENERGY_CONSUMPTION_TOTAL")
     @patch("src.infrastructure.sustainability.metrics.ENERGY_CONSUMPTION_KWH")
-    def test_record_energy_metric(
-        self, mock_kwh: MagicMock, mock_total: MagicMock
-    ) -> None:
+    def test_record_energy_metric(self, mock_kwh: MagicMock, mock_total: MagicMock) -> None:
         """Test recording energy metric."""
         mock_total.labels.return_value.inc = MagicMock()
         mock_kwh.labels.return_value.set = MagicMock()
@@ -171,21 +166,15 @@ class TestRecordMetricFunctions:
             namespace="test",
             pod="pod-1",
             container="main",
-            energy_joules=Decimal("3600000"),  # 1 kWh
+            energy_joules=Decimal(3600000),  # 1 kWh
         )
 
-        mock_total.labels.assert_called_with(
-            namespace="test", pod="pod-1", container="main"
-        )
-        mock_kwh.labels.assert_called_with(
-            namespace="test", pod="pod-1", container="main"
-        )
+        mock_total.labels.assert_called_with(namespace="test", pod="pod-1", container="main")
+        mock_kwh.labels.assert_called_with(namespace="test", pod="pod-1", container="main")
 
     @patch("src.infrastructure.sustainability.metrics.CARBON_EMISSIONS_TOTAL")
     @patch("src.infrastructure.sustainability.metrics.CARBON_EMISSIONS_RATE")
-    def test_record_carbon_metric(
-        self, mock_rate: MagicMock, mock_total: MagicMock
-    ) -> None:
+    def test_record_carbon_metric(self, mock_rate: MagicMock, mock_total: MagicMock) -> None:
         """Test recording carbon metric."""
         mock_total.labels.return_value.inc = MagicMock()
         mock_rate.labels.return_value.set = MagicMock()
@@ -194,12 +183,10 @@ class TestRecordMetricFunctions:
             namespace="test",
             pod="pod-1",
             container="main",
-            emissions_gco2=Decimal("400"),
+            emissions_gco2=Decimal(400),
         )
 
-        mock_total.labels.assert_called_with(
-            namespace="test", pod="pod-1", container="main"
-        )
+        mock_total.labels.assert_called_with(namespace="test", pod="pod-1", container="main")
 
     @patch("src.infrastructure.sustainability.metrics.CARBON_INTENSITY")
     def test_record_carbon_intensity(self, mock_intensity: MagicMock) -> None:
@@ -209,18 +196,14 @@ class TestRecordMetricFunctions:
         record_carbon_intensity(
             region="us-east-1",
             source="electricity-maps",
-            intensity_gco2_per_kwh=Decimal("350"),
+            intensity_gco2_per_kwh=Decimal(350),
         )
 
-        mock_intensity.labels.assert_called_with(
-            region="us-east-1", source="electricity-maps"
-        )
+        mock_intensity.labels.assert_called_with(region="us-east-1", source="electricity-maps")
 
     @patch("src.infrastructure.sustainability.metrics.ENERGY_COST_TOTAL")
     @patch("src.infrastructure.sustainability.metrics.ENERGY_COST_RATE")
-    def test_record_energy_cost(
-        self, mock_rate: MagicMock, mock_total: MagicMock
-    ) -> None:
+    def test_record_energy_cost(self, mock_rate: MagicMock, mock_total: MagicMock) -> None:
         """Test recording energy cost metric."""
         mock_total.labels.return_value.inc = MagicMock()
         mock_rate.labels.return_value.set = MagicMock()

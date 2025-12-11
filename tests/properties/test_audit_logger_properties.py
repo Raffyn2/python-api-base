@@ -38,9 +38,7 @@ def user_id_strategy(draw: st.DrawFn) -> str:
         st.text(
             min_size=1,
             max_size=50,
-            alphabet=st.characters(
-                whitelist_categories=("L", "N"), whitelist_characters="_-"
-            ),
+            alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_-"),
         ).filter(lambda x: x.strip() != "")
     )
 
@@ -190,9 +188,7 @@ class TestSecretAccessLoggingProperties:
     """
 
     @given(
-        secret_name=st.text(
-            min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-"
-        ),
+        secret_name=st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-"),
         accessor=user_id_strategy(),
         action=st.sampled_from(["read", "rotate", "delete", "create"]),
     )

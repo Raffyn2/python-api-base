@@ -9,9 +9,6 @@ Tests configuration loading, defaults, and validation.
 import os
 from unittest.mock import patch
 
-import pytest
-from pydantic import SecretStr
-
 from core.config.application.settings import Settings, get_settings
 
 

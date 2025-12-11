@@ -14,11 +14,15 @@ Organized into subpackages by responsibility:
 """
 
 from interface.v1.auth import auth_router
-from interface.v1.core import cache_router, health_router, infrastructure_router, jwks_router
-from interface.v1.enterprise import enterprise_router
+from interface.v1.core import (
+    cache_router,
+    health_router,
+    infrastructure_router,
+    jwks_router,
+)
+from interface.v1.enterprise import router as enterprise_router
 from interface.v1.examples import examples_router
 from interface.v1.features import kafka_router, storage_router, sustainability_router
-from interface.v1.items import items_router
 from interface.v1.users import users_router
 
 __all__ = [
@@ -28,7 +32,6 @@ __all__ = [
     "examples_router",
     "health_router",
     "infrastructure_router",
-    "items_router",
     "jwks_router",
     "kafka_router",
     "storage_router",

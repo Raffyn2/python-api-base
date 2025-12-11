@@ -67,7 +67,7 @@ class TestJsonTypes:
     def test_exports(self) -> None:
         """Test all types are exported."""
         from infrastructure.httpclient import types
-        
+
         assert hasattr(types, "JsonPrimitive")
         assert hasattr(types, "JsonValue")
         assert hasattr(types, "JsonObject")

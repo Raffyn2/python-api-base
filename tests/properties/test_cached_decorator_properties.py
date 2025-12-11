@@ -24,9 +24,7 @@ class TestCachedDecorator:
     @settings(max_examples=50)
     @given(x=int_strategy, y=int_strategy)
     @pytest.mark.asyncio
-    async def test_cached_async_function_returns_same_result(
-        self, x: int, y: int
-    ) -> None:
+    async def test_cached_async_function_returns_same_result(self, x: int, y: int) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 10: Cached Decorator Returns Cached Results**
 
@@ -78,9 +76,7 @@ class TestCachedDecorator:
     @settings(max_examples=30)
     @given(values=st.lists(int_strategy, min_size=2, max_size=5, unique=True))
     @pytest.mark.asyncio
-    async def test_different_args_call_function_separately(
-        self, values: list[int]
-    ) -> None:
+    async def test_different_args_call_function_separately(self, values: list[int]) -> None:
         """
         For different arguments, the cached function SHALL be called for each unique set.
         **Validates: Requirements 7.4**

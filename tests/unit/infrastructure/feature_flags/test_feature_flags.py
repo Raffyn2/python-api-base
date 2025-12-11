@@ -4,8 +4,6 @@ Tests FlagStatus, EvaluationContext, FeatureFlag, EvaluationResult,
 FeatureFlagEvaluator, InMemoryFeatureFlagStore, and FlagAuditLogger.
 """
 
-from datetime import UTC, datetime
-
 import pytest
 
 from infrastructure.feature_flags.flags import (
@@ -14,7 +12,6 @@ from infrastructure.feature_flags.flags import (
     FeatureFlag,
     FeatureFlagEvaluator,
     FlagAuditLogger,
-    FlagEvaluationLog,
     FlagStatus,
     InMemoryFeatureFlagStore,
 )
@@ -46,7 +43,7 @@ class TestEvaluationContext:
     def test_default_values(self) -> None:
         """Test default context values."""
         context = EvaluationContext[dict]()
-        
+
         assert context.user_id is None
         assert context.groups == ()
         assert context.attributes == {}
@@ -55,28 +52,26 @@ class TestEvaluationContext:
     def test_with_user_id(self) -> None:
         """Test context with user ID."""
         context = EvaluationContext[dict](user_id="user-123")
-        
+
         assert context.user_id == "user-123"
 
     def test_with_groups(self) -> None:
         """Test context with groups."""
         context = EvaluationContext[dict](groups=("admin", "beta"))
-        
+
         assert context.groups == ("admin", "beta")
 
     def test_with_attributes(self) -> None:
         """Test context with attributes."""
-        context = EvaluationContext[dict](
-            attributes={"country": "US", "plan": "premium"}
-        )
-        
+        context = EvaluationContext[dict](attributes={"country": "US", "plan": "premium"})
+
         assert context.attributes["country"] == "US"
         assert context.attributes["plan"] == "premium"
 
     def test_immutability(self) -> None:
         """Test context is immutable."""
         context = EvaluationContext[dict](user_id="user-123")
-        
+
         with pytest.raises(AttributeError):
             context.user_id = "other"  # type: ignore
 
@@ -90,7 +85,7 @@ class TestFeatureFlag:
             key="new-feature",
             name="New Feature",
         )
-        
+
         assert flag.key == "new-feature"
         assert flag.name == "New Feature"
         assert flag.status == FlagStatus.DISABLED
@@ -103,7 +98,7 @@ class TestFeatureFlag:
             status=FlagStatus.DISABLED,
         )
         context = EvaluationContext[dict](user_id="user-123")
-        
+
         assert flag.is_enabled_for(context) is False
 
     def test_is_enabled_for_enabled_flag(self) -> None:
@@ -114,7 +109,7 @@ class TestFeatureFlag:
             status=FlagStatus.ENABLED,
         )
         context = EvaluationContext[dict](user_id="user-123")
-        
+
         assert flag.is_enabled_for(context) is True
 
     def test_is_enabled_for_disabled_user(self) -> None:
@@ -126,7 +121,7 @@ class TestFeatureFlag:
             disabled_users={"user-123"},
         )
         context = EvaluationContext[dict](user_id="user-123")
-        
+
         assert flag.is_enabled_for(context) is False
 
     def test_is_enabled_for_targeted_user(self) -> None:
@@ -138,7 +133,7 @@ class TestFeatureFlag:
             enabled_users={"user-123"},
         )
         context = EvaluationContext[dict](user_id="user-123")
-        
+
         assert flag.is_enabled_for(context) is True
 
     def test_is_enabled_for_targeted_group(self) -> None:
@@ -150,7 +145,7 @@ class TestFeatureFlag:
             enabled_groups={"beta"},
         )
         context = EvaluationContext[dict](user_id="user-123", groups=("beta",))
-        
+
         assert flag.is_enabled_for(context) is True
 
     def test_is_enabled_for_not_in_target(self) -> None:
@@ -162,7 +157,7 @@ class TestFeatureFlag:
             enabled_groups={"beta"},
         )
         context = EvaluationContext[dict](user_id="user-123", groups=("alpha",))
-        
+
         assert flag.is_enabled_for(context) is False
 
     def test_percentage_rollout(self) -> None:
@@ -173,12 +168,12 @@ class TestFeatureFlag:
             status=FlagStatus.PERCENTAGE,
             percentage=50.0,
         )
-        
+
         # Same user should always get same result
         context = EvaluationContext[dict](user_id="user-123")
         result1 = flag.is_enabled_for(context)
         result2 = flag.is_enabled_for(context)
-        
+
         assert result1 == result2
 
 
@@ -192,7 +187,7 @@ class TestEvaluationResult:
             enabled=True,
             reason="FLAG_ENABLED",
         )
-        
+
         assert result.flag_key == "test"
         assert result.enabled is True
         assert result.reason == "FLAG_ENABLED"
@@ -207,7 +202,7 @@ class TestEvaluationResult:
             reason="VARIANT_SELECTED",
             variant="control",
         )
-        
+
         assert result.variant == "control"
 
 
@@ -218,18 +213,18 @@ class TestFeatureFlagEvaluator:
         """Test registering a flag."""
         evaluator = FeatureFlagEvaluator[dict]()
         flag = FeatureFlag[dict](key="test", name="Test")
-        
+
         evaluator.register(flag)
-        
+
         assert "test" in evaluator._flags
 
     def test_evaluate_not_found(self) -> None:
         """Test evaluating non-existent flag."""
         evaluator = FeatureFlagEvaluator[dict]()
         context = EvaluationContext[dict](user_id="user-123")
-        
+
         result = evaluator.evaluate("nonexistent", context)
-        
+
         assert result.enabled is False
         assert result.reason == "FLAG_NOT_FOUND"
 
@@ -243,9 +238,9 @@ class TestFeatureFlagEvaluator:
         )
         evaluator.register(flag)
         context = EvaluationContext[dict](user_id="user-123")
-        
+
         result = evaluator.evaluate("test", context)
-        
+
         assert result.enabled is True
         assert result.reason == "FLAG_ENABLED"
 
@@ -259,14 +254,14 @@ class TestFeatureFlagEvaluator:
         )
         evaluator.register(flag)
         context = EvaluationContext[dict](user_id="user-123")
-        
+
         assert evaluator.is_enabled("test", context) is True
 
 
 class TestInMemoryFeatureFlagStore:
     """Tests for InMemoryFeatureFlagStore."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def store(self) -> InMemoryFeatureFlagStore[dict]:
         """Create a fresh store."""
         return InMemoryFeatureFlagStore[dict]()
@@ -275,10 +270,10 @@ class TestInMemoryFeatureFlagStore:
     async def test_save_and_get(self, store: InMemoryFeatureFlagStore[dict]) -> None:
         """Test saving and getting a flag."""
         flag = FeatureFlag[dict](key="test", name="Test")
-        
+
         await store.save(flag)
         result = await store.get("test")
-        
+
         assert result is not None
         assert result.key == "test"
 
@@ -286,7 +281,7 @@ class TestInMemoryFeatureFlagStore:
     async def test_get_not_found(self, store: InMemoryFeatureFlagStore[dict]) -> None:
         """Test getting non-existent flag."""
         result = await store.get("nonexistent")
-        
+
         assert result is None
 
     @pytest.mark.asyncio
@@ -294,12 +289,12 @@ class TestInMemoryFeatureFlagStore:
         """Test getting all flags."""
         flag1 = FeatureFlag[dict](key="test1", name="Test 1")
         flag2 = FeatureFlag[dict](key="test2", name="Test 2")
-        
+
         await store.save(flag1)
         await store.save(flag2)
-        
+
         result = await store.get_all()
-        
+
         assert len(result) == 2
 
     @pytest.mark.asyncio
@@ -307,9 +302,9 @@ class TestInMemoryFeatureFlagStore:
         """Test deleting a flag."""
         flag = FeatureFlag[dict](key="test", name="Test")
         await store.save(flag)
-        
+
         result = await store.delete("test")
-        
+
         assert result is True
         assert await store.get("test") is None
 
@@ -317,7 +312,7 @@ class TestInMemoryFeatureFlagStore:
     async def test_delete_not_found(self, store: InMemoryFeatureFlagStore[dict]) -> None:
         """Test deleting non-existent flag."""
         result = await store.delete("nonexistent")
-        
+
         assert result is False
 
 
@@ -333,9 +328,9 @@ class TestFlagAuditLogger:
             reason="FLAG_ENABLED",
         )
         context = EvaluationContext[dict](user_id="user-123")
-        
+
         logger.log_evaluation(result, context)
-        
+
         logs = logger.get_logs()
         assert len(logs) == 1
         assert logs[0].flag_key == "test"
@@ -344,15 +339,15 @@ class TestFlagAuditLogger:
     def test_get_logs_filtered(self) -> None:
         """Test getting logs filtered by flag key."""
         logger = FlagAuditLogger()
-        
+
         result1 = EvaluationResult(flag_key="flag1", enabled=True, reason="ENABLED")
         result2 = EvaluationResult(flag_key="flag2", enabled=False, reason="DISABLED")
         context = EvaluationContext[dict](user_id="user-123")
-        
+
         logger.log_evaluation(result1, context)
         logger.log_evaluation(result2, context)
-        
+
         logs = logger.get_logs("flag1")
-        
+
         assert len(logs) == 1
         assert logs[0].flag_key == "flag1"

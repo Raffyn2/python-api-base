@@ -26,7 +26,7 @@ class TestMetricsCollection:
         config = PrometheusConfig(namespace="test")
         registry = MetricsRegistry(config, test_registry)
         set_registry(registry)
-        yield registry
+        return registry
 
     def test_counter_increments(self, setup_registry) -> None:
         """Test counter increments on function call.
@@ -115,7 +115,7 @@ class TestUseCaseMetrics:
         config = PrometheusConfig(namespace="app")
         registry = MetricsRegistry(config, test_registry)
         set_registry(registry)
-        yield registry
+        return registry
 
     def test_use_case_pattern(self, setup_registry) -> None:
         """Test metrics pattern for use cases.

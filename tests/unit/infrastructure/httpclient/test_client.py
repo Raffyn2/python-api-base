@@ -82,7 +82,7 @@ class TestRetryPolicy:
 class TestCircuitBreaker:
     """Tests for CircuitBreaker."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def config(self) -> CircuitBreakerConfig:
         """Create test config."""
         return CircuitBreakerConfig(
@@ -91,7 +91,7 @@ class TestCircuitBreaker:
             timeout=timedelta(seconds=1),
         )
 
-    @pytest.fixture
+    @pytest.fixture()
     def breaker(self, config: CircuitBreakerConfig) -> CircuitBreaker:
         """Create test circuit breaker."""
         return CircuitBreaker(config)
@@ -228,7 +228,7 @@ class TestHttpClientTypes:
 class TestHttpClientIntegration:
     """Integration-style tests for HttpClient."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def config(self) -> HttpClientConfig:
         """Create test config."""
         return HttpClientConfig(
@@ -244,11 +244,13 @@ class TestHttpClientIntegration:
             response_type=UserResponse,
         )
 
-        response = client._parse_response({
-            "id": "123",
-            "name": "John",
-            "email": "john@example.com",
-        })
+        response = client._parse_response(
+            {
+                "id": "123",
+                "name": "John",
+                "email": "john@example.com",
+            }
+        )
 
         assert response.id == "123"
         assert response.name == "John"

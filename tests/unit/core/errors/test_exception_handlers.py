@@ -4,12 +4,11 @@
 **Requirements: 3.3**
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from pydantic import ValidationError as PydanticValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from core.errors.http.exception_handlers import (
@@ -17,7 +16,6 @@ from core.errors.http.exception_handlers import (
     _get_correlation_id,
     generic_exception_handler,
     http_exception_handler,
-    pydantic_exception_handler,
     setup_exception_handlers,
     validation_exception_handler,
 )
@@ -237,4 +235,5 @@ class TestSetupExceptionHandlers:
 
         setup_exception_handlers(app)
 
-        assert app.add_exception_handler.call_count == 4
+        # 5 handlers: HTTPException, RequestValidationError, PydanticValidationError, AppError, Exception
+        assert app.add_exception_handler.call_count == 5

@@ -8,28 +8,21 @@ Monitors SQL query execution time and logs slow queries.
 
 from __future__ import annotations
 
-import logging
 import time
-from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+import structlog
 from sqlalchemy import event
 from sqlalchemy.pool import Pool
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Connection, Engine
 
-logger = logging.getLogger(__name__)
-
-# Context var to store query timing data
-_query_context: ContextVar[dict[str, Any] | None] = ContextVar(
-    "_query_context",
-    default=None,
-)
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class QueryStats:
     """Statistics for query execution."""
 
@@ -175,11 +168,9 @@ class QueryTimingMiddleware:
         self._installed = True
         logger.info(
             "Query timing middleware installed",
-            extra={
-                "slow_query_threshold_ms": self.slow_query_threshold_ms,
-                "log_all_queries": self.log_all_queries,
-                "collect_stats": self.collect_stats,
-            },
+            slow_query_threshold_ms=self.slow_query_threshold_ms,
+            log_all_queries=self.log_all_queries,
+            collect_stats=self.collect_stats,
         )
 
     def uninstall(self) -> None:
@@ -253,26 +244,28 @@ class QueryTimingMiddleware:
         # Log slow queries
         is_slow = duration_ms >= self.slow_query_threshold_ms
         if is_slow or self.log_all_queries:
-            log_level = logging.WARNING if is_slow else logging.DEBUG
-            extra_data = {
-                "duration_ms": round(duration_ms, 2),
-                "statement": statement[:500],  # Truncate long statements
-                "executemany": executemany,
-                "is_slow": is_slow,
-                "query_type": QueryStats._get_query_type(statement),
-            }
+            query_type = QueryStats._get_query_type(statement)
 
             if is_slow:
-                logger.log(
-                    log_level,
-                    f"Slow query detected ({duration_ms:.2f}ms > {self.slow_query_threshold_ms}ms)",
-                    extra=extra_data,
+                logger.warning(
+                    "Slow query detected",
+                    duration_ms=round(duration_ms, 2),
+                    statement=statement[:500],
+                    executemany=executemany,
+                    is_slow=is_slow,
+                    query_type=query_type,
+                    operation="DB_SLOW_QUERY",
+                    threshold_ms=self.slow_query_threshold_ms,
                 )
             else:
-                logger.log(
-                    log_level,
-                    f"Query executed ({duration_ms:.2f}ms)",
-                    extra=extra_data,
+                logger.debug(
+                    "Query executed",
+                    duration_ms=round(duration_ms, 2),
+                    statement=statement[:500],
+                    executemany=executemany,
+                    is_slow=is_slow,
+                    query_type=query_type,
+                    operation="DB_QUERY",
                 )
 
     def _on_connect(self, dbapi_conn: Any, connection_record: Any) -> None:

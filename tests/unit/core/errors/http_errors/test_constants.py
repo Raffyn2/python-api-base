@@ -3,8 +3,6 @@
 Tests HttpStatus, ErrorCode, and ErrorMessages.
 """
 
-import pytest
-
 from core.errors.http.constants import ErrorCode, ErrorCodes, ErrorMessages, HttpStatus
 
 
@@ -134,4 +132,3 @@ class TestErrorMessages:
         msg = template.format(rule="max_items", message="Cannot exceed 100 items")
         assert "max_items" in msg
         assert "Cannot exceed 100 items" in msg
-

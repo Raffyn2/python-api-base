@@ -14,10 +14,10 @@ from core.base.events.domain_event import DomainEvent
 from core.shared.utils.datetime import utc_now
 
 __all__ = [
+    "PedidoCancelled",
+    "PedidoCompleted",
     "PedidoCreated",
     "PedidoItemAdded",
-    "PedidoCompleted",
-    "PedidoCancelled",
 ]
 
 

@@ -6,10 +6,11 @@ Provides centralized cache operations with consistent error handling.
 **Extracted from: examples/item/use_case.py**
 """
 
-import logging
 from typing import Any, Protocol
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class CacheProtocol(Protocol):
@@ -78,8 +79,8 @@ class CacheService:
 
         try:
             return await self._cache.get(self._make_key(key))
-        except Exception as e:
-            logger.warning(f"Cache get failed for {key}: {e}")
+        except Exception:
+            logger.warning("Cache get failed for %s", key, exc_info=True)
             return None
 
     async def set(self, key: str, value: Any, ttl: int | None = 300) -> None:
@@ -95,8 +96,8 @@ class CacheService:
 
         try:
             await self._cache.set(self._make_key(key), value, ttl)
-        except Exception as e:
-            logger.warning(f"Cache set failed for {key}: {e}")
+        except Exception:
+            logger.warning("Cache set failed for %s", key, exc_info=True)
 
     async def delete(self, key: str) -> None:
         """Delete value from cache.
@@ -109,8 +110,8 @@ class CacheService:
 
         try:
             await self._cache.delete(self._make_key(key))
-        except Exception as e:
-            logger.warning(f"Cache delete failed for {key}: {e}")
+        except Exception:
+            logger.warning("Cache delete failed for %s", key, exc_info=True)
 
     async def invalidate(
         self,

@@ -6,10 +6,11 @@ Provides reusable event publishing functionality for use cases.
 **Extracted from: examples/item/use_case.py**
 """
 
-import logging
 from typing import Any, Protocol
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class HasEvents(Protocol):
@@ -62,10 +63,10 @@ class EventPublishingMixin:
         for event in entity.events:
             try:
                 await self._event_bus.publish(event, raise_on_error=raise_on_error)
-            except Exception as e:
-                logger.error(
-                    f"Failed to publish event {type(event).__name__}: {e}",
-                    extra={"event_type": type(event).__name__, "error": str(e)},
+            except Exception:
+                logger.exception(
+                    "Failed to publish event",
+                    event_type=type(event).__name__,
                 )
                 if raise_on_error:
                     raise

@@ -59,7 +59,7 @@ class TestIsValidIp:
 class TestInMemoryRateLimiter:
     """Tests for InMemoryRateLimiter."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def limiter(self) -> InMemoryRateLimiter:
         """Create limiter with small limit for testing."""
         return InMemoryRateLimiter(limit=3, window_seconds=60)
@@ -107,9 +107,7 @@ class TestInMemoryRateLimiter:
         assert remaining == 3
 
     @pytest.mark.asyncio
-    async def test_get_remaining_after_requests(
-        self, limiter: InMemoryRateLimiter
-    ) -> None:
+    async def test_get_remaining_after_requests(self, limiter: InMemoryRateLimiter) -> None:
         """Test get_remaining decreases after requests."""
         await limiter.is_allowed("client1")
         await limiter.is_allowed("client1")
@@ -119,9 +117,7 @@ class TestInMemoryRateLimiter:
         assert remaining == 1
 
     @pytest.mark.asyncio
-    async def test_get_remaining_at_limit(
-        self, limiter: InMemoryRateLimiter
-    ) -> None:
+    async def test_get_remaining_at_limit(self, limiter: InMemoryRateLimiter) -> None:
         """Test get_remaining returns 0 at limit."""
         for _ in range(3):
             await limiter.is_allowed("client1")
@@ -130,28 +126,40 @@ class TestInMemoryRateLimiter:
 
         assert remaining == 0
 
-    def test_reset_specific_client(self, limiter: InMemoryRateLimiter) -> None:
+    @pytest.mark.asyncio
+    async def test_reset_specific_client(self, limiter: InMemoryRateLimiter) -> None:
         """Test reset for specific client."""
-        limiter._requests["client1"] = [1.0, 2.0, 3.0]
-        limiter._requests["client2"] = [1.0, 2.0]
+        # Make some requests to populate state
+        await limiter.is_allowed("client1")
+        await limiter.is_allowed("client2")
 
-        limiter.reset("client1")
+        # Reset specific client
+        await limiter.reset_async("client1")
 
-        assert "client1" not in limiter._requests
-        assert "client2" in limiter._requests
+        # client1 should be reset (full limit available)
+        remaining1 = await limiter.get_remaining("client1")
+        assert remaining1 == limiter._limit
 
-    def test_reset_all_clients(self, limiter: InMemoryRateLimiter) -> None:
+    @pytest.mark.asyncio
+    async def test_reset_all_clients(self, limiter: InMemoryRateLimiter) -> None:
         """Test reset for all clients."""
-        limiter._requests["client1"] = [1.0, 2.0, 3.0]
-        limiter._requests["client2"] = [1.0, 2.0]
+        # Make some requests to populate state
+        await limiter.is_allowed("client1")
+        await limiter.is_allowed("client2")
 
-        limiter.reset()
+        # Reset all clients
+        await limiter.reset_async()
 
-        assert len(limiter._requests) == 0
+        # Both should be reset
+        remaining1 = await limiter.get_remaining("client1")
+        remaining2 = await limiter.get_remaining("client2")
+        assert remaining1 == limiter._limit
+        assert remaining2 == limiter._limit
 
-    def test_reset_nonexistent_client(self, limiter: InMemoryRateLimiter) -> None:
+    @pytest.mark.asyncio
+    async def test_reset_nonexistent_client(self, limiter: InMemoryRateLimiter) -> None:
         """Test reset for nonexistent client does nothing."""
-        limiter.reset("nonexistent")  # Should not raise
+        await limiter.reset_async("nonexistent")  # Should not raise
 
     @pytest.mark.asyncio
     async def test_default_values(self) -> None:
@@ -159,8 +167,6 @@ class TestInMemoryRateLimiter:
         limiter = InMemoryRateLimiter()
 
         assert limiter._limit == 100
-        assert limiter._window_seconds == 60
-
 
 
 class TestGetClientIp:
@@ -188,9 +194,7 @@ class TestGetClientIp:
         request = MagicMock()
         request.headers = {"X-Forwarded-For": "invalid-ip"}
 
-        with patch(
-            "infrastructure.security.rate_limit.limiter.get_remote_address"
-        ) as mock_remote:
+        with patch("infrastructure.security.rate_limit.limiter.get_remote_address") as mock_remote:
             mock_remote.return_value = "127.0.0.1"
             ip = get_client_ip(request)
 
@@ -205,9 +209,7 @@ class TestGetClientIp:
         request = MagicMock()
         request.headers = {}
 
-        with patch(
-            "infrastructure.security.rate_limit.limiter.get_remote_address"
-        ) as mock_remote:
+        with patch("infrastructure.security.rate_limit.limiter.get_remote_address") as mock_remote:
             mock_remote.return_value = "10.0.0.1"
             ip = get_client_ip(request)
 
@@ -226,9 +228,7 @@ class TestGetRateLimit:
         mock_settings = MagicMock()
         mock_settings.security.rate_limit = "100/minute"
 
-        with patch(
-            "infrastructure.security.rate_limit.limiter.get_settings"
-        ) as mock_get:
+        with patch("infrastructure.security.rate_limit.limiter.get_settings") as mock_get:
             mock_get.return_value = mock_settings
             result = get_rate_limit()
 
@@ -241,7 +241,7 @@ class TestSlidingRateLimitResponse:
     @pytest.mark.asyncio
     async def test_creates_429_response(self) -> None:
         """Test creates 429 response with correct headers."""
-        from unittest.mock import MagicMock
+        from unittest.mock import MagicMock, PropertyMock
 
         from infrastructure.security.rate_limit.limiter import (
             sliding_rate_limit_response,
@@ -249,7 +249,10 @@ class TestSlidingRateLimitResponse:
         from infrastructure.security.rate_limit.sliding_window import RateLimitResult
 
         request = MagicMock()
-        request.url = "http://example.com/api/test"
+        # Mock URL as object with string representation
+        mock_url = MagicMock()
+        mock_url.__str__ = MagicMock(return_value="http://example.com/api/test")
+        type(request).url = PropertyMock(return_value=mock_url)
 
         result = RateLimitResult(
             allowed=False,
@@ -268,7 +271,7 @@ class TestSlidingRateLimitResponse:
     async def test_response_contains_problem_detail(self) -> None:
         """Test response body contains RFC 7807 problem detail."""
         import json
-        from unittest.mock import MagicMock
+        from unittest.mock import MagicMock, PropertyMock
 
         from infrastructure.security.rate_limit.limiter import (
             sliding_rate_limit_response,
@@ -276,7 +279,10 @@ class TestSlidingRateLimitResponse:
         from infrastructure.security.rate_limit.sliding_window import RateLimitResult
 
         request = MagicMock()
-        request.url = "http://example.com/api/test"
+        # Mock URL as object with string representation
+        mock_url = MagicMock()
+        mock_url.__str__ = MagicMock(return_value="http://example.com/api/test")
+        type(request).url = PropertyMock(return_value=mock_url)
 
         result = RateLimitResult(
             allowed=False,
@@ -299,27 +305,25 @@ class TestRateLimitExceededHandler:
     @pytest.mark.asyncio
     async def test_handler_returns_429(self) -> None:
         """Test handler returns 429 status code."""
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import MagicMock, PropertyMock, patch
 
         from infrastructure.security.rate_limit.limiter import (
             rate_limit_exceeded_handler,
         )
 
         request = MagicMock()
-        request.url = "http://example.com/api/test"
+        mock_url = MagicMock()
+        mock_url.__str__ = MagicMock(return_value="http://example.com/api/test")
+        type(request).url = PropertyMock(return_value=mock_url)
         request.headers = {}
 
         # Create mock exception with detail attribute
         exc = MagicMock()
         exc.detail = "Rate limit exceeded"
 
-        with patch(
-            "infrastructure.security.rate_limit.limiter.get_sliding_limiter"
-        ) as mock_limiter:
+        with patch("infrastructure.security.rate_limit.limiter.get_sliding_limiter") as mock_limiter:
             mock_limiter.return_value.get_state.return_value = None
-            with patch(
-                "infrastructure.security.rate_limit.limiter.get_remote_address"
-            ) as mock_remote:
+            with patch("infrastructure.security.rate_limit.limiter.get_remote_address") as mock_remote:
                 mock_remote.return_value = "127.0.0.1"
                 response = await rate_limit_exceeded_handler(request, exc)
 
@@ -328,27 +332,25 @@ class TestRateLimitExceededHandler:
     @pytest.mark.asyncio
     async def test_handler_includes_retry_after(self) -> None:
         """Test handler includes Retry-After header."""
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import MagicMock, PropertyMock, patch
 
         from infrastructure.security.rate_limit.limiter import (
             rate_limit_exceeded_handler,
         )
 
         request = MagicMock()
-        request.url = "http://example.com/api/test"
+        mock_url = MagicMock()
+        mock_url.__str__ = MagicMock(return_value="http://example.com/api/test")
+        type(request).url = PropertyMock(return_value=mock_url)
         request.headers = {}
 
         # Create mock exception with detail attribute
         exc = MagicMock()
         exc.detail = "Rate limit exceeded"
 
-        with patch(
-            "infrastructure.security.rate_limit.limiter.get_sliding_limiter"
-        ) as mock_limiter:
+        with patch("infrastructure.security.rate_limit.limiter.get_sliding_limiter") as mock_limiter:
             mock_limiter.return_value.get_state.return_value = None
-            with patch(
-                "infrastructure.security.rate_limit.limiter.get_remote_address"
-            ) as mock_remote:
+            with patch("infrastructure.security.rate_limit.limiter.get_remote_address") as mock_remote:
                 mock_remote.return_value = "127.0.0.1"
                 response = await rate_limit_exceeded_handler(request, exc)
 

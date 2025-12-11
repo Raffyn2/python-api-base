@@ -12,7 +12,7 @@ Implements:
 
 from collections.abc import Sequence
 from functools import lru_cache
-from typing import Annotated, Any, TypeVar
+from typing import Annotated, Any, Self, TypeVar
 
 from pydantic import BaseModel, TypeAdapter, computed_field
 from pydantic.functional_validators import BeforeValidator
@@ -215,7 +215,7 @@ class OptimizedBaseModel(BaseModel):
         return self.model_dump_json().encode()
 
     @classmethod
-    def from_json_bytes(cls, data: bytes | str) -> "OptimizedBaseModel":
+    def from_json_bytes(cls, data: bytes | str) -> Self:
         """Parse from JSON bytes efficiently.
 
         **Feature: api-best-practices-review-2025**

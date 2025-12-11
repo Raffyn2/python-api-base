@@ -4,12 +4,11 @@
 **Requirements: 6.1, 6.2, 6.3, 6.4**
 """
 
+from datetime import UTC, datetime
+from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
-from datetime import UTC, datetime
-from decimal import Decimal
 
 from application.common.batch.config import BatchConfig, BatchErrorStrategy
 from application.examples.item.batch.batch import (
@@ -116,7 +115,7 @@ class TestBatchUpdateRequest:
 class TestApplyBatchUpdateFields:
     """Tests for _apply_batch_update_fields helper."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_entity(self) -> MagicMock:
         """Create mock ItemExample entity."""
         entity = MagicMock(spec=ItemExample)
@@ -183,17 +182,17 @@ class TestApplyBatchUpdateFields:
 class TestItemExampleBatchService:
     """Tests for ItemExampleBatchService."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repository(self) -> AsyncMock:
         """Create mock repository."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def service(self, mock_repository: AsyncMock) -> ItemExampleBatchService:
         """Create batch service instance."""
         return ItemExampleBatchService(mock_repository)
 
-    @pytest.fixture
+    @pytest.fixture()
     def service_fail_fast(self, mock_repository: AsyncMock) -> ItemExampleBatchService:
         """Create batch service with fail-fast strategy."""
         config = BatchConfig(
@@ -203,9 +202,7 @@ class TestItemExampleBatchService:
         return ItemExampleBatchService(mock_repository, config)
 
     @pytest.mark.asyncio
-    async def test_batch_create_success(
-        self, service: ItemExampleBatchService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_batch_create_success(self, service: ItemExampleBatchService, mock_repository: AsyncMock) -> None:
         """Should create items successfully."""
         mock_entity = create_mock_item_entity()
         mock_repository.create.return_value = mock_entity
@@ -281,9 +278,7 @@ class TestItemExampleBatchService:
             await service_fail_fast.batch_create(items)
 
     @pytest.mark.asyncio
-    async def test_batch_update_success(
-        self, service: ItemExampleBatchService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_batch_update_success(self, service: ItemExampleBatchService, mock_repository: AsyncMock) -> None:
         """Should update items successfully."""
         mock_entity = create_mock_item_entity()
         mock_repository.get.return_value = mock_entity
@@ -301,9 +296,7 @@ class TestItemExampleBatchService:
         assert len(result.failed) == 0
 
     @pytest.mark.asyncio
-    async def test_batch_update_not_found(
-        self, service: ItemExampleBatchService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_batch_update_not_found(self, service: ItemExampleBatchService, mock_repository: AsyncMock) -> None:
         """Should handle not found items."""
         mock_repository.get.return_value = None
 
@@ -317,9 +310,7 @@ class TestItemExampleBatchService:
         assert "not found" in result.failed[0][1]
 
     @pytest.mark.asyncio
-    async def test_batch_delete_soft_delete(
-        self, service: ItemExampleBatchService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_batch_delete_soft_delete(self, service: ItemExampleBatchService, mock_repository: AsyncMock) -> None:
         """Should soft delete items."""
         mock_entity = MagicMock(spec=ItemExample)
         mock_repository.get.return_value = mock_entity
@@ -337,9 +328,7 @@ class TestItemExampleBatchService:
         mock_repository.update.assert_called()
 
     @pytest.mark.asyncio
-    async def test_batch_delete_hard_delete(
-        self, service: ItemExampleBatchService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_batch_delete_hard_delete(self, service: ItemExampleBatchService, mock_repository: AsyncMock) -> None:
         """Should hard delete items."""
         mock_entity = MagicMock(spec=ItemExample)
         mock_repository.get.return_value = mock_entity
@@ -355,9 +344,7 @@ class TestItemExampleBatchService:
         mock_repository.delete.assert_called_once_with("item-1")
 
     @pytest.mark.asyncio
-    async def test_batch_delete_not_found(
-        self, service: ItemExampleBatchService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_batch_delete_not_found(self, service: ItemExampleBatchService, mock_repository: AsyncMock) -> None:
         """Should handle not found items in delete."""
         mock_repository.get.return_value = None
 

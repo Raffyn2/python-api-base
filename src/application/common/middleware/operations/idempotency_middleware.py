@@ -7,13 +7,14 @@ Prevents duplicate command execution.
 **Refactored: Added runtime_checkable for Protocol validation**
 """
 
-import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol, runtime_checkable
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 @runtime_checkable
@@ -128,12 +129,10 @@ class IdempotencyMiddleware:
         cached = await self._cache.get(cache_key)
         if cached is not None:
             logger.info(
-                f"Returning cached result for {command_type}",
-                extra={
-                    "command_type": command_type,
-                    "idempotency_key": idempotency_key,
-                    "operation": "IDEMPOTENCY_HIT",
-                },
+                "Returning cached result",
+                command_type=command_type,
+                idempotency_key=idempotency_key,
+                operation="IDEMPOTENCY_HIT",
             )
             return cached
 
@@ -141,13 +140,11 @@ class IdempotencyMiddleware:
 
         await self._cache.set(cache_key, result, self._config.ttl_seconds)
         logger.debug(
-            f"Cached result for {command_type}",
-            extra={
-                "command_type": command_type,
-                "idempotency_key": idempotency_key,
-                "ttl_seconds": self._config.ttl_seconds,
-                "operation": "IDEMPOTENCY_CACHE",
-            },
+            "Cached result",
+            command_type=command_type,
+            idempotency_key=idempotency_key,
+            ttl_seconds=self._config.ttl_seconds,
+            operation="IDEMPOTENCY_CACHE",
         )
 
         return result

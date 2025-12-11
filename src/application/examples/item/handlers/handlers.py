@@ -6,9 +6,9 @@
 
 from typing import Any, Protocol
 
-from application.common.dto import PaginatedResponse
 from application.common.cqrs.events.event_bus import TypedEventBus
 from application.common.cqrs.handlers import CommandHandler, QueryHandler
+from application.common.dto import PaginatedResponse
 from application.examples.item.commands import (
     CreateItemCommand,
     DeleteItemCommand,
@@ -49,9 +49,7 @@ class CreateItemCommandHandler(CommandHandler[CreateItemCommand, ItemExampleResp
         self._event_bus = event_bus
         self._mapper = mapper or ItemExampleMapper()
 
-    async def handle(
-        self, command: CreateItemCommand
-    ) -> Result[ItemExampleResponse, Exception]:
+    async def handle(self, command: CreateItemCommand) -> Result[ItemExampleResponse, Exception]:
         """Handle create item command."""
         existing = await self._repo.get_by_sku(command.sku)
         if existing:
@@ -117,9 +115,7 @@ class UpdateItemCommandHandler(CommandHandler[UpdateItemCommand, ItemExampleResp
         self._event_bus = event_bus
         self._mapper = mapper or ItemExampleMapper()
 
-    async def handle(
-        self, command: UpdateItemCommand
-    ) -> Result[ItemExampleResponse, Exception]:
+    async def handle(self, command: UpdateItemCommand) -> Result[ItemExampleResponse, Exception]:
         """Handle update item command."""
         item = await self._repo.get(command.item_id)
         if not item:
@@ -175,9 +171,7 @@ class GetItemQueryHandler(QueryHandler[GetItemQuery, ItemExampleResponse]):
         self._repo = repository
         self._mapper = mapper or ItemExampleMapper()
 
-    async def handle(
-        self, query: GetItemQuery
-    ) -> Result[ItemExampleResponse, Exception]:
+    async def handle(self, query: GetItemQuery) -> Result[ItemExampleResponse, Exception]:
         """Handle get item query."""
         item = await self._repo.get(query.item_id)
         if not item:
@@ -185,9 +179,7 @@ class GetItemQueryHandler(QueryHandler[GetItemQuery, ItemExampleResponse]):
         return Ok(self._mapper.to_dto(item))
 
 
-class ListItemsQueryHandler(
-    QueryHandler[ListItemsQuery, PaginatedResponse[ItemExampleResponse]]
-):
+class ListItemsQueryHandler(QueryHandler[ListItemsQuery, PaginatedResponse[ItemExampleResponse]]):
     """Handler for ListItemsQuery."""
 
     def __init__(
@@ -198,9 +190,7 @@ class ListItemsQueryHandler(
         self._repo = repository
         self._mapper = mapper or ItemExampleMapper()
 
-    async def handle(
-        self, query: ListItemsQuery
-    ) -> Result[PaginatedResponse[ItemExampleResponse], Exception]:
+    async def handle(self, query: ListItemsQuery) -> Result[PaginatedResponse[ItemExampleResponse], Exception]:
         """Handle list items query."""
         filters = {}
         if query.category:

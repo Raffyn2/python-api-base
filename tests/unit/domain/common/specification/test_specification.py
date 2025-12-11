@@ -2,8 +2,6 @@
 
 from dataclasses import dataclass
 
-import pytest
-
 from domain.common.specification.specification import (
     AndSpecification,
     AttributeSpecification,
@@ -19,7 +17,6 @@ from domain.common.specification.specification import (
     is_null,
     less_than,
     not_equals,
-    spec,
 )
 
 
@@ -50,21 +47,21 @@ class IsActiveSpec(Specification[Person]):
 class TestSpecificationBase:
     """Tests for Specification base class."""
 
-    def test_and_spec_method(self) -> None:
+    def test_and_via_operator(self) -> None:
         adult = IsAdultSpec()
         active = IsActiveSpec()
-        combined = adult.and_spec(active)
+        combined = adult & active
         assert isinstance(combined, AndSpecification)
 
-    def test_or_spec_method(self) -> None:
+    def test_or_via_operator(self) -> None:
         adult = IsAdultSpec()
         active = IsActiveSpec()
-        combined = adult.or_spec(active)
+        combined = adult | active
         assert isinstance(combined, OrSpecification)
 
-    def test_not_spec_method(self) -> None:
+    def test_not_via_operator(self) -> None:
         adult = IsAdultSpec()
-        negated = adult.not_spec()
+        negated = ~adult
         assert isinstance(negated, NotSpecification)
 
     def test_and_operator(self) -> None:
@@ -169,34 +166,30 @@ class TestPredicateSpecification:
     """Tests for PredicateSpecification."""
 
     def test_with_lambda(self) -> None:
-        spec = PredicateSpecification(lambda p: p.age >= 21, "is_drinking_age")
+        spec = PredicateSpecification(lambda p: p.age >= 21)
         person = Person(name="John", age=25, status="active")
         assert spec.is_satisfied_by(person) is True
 
     def test_with_lambda_false(self) -> None:
-        spec = PredicateSpecification(lambda p: p.age >= 21, "is_drinking_age")
+        spec = PredicateSpecification(lambda p: p.age >= 21)
         person = Person(name="John", age=18, status="active")
         assert spec.is_satisfied_by(person) is False
 
     def test_repr(self) -> None:
-        spec = PredicateSpecification(lambda p: p.age >= 21, "is_drinking_age")
-        assert "is_drinking_age" in repr(spec)
-
-    def test_repr_empty_name(self) -> None:
         spec = PredicateSpecification(lambda p: p.age >= 21)
         assert "PredicateSpecification" in repr(spec)
 
 
-class TestSpecFunction:
-    """Tests for spec factory function."""
+class TestSpecCombination:
+    """Tests for specification combination."""
 
     def test_creates_predicate_spec(self) -> None:
-        s = spec(lambda p: p.age >= 18, "is_adult")
+        s = PredicateSpecification(lambda p: p.age >= 18)
         assert isinstance(s, PredicateSpecification)
 
     def test_can_combine(self) -> None:
-        is_adult = spec(lambda p: p.age >= 18, "is_adult")
-        is_active = spec(lambda p: p.status == "active", "is_active")
+        is_adult = PredicateSpecification(lambda p: p.age >= 18)
+        is_active = PredicateSpecification(lambda p: p.status == "active")
         combined = is_adult & is_active
         person = Person(name="John", age=25, status="active")
         assert combined.is_satisfied_by(person) is True

@@ -4,7 +4,6 @@
 **Validates: Requirements 22.1, 22.2, 22.3, 22.4**
 """
 
-from collections.abc import Sequence
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -58,9 +57,7 @@ class TestService(GenericService[TestEntity, TestCreate, TestUpdate, TestRespons
     entity_name = "TestEntity"
 
 
-class TestServiceWithValidation(
-    GenericService[TestEntity, TestCreate, TestUpdate, TestResponse]
-):
+class TestServiceWithValidation(GenericService[TestEntity, TestCreate, TestUpdate, TestResponse]):
     """Test service with custom validation."""
 
     entity_name = "TestEntity"
@@ -78,7 +75,7 @@ class TestServiceWithValidation(
         return Ok(data)
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_repository() -> AsyncMock:
     """Create mock repository."""
     repo = AsyncMock()
@@ -92,26 +89,22 @@ def mock_repository() -> AsyncMock:
     return repo
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_mapper() -> MagicMock:
     """Create mock mapper."""
     mapper = MagicMock()
-    mapper.to_dto = MagicMock(
-        side_effect=lambda e: TestResponse(id=e.id, name=e.name, value=e.value)
-    )
+    mapper.to_dto = MagicMock(side_effect=lambda e: TestResponse(id=e.id, name=e.name, value=e.value))
     return mapper
 
 
-@pytest.fixture
+@pytest.fixture()
 def service(mock_repository: AsyncMock, mock_mapper: MagicMock) -> TestService:
     """Create test service."""
     return TestService(mock_repository, mock_mapper)
 
 
-@pytest.fixture
-def service_with_validation(
-    mock_repository: AsyncMock, mock_mapper: MagicMock
-) -> TestServiceWithValidation:
+@pytest.fixture()
+def service_with_validation(mock_repository: AsyncMock, mock_mapper: MagicMock) -> TestServiceWithValidation:
     """Create test service with validation."""
     return TestServiceWithValidation(mock_repository, mock_mapper)
 
@@ -120,9 +113,7 @@ class TestGenericServiceCreate:
     """Tests for create operations."""
 
     @pytest.mark.asyncio
-    async def test_create_success(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_create_success(self, service: TestService, mock_repository: AsyncMock) -> None:
         """Create should return response on success."""
         entity = TestEntity(id="1", name="Test", value=10)
         mock_repository.create.return_value = entity
@@ -134,9 +125,7 @@ class TestGenericServiceCreate:
         mock_repository.create.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_create_with_result_success(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_create_with_result_success(self, service: TestService, mock_repository: AsyncMock) -> None:
         """create_with_result should return Ok on success."""
         entity = TestEntity(id="1", name="Test", value=10)
         mock_repository.create.return_value = entity
@@ -160,9 +149,7 @@ class TestGenericServiceCreate:
         mock_repository.create.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_create_repository_error(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_create_repository_error(self, service: TestService, mock_repository: AsyncMock) -> None:
         """Create should raise ServiceError on repository failure."""
         mock_repository.create.side_effect = Exception("DB error")
 
@@ -174,9 +161,7 @@ class TestGenericServiceGet:
     """Tests for get operations."""
 
     @pytest.mark.asyncio
-    async def test_get_success(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_get_success(self, service: TestService, mock_repository: AsyncMock) -> None:
         """Get should return response when entity exists."""
         entity = TestEntity(id="1", name="Test", value=10)
         mock_repository.get_by_id.return_value = entity
@@ -187,9 +172,7 @@ class TestGenericServiceGet:
         assert result.name == "Test"
 
     @pytest.mark.asyncio
-    async def test_get_not_found(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_get_not_found(self, service: TestService, mock_repository: AsyncMock) -> None:
         """Get should raise NotFoundError when entity doesn't exist."""
         mock_repository.get_by_id.return_value = None
 
@@ -200,9 +183,7 @@ class TestGenericServiceGet:
         assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_get_by_id_returns_none(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_get_by_id_returns_none(self, service: TestService, mock_repository: AsyncMock) -> None:
         """get_by_id should return Ok(None) when entity doesn't exist."""
         mock_repository.get_by_id.return_value = None
 
@@ -216,9 +197,7 @@ class TestGenericServiceUpdate:
     """Tests for update operations."""
 
     @pytest.mark.asyncio
-    async def test_update_success(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_update_success(self, service: TestService, mock_repository: AsyncMock) -> None:
         """Update should return response on success."""
         existing = TestEntity(id="1", name="Old", value=5)
         updated = TestEntity(id="1", name="New", value=10)
@@ -231,9 +210,7 @@ class TestGenericServiceUpdate:
         assert result.value == 10
 
     @pytest.mark.asyncio
-    async def test_update_not_found(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_update_not_found(self, service: TestService, mock_repository: AsyncMock) -> None:
         """Update should raise NotFoundError when entity doesn't exist."""
         mock_repository.get_by_id.return_value = None
 
@@ -258,9 +235,7 @@ class TestGenericServiceDelete:
     """Tests for delete operations."""
 
     @pytest.mark.asyncio
-    async def test_delete_success(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_delete_success(self, service: TestService, mock_repository: AsyncMock) -> None:
         """Delete should return True on success."""
         existing = TestEntity(id="1", name="Test", value=5)
         mock_repository.get_by_id.return_value = existing
@@ -272,9 +247,7 @@ class TestGenericServiceDelete:
         mock_repository.delete.assert_called_once_with("1", soft=True)
 
     @pytest.mark.asyncio
-    async def test_delete_hard(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_delete_hard(self, service: TestService, mock_repository: AsyncMock) -> None:
         """Delete with soft=False should perform hard delete."""
         existing = TestEntity(id="1", name="Test", value=5)
         mock_repository.get_by_id.return_value = existing
@@ -286,9 +259,7 @@ class TestGenericServiceDelete:
         mock_repository.delete.assert_called_once_with("1", soft=False)
 
     @pytest.mark.asyncio
-    async def test_delete_not_found(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_delete_not_found(self, service: TestService, mock_repository: AsyncMock) -> None:
         """Delete should raise NotFoundError when entity doesn't exist."""
         mock_repository.get_by_id.return_value = None
 
@@ -300,9 +271,7 @@ class TestGenericServiceList:
     """Tests for list operations."""
 
     @pytest.mark.asyncio
-    async def test_list_success(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_list_success(self, service: TestService, mock_repository: AsyncMock) -> None:
         """List should return paginated results."""
         entities = [
             TestEntity(id="1", name="Test1", value=1),
@@ -314,31 +283,23 @@ class TestGenericServiceList:
 
         assert len(items) == 2
         assert total == 2
-        mock_repository.get_all.assert_called_once_with(
-            skip=0, limit=10, filters=None, sort_by=None, sort_order="asc"
-        )
+        mock_repository.get_all.assert_called_once_with(skip=0, limit=10, filters=None, sort_by=None, sort_order="asc")
 
     @pytest.mark.asyncio
-    async def test_list_pagination(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_list_pagination(self, service: TestService, mock_repository: AsyncMock) -> None:
         """List should calculate correct skip value."""
         mock_repository.get_all.return_value = ([], 0)
 
         await service.list(page=3, size=20)
 
-        mock_repository.get_all.assert_called_once_with(
-            skip=40, limit=20, filters=None, sort_by=None, sort_order="asc"
-        )
+        mock_repository.get_all.assert_called_once_with(skip=40, limit=20, filters=None, sort_by=None, sort_order="asc")
 
 
 class TestGenericServiceBulk:
     """Tests for bulk operations."""
 
     @pytest.mark.asyncio
-    async def test_create_many_success(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_create_many_success(self, service: TestService, mock_repository: AsyncMock) -> None:
         """create_many should return list of responses."""
         entities = [
             TestEntity(id="1", name="Test1", value=1),
@@ -358,9 +319,7 @@ class TestGenericServiceExists:
     """Tests for exists operation."""
 
     @pytest.mark.asyncio
-    async def test_exists_true(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_exists_true(self, service: TestService, mock_repository: AsyncMock) -> None:
         """exists should return True when entity exists."""
         mock_repository.exists.return_value = True
 
@@ -369,9 +328,7 @@ class TestGenericServiceExists:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_exists_false(
-        self, service: TestService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_exists_false(self, service: TestService, mock_repository: AsyncMock) -> None:
         """exists should return False when entity doesn't exist."""
         mock_repository.exists.return_value = False
 

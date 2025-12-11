@@ -114,7 +114,7 @@ class Money:
 
     def __bool__(self) -> bool:
         """Check if amount is non-zero."""
-        return self.amount != Decimal("0")
+        return self.amount != Decimal(0)
 
     def __lt__(self, other: Money) -> bool:
         """Less than comparison."""
@@ -139,24 +139,21 @@ class Money:
     def _validate_same_currency(self, other: Money) -> None:
         """Validate that currencies match."""
         if self.currency != other.currency:
-            raise ValueError(
-                f"Cannot operate on different currencies: "
-                f"{self.currency} vs {other.currency}"
-            )
+            raise ValueError(f"Cannot operate on different currencies: {self.currency} vs {other.currency}")
 
     @classmethod
     def zero(cls, currency: str = "USD") -> Self:
         """Create a zero money value."""
-        return cls(Decimal("0"), currency)
+        return cls(Decimal(0), currency)
 
     @classmethod
     def from_cents(cls, cents: int, currency: str = "USD") -> Self:
         """Create money from cents/minor units."""
-        return cls(Decimal(cents) / Decimal("100"), currency)
+        return cls(Decimal(cents) / Decimal(100), currency)
 
     def to_cents(self) -> int:
         """Convert to cents/minor units."""
-        return int(self.amount * Decimal("100"))
+        return int(self.amount * Decimal(100))
 
     def format(self, symbol: str | None = None) -> str:
         """Format as string with currency symbol.

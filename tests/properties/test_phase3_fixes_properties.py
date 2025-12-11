@@ -75,8 +75,7 @@ def test_memory_alert_logging_severity_mapping(alert: MemoryAlert) -> None:
         actual_level = call_args[0][0]
 
         assert actual_level == expected_level, (
-            f"Expected log level {expected_level} for severity {alert.severity}, "
-            f"got {actual_level}"
+            f"Expected log level {expected_level} for severity {alert.severity}, got {actual_level}"
         )
 
 
@@ -152,9 +151,7 @@ def test_query_analyzer_extracts_valid_identifiers(query: str) -> None:
         assert ALLOWED_IDENTIFIER_PATTERN.match(table), f"Invalid table name: {table}"
 
     for column in analysis.columns:
-        assert ALLOWED_IDENTIFIER_PATTERN.match(column), (
-            f"Invalid column name: {column}"
-        )
+        assert ALLOWED_IDENTIFIER_PATTERN.match(column), f"Invalid column name: {column}"
 
 
 # =============================================================================
@@ -221,9 +218,7 @@ def test_batch_loader_cache_respects_limit(num_items: int, max_cache: int) -> No
     asyncio.get_event_loop().run_until_complete(loader.load_all())
 
     # Cache should not exceed limit
-    assert loader.cached_count <= max_cache, (
-        f"Cache size {loader.cached_count} exceeds limit {max_cache}"
-    )
+    assert loader.cached_count <= max_cache, f"Cache size {loader.cached_count} exceeds limit {max_cache}"
 
 
 # =============================================================================
@@ -269,9 +264,7 @@ def test_state_store_clears_expired(num_states: int, max_age: int) -> None:
     removed = store.clear_expired(max_age_seconds=max_age)
 
     # Should have removed approximately half
-    assert removed >= num_states // 2 - 1, (
-        f"Expected to remove ~{num_states // 2} states"
-    )
+    assert removed >= num_states // 2 - 1, f"Expected to remove ~{num_states // 2} states"
 
 
 # =============================================================================
@@ -303,14 +296,10 @@ def test_metrics_store_respects_limit(num_points: int, max_points: int) -> None:
         store.record_value("test_metric", float(i))
 
     # Get the metric
-    metric = asyncio.get_event_loop().run_until_complete(
-        store.get_metric("test_metric")
-    )
+    metric = asyncio.get_event_loop().run_until_complete(store.get_metric("test_metric"))
 
     assert metric is not None
-    assert len(metric.points) <= max_points, (
-        f"Points {len(metric.points)} exceeds limit {max_points}"
-    )
+    assert len(metric.points) <= max_points, f"Points {len(metric.points)} exceeds limit {max_points}"
 
 
 # =============================================================================
@@ -407,9 +396,7 @@ def test_dashboard_created_at_is_timezone_aware() -> None:
     For any newly created Dashboard, created_at should have tzinfo set.
     """
     dashboard = Dashboard(id="test", title="Test Dashboard")
-    assert dashboard.created_at.tzinfo is not None, (
-        "created_at should be timezone-aware"
-    )
+    assert dashboard.created_at.tzinfo is not None, "created_at should be timezone-aware"
 
 
 def test_dashboard_data_timestamp_is_timezone_aware() -> None:
@@ -431,9 +418,7 @@ def test_metric_series_add_point_is_timezone_aware() -> None:
     series.add_point(42.0)
 
     assert len(series.points) == 1
-    assert series.points[0].timestamp.tzinfo is not None, (
-        "point timestamp should be timezone-aware"
-    )
+    assert series.points[0].timestamp.tzinfo is not None, "point timestamp should be timezone-aware"
 
 
 # =============================================================================
@@ -451,9 +436,7 @@ from core.shared.mutation_testing.service import MutationScoreTracker
 @settings(max_examples=50)
 @given(
     unicode_text=st.text(
-        alphabet=st.characters(
-            whitelist_categories=("L", "N", "P", "S"), whitelist_characters=" \n\t"
-        ),
+        alphabet=st.characters(whitelist_categories=("L", "N", "P", "S"), whitelist_characters=" \n\t"),
         min_size=1,
         max_size=100,
     )
@@ -503,28 +486,28 @@ class TestItem(BaseModel):
 
 @settings(max_examples=50)
 @given(
-    special_char=st.sampled_from([
-        ".",
-        "^",
-        "$",
-        "*",
-        "+",
-        "?",
-        "{",
-        "}",
-        "[",
-        "]",
-        "\\",
-        "|",
-        "(",
-        ")",
-    ]),
+    special_char=st.sampled_from(
+        [
+            ".",
+            "^",
+            "$",
+            "*",
+            "+",
+            "?",
+            "{",
+            "}",
+            "[",
+            "]",
+            "\\",
+            "|",
+            "(",
+            ")",
+        ]
+    ),
     prefix=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=5),
     suffix=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=5),
 )
-def test_regex_pattern_escapes_special_chars(
-    special_char: str, prefix: str, suffix: str
-) -> None:
+def test_regex_pattern_escapes_special_chars(special_char: str, prefix: str, suffix: str) -> None:
     """
     **Feature: shared-modules-phase3-fixes, Property 10: Regex escaping**
     **Validates: Requirements 2.2**

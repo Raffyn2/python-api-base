@@ -3,7 +3,7 @@
 Tests for TracingConfig and TracingProvider.
 """
 
-import logging
+from unittest.mock import patch
 
 import pytest
 
@@ -74,21 +74,23 @@ class TestTracingProvider:
         provider = TracingProvider()
         assert provider._tracer is None
 
-    def test_setup_when_disabled(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_setup_when_disabled(self) -> None:
         """Setup should log when tracing is disabled."""
         config = TracingConfig(enabled=False)
         provider = TracingProvider(config)
-        with caplog.at_level(logging.INFO):
+        with patch("infrastructure.observability.tracing.logger") as mock_logger:
             provider.setup()
-        assert "Tracing disabled" in caplog.text
+            mock_logger.info.assert_called_once_with("Tracing disabled")
 
-    def test_setup_when_enabled(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_setup_when_enabled(self) -> None:
         """Setup should log service name when enabled."""
         config = TracingConfig(service_name="test-service")
         provider = TracingProvider(config)
-        with caplog.at_level(logging.INFO):
+        with patch("infrastructure.observability.tracing.logger") as mock_logger:
             provider.setup()
-        assert "test-service" in caplog.text
+            mock_logger.info.assert_called_once()
+            call_kwargs = mock_logger.info.call_args[1]
+            assert call_kwargs["service_name"] == "test-service"
 
     def test_get_tracer_returns_none(self) -> None:
         """get_tracer should return None (no real tracer configured)."""
@@ -101,32 +103,39 @@ class TestTracingProvider:
         result = provider.create_span("test-span")
         assert result is None
 
-    def test_create_span_logs_debug(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_create_span_logs_debug(self) -> None:
         """create_span should log span name at debug level."""
         provider = TracingProvider()
-        with caplog.at_level(logging.DEBUG):
-            provider.create_span("my-span")
-        assert "my-span" in caplog.text
+        with patch("infrastructure.observability.tracing.logger") as mock_logger:
+            result = provider.create_span("my-span")
+            assert result is None
+            mock_logger.debug.assert_called_once()
+            call_kwargs = mock_logger.debug.call_args[1]
+            assert call_kwargs["span_name"] == "my-span"
 
-    def test_shutdown_logs_info(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_shutdown_logs_info(self) -> None:
         """shutdown should log info message."""
         provider = TracingProvider()
-        with caplog.at_level(logging.INFO):
+        with patch("infrastructure.observability.tracing.logger") as mock_logger:
             provider.shutdown()
-        assert "Shutting down tracing" in caplog.text
+            mock_logger.info.assert_called_once_with("Shutting down tracing")
 
-    def test_full_lifecycle(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_full_lifecycle(self) -> None:
         """Test full provider lifecycle."""
         config = TracingConfig(service_name="lifecycle-test")
         provider = TracingProvider(config)
 
-        with caplog.at_level(logging.INFO):
+        with patch("infrastructure.observability.tracing.logger") as mock_logger:
             provider.setup()
             tracer = provider.get_tracer()
             span = provider.create_span("operation")
             provider.shutdown()
 
-        assert tracer is None
-        assert span is None
-        assert "lifecycle-test" in caplog.text
-        assert "Shutting down" in caplog.text
+            assert tracer is None
+            assert span is None
+            # Verify setup was called with service_name
+            setup_call = mock_logger.info.call_args_list[0]
+            assert setup_call[1]["service_name"] == "lifecycle-test"
+            # Verify shutdown was called
+            shutdown_call = mock_logger.info.call_args_list[1]
+            assert shutdown_call[0][0] == "Shutting down tracing"

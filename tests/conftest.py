@@ -44,7 +44,7 @@ sys.modules["my_app"] = my_app
 # =============================================================================
 
 
-@pytest.fixture
+@pytest.fixture()
 def admin_headers() -> dict[str, str]:
     """Headers for authenticated requests with admin role.
 
@@ -58,7 +58,7 @@ def admin_headers() -> dict[str, str]:
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def editor_headers() -> dict[str, str]:
     """Headers for authenticated requests with editor role."""
     return {
@@ -68,7 +68,7 @@ def editor_headers() -> dict[str, str]:
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def viewer_headers() -> dict[str, str]:
     """Headers for viewer role (read-only)."""
     return {
@@ -77,7 +77,7 @@ def viewer_headers() -> dict[str, str]:
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def tenant_headers() -> dict[str, str]:
     """Headers with specific tenant context."""
     return {
@@ -87,7 +87,7 @@ def tenant_headers() -> dict[str, str]:
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def item_data_factory() -> callable:
     """Factory for creating unique item test data.
 
@@ -112,7 +112,7 @@ def item_data_factory() -> callable:
     return _create_item_data
 
 
-@pytest.fixture
+@pytest.fixture()
 def pedido_data_factory() -> callable:
     """Factory for creating unique pedido test data.
 

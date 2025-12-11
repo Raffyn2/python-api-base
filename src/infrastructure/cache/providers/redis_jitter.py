@@ -12,10 +12,11 @@ Implements:
 
 import asyncio
 import json
-import logging
 import random
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
+
+import structlog
 
 from infrastructure.cache.providers.cache_models import (
     CacheStats,
@@ -23,7 +24,7 @@ from infrastructure.cache.providers.cache_models import (
     TTLPattern,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 CacheValueT = TypeVar("CacheValueT")
 
@@ -43,9 +44,7 @@ class RedisCacheWithJitter[T]:
     Example:
         >>> cache = RedisCacheWithJitter[dict](redis_client)
         >>> await cache.set("user:123", user_data, ttl=300)  # 5 min with jitter
-        >>> user = await cache.get_or_compute(
-        ...     "user:123", compute=lambda: fetch_user(123), ttl=300
-        ... )
+        >>> user = await cache.get_or_compute("user:123", compute=lambda: fetch_user(123), ttl=300)
     """
 
     def __init__(
@@ -108,8 +107,8 @@ class RedisCacheWithJitter[T]:
             logger.warning("redis package not installed")
             self._connected = False
             return None
-        except Exception as e:
-            logger.warning("Redis connection failed: %s", e)
+        except Exception:
+            logger.warning("Redis connection failed", exc_info=True)
             self._connected = False
             return None
 
@@ -135,7 +134,7 @@ class RedisCacheWithJitter[T]:
         Returns:
             TTL with jitter applied.
         """
-        jitter_percent = random.uniform(  # noqa: S311 - Jitter for cache stampede
+        jitter_percent = random.uniform(
             self._config.min_jitter_percent,
             self._config.max_jitter_percent,
         )
@@ -203,8 +202,8 @@ class RedisCacheWithJitter[T]:
                 self._stats.misses += 1
 
             return result
-        except Exception as e:
-            logger.warning("Redis get failed: %s", e)
+        except Exception:
+            logger.warning("Redis get failed", exc_info=True)
             return None
 
     async def set(
@@ -239,8 +238,8 @@ class RedisCacheWithJitter[T]:
                 self._stats.jittered_sets += 1
 
             await client.setex(full_key, effective_ttl, data)
-        except Exception as e:
-            logger.warning("Redis set failed: %s", e)
+        except Exception:
+            logger.warning("Redis set failed", exc_info=True)
 
     async def delete(self, key: str) -> bool:
         """Delete value from cache.
@@ -259,8 +258,8 @@ class RedisCacheWithJitter[T]:
             full_key = self._make_key(key)
             result = await client.delete(full_key)
             return result > 0
-        except Exception as e:
-            logger.warning("Redis delete failed: %s", e)
+        except Exception:
+            logger.warning("Redis delete failed", exc_info=True)
             return False
 
     async def get_or_compute(
@@ -328,8 +327,8 @@ class RedisCacheWithJitter[T]:
                 # Lock held by another caller - wait and retry
                 self._stats.stampede_prevented += 1
                 return await self._wait_for_cache(key, compute, ttl, lock_timeout)
-        except Exception as e:
-            logger.warning("get_or_compute failed: %s", e)
+        except Exception:
+            logger.warning("get_or_compute failed", exc_info=True)
             # Fallback: compute without caching
             return await compute()
 
@@ -357,7 +356,7 @@ class RedisCacheWithJitter[T]:
                 return cached
 
         # Timeout - compute ourselves
-        logger.warning("Cache wait timeout for key: %s", key)
+        logger.warning("Cache wait timeout", key=key)
         value = await compute()
         await self.set(key, value, ttl, apply_jitter=True)
         return value
@@ -385,7 +384,8 @@ class RedisCacheWithJitter[T]:
             # Check if within early recompute window
             if remaining_ttl <= self._config.early_recompute_window:
                 # Probabilistic trigger to avoid all callers recomputing
-                return random.random() < self._config.early_recompute_probability  # noqa: S311
+
+                return random.random() < self._config.early_recompute_probability
 
             return False
         except Exception:
@@ -405,9 +405,9 @@ class RedisCacheWithJitter[T]:
         try:
             value = await compute()
             await self.set(key, value, ttl, apply_jitter=True)
-            logger.debug("Background recompute completed for key: %s", key)
-        except Exception as e:
-            logger.warning("Background recompute failed for key %s: %s", key, e)
+            logger.debug("Background recompute completed", key=key)
+        except Exception:
+            logger.warning("Background recompute failed", key=key, exc_info=True)
 
     async def clear_pattern(self, pattern: str, max_iterations: int = 1000) -> int:
         """Clear all keys matching pattern.
@@ -432,7 +432,9 @@ class RedisCacheWithJitter[T]:
 
             while iterations < max_iterations:
                 cursor, keys = await client.scan(
-                    cursor, match=full_pattern, count=scan_batch_size
+                    cursor,
+                    match=full_pattern,
+                    count=scan_batch_size,
                 )
                 if keys:
                     deleted += await client.delete(*keys)
@@ -442,13 +444,16 @@ class RedisCacheWithJitter[T]:
 
             if iterations >= max_iterations:
                 logger.warning(
-                    f"clear_pattern reached max iterations ({max_iterations})",
-                    extra={"pattern": pattern, "deleted": deleted},
+                    "clear_pattern reached max iterations",
+                    operation="CACHE_CLEAR_PATTERN",
+                    max_iterations=max_iterations,
+                    pattern=pattern,
+                    deleted=deleted,
                 )
 
             return deleted
-        except Exception as e:
-            logger.warning("Redis clear_pattern failed: %s", e)
+        except Exception:
+            logger.warning("Redis clear_pattern failed", exc_info=True)
             return 0
 
     def _handle_task_exception(self, task: asyncio.Task[None]) -> None:
@@ -461,7 +466,9 @@ class RedisCacheWithJitter[T]:
         exception = task.exception()
         if exception is not None:
             logger.warning(
-                f"Background task {task.get_name()} failed: {exception}",
+                "Background task failed",
+                operation="CACHE_BACKGROUND_TASK",
+                task_name=task.get_name(),
                 exc_info=exception,
             )
 

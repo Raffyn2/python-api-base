@@ -59,9 +59,7 @@ def map_pedido_dto_to_type(pedido_dto: Any) -> PedidoExampleType:
     )
 
 
-def _create_page_info(
-    edges: list[Any], page: int, page_size: int, total: int
-) -> PageInfoType:
+def _create_page_info(edges: list[Any], page: int, page_size: int, total: int) -> PageInfoType:
     """Create PageInfoType from pagination data (DRY helper)."""
     return PageInfoType(
         has_next_page=(page * page_size) < total,

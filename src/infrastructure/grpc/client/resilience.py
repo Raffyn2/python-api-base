@@ -7,14 +7,17 @@ to prevent cascading failures.
 from __future__ import annotations
 
 import asyncio
+import secrets
 import time
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from grpc import StatusCode
 from structlog import get_logger
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 logger = get_logger(__name__)
 
@@ -23,14 +26,16 @@ T = TypeVar("T")
 
 class CircuitState(Enum):
     """Circuit breaker states."""
+
     CLOSED = "closed"
     OPEN = "open"
     HALF_OPEN = "half_open"
 
 
-@dataclass
+@dataclass(slots=True)
 class CircuitBreakerConfig:
     """Circuit breaker configuration."""
+
     failure_threshold: int = 5
     recovery_timeout: float = 30.0
     half_open_max_calls: int = 3
@@ -38,7 +43,7 @@ class CircuitBreakerConfig:
 
 class CircuitBreakerWrapper:
     """Circuit breaker wrapper for gRPC calls.
-    
+
     Implements the circuit breaker pattern to prevent cascading
     failures when a service is unavailable.
     """
@@ -49,7 +54,7 @@ class CircuitBreakerWrapper:
         name: str = "default",
     ) -> None:
         """Initialize circuit breaker.
-        
+
         Args:
             config: Circuit breaker configuration
             name: Name for logging
@@ -83,18 +88,18 @@ class CircuitBreakerWrapper:
         func: Callable[[], Awaitable[T]],
     ) -> T:
         """Execute a function with circuit breaker protection.
-        
+
         Args:
             func: Async function to execute
-            
+
         Returns:
             The function result
-            
+
         Raises:
             CircuitOpenError: If circuit is open
         """
         self._check_state_transition()
-        
+
         if self._state == CircuitState.OPEN:
             logger.warning(
                 "circuit_breaker_open",
@@ -118,11 +123,10 @@ class CircuitBreakerWrapper:
 
     def _check_state_transition(self) -> None:
         """Check and perform state transitions."""
-        if self._state == CircuitState.OPEN:
-            if self._last_failure_time is not None:
-                elapsed = time.monotonic() - self._last_failure_time
-                if elapsed >= self._config.recovery_timeout:
-                    self._transition_to_half_open()
+        if self._state == CircuitState.OPEN and self._last_failure_time is not None:
+            elapsed = time.monotonic() - self._last_failure_time
+            if elapsed >= self._config.recovery_timeout:
+                self._transition_to_half_open()
 
     def _transition_to_half_open(self) -> None:
         """Transition to half-open state."""
@@ -147,10 +151,8 @@ class CircuitBreakerWrapper:
         """Handle failed call."""
         self._failure_count += 1
         self._last_failure_time = time.monotonic()
-        
-        if self._state == CircuitState.HALF_OPEN:
-            self._open()
-        elif self._failure_count >= self._config.failure_threshold:
+
+        if self._state == CircuitState.HALF_OPEN or self._failure_count >= self._config.failure_threshold:
             self._open()
 
     def _open(self) -> None:
@@ -176,12 +178,11 @@ class CircuitBreakerWrapper:
 
 class CircuitOpenError(Exception):
     """Exception raised when circuit breaker is open."""
-    pass
 
 
 class RetryInterceptor:
     """Retry interceptor with exponential backoff.
-    
+
     Provides retry logic for gRPC calls with configurable
     backoff and jitter.
     """
@@ -195,7 +196,7 @@ class RetryInterceptor:
         jitter: float = 0.1,
     ) -> None:
         """Initialize retry interceptor.
-        
+
         Args:
             max_retries: Maximum number of retries
             backoff_base: Base delay in seconds
@@ -215,11 +216,11 @@ class RetryInterceptor:
         retryable_codes: set[StatusCode] | None = None,
     ) -> T:
         """Execute function with retry logic.
-        
+
         Args:
             func: Async function to execute
             retryable_codes: Status codes that should trigger retry
-            
+
         Returns:
             The function result
         """
@@ -231,17 +232,17 @@ class RetryInterceptor:
             }
 
         last_exception: Exception | None = None
-        
+
         for attempt in range(self._max_retries + 1):
             try:
                 return await func()
             except Exception as exc:
                 last_exception = exc
-                
+
                 # Check if retryable
                 if not self._is_retryable(exc, retryable_codes):
                     raise
-                
+
                 if attempt < self._max_retries:
                     delay = self._calculate_delay(attempt)
                     logger.warning(
@@ -249,7 +250,7 @@ class RetryInterceptor:
                         attempt=attempt + 1,
                         max_retries=self._max_retries,
                         delay=delay,
-                        error=str(exc),
+                        exc_info=exc,
                     )
                     await asyncio.sleep(delay)
 
@@ -269,13 +270,13 @@ class RetryInterceptor:
 
     def _calculate_delay(self, attempt: int) -> float:
         """Calculate delay with exponential backoff and jitter."""
-        import random
-        
-        delay = self._backoff_base * (self._backoff_multiplier ** attempt)
+        delay = self._backoff_base * (self._backoff_multiplier**attempt)
         delay = min(delay, self._backoff_max)
-        
-        # Add jitter
+
+        # Add jitter using secrets for better randomness
         jitter_range = delay * self._jitter
-        delay += random.uniform(-jitter_range, jitter_range)
-        
+        # Generate random float in range [-jitter_range, jitter_range]
+        jitter = (secrets.randbelow(1000001) / 500000 - 1) * jitter_range
+        delay += jitter
+
         return max(0, delay)

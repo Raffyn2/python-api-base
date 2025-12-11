@@ -6,7 +6,6 @@ Provides structured logging with correlation IDs.
 **Validates: Requirements 12.1, 12.2**
 """
 
-import logging
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -14,7 +13,9 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 # Context variable for request correlation
 request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
@@ -93,7 +94,7 @@ class LoggingMiddleware:
             request_id = generate_request_id()
             set_request_id(request_id)
 
-        extra = {
+        log_context = {
             "request_id": request_id,
             "command_type": command_type,
             "operation": "COMMAND_EXECUTION",
@@ -102,8 +103,8 @@ class LoggingMiddleware:
         if self._config.log_request:
             command_data = self._get_command_data(command)
             if command_data:
-                extra["command_data"] = command_data
-            logger.info(f"Executing command {command_type}", extra=extra)
+                log_context["command_data"] = command_data
+            logger.info("Executing command", **log_context)
 
         start_time = time.perf_counter()
         error: Exception | None = None
@@ -117,20 +118,20 @@ class LoggingMiddleware:
             duration_ms = (time.perf_counter() - start_time) * 1000
 
             if self._config.log_duration:
-                extra["duration_ms"] = round(duration_ms, 2)
+                log_context["duration_ms"] = round(duration_ms, 2)
 
             if self._config.log_response:
                 if error:
-                    extra["error_type"] = type(error).__name__
-                    extra["success"] = False
+                    log_context["error_type"] = type(error).__name__
+                    log_context["success"] = False
                     logger.error(
-                        f"Command {command_type} failed in {duration_ms:.2f}ms",
-                        extra=extra,
+                        "Command failed",
                         exc_info=True,
+                        **log_context,
                     )
                 else:
-                    extra["success"] = True
+                    log_context["success"] = True
                     logger.info(
-                        f"Command {command_type} completed in {duration_ms:.2f}ms",
-                        extra=extra,
+                        "Command completed",
+                        **log_context,
                     )

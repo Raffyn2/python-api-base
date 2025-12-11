@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
+import structlog
 from pydantic import BaseModel
 
 from infrastructure.tasks.task import TaskResult, TaskStatus
@@ -24,10 +24,10 @@ if TYPE_CHECKING:
 
     from infrastructure.tasks.rabbitmq.config import RabbitMQConfig
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class TaskHandle[TTask: BaseModel, TResult]:
     """Handle for tracking enqueued task.
 
@@ -145,7 +145,12 @@ class RabbitMQTaskQueue[TTask: BaseModel, TResult]:
             await self._channel.set_qos(prefetch_count=self._config.prefetch_count)
 
             await self._channel.declare_queue(self._config.queue_name, durable=True)
-            logger.info(f"Connected to RabbitMQ: {self._config.host}")
+            logger.info(
+                "Connected to RabbitMQ",
+                host=self._config.host,
+                queue=self._config.queue_name,
+                operation="RABBITMQ_CONNECT",
+            )
 
         except ImportError:
             logger.warning("aio_pika not installed, using in-memory fallback")
@@ -189,12 +194,14 @@ class RabbitMQTaskQueue[TTask: BaseModel, TResult]:
         """Enqueue to RabbitMQ."""
         import aio_pika
 
-        message_body = json.dumps({
-            "task_id": task_id,
-            "payload": task.model_dump(mode="json"),
-            "priority": priority,
-            "enqueued_at": datetime.now(UTC).isoformat(),
-        }).encode()
+        message_body = json.dumps(
+            {
+                "task_id": task_id,
+                "payload": task.model_dump(mode="json"),
+                "priority": priority,
+                "enqueued_at": datetime.now(UTC).isoformat(),
+            }
+        ).encode()
 
         message = aio_pika.Message(
             body=message_body,

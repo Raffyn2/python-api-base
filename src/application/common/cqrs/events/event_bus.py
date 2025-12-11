@@ -1,64 +1,34 @@
 """Domain Event Bus infrastructure.
 
 This module provides:
-- EventHandler protocol for typed event handling
+- EventHandler protocol (re-exported from core.protocols)
 - TypedEventBus for publishing domain events
 - Subscription management for event handlers
-- Proper error propagation with ExceptionGroup
+- Proper error propagation with EventHandlerError
 
 **Feature: python-api-base-2025-state-of-art**
 **Validates: Requirements 2.4**
+**Refactored: 2025 - Consolidated EventHandler to core.protocols**
 """
 
-import logging
-from typing import Any, Protocol, runtime_checkable
+from typing import Any
 
-logger = logging.getLogger(__name__)
+import structlog
 
+from application.common.cqrs.exceptions.exceptions import EventHandlerError
 
-class EventHandlerError(Exception):
-    """Error raised when event handlers fail."""
+# Import canonical EventHandler from core.protocols (Single Source of Truth)
+from core.protocols.application import EventHandler
 
-    def __init__(
-        self,
-        event_type: str,
-        handler_errors: list[tuple[str, Exception]],
-    ) -> None:
-        """Initialize event handler error.
+logger = structlog.get_logger(__name__)
 
-        Args:
-            event_type: Name of the event type.
-            handler_errors: List of (handler_name, exception) tuples.
-        """
-        self.event_type = event_type
-        self.handler_errors = handler_errors
-        error_count = len(handler_errors)
-        super().__init__(f"{error_count} handler(s) failed for event {event_type}")
+# Module constants
+_LOG_OP_SUBSCRIBE = "EVENT_SUBSCRIBE"
+_LOG_OP_PUBLISH = "EVENT_PUBLISH"
+_LOG_OP_ERROR = "EVENT_HANDLER_ERROR"
 
-
-# =============================================================================
-# Typed Event Handler Protocol
-# =============================================================================
-
-
-@runtime_checkable
-class EventHandler[TEvent](Protocol):
-    """Protocol for typed domain event handlers.
-
-    Type Parameters:
-        TEvent: The event type this handler processes.
-
-    **Feature: python-api-base-2025-state-of-art**
-    **Validates: Requirements 2.4**
-    """
-
-    async def handle(self, event: TEvent) -> None:
-        """Handle a domain event.
-
-        Args:
-            event: The domain event to handle.
-        """
-        ...
+# Re-export for backward compatibility
+__all__ = ["EventHandler", "TypedEventBus"]
 
 
 # =============================================================================
@@ -99,7 +69,12 @@ class TypedEventBus[TEvent]:
         if event_type not in self._handlers:
             self._handlers[event_type] = []
         self._handlers[event_type].append(handler)
-        logger.debug(f"Subscribed handler to {event_type.__name__}")
+        logger.debug(
+            "Subscribed handler to event type",
+            event_type=event_type.__name__,
+            handler=type(handler).__name__,
+            operation=_LOG_OP_SUBSCRIBE,
+        )
 
     def unsubscribe[T: TEvent](
         self,
@@ -113,10 +88,12 @@ class TypedEventBus[TEvent]:
             handler: Handler to remove.
         """
         if event_type in self._handlers:
-            self._handlers[event_type] = [
-                h for h in self._handlers[event_type] if h != handler
-            ]
-            logger.debug(f"Unsubscribed handler from {event_type.__name__}")
+            self._handlers[event_type] = [h for h in self._handlers[event_type] if h != handler]
+            logger.debug(
+                "Unsubscribed handler from event type",
+                event_type=event_type.__name__,
+                handler=type(handler).__name__,
+            )
 
     async def publish(
         self,
@@ -145,17 +122,18 @@ class TypedEventBus[TEvent]:
             handler_name = type(handler).__name__
             try:
                 await handler.handle(event)
-                logger.debug(f"Event {event_type.__name__} handled by {handler_name}")
+                logger.debug(
+                    "Event handled successfully",
+                    event_type=event_type.__name__,
+                    handler=handler_name,
+                    operation=_LOG_OP_PUBLISH,
+                )
             except Exception as e:
-                msg = f"Event handler {handler_name} failed for {event_type.__name__}"
-                logger.error(
-                    f"{msg}: {e}",
-                    exc_info=True,
-                    extra={
-                        "event_type": event_type.__name__,
-                        "handler": handler_name,
-                        "operation": "EVENT_HANDLER_ERROR",
-                    },
+                logger.exception(
+                    "Event handler failed",
+                    event_type=event_type.__name__,
+                    handler=handler_name,
+                    operation=_LOG_OP_ERROR,
                 )
                 errors.append((handler_name, e))
 

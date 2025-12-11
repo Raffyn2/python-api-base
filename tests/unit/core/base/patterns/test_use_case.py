@@ -3,19 +3,18 @@
 **Feature: test-coverage-90-percent**
 """
 
-from dataclasses import dataclass
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from pydantic import BaseModel
 
-from core.base.patterns.use_case import BaseUseCase, IMapper, IRepository
+from core.base.patterns.use_case import BaseUseCase
 from core.errors.base.domain_errors import EntityNotFoundError
 
 
 class SampleEntity(BaseModel):
     """Sample entity for testing."""
+
     id: str
     name: str
     value: int = 0
@@ -23,18 +22,21 @@ class SampleEntity(BaseModel):
 
 class SampleCreateDTO(BaseModel):
     """Sample create DTO."""
+
     name: str
     value: int = 0
 
 
 class SampleUpdateDTO(BaseModel):
     """Sample update DTO."""
+
     name: str | None = None
     value: int | None = None
 
 
 class SampleResponseDTO(BaseModel):
     """Sample response DTO."""
+
     id: str
     name: str
     value: int
@@ -67,7 +69,7 @@ class MockRepository:
         sort_by: str | None,
         sort_order: str,
     ) -> tuple[list[SampleEntity], int]:
-        items = list(self._data.values())[skip:skip + limit]
+        items = list(self._data.values())[skip : skip + limit]
         return items, len(self._data)
 
     async def create(self, data: SampleCreateDTO) -> SampleEntity:
@@ -118,25 +120,25 @@ class MockUnitOfWork:
         self.rolled_back = True
 
 
-@pytest.fixture
+@pytest.fixture()
 def repository() -> MockRepository:
     """Create mock repository."""
     return MockRepository()
 
 
-@pytest.fixture
+@pytest.fixture()
 def mapper() -> MockMapper:
     """Create mock mapper."""
     return MockMapper()
 
 
-@pytest.fixture
+@pytest.fixture()
 def uow() -> MockUnitOfWork:
     """Create mock unit of work."""
     return MockUnitOfWork()
 
 
-@pytest.fixture
+@pytest.fixture()
 def use_case(
     repository: MockRepository, mapper: MockMapper, uow: MockUnitOfWork
 ) -> BaseUseCase[SampleEntity, SampleCreateDTO, SampleUpdateDTO, SampleResponseDTO]:
@@ -149,7 +151,7 @@ def use_case(
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def use_case_no_uow(
     repository: MockRepository, mapper: MockMapper
 ) -> BaseUseCase[SampleEntity, SampleCreateDTO, SampleUpdateDTO, SampleResponseDTO]:
@@ -210,9 +212,7 @@ class TestBaseUseCaseList:
         assert len(result.items) == 0
 
     @pytest.mark.asyncio
-    async def test_list_with_data(
-        self, use_case: BaseUseCase, repository: MockRepository
-    ) -> None:
+    async def test_list_with_data(self, use_case: BaseUseCase, repository: MockRepository) -> None:
         """Test listing with data."""
         repository._data["1"] = SampleEntity(id="1", name="One", value=1)
         repository._data["2"] = SampleEntity(id="2", name="Two", value=2)
@@ -223,9 +223,7 @@ class TestBaseUseCaseList:
         assert len(result.items) == 2
 
     @pytest.mark.asyncio
-    async def test_list_pagination(
-        self, use_case: BaseUseCase, repository: MockRepository
-    ) -> None:
+    async def test_list_pagination(self, use_case: BaseUseCase, repository: MockRepository) -> None:
         """Test list pagination."""
         for i in range(5):
             repository._data[str(i)] = SampleEntity(id=str(i), name=f"Item {i}", value=i)
@@ -254,9 +252,7 @@ class TestBaseUseCaseUpdate:
     """Tests for update method."""
 
     @pytest.mark.asyncio
-    async def test_update_existing_entity(
-        self, use_case: BaseUseCase, repository: MockRepository
-    ) -> None:
+    async def test_update_existing_entity(self, use_case: BaseUseCase, repository: MockRepository) -> None:
         """Test updating existing entity."""
         repository._data["test-1"] = SampleEntity(id="test-1", name="Old", value=10)
         data = SampleUpdateDTO(name="Updated", value=99)
@@ -279,9 +275,7 @@ class TestBaseUseCaseDelete:
     """Tests for delete method."""
 
     @pytest.mark.asyncio
-    async def test_delete_existing_entity(
-        self, use_case: BaseUseCase, repository: MockRepository
-    ) -> None:
+    async def test_delete_existing_entity(self, use_case: BaseUseCase, repository: MockRepository) -> None:
         """Test deleting existing entity."""
         repository._data["test-1"] = SampleEntity(id="test-1", name="Test", value=10)
 
@@ -301,9 +295,7 @@ class TestBaseUseCaseExists:
     """Tests for exists method."""
 
     @pytest.mark.asyncio
-    async def test_exists_true(
-        self, use_case: BaseUseCase, repository: MockRepository
-    ) -> None:
+    async def test_exists_true(self, use_case: BaseUseCase, repository: MockRepository) -> None:
         """Test exists returns True for existing entity."""
         repository._data["test-1"] = SampleEntity(id="test-1", name="Test", value=10)
 
@@ -340,9 +332,7 @@ class TestBaseUseCaseTransaction:
     """Tests for transaction context manager."""
 
     @pytest.mark.asyncio
-    async def test_transaction_commits_on_success(
-        self, use_case: BaseUseCase, uow: MockUnitOfWork
-    ) -> None:
+    async def test_transaction_commits_on_success(self, use_case: BaseUseCase, uow: MockUnitOfWork) -> None:
         """Test transaction commits on success."""
         async with use_case.transaction():
             pass
@@ -350,9 +340,7 @@ class TestBaseUseCaseTransaction:
         assert uow.committed is True
 
     @pytest.mark.asyncio
-    async def test_transaction_rollbacks_on_error(
-        self, use_case: BaseUseCase, uow: MockUnitOfWork
-    ) -> None:
+    async def test_transaction_rollbacks_on_error(self, use_case: BaseUseCase, uow: MockUnitOfWork) -> None:
         """Test transaction rollbacks on error."""
         with pytest.raises(ValueError):
             async with use_case.transaction():

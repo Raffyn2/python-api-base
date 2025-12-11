@@ -19,9 +19,7 @@ except ImportError:
 
 
 # Strategy for claim values
-claim_key_strategy = st.text(
-    min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"
-)
+claim_key_strategy = st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_")
 claim_value_strategy = st.one_of(
     st.text(max_size=100),
     st.integers(min_value=-1000000, max_value=1000000),
@@ -35,14 +33,10 @@ claims_strategy = st.dictionaries(
     values=claim_value_strategy,
     min_size=1,
     max_size=5,
-).filter(
-    lambda d: "exp" not in d and "iat" not in d and "iss" not in d and "aud" not in d
-)
+).filter(lambda d: "exp" not in d and "iat" not in d and "iss" not in d and "aud" not in d)
 
 # Strategy for subject claim
-subject_strategy = st.text(
-    min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_"
-)
+subject_strategy = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_")
 
 
 class TestJWTRoundTrip:
@@ -129,11 +123,7 @@ class TestJWTRoundTrip:
         assert "exp" in claims  # Expiration
 
     @settings(max_examples=20)
-    @given(
-        roles=st.lists(
-            st.text(min_size=1, max_size=20), min_size=1, max_size=5, unique=True
-        )
-    )
+    @given(roles=st.lists(st.text(min_size=1, max_size=20), min_size=1, max_size=5, unique=True))
     def test_list_claims_preserved(self, roles: list[str]) -> None:
         """
         For any list claim (like roles), encoding and decoding SHALL preserve the list.

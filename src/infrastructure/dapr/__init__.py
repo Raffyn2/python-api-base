@@ -3,8 +3,8 @@
 This module provides Dapr integration components for the application.
 """
 
-from infrastructure.dapr.client import DaprClientWrapper
-from infrastructure.dapr.errors import (
+from infrastructure.dapr.core.client import DaprClientWrapper
+from infrastructure.dapr.core.errors import (
     DaprConnectionError,
     DaprError,
     DaprTimeoutError,
@@ -14,9 +14,9 @@ from infrastructure.dapr.errors import (
 
 __all__ = [
     "DaprClientWrapper",
-    "DaprError",
     "DaprConnectionError",
+    "DaprError",
     "DaprTimeoutError",
-    "StateNotFoundError",
     "SecretNotFoundError",
+    "StateNotFoundError",
 ]

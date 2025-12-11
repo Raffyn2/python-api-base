@@ -8,11 +8,11 @@ import hashlib
 
 from application.services.feature_flags.config import FlagConfig
 from application.services.feature_flags.core import FlagStatus
-from application.services.feature_flags.models import EvaluationContext
 from application.services.feature_flags.core.base import (
     EvaluationStrategy,
     FlagEvaluationResult,
 )
+from application.services.feature_flags.models import EvaluationContext
 
 
 class PercentageRolloutStrategy(EvaluationStrategy):
@@ -73,11 +73,7 @@ class PercentageRolloutStrategy(EvaluationStrategy):
 
         # Use consistent hashing (MD5 not for security, just distribution)
         hash_input = f"{flag_key}:{user_id or 'anonymous'}:{self._seed}"
-        hash_value = int(
-            hashlib.md5(hash_input.encode(), usedforsecurity=False).hexdigest(), 16
-        )
+        hash_value = int(hashlib.md5(hash_input.encode(), usedforsecurity=False).hexdigest(), 16)
         bucket = hash_value % 100
 
         return bucket < percentage
-
-

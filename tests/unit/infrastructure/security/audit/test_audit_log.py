@@ -226,7 +226,7 @@ class TestAuditFilters:
 class TestInMemoryAuditLogger:
     """Tests for InMemoryAuditLogger."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def logger(self) -> InMemoryAuditLogger:
         """Create logger instance."""
         return InMemoryAuditLogger(max_entries=100)
@@ -277,12 +277,8 @@ class TestInMemoryAuditLogger:
     @pytest.mark.asyncio
     async def test_query_by_user_id(self, logger: InMemoryAuditLogger) -> None:
         """Test query filtering by user_id."""
-        await logger.log_action(
-            action="login", resource_type="user", user_id="user-1"
-        )
-        await logger.log_action(
-            action="login", resource_type="user", user_id="user-2"
-        )
+        await logger.log_action(action="login", resource_type="user", user_id="user-1")
+        await logger.log_action(action="login", resource_type="user", user_id="user-2")
 
         results = await logger.query(AuditFilters(user_id="user-1"))
 
@@ -314,12 +310,8 @@ class TestInMemoryAuditLogger:
     @pytest.mark.asyncio
     async def test_query_by_result(self, logger: InMemoryAuditLogger) -> None:
         """Test query filtering by result."""
-        await logger.log_action(
-            action="login", resource_type="user", result=AuditResult.SUCCESS
-        )
-        await logger.log_action(
-            action="login", resource_type="user", result=AuditResult.FAILURE
-        )
+        await logger.log_action(action="login", resource_type="user", result=AuditResult.SUCCESS)
+        await logger.log_action(action="login", resource_type="user", result=AuditResult.FAILURE)
 
         results = await logger.query(AuditFilters(result="success"))
 
@@ -348,9 +340,7 @@ class TestInMemoryAuditLogger:
         await logger.log(old_entry)
         await logger.log(new_entry)
 
-        results = await logger.query(
-            AuditFilters(start_date=now - timedelta(days=1))
-        )
+        results = await logger.query(AuditFilters(start_date=now - timedelta(days=1)))
 
         assert len(results) == 1
         assert results[0].id == "new"
@@ -359,9 +349,7 @@ class TestInMemoryAuditLogger:
     async def test_query_pagination(self, logger: InMemoryAuditLogger) -> None:
         """Test query pagination."""
         for i in range(10):
-            await logger.log_action(
-                action="login", resource_type="user", user_id=f"user-{i}"
-            )
+            await logger.log_action(action="login", resource_type="user", user_id=f"user-{i}")
 
         results = await logger.query(AuditFilters(limit=5, offset=0))
         assert len(results) == 5
@@ -375,9 +363,7 @@ class TestInMemoryAuditLogger:
         logger = InMemoryAuditLogger(max_entries=5)
 
         for i in range(10):
-            await logger.log_action(
-                action="login", resource_type="user", user_id=f"user-{i}"
-            )
+            await logger.log_action(action="login", resource_type="user", user_id=f"user-{i}")
 
         results = await logger.query(AuditFilters(limit=100))
         assert len(results) == 5

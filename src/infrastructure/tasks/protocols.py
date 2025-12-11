@@ -91,9 +91,7 @@ class TaskQueue[TPayload, TResult](Protocol):
         """
         ...
 
-    async def get_tasks_by_status(
-        self, status: TaskStatus, limit: int = 100
-    ) -> Sequence[Task[TPayload, TResult]]:
+    async def get_tasks_by_status(self, status: TaskStatus, limit: int = 100) -> Sequence[Task[TPayload, TResult]]:
         """Get tasks by status.
 
         Args:

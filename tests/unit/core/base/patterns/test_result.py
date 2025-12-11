@@ -321,8 +321,7 @@ class TestResultRoundTrip:
         assert restored.error == original.error
 
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 
 class TestResultMonadLawsProperties:
@@ -340,7 +339,9 @@ class TestResultMonadLawsProperties:
         **Feature: test-coverage-80-percent-v3, Property 11: Result Type Monad Laws**
         **Validates: Requirements 4.3**
         """
-        f = lambda x: Ok(x * 2)
+
+        def f(x):
+            return Ok(x * 2)
 
         # return a >>= f
         left = Ok(value).bind(f)
@@ -372,8 +373,13 @@ class TestResultMonadLawsProperties:
         **Feature: test-coverage-80-percent-v3, Property 11: Result Type Monad Laws**
         **Validates: Requirements 4.3**
         """
-        f = lambda x: Ok(x + 1)
-        g = lambda x: Ok(x * 2)
+
+        def f(x):
+            return Ok(x + 1)
+
+        def g(x):
+            return Ok(x * 2)
+
         m = Ok(value)
 
         # (m >>= f) >>= g
@@ -392,7 +398,9 @@ class TestResultMonadLawsProperties:
         **Validates: Requirements 4.3**
         """
         err_result = Err(error)
-        f = lambda x: Ok(x * 2)
+
+        def f(x):
+            return Ok(x * 2)
 
         result = err_result.bind(f)
 

@@ -236,9 +236,7 @@ class TestPaginationCursor:
         )
         assert result.pages == expected_pages
 
-    @given(
-        st.integers(min_value=1, max_value=10), st.integers(min_value=1, max_value=20)
-    )
+    @given(st.integers(min_value=1, max_value=10), st.integers(min_value=1, max_value=20))
     @settings(max_examples=100)
     def test_offset_pagination_has_next(self, page: int, total_pages: int) -> None:
         """has_next is true when page < pages."""
@@ -318,9 +316,7 @@ class TestDTOConsistency:
         # has_previous
         assert response.has_previous == (response.page > 1)
 
-    @given(
-        st.integers(min_value=1, max_value=5), st.integers(min_value=1, max_value=100)
-    )
+    @given(st.integers(min_value=1, max_value=5), st.integers(min_value=1, max_value=100))
     @settings(max_examples=100)
     def test_paginated_response_navigation(self, page: int, total: int) -> None:
         """PaginatedResponse navigation flags are consistent."""

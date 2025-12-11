@@ -6,16 +6,17 @@
 """
 
 import functools
-import logging
 import re
 from typing import Any, Final
+
+import structlog
 
 from application.services.multitenancy.models import (
     TenantContext,
     get_current_tenant,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Security constants for tenant ID validation
 TENANT_ID_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
@@ -104,30 +105,24 @@ class TenantMiddleware:
         if not tenant_id:
             logger.warning(
                 "Tenant ID rejected: empty or whitespace-only",
-                extra={
-                    "operation": "TENANT_VALIDATION",
-                    "reason": "EMPTY_OR_WHITESPACE",
-                },
+                operation="TENANT_VALIDATION",
+                reason="EMPTY_OR_WHITESPACE",
             )
             return None
 
         if len(tenant_id) > TENANT_ID_MAX_LENGTH:
             logger.warning(
                 "Tenant ID rejected: exceeds max length",
-                extra={
-                    "operation": "TENANT_VALIDATION",
-                    "reason": "LENGTH_EXCEEDED",
-                },
+                operation="TENANT_VALIDATION",
+                reason="LENGTH_EXCEEDED",
             )
             return None
 
         if not TENANT_ID_PATTERN.match(tenant_id):
             logger.warning(
                 "Tenant ID rejected: invalid characters",
-                extra={
-                    "operation": "TENANT_VALIDATION",
-                    "reason": "INVALID_CHARS",
-                },
+                operation="TENANT_VALIDATION",
+                reason="INVALID_CHARS",
             )
             return None
 

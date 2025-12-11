@@ -6,13 +6,14 @@ Provides centralized Kafka event publishing with consistent error handling.
 **Extracted from: examples/item/use_case.py**
 """
 
-import logging
 from typing import TYPE_CHECKING, Any
+
+import structlog
 
 if TYPE_CHECKING:
     from infrastructure.kafka.event_publisher import EventPublisher
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class KafkaEventService:
@@ -27,7 +28,7 @@ class KafkaEventService:
         ...     event_type="ItemCreated",
         ...     entity_type="Item",
         ...     entity_id="123",
-        ...     payload=ItemCreatedEvent(...)
+        ...     payload=ItemCreatedEvent(...),
         ... )
     """
 
@@ -79,24 +80,19 @@ class KafkaEventService:
             await self._publisher.publish(kafka_event, topic)
 
             logger.debug(
-                f"Kafka event published: {event_type}",
-                extra={
-                    "event_type": event_type,
-                    "entity_type": entity_type,
-                    "entity_id": entity_id,
-                    "topic": topic,
-                },
+                "Kafka event published",
+                event_type=event_type,
+                entity_type=entity_type,
+                entity_id=entity_id,
+                topic=topic,
             )
             return True
 
-        except Exception as e:
-            logger.error(
-                f"Failed to publish Kafka event: {e}",
-                extra={
-                    "event_type": event_type,
-                    "entity_type": entity_type,
-                    "entity_id": entity_id,
-                    "error": str(e),
-                },
+        except Exception:
+            logger.exception(
+                "Failed to publish Kafka event",
+                event_type=event_type,
+                entity_type=entity_type,
+                entity_id=entity_id,
             )
             return False

@@ -6,13 +6,14 @@
 **Improvement: P1-1 - Replaced Any with specific types (CacheProvider, TypedDict)**
 """
 
-import logging
 from dataclasses import dataclass
 from typing import Any, TypedDict
 
+import structlog
+
 from infrastructure.cache.protocols import CacheProvider
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class CacheMetricsDict(TypedDict):
@@ -25,7 +26,7 @@ class CacheMetricsDict(TypedDict):
     total_requests: int
 
 
-@dataclass
+@dataclass(slots=True)
 class CacheMetrics:
     """Cache metrics for monitoring and OpenTelemetry export.
 
@@ -189,14 +190,16 @@ class CacheMetricsExporter:
 
             logger.info(
                 "OpenTelemetry cache metrics initialized",
-                extra={"cache_name": self._cache_name},
+                cache_name=self._cache_name,
             )
         except ImportError:
+            logger.warning("OpenTelemetry not available, cache metrics will not be exported")
+        except Exception:
             logger.warning(
-                "OpenTelemetry not available, cache metrics will not be exported"
+                "Failed to initialize OpenTelemetry metrics",
+                operation="METRICS_INIT",
+                exc_info=True,
             )
-        except Exception as e:
-            logger.warning(f"Failed to initialize OpenTelemetry metrics: {e}")
 
     def export_metrics(self, metrics: CacheMetrics) -> None:
         """Export cache metrics to OpenTelemetry.
@@ -229,13 +232,11 @@ class CacheMetricsExporter:
 
         logger.debug(
             "Cache metrics exported",
-            extra={
-                "cache_name": self._cache_name,
-                "hits": metrics.hits,
-                "misses": metrics.misses,
-                "evictions": metrics.evictions,
-                "hit_rate": metrics.hit_rate,
-            },
+            cache_name=self._cache_name,
+            hits=metrics.hits,
+            misses=metrics.misses,
+            evictions=metrics.evictions,
+            hit_rate=metrics.hit_rate,
         )
 
 
@@ -314,13 +315,9 @@ class MetricsAwareCacheWrapper[T]:
         **Feature: api-base-score-100, Property 10: Cache Eviction Counter**
         **Validates: Requirements 3.5**
         """
-        size_before = (
-            await self._provider.size() if hasattr(self._provider, "size") else 0
-        )
+        size_before = await self._provider.size() if hasattr(self._provider, "size") else 0
         await self._provider.set(key, value, ttl)
-        size_after = (
-            await self._provider.size() if hasattr(self._provider, "size") else 0
-        )
+        size_after = await self._provider.size() if hasattr(self._provider, "size") else 0
 
         if hasattr(self._provider, "_config"):
             max_size = self._provider._config.max_size

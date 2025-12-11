@@ -1,8 +1,6 @@
 """Tests for core/base/domain/entity.py - Base entity classes."""
 
-from datetime import UTC, datetime
-
-import pytest
+from datetime import datetime
 
 from src.core.base.domain.entity import (
     AuditableEntity,
@@ -12,7 +10,6 @@ from src.core.base.domain.entity import (
     ULIDEntity,
     VersionedEntity,
     VersionedULIDEntity,
-    VersionMixin,
 )
 
 

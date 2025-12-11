@@ -7,17 +7,12 @@ Queries represent requests for data without side effects.
 """
 
 from abc import ABC
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
-try:
-    from core.shared.utils.time import utc_now
-except ImportError:
-
-    def utc_now() -> datetime:
-        return datetime.now(UTC)
+from core.shared.utils.time import utc_now
 
 
 @dataclass(frozen=True)
@@ -69,6 +64,4 @@ class BaseQuery[TResult](ABC):
         Returns:
             Dictionary representation of the query.
         """
-        from dataclasses import asdict
-
         return asdict(self)

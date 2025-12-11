@@ -28,7 +28,7 @@ class ItemExampleModel(SQLModel, table=True):
     name: str = Field(max_length=200, index=True)
     description: str = Field(default="", sa_column=Column(Text))
     sku: str = Field(max_length=50, unique=True, index=True)
-    price_amount: Decimal = Field(default=Decimal("0"), decimal_places=2)
+    price_amount: Decimal = Field(default=Decimal(0), decimal_places=2)
     price_currency: str = Field(default="BRL", max_length=3)
     quantity: int = Field(default=0, ge=0)
     status: str = Field(default="active", max_length=20, index=True)
@@ -94,7 +94,7 @@ class PedidoItemExampleModel(SQLModel, table=True):
     quantity: int = Field(ge=1)
     unit_price_amount: Decimal = Field(decimal_places=2)
     unit_price_currency: str = Field(default="BRL", max_length=3)
-    discount: Decimal = Field(default=Decimal("0"), decimal_places=2)
+    discount: Decimal = Field(default=Decimal(0), decimal_places=2)
 
     # Relationships
     pedido: PedidoExampleModel = Relationship(back_populates="items")

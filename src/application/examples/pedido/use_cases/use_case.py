@@ -9,8 +9,9 @@ Demonstrates:
 **Feature: example-system-demo**
 """
 
-import logging
 from typing import Any
+
+import structlog
 
 from application.examples.pedido.dtos import (
     AddItemRequest,
@@ -26,7 +27,7 @@ from application.examples.shared.errors import (
 from core.base.patterns.result import Err, Ok, Result
 from domain.examples.pedido.entity import PedidoExample
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class PedidoExampleUseCase:
@@ -76,7 +77,7 @@ class PedidoExampleUseCase:
                 if not item:
                     return Err(NotFoundError("ItemExample", item_req.item_id))
                 if not item.is_available:
-                    return Err(ValidationError(f"Item '{item.name}' is not available"))
+                    return Err(ValidationError("Item is not available", "item_id"))
                 if item.quantity < item_req.quantity:
                     return Err(
                         ValidationError(
@@ -103,18 +104,20 @@ class PedidoExampleUseCase:
                 saved.clear_events()
 
             logger.info(
-                f"PedidoExample created: {saved.id}",
-                extra={
-                    "pedido_id": saved.id,
-                    "customer_id": saved.customer_id,
-                    "items_count": saved.items_count,
-                },
+                "PedidoExample created",
+                pedido_id=saved.id,
+                customer_id=saved.customer_id,
+                items_count=saved.items_count,
+                operation="PEDIDO_CREATE",
             )
 
             return Ok(PedidoExampleMapper.to_response(saved))
 
         except Exception as e:
-            logger.error(f"Failed to create PedidoExample: {e}", exc_info=True)
+            logger.exception(
+                "Failed to create PedidoExample",
+                operation="PEDIDO_CREATE_ERROR",
+            )
             return Err(UseCaseError(str(e)))
 
     async def get(self, pedido_id: str) -> Result[PedidoExampleResponse, UseCaseError]:
@@ -135,18 +138,14 @@ class PedidoExampleUseCase:
             return Err(NotFoundError("PedidoExample", pedido_id))
 
         if not pedido.can_be_modified:
-            return Err(
-                ValidationError(
-                    f"Order in '{pedido.status.value}' status cannot be modified"
-                )
-            )
+            return Err(ValidationError("Order cannot be modified in current status"))
 
         item = await self._item_repo.get(data.item_id)
         if not item:
             return Err(NotFoundError("ItemExample", data.item_id))
 
         if not item.is_available:
-            return Err(ValidationError(f"Item '{item.name}' is not available"))
+            return Err(ValidationError("Item is not available", "item_id"))
 
         try:
             pedido.add_item(
@@ -188,8 +187,10 @@ class PedidoExampleUseCase:
                 saved.clear_events()
 
             logger.info(
-                f"PedidoExample confirmed: {pedido_id}",
-                extra={"pedido_id": pedido_id, "total": str(pedido.total.amount)},
+                "PedidoExample confirmed",
+                pedido_id=pedido_id,
+                total=str(pedido.total.amount),
+                operation="PEDIDO_CONFIRM",
             )
 
             return Ok(PedidoExampleMapper.to_response(saved))
@@ -209,11 +210,7 @@ class PedidoExampleUseCase:
             return Err(NotFoundError("PedidoExample", pedido_id))
 
         if not pedido.can_be_cancelled:
-            return Err(
-                ValidationError(
-                    f"Order in '{pedido.status.value}' status cannot be cancelled"
-                )
-            )
+            return Err(ValidationError("Order cannot be cancelled in current status"))
 
         try:
             pedido.cancel(reason, cancelled_by)
@@ -225,8 +222,10 @@ class PedidoExampleUseCase:
                 saved.clear_events()
 
             logger.info(
-                f"PedidoExample cancelled: {pedido_id}",
-                extra={"pedido_id": pedido_id, "reason": reason},
+                "PedidoExample cancelled",
+                pedido_id=pedido_id,
+                reason=reason,
+                operation="PEDIDO_CANCEL",
             )
 
             return Ok(PedidoExampleMapper.to_response(saved))

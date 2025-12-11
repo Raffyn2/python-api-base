@@ -6,11 +6,12 @@ Uses PEP 695 type parameter syntax (Python 3.12+) for cleaner generic definition
 **Validates: Requirements 11.1, 11.2**
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 
 from core.shared.utils.ids import generate_ulid
+from core.shared.utils.time import utc_now
 
 
 class BaseEntity[IdType: (str, int)](BaseModel):
@@ -25,11 +26,11 @@ class BaseEntity[IdType: (str, int)](BaseModel):
 
     id: IdType | None = Field(default=None, description="Unique entity identifier")
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(tz=UTC),
+        default_factory=utc_now,
         description="Timestamp when entity was created",
     )
     updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(tz=UTC),
+        default_factory=utc_now,
         description="Timestamp when entity was last updated",
     )
     is_deleted: bool = Field(
@@ -41,7 +42,7 @@ class BaseEntity[IdType: (str, int)](BaseModel):
 
     def mark_updated(self) -> None:
         """Update the updated_at timestamp to current time."""
-        object.__setattr__(self, "updated_at", datetime.now(tz=UTC))
+        object.__setattr__(self, "updated_at", utc_now())
 
     def mark_deleted(self) -> None:
         """Mark entity as soft deleted."""
@@ -105,9 +106,7 @@ class VersionMixin[VersionT: (int, str) = int]:
             self.mark_updated()  # type: ignore
 
 
-class VersionedEntity[IdType: (str, int), VersionT: (int, str) = int](
-    VersionMixin[VersionT], BaseEntity[IdType]
-):
+class VersionedEntity[IdType: (str, int), VersionT: (int, str) = int](VersionMixin[VersionT], BaseEntity[IdType]):
     """Entity with optimistic locking version.
 
     Extends BaseEntity with a version field for optimistic concurrency control.
@@ -119,8 +118,6 @@ class VersionedEntity[IdType: (str, int), VersionT: (int, str) = int](
     **Feature: python-api-base-2025-state-of-art**
     **Validates: Requirements 11.1**
     """
-
-    pass
 
 
 class AuditableVersionedEntity[IdType: (str, int), VersionT: (int, str) = int](

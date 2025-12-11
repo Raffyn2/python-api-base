@@ -21,13 +21,9 @@ except ImportError:
 
 
 # Strategies
-user_id_strategy = st.text(
-    min_size=10, max_size=26, alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ"
-)
+user_id_strategy = st.text(min_size=10, max_size=26, alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ")
 email_strategy = st.emails()
-username_strategy = st.text(
-    min_size=3, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_"
-)
+username_strategy = st.text(min_size=3, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_")
 reason_strategy = st.text(min_size=1, max_size=200)
 
 
@@ -220,9 +216,7 @@ class TestGenericSerialization:
     @settings(max_examples=50)
     @given(
         data=st.dictionaries(
-            keys=st.text(
-                min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"
-            ),
+            keys=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"),
             values=st.one_of(
                 st.text(max_size=100),
                 st.integers(),

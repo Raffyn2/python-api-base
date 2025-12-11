@@ -37,18 +37,16 @@ class TestGetUserByIdQuery:
 class TestGetUserByIdHandler:
     """Tests for GetUserByIdHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repository(self) -> AsyncMock:
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, mock_repository: AsyncMock) -> GetUserByIdHandler:
         return GetUserByIdHandler(repository=mock_repository)
 
     @pytest.mark.asyncio
-    async def test_handle_user_found(
-        self, handler: GetUserByIdHandler, mock_repository: AsyncMock
-    ) -> None:
+    async def test_handle_user_found(self, handler: GetUserByIdHandler, mock_repository: AsyncMock) -> None:
         """Handler should return user data when found."""
         mock_user = MagicMock()
         mock_user.model_dump.return_value = {"id": "user-123", "email": "test@example.com"}
@@ -61,9 +59,7 @@ class TestGetUserByIdHandler:
         assert result.unwrap()["id"] == "user-123"
 
     @pytest.mark.asyncio
-    async def test_handle_user_not_found(
-        self, handler: GetUserByIdHandler, mock_repository: AsyncMock
-    ) -> None:
+    async def test_handle_user_not_found(self, handler: GetUserByIdHandler, mock_repository: AsyncMock) -> None:
         """Handler should return None when user not found."""
         mock_repository.get_by_id.return_value = None
 
@@ -74,9 +70,7 @@ class TestGetUserByIdHandler:
         assert result.unwrap() is None
 
     @pytest.mark.asyncio
-    async def test_handle_exception(
-        self, handler: GetUserByIdHandler, mock_repository: AsyncMock
-    ) -> None:
+    async def test_handle_exception(self, handler: GetUserByIdHandler, mock_repository: AsyncMock) -> None:
         """Handler should return Err on exception."""
         mock_repository.get_by_id.side_effect = Exception("DB error")
 
@@ -101,18 +95,16 @@ class TestGetUserByEmailQuery:
 class TestGetUserByEmailHandler:
     """Tests for GetUserByEmailHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repository(self) -> AsyncMock:
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, mock_repository: AsyncMock) -> GetUserByEmailHandler:
         return GetUserByEmailHandler(repository=mock_repository)
 
     @pytest.mark.asyncio
-    async def test_handle_user_found(
-        self, handler: GetUserByEmailHandler, mock_repository: AsyncMock
-    ) -> None:
+    async def test_handle_user_found(self, handler: GetUserByEmailHandler, mock_repository: AsyncMock) -> None:
         """Handler should return user data when found."""
         mock_user = MagicMock()
         mock_user.model_dump.return_value = {"id": "user-123", "email": "test@example.com"}
@@ -125,9 +117,7 @@ class TestGetUserByEmailHandler:
         assert result.unwrap()["email"] == "test@example.com"
 
     @pytest.mark.asyncio
-    async def test_handle_user_not_found(
-        self, handler: GetUserByEmailHandler, mock_repository: AsyncMock
-    ) -> None:
+    async def test_handle_user_not_found(self, handler: GetUserByEmailHandler, mock_repository: AsyncMock) -> None:
         """Handler should return None when user not found."""
         mock_repository.get_by_email.return_value = None
 
@@ -138,9 +128,7 @@ class TestGetUserByEmailHandler:
         assert result.unwrap() is None
 
     @pytest.mark.asyncio
-    async def test_handle_exception(
-        self, handler: GetUserByEmailHandler, mock_repository: AsyncMock
-    ) -> None:
+    async def test_handle_exception(self, handler: GetUserByEmailHandler, mock_repository: AsyncMock) -> None:
         """Handler should return Err on exception."""
         mock_repository.get_by_email.side_effect = Exception("DB error")
 
@@ -167,18 +155,16 @@ class TestListUsersQuery:
 class TestListUsersHandler:
     """Tests for ListUsersHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_read_repository(self) -> AsyncMock:
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, mock_read_repository: AsyncMock) -> ListUsersHandler:
         return ListUsersHandler(read_repository=mock_read_repository)
 
     @pytest.mark.asyncio
-    async def test_handle_success(
-        self, handler: ListUsersHandler, mock_read_repository: AsyncMock
-    ) -> None:
+    async def test_handle_success(self, handler: ListUsersHandler, mock_read_repository: AsyncMock) -> None:
         """Handler should return list of users."""
         mock_read_repository.list_all.return_value = [
             {"id": "user-1"},
@@ -190,28 +176,20 @@ class TestListUsersHandler:
 
         assert result.is_ok()
         assert len(result.unwrap()) == 2
-        mock_read_repository.list_all.assert_called_once_with(
-            limit=10, offset=0, include_inactive=False
-        )
+        mock_read_repository.list_all.assert_called_once_with(limit=10, offset=0, include_inactive=False)
 
     @pytest.mark.asyncio
-    async def test_handle_pagination_offset(
-        self, handler: ListUsersHandler, mock_read_repository: AsyncMock
-    ) -> None:
+    async def test_handle_pagination_offset(self, handler: ListUsersHandler, mock_read_repository: AsyncMock) -> None:
         """Handler should calculate correct offset."""
         mock_read_repository.list_all.return_value = []
 
         query = ListUsersQuery(page=3, page_size=20)
         await handler.handle(query)
 
-        mock_read_repository.list_all.assert_called_once_with(
-            limit=20, offset=40, include_inactive=False
-        )
+        mock_read_repository.list_all.assert_called_once_with(limit=20, offset=40, include_inactive=False)
 
     @pytest.mark.asyncio
-    async def test_handle_exception(
-        self, handler: ListUsersHandler, mock_read_repository: AsyncMock
-    ) -> None:
+    async def test_handle_exception(self, handler: ListUsersHandler, mock_read_repository: AsyncMock) -> None:
         """Handler should return Err on exception."""
         mock_read_repository.list_all.side_effect = Exception("DB error")
 
@@ -236,18 +214,16 @@ class TestCountUsersQuery:
 class TestCountUsersHandler:
     """Tests for CountUsersHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_read_repository(self) -> AsyncMock:
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, mock_read_repository: AsyncMock) -> CountUsersHandler:
         return CountUsersHandler(read_repository=mock_read_repository)
 
     @pytest.mark.asyncio
-    async def test_handle_success(
-        self, handler: CountUsersHandler, mock_read_repository: AsyncMock
-    ) -> None:
+    async def test_handle_success(self, handler: CountUsersHandler, mock_read_repository: AsyncMock) -> None:
         """Handler should return user count."""
         mock_read_repository.count_all.return_value = 42
 
@@ -258,9 +234,7 @@ class TestCountUsersHandler:
         assert result.unwrap() == 42
 
     @pytest.mark.asyncio
-    async def test_handle_exception(
-        self, handler: CountUsersHandler, mock_read_repository: AsyncMock
-    ) -> None:
+    async def test_handle_exception(self, handler: CountUsersHandler, mock_read_repository: AsyncMock) -> None:
         """Handler should return Err on exception."""
         mock_read_repository.count_all.side_effect = Exception("DB error")
 

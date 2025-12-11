@@ -18,9 +18,7 @@ class TestSpecificationComposition:
         threshold_a=st.integers(),
         threshold_b=st.integers(),
     )
-    def test_and_spec_requires_both(
-        self, value: int, threshold_a: int, threshold_b: int
-    ) -> None:
+    def test_and_spec_requires_both(self, value: int, threshold_a: int, threshold_b: int) -> None:
         """
         **Feature: generic-fastapi-crud, Property 23: Specification Pattern Composition**
 
@@ -44,9 +42,7 @@ class TestSpecificationComposition:
         threshold_a=st.integers(),
         threshold_b=st.integers(),
     )
-    def test_or_spec_requires_either(
-        self, value: int, threshold_a: int, threshold_b: int
-    ) -> None:
+    def test_or_spec_requires_either(self, value: int, threshold_a: int, threshold_b: int) -> None:
         """
         **Feature: generic-fastapi-crud, Property 23: Specification Pattern Composition**
 
@@ -88,9 +84,7 @@ class TestSpecificationComposition:
         threshold_a=st.integers(),
         threshold_b=st.integers(),
     )
-    def test_operator_and_equals_and_spec(
-        self, value: int, threshold_a: int, threshold_b: int
-    ) -> None:
+    def test_operator_and_equals_and_spec(self, value: int, threshold_a: int, threshold_b: int) -> None:
         """
         The & operator SHALL produce the same result as and_spec.
         """
@@ -108,9 +102,7 @@ class TestSpecificationComposition:
         threshold_a=st.integers(),
         threshold_b=st.integers(),
     )
-    def test_operator_or_equals_or_spec(
-        self, value: int, threshold_a: int, threshold_b: int
-    ) -> None:
+    def test_operator_or_equals_or_spec(self, value: int, threshold_a: int, threshold_b: int) -> None:
         """
         The | operator SHALL produce the same result as or_spec.
         """
@@ -145,9 +137,7 @@ class TestSpecificationComposition:
         threshold_b=st.integers(),
         threshold_c=st.integers(),
     )
-    def test_complex_composition(
-        self, value: int, threshold_a: int, threshold_b: int, threshold_c: int
-    ) -> None:
+    def test_complex_composition(self, value: int, threshold_a: int, threshold_b: int, threshold_c: int) -> None:
         """
         Complex compositions SHALL evaluate correctly.
         (A AND B) OR C

@@ -2,6 +2,7 @@
 
 **Feature: python-api-base-2025-state-of-art**
 **Validates: Requirements 15.1, 15.2, 15.3**
+**Refactored: 2025 - Consolidated EventHandler to core.protocols**
 """
 
 import asyncio
@@ -11,22 +12,23 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Protocol, runtime_checkable
 
-# =============================================================================
-# Event Bus
-# =============================================================================
+# Import canonical EventHandler from core.protocols (Single Source of Truth)
+from core.protocols.application import EventHandler
 
-
-@runtime_checkable
-class EventHandler[TEvent](Protocol):
-    """Protocol for typed event handlers.
-
-    Type Parameters:
-        TEvent: The event type this handler processes.
-    """
-
-    async def handle(self, event: TEvent) -> None:
-        """Handle an event."""
-        ...
+# Re-export for backward compatibility
+__all__ = [
+    "AsyncMessageHandler",
+    "DeadLetter",
+    "DeadLetterQueue",
+    "EventBus",
+    "EventHandler",
+    "FilteredSubscription",
+    "InMemoryBroker",
+    "InMemoryDLQ",
+    "MessageBroker",
+    "MessageHandler",
+    "Subscription",
+]
 
 
 class EventBus[TEvent]:
@@ -61,9 +63,7 @@ class EventBus[TEvent]:
     ) -> None:
         """Unsubscribe handler from event type."""
         if event_type in self._handlers:
-            self._handlers[event_type] = [
-                h for h in self._handlers[event_type] if h != handler
-            ]
+            self._handlers[event_type] = [h for h in self._handlers[event_type] if h != handler]
 
     async def publish(self, event: TEvent) -> None:
         """Publish event to all subscribed handlers."""
@@ -114,7 +114,7 @@ class AsyncMessageHandler[TMessage, TResult](ABC):
 # =============================================================================
 
 
-@dataclass
+@dataclass(slots=True)
 class Subscription[TEvent]:
     """Type-safe event subscription.
 
@@ -234,7 +234,7 @@ class InMemoryBroker[TMessage]:
 # =============================================================================
 
 
-@dataclass
+@dataclass(slots=True)
 class DeadLetter[TMessage]:
     """A message that failed processing.
 

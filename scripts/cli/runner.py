@@ -25,7 +25,7 @@ def run_alembic(args: list[str], timeout: int = DEFAULT_TIMEOUT) -> int:
     Raises:
         CLITimeoutError: If command times out.
     """
-    cmd = [sys.executable, "-m", "alembic"] + args
+    cmd = [sys.executable, "-m", "alembic", *args]
 
     try:
         result = subprocess.run(
@@ -51,7 +51,7 @@ def run_pytest(args: list[str], timeout: int = DEFAULT_TIMEOUT) -> int:
     Raises:
         CLITimeoutError: If command times out.
     """
-    cmd = [sys.executable, "-m", "pytest"] + args
+    cmd = [sys.executable, "-m", "pytest", *args]
 
     try:
         result = subprocess.run(

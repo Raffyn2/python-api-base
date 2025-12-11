@@ -18,8 +18,11 @@ from core.shared.logging.config import (
 from core.shared.logging.correlation import (
     bind_contextvars,
     clear_contextvars,
+    clear_correlation_id,
+    generate_correlation_id,
     get_correlation_id,
     set_correlation_id,
+    unbind_contextvars,
 )
 from core.shared.logging.redaction import (
     PII_PATTERNS,
@@ -33,10 +36,13 @@ __all__ = [
     "RedactionProcessor",
     "bind_contextvars",
     "clear_contextvars",
+    "clear_correlation_id",
     # Config
     "configure_logging",
     # Correlation
+    "generate_correlation_id",
     "get_correlation_id",
     "get_logger",
     "set_correlation_id",
+    "unbind_contextvars",
 ]

@@ -3,7 +3,6 @@
 Tests for MetricsRegistry, get_registry, and set_registry.
 """
 
-import pytest
 from prometheus_client import CollectorRegistry
 
 from infrastructure.prometheus.config import PrometheusConfig
@@ -138,9 +137,7 @@ class TestMetricsRegistry:
         registry = CollectorRegistry()
         metrics = MetricsRegistry(registry=registry)
         buckets = (0.1, 0.5, 1.0, 5.0)
-        histogram = metrics.histogram(
-            "custom_buckets_histogram", "Test", buckets=buckets
-        )
+        histogram = metrics.histogram("custom_buckets_histogram", "Test", buckets=buckets)
         histogram.observe(0.3)
 
     def test_summary_creates_metric(self) -> None:

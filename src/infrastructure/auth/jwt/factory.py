@@ -75,6 +75,5 @@ def create_jwt_provider(config: JWTKeyConfig, **kwargs: Any) -> JWTAlgorithmProv
             raise InvalidKeyError("HS256 requires secret_key in configuration")
         return HS256Provider(secret_key=config.secret_key, **kwargs)
     raise InvalidKeyError(
-        f"Unsupported algorithm: {config.algorithm}. "
-        f"Supported algorithms: RS256, ES256, HS256"
+        f"Unsupported algorithm: {config.algorithm}. Supported algorithms: RS256, ES256, HS256",
     )

@@ -10,15 +10,14 @@ Demonstrates:
 **Refactored: Extracted from examples.py for one-class-per-file compliance**
 """
 
-import logging
-
+import structlog
 from sqlalchemy import and_, false, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domain.examples.item.entity import ItemExample, ItemExampleStatus, Money
 from infrastructure.db.models.examples import ItemExampleModel
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class ItemExampleRepository:
@@ -108,7 +107,7 @@ class ItemExampleRepository:
         self._session.add(model)
         await self._session.commit()
         await self._session.refresh(model)
-        logger.debug("Created ItemExample: %s", model.id)
+        logger.debug("Created ItemExample", item_id=model.id)
         return self._to_entity(model)
 
     async def update(self, entity: ItemExample) -> ItemExample:
@@ -135,7 +134,7 @@ class ItemExampleRepository:
 
             await self._session.commit()
             await self._session.refresh(model)
-            logger.debug("Updated ItemExample: %s", model.id)
+            logger.debug("Updated ItemExample", item_id=model.id)
             return self._to_entity(model)
 
         raise ValueError(f"ItemExample {entity.id} not found")

@@ -70,23 +70,15 @@ def _generate_entity_content(name: str, fields: list[tuple[str, str]]) -> str:
 
     if fields:
         field_lines = [
-            f'{fname}: {ftype} = SQLField(description="{fname.replace("_", " ").title()}")'
-            for fname, ftype in fields
+            f'{fname}: {ftype} = SQLField(description="{fname.replace("_", " ").title()}")' for fname, ftype in fields
         ]
         field_defs = "\n    ".join(field_lines)
 
-        update_lines = [
-            f"{fname}: {ftype} | None = SQLField(default=None)"
-            for fname, ftype in fields
-        ]
+        update_lines = [f"{fname}: {ftype} | None = SQLField(default=None)" for fname, ftype in fields]
         update_fields = "\n    ".join(update_lines)
     else:
-        field_defs = (
-            'name: str = SQLField(min_length=1, max_length=255, description="Name")'
-        )
-        update_fields = (
-            "name: str | None = SQLField(default=None, min_length=1, max_length=255)"
-        )
+        field_defs = 'name: str = SQLField(min_length=1, max_length=255, description="Name")'
+        update_fields = "name: str | None = SQLField(default=None, min_length=1, max_length=255)"
 
     # PEP8 import ordering: stdlib, third-party, local
     return f'''"""{pascal_name} domain entity."""
@@ -271,16 +263,10 @@ def entity(
     name: Annotated[str, typer.Argument(help="Entity name (snake_case)")],
     fields: Annotated[
         str,
-        typer.Option(
-            "--fields", "-f", help="Field definitions (e.g., 'name:str,price:float')"
-        ),
+        typer.Option("--fields", "-f", help="Field definitions (e.g., 'name:str,price:float')"),
     ] = "",
-    with_cache: Annotated[
-        bool, typer.Option("--with-cache", help="Add caching to use case")
-    ] = False,
-    dry_run: Annotated[
-        bool, typer.Option("--dry-run", help="Print without writing files")
-    ] = False,
+    with_cache: Annotated[bool, typer.Option("--with-cache", help="Add caching to use case")] = False,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Print without writing files")] = False,
 ) -> None:
     """Generate a new entity with CRUD scaffolding."""
     logger.debug(f"entity command called with name={name}, fields={fields}")
@@ -308,27 +294,14 @@ def entity(
     base_path = Path("src/my_app")
 
     files: dict[Path, str] = {
-        base_path
-        / "domain"
-        / "entities"
-        / f"{validated_name}.py": _generate_entity_content(
+        base_path / "domain" / "entities" / f"{validated_name}.py": _generate_entity_content(
             validated_name, parsed_fields
         ),
-        base_path
-        / "application"
-        / "mappers"
-        / f"{validated_name}_mapper.py": _generate_mapper_content(validated_name),
-        base_path
-        / "application"
-        / "use_cases"
-        / f"{validated_name}_use_case.py": _generate_use_case_content(
+        base_path / "application" / "mappers" / f"{validated_name}_mapper.py": _generate_mapper_content(validated_name),
+        base_path / "application" / "use_cases" / f"{validated_name}_use_case.py": _generate_use_case_content(
             validated_name, with_cache
         ),
-        base_path
-        / "adapters"
-        / "api"
-        / "routes"
-        / f"{validated_name}s.py": _generate_routes_content(validated_name),
+        base_path / "adapters" / "api" / "routes" / f"{validated_name}s.py": _generate_routes_content(validated_name),
     }
 
     for path, content in files.items():
@@ -340,9 +313,7 @@ def entity(
         else:
             path.parent.mkdir(parents=True, exist_ok=True)
             if path.exists():
-                typer.secho(
-                    f"⚠️  Skipping {path} (already exists)", fg=typer.colors.YELLOW
-                )
+                typer.secho(f"⚠️  Skipping {path} (already exists)", fg=typer.colors.YELLOW)
             else:
                 path.write_text(content)
                 typer.secho(f"✓ Created {path}", fg=typer.colors.GREEN)
@@ -351,7 +322,5 @@ def entity(
         typer.echo(f"\n✓ Entity '{pascal_name}' scaffolding complete!")
         typer.echo("\nNext steps:")
         typer.echo("  1. Add router to main.py")
-        typer.echo(
-            f"  2. Create migration: api-cli db revision -m 'add {validated_name}s'"
-        )
+        typer.echo(f"  2. Create migration: api-cli db revision -m 'add {validated_name}s'")
         typer.echo("  3. Configure repository in DI container (see TODO comments)")

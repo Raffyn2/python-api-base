@@ -69,7 +69,6 @@ class TestCircuitBreaker:
         cb = CircuitBreaker()
         assert cb.can_execute() is True
 
-
     def test_cannot_execute_when_open(self) -> None:
         """Test cannot execute when circuit is open."""
         cb = CircuitBreaker(failure_threshold=1, recovery_timeout=60)
@@ -110,14 +109,14 @@ class TestCarbonIntensityClient:
         """Test getting default carbon intensity."""
         settings = SustainabilitySettings(
             default_region="us-east-1",
-            default_carbon_intensity_gco2_per_kwh=Decimal("450"),
+            default_carbon_intensity_gco2_per_kwh=Decimal(450),
         )
         client = CarbonIntensityClient(settings)
 
         intensity = client._get_default_intensity()
 
         assert intensity.region == "us-east-1"
-        assert intensity.intensity_gco2_per_kwh == Decimal("450")
+        assert intensity.intensity_gco2_per_kwh == Decimal(450)
         assert intensity.is_default is True
         assert intensity.source == "default"
 
@@ -139,9 +138,7 @@ class TestCarbonIntensityClient:
         settings = SustainabilitySettings()
         client = CarbonIntensityClient(settings)
 
-        with patch.object(
-            client, "_fetch_intensity", side_effect=Exception("API Error")
-        ):
+        with patch.object(client, "_fetch_intensity", side_effect=Exception("API Error")):
             intensity = await client.get_carbon_intensity("us-east-1")
 
         assert intensity.is_default is True
@@ -256,7 +253,7 @@ class TestPrometheusClient:
 
             assert len(metrics) == 1
             assert metrics[0].namespace == "default"
-            assert metrics[0].energy_joules == Decimal("3600000")
+            assert metrics[0].energy_joules == Decimal(3600000)
 
     @pytest.mark.asyncio
     async def test_get_kepler_energy_metrics_with_namespace(self) -> None:

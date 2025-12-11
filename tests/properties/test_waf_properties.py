@@ -74,12 +74,8 @@ class TestWAFRuleProperties:
 
     @settings(max_examples=20)
     @given(
-        rule_id=st.text(
-            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        name=st.text(
-            min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789 "
-        ),
+        rule_id=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        name=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789 "),
     )
     def test_rule_preserves_metadata(self, rule_id: str, name: str) -> None:
         """Rule SHALL preserve id and name."""
@@ -425,9 +421,7 @@ class TestWAFRequestProperties:
     @settings(max_examples=20)
     @given(
         method=st.sampled_from(["GET", "POST", "PUT", "DELETE"]),
-        path=st.text(
-            min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ).map(lambda x: f"/{x}"),
+        path=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789").map(lambda x: f"/{x}"),
     )
     def test_request_preserves_method_and_path(self, method: str, path: str) -> None:
         """WAFRequest SHALL preserve method and path."""

@@ -11,8 +11,8 @@ from application.examples.pedido.commands.commands import (
 )
 
 __all__ = [
-    "CreatePedidoCommand",
     "AddItemToPedidoCommand",
-    "ConfirmPedidoCommand",
     "CancelPedidoCommand",
+    "ConfirmPedidoCommand",
+    "CreatePedidoCommand",
 ]

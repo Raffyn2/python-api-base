@@ -12,7 +12,14 @@ from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Self
+
+import structlog
+
+logger = structlog.get_logger(__name__)
+
+# Security limits to prevent ReDoS attacks
+MAX_REGEX_LENGTH = 500
 
 
 class HttpMethod(Enum):
@@ -28,7 +35,7 @@ class HttpMethod(Enum):
     ALL = "*"
 
 
-@dataclass
+@dataclass(slots=True)
 class RouteInfo:
     """Information about the current route."""
 
@@ -66,15 +73,31 @@ class PathCondition(Condition):
     def __init__(self, pattern: str, regex: bool = False) -> None:
         self._pattern = pattern
         self._regex = regex
-        if regex:
-            self._compiled = re.compile(pattern)
-        else:
-            # Convert glob-like pattern to regex
-            regex_pattern = pattern.replace("*", ".*").replace("?", ".")
-            self._compiled = re.compile(f"^{regex_pattern}$")
+        self._compiled: re.Pattern | None = None
+
+        # Validate pattern length to prevent ReDoS
+        if len(pattern) > MAX_REGEX_LENGTH:
+            logger.warning(
+                "path_pattern_too_long",
+                pattern_length=len(pattern),
+                max_length=MAX_REGEX_LENGTH,
+            )
+            return
+
+        try:
+            if regex:
+                self._compiled = re.compile(pattern)
+            else:
+                # Convert glob-like pattern to regex
+                regex_pattern = pattern.replace("*", ".*").replace("?", ".")
+                self._compiled = re.compile(f"^{regex_pattern}$")
+        except re.error:
+            logger.warning("invalid_path_pattern", pattern=pattern[:50], exc_info=True)
 
     def matches(self, route_info: RouteInfo) -> bool:
         """Check if path matches pattern."""
+        if self._compiled is None:
+            return False
         return bool(self._compiled.match(route_info.path))
 
 
@@ -174,7 +197,7 @@ type MiddlewareFunc[RequestT, ResponseT] = Callable[
 ]
 
 
-@dataclass
+@dataclass(slots=True)
 class ConditionalMiddleware[RequestT, ResponseT]:
     """Middleware that executes conditionally based on route info."""
 
@@ -209,15 +232,13 @@ class ConditionalMiddlewareRegistry[RequestT, ResponseT]:
         middleware: MiddlewareFunc[RequestT, ResponseT],
         condition: Condition,
         name: str = "",
-    ) -> "ConditionalMiddlewareRegistry[RequestT, ResponseT]":
+    ) -> Self:
         """Register a conditional middleware."""
         self._middlewares.append(
             ConditionalMiddleware(
                 middleware=middleware,
                 condition=condition,
-                name=name or middleware.__name__
-                if hasattr(middleware, "__name__")
-                else "",
+                name=name or middleware.__name__ if hasattr(middleware, "__name__") else "",
             )
         )
         return self
@@ -227,7 +248,7 @@ class ConditionalMiddlewareRegistry[RequestT, ResponseT]:
         pattern: str,
         middleware: MiddlewareFunc[RequestT, ResponseT],
         name: str = "",
-    ) -> "ConditionalMiddlewareRegistry[RequestT, ResponseT]":
+    ) -> Self:
         """Register middleware for path pattern."""
         return self.register(middleware, PathCondition(pattern), name)
 
@@ -236,7 +257,7 @@ class ConditionalMiddlewareRegistry[RequestT, ResponseT]:
         methods: list[HttpMethod],
         middleware: MiddlewareFunc[RequestT, ResponseT],
         name: str = "",
-    ) -> "ConditionalMiddlewareRegistry[RequestT, ResponseT]":
+    ) -> Self:
         """Register middleware for specific HTTP methods."""
         return self.register(middleware, MethodCondition(*methods), name)
 
@@ -244,7 +265,7 @@ class ConditionalMiddlewareRegistry[RequestT, ResponseT]:
         self,
         middleware: MiddlewareFunc[RequestT, ResponseT],
         name: str = "",
-    ) -> "ConditionalMiddlewareRegistry[RequestT, ResponseT]":
+    ) -> Self:
         """Register middleware for /api/* paths."""
         return self.register(middleware, PathCondition("/api/*"), name)
 
@@ -253,7 +274,7 @@ class ConditionalMiddlewareRegistry[RequestT, ResponseT]:
         pattern: str,
         middleware: MiddlewareFunc[RequestT, ResponseT],
         name: str = "",
-    ) -> "ConditionalMiddlewareRegistry[RequestT, ResponseT]":
+    ) -> Self:
         """Register middleware for all paths except pattern."""
         return self.register(middleware, ~PathCondition(pattern), name)
 
@@ -262,12 +283,15 @@ class ConditionalMiddlewareRegistry[RequestT, ResponseT]:
         request: RequestT,
         route_info: RouteInfo,
         final_handler: Callable[[RequestT], Awaitable[ResponseT]],
+        correlation_id: str | None = None,
     ) -> ResponseT:
         """Execute all matching middlewares."""
         handler = final_handler
+        matching_count = 0
 
         for mw in reversed(self._middlewares):
             if mw.enabled and mw.condition.matches(route_info):
+                matching_count += 1
                 current_mw = mw.middleware
                 current_handler = handler
 
@@ -282,17 +306,20 @@ class ConditionalMiddlewareRegistry[RequestT, ResponseT]:
 
                 handler = await make_handler(current_mw, current_handler)
 
+        if matching_count > 0:
+            logger.debug(
+                "conditional_middleware_executed",
+                correlation_id=correlation_id,
+                path=route_info.path,
+                method=route_info.method.value,
+                matching_middlewares=matching_count,
+            )
+
         return await handler(request)
 
-    def get_matching(
-        self, route_info: RouteInfo
-    ) -> list[ConditionalMiddleware[RequestT, ResponseT]]:
+    def get_matching(self, route_info: RouteInfo) -> list[ConditionalMiddleware[RequestT, ResponseT]]:
         """Get all middlewares matching the route."""
-        return [
-            mw
-            for mw in self._middlewares
-            if mw.enabled and mw.condition.matches(route_info)
-        ]
+        return [mw for mw in self._middlewares if mw.enabled and mw.condition.matches(route_info)]
 
     def __len__(self) -> int:
         return len(self._middlewares)

@@ -88,9 +88,7 @@ class TestRateLimitingProperties:
     )
     @settings(max_examples=100)
     @pytest.mark.asyncio
-    async def test_rate_limiter_tracks_requests(
-        self, client_id: str, num_requests: int
-    ) -> None:
+    async def test_rate_limiter_tracks_requests(self, client_id: str, num_requests: int) -> None:
         """Test rate limiter correctly tracks request count.
 
         *For any* client making N requests, the remaining count
@@ -208,9 +206,7 @@ class TestCircuitBreakerProperties:
     )
     @settings(max_examples=100)
     @pytest.mark.asyncio
-    async def test_circuit_opens_at_threshold(
-        self, failure_threshold: int, num_failures: int
-    ) -> None:
+    async def test_circuit_opens_at_threshold(self, failure_threshold: int, num_failures: int) -> None:
         """Test circuit opens exactly at failure threshold.
 
         *For any* threshold N, the circuit should open after

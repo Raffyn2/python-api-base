@@ -11,16 +11,19 @@ from core.types.identity.id_types import ULID, UUID, UUID7, EntityId
 
 class ULIDModel(BaseModel):
     """Model with ULID field."""
+
     id: ULID
 
 
 class UUIDModel(BaseModel):
     """Model with UUID field."""
+
     id: UUID
 
 
 class UUID7Model(BaseModel):
     """Model with UUID7 field."""
+
     id: UUID7
 
 
@@ -78,10 +81,10 @@ class TestUUID:
         with pytest.raises(ValidationError):
             UUIDModel(id="550e8400-e29b-41d4-a716-44665544000")
 
-    def test_invalid_uuid_uppercase(self) -> None:
-        """Test UUID with uppercase is rejected (pattern requires lowercase)."""
-        with pytest.raises(ValidationError):
-            UUIDModel(id="550E8400-E29B-41D4-A716-446655440000")
+    def test_valid_uuid_uppercase(self) -> None:
+        """Test UUID with uppercase is accepted (pattern is case-insensitive)."""
+        model = UUIDModel(id="550E8400-E29B-41D4-A716-446655440000")
+        assert model.id == "550E8400-E29B-41D4-A716-446655440000"
 
 
 class TestUUID7:
@@ -121,8 +124,9 @@ class TestEntityId:
 
     def test_entity_id_in_function(self) -> None:
         """Test EntityId can be used in function signatures."""
+
         def get_entity(id: EntityId) -> str:
             return f"Entity: {id}"
-        
+
         assert get_entity("abc") == "Entity: abc"
         assert get_entity(123) == "Entity: 123"

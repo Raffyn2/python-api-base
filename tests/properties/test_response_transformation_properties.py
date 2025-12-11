@@ -57,9 +57,7 @@ class TestTransformationContextProperties:
         locale=st.sampled_from(["en", "es", "fr", "de", "pt"]),
     )
     @settings(max_examples=100)
-    def test_context_preserves_values(
-        self, api_version: str, client_type: str, locale: str
-    ) -> None:
+    def test_context_preserves_values(self, api_version: str, client_type: str, locale: str) -> None:
         """Property: Context preserves all values."""
         context = TransformationContext(
             api_version=api_version,
@@ -100,7 +98,7 @@ class TestFieldRenameTransformerProperties:
         if not data:
             return
 
-        old_key = list(data.keys())[0]
+        old_key = next(iter(data.keys()))
         new_key = f"renamed_{old_key}"
         renames = {old_key: new_key}
 
@@ -132,7 +130,7 @@ class TestFieldRemoveTransformerProperties:
         if not data:
             return
 
-        key_to_remove = list(data.keys())[0]
+        key_to_remove = next(iter(data.keys()))
         transformer = FieldRemoveTransformer({key_to_remove})
         context = TransformationContext()
         result = transformer.transform(data, context)
@@ -197,9 +195,7 @@ class TestFieldTransformTransformerProperties:
 
     @given(data=dict_data_strategy)
     @settings(max_examples=100)
-    def test_transform_preserves_untransformed_fields(
-        self, data: dict[str, int]
-    ) -> None:
+    def test_transform_preserves_untransformed_fields(self, data: dict[str, int]) -> None:
         """Property: Untransformed fields are preserved."""
         transformer = FieldTransformTransformer({})
         context = TransformationContext()
@@ -321,19 +317,12 @@ class TestTransformationBuilderProperties:
     def test_builder_fluent_interface(self) -> None:
         """Property: Builder methods return builder for chaining."""
         builder = TransformationBuilder()
-        result = (
-            builder.rename_fields({"a": "b"}).remove_fields({"c"}).add_fields({"d": 1})
-        )
+        result = builder.rename_fields({"a": "b"}).remove_fields({"c"}).add_fields({"d": 1})
         assert result is builder
 
     def test_builder_creates_working_transformer(self) -> None:
         """Property: Builder creates working transformer."""
-        transformer = (
-            TransformationBuilder()
-            .rename_fields({"old": "new"})
-            .add_fields({"added": 42})
-            .build()
-        )
+        transformer = TransformationBuilder().rename_fields({"old": "new"}).add_fields({"added": 42}).build()
 
         context = TransformationContext()
         result = transformer.transform({"old": 1}, context)

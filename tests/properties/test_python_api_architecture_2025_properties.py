@@ -45,9 +45,7 @@ SAFE_ALPHABET = st.characters(whitelist_categories=("L", "N"))
 create_dto_strategy = st.builds(
     SampleCreateDTO,
     name=st.text(min_size=1, max_size=50, alphabet=SAFE_ALPHABET),
-    value=st.floats(
-        min_value=0, max_value=10000, allow_nan=False, allow_infinity=False
-    ),
+    value=st.floats(min_value=0, max_value=10000, allow_nan=False, allow_infinity=False),
 )
 
 
@@ -60,9 +58,7 @@ class TestRepositoryCRUDRoundTrip:
         import asyncio
 
         async def run():
-            repo = InMemoryRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
-                SampleEntity
-            )
+            repo = InMemoryRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
             created = await repo.create(create_data)
             assert created.id is not None
             retrieved = await repo.get_by_id(created.id)
@@ -78,14 +74,10 @@ class TestMapperBidirectionalConsistency:
     @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
     @given(
         name=st.text(min_size=1, max_size=50, alphabet=SAFE_ALPHABET),
-        value=st.floats(
-            min_value=0, max_value=10000, allow_nan=False, allow_infinity=False
-        ),
+        value=st.floats(min_value=0, max_value=10000, allow_nan=False, allow_infinity=False),
     )
     def test_entity_to_dto_round_trip(self, name: str, value: float) -> None:
-        mapper = AutoMapper[SampleEntity, SampleResponseDTO](
-            SampleEntity, SampleResponseDTO
-        )
+        mapper = AutoMapper[SampleEntity, SampleResponseDTO](SampleEntity, SampleResponseDTO)
         entity = SampleEntity(id="test-id", name=name, value=value)
         dto = mapper.to_dto(entity)
         assert dto.name == entity.name
@@ -138,11 +130,7 @@ class TestAnnotatedTypeValidation:
     """**Feature: python-api-architecture-2025, Property 5: Annotated Type Validation**"""
 
     @settings(max_examples=100)
-    @given(
-        ulid=st.text(
-            alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ", min_size=26, max_size=26
-        )
-    )
+    @given(ulid=st.text(alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ", min_size=26, max_size=26))
     def test_valid_ulid_passes_validation(self, ulid: str) -> None:
         from pydantic import BaseModel
 
@@ -177,9 +165,7 @@ class TestSpecificationBooleanAlgebra:
         threshold_a=st.integers(-100, 100),
         threshold_b=st.integers(-100, 100),
     )
-    def test_and_specification(
-        self, value: int, threshold_a: int, threshold_b: int
-    ) -> None:
+    def test_and_specification(self, value: int, threshold_a: int, threshold_b: int) -> None:
         from core.base.specification import PredicateSpecification
 
         spec_a = PredicateSpecification[int](lambda x, ta=threshold_a: x > ta)

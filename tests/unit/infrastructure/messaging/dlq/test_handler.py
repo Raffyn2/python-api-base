@@ -53,7 +53,7 @@ class TestDLQEntry:
             retry_count=3,
         )
         result = entry.to_dict()
-        
+
         assert result["original_queue"] == "orders"
         assert result["message_id"] == "msg-123"
         assert result["payload"] == {"order_id": "456"}
@@ -76,7 +76,7 @@ class TestDLQHandler:
             error_message="Failed",
         )
         await handler.add(entry)
-        
+
         count = await handler.count()
         assert count == 1
 
@@ -84,14 +84,14 @@ class TestDLQHandler:
     async def test_get_all(self) -> None:
         """Test getting all entries."""
         handler = DLQHandler()
-        
+
         for i in range(3):
             entry = DLQEntry(
                 original_queue="orders",
                 message_id=f"msg-{i}",
             )
             await handler.add(entry)
-        
+
         entries = await handler.get_all()
         assert len(entries) == 3
 
@@ -99,14 +99,14 @@ class TestDLQHandler:
     async def test_get_all_with_limit(self) -> None:
         """Test getting entries with limit."""
         handler = DLQHandler()
-        
+
         for i in range(10):
             entry = DLQEntry(
                 original_queue="orders",
                 message_id=f"msg-{i}",
             )
             await handler.add(entry)
-        
+
         entries = await handler.get_all(limit=5)
         assert len(entries) == 5
 
@@ -119,12 +119,12 @@ class TestDLQHandler:
             message_id="msg-123",
         )
         await handler.add(entry)
-        
+
         result = await handler.retry(entry.id)
-        
+
         assert result is not None
         assert result.id == entry.id
-        
+
         # Entry should be removed from DLQ
         count = await handler.count()
         assert count == 0
@@ -145,9 +145,9 @@ class TestDLQHandler:
             message_id="msg-123",
         )
         await handler.add(entry)
-        
+
         result = await handler.delete(entry.id)
-        
+
         assert result is True
         count = await handler.count()
         assert count == 0

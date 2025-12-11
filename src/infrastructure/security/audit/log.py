@@ -5,17 +5,18 @@
 """
 
 import json
-import logging
 import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Self
+
+import structlog
 
 from core.shared.utils.ids import generate_ulid
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class AuditAction(str, Enum):
@@ -25,8 +26,8 @@ class AuditAction(str, Enum):
     LOGIN = "login"
     LOGOUT = "logout"
     LOGIN_FAILED = "login_failed"
-    TOKEN_REFRESH = "token_refresh"  # noqa: S105 - Enum value, not password
-    PASSWORD_CHANGE = "password_change"  # noqa: S105 - Enum value, not password
+    TOKEN_REFRESH = "token_refresh"
+    PASSWORD_CHANGE = "password_change"
 
     # Authorization actions
     PERMISSION_DENIED = "permission_denied"
@@ -100,7 +101,7 @@ class AuditEntry:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "AuditEntry":
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create entry from dictionary.
 
         Args:
@@ -146,12 +147,12 @@ class AuditEntry:
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> "AuditEntry":
+    def from_json(cls, json_str: str) -> Self:
         """Deserialize entry from JSON string."""
         return cls.from_dict(json.loads(json_str))
 
 
-@dataclass
+@dataclass(slots=True)
 class AuditFilters:
     """Filters for querying audit logs.
 
@@ -272,8 +273,12 @@ class InMemoryAuditLogger(AuditLogger):
                 self._entries = self._entries[-self._max_entries :]
 
         logger.debug(
-            f"Audit: {entry.action} on {entry.resource_type} "
-            f"by {entry.user_id or 'anonymous'} - {entry.result}"
+            "Audit entry logged",
+            operation="AUDIT_LOG",
+            action=entry.action,
+            resource_type=entry.resource_type,
+            user_id=entry.user_id or "anonymous",
+            result=entry.result,
         )
 
     async def query(self, filters: AuditFilters) -> list[AuditEntry]:

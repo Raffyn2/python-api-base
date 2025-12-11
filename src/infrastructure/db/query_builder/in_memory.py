@@ -6,7 +6,7 @@
 
 import re
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, ClassVar, Self
 
 from pydantic import BaseModel
 
@@ -33,7 +33,7 @@ class InMemoryQueryBuilder[T: BaseModel](QueryBuilder[T]):
     """In-memory implementation of QueryBuilder for testing."""
 
     # Comparison strategy map - reduces cyclomatic complexity
-    _COMPARATORS: dict[ComparisonOperator, ComparisonFn] = {
+    _COMPARATORS: ClassVar[dict[ComparisonOperator, ComparisonFn]] = {
         ComparisonOperator.EQ: lambda v, t: v == t,
         ComparisonOperator.NE: lambda v, t: v != t,
         ComparisonOperator.GT: lambda v, t: v is not None and v > t,
@@ -55,12 +55,12 @@ class InMemoryQueryBuilder[T: BaseModel](QueryBuilder[T]):
         super().__init__()
         self._data: list[T] = list(data) if data else []
 
-    def set_data(self, data: Sequence[T]) -> "InMemoryQueryBuilder[T]":
+    def set_data(self, data: Sequence[T]) -> Self:
         """Set the data source."""
         self._data = list(data)
         return self
 
-    def _create_sub_builder(self) -> "InMemoryQueryBuilder[T]":
+    def _create_sub_builder(self) -> Self:
         """Create a new instance for sub-queries."""
         return InMemoryQueryBuilder(self._data)
 
@@ -95,17 +95,13 @@ class InMemoryQueryBuilder[T: BaseModel](QueryBuilder[T]):
         placeholder_underscore = "\x00UNDERSCORE\x00"
 
         # Replace SQL wildcards with placeholders
-        temp = pattern.replace("%", placeholder_percent).replace(
-            "_", placeholder_underscore
-        )
+        temp = pattern.replace("%", placeholder_percent).replace("_", placeholder_underscore)
 
         # Escape all special regex characters
         escaped = re.escape(temp)
 
         # Convert placeholders back to regex patterns
-        regex = escaped.replace(placeholder_percent, ".*").replace(
-            placeholder_underscore, "."
-        )
+        regex = escaped.replace(placeholder_percent, ".*").replace(placeholder_underscore, ".")
         return bool(re.match(f"^{regex}$", value))
 
     def _evaluate_group(self, item: T, group: ConditionGroup) -> bool:
@@ -133,17 +129,13 @@ class InMemoryQueryBuilder[T: BaseModel](QueryBuilder[T]):
         filtered = list(items)
 
         if not self._conditions.is_empty():
-            filtered = [
-                i for i in filtered if self._evaluate_group(i, self._conditions)
-            ]
+            filtered = [i for i in filtered if self._evaluate_group(i, self._conditions)]
 
         if self._specification:
             filtered = [i for i in filtered if self._specification.is_satisfied_by(i)]
 
         if not self._options.include_deleted:
-            filtered = [
-                i for i in filtered if not (hasattr(i, "is_deleted") and i.is_deleted)
-            ]
+            filtered = [i for i in filtered if not (hasattr(i, "is_deleted") and i.is_deleted)]
 
         return filtered
 
@@ -167,9 +159,7 @@ class InMemoryQueryBuilder[T: BaseModel](QueryBuilder[T]):
         total = len(filtered)
 
         sorted_items = self._sort_items(filtered)
-        paginated = sorted_items[
-            self._options.skip : self._options.skip + self._options.limit
-        ]
+        paginated = sorted_items[self._options.skip : self._options.skip + self._options.limit]
 
         has_more = self._options.skip + len(paginated) < total
 

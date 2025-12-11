@@ -4,8 +4,6 @@ Tests Permission, PermissionSet, StandardResource, StandardAction,
 and create_crud_permissions.
 """
 
-from enum import Enum
-
 import pytest
 
 from infrastructure.rbac.permission import (
@@ -71,7 +69,7 @@ class TestPermission:
             resource=StandardResource.USER,
             action=StandardAction.READ,
         )
-        
+
         assert perm.resource == StandardResource.USER
         assert perm.action == StandardAction.READ
         assert perm.conditions is None
@@ -82,7 +80,7 @@ class TestPermission:
             resource=StandardResource.DOCUMENT,
             action=StandardAction.CREATE,
         )
-        
+
         assert str(perm) == "document:create"
 
     def test_hash(self) -> None:
@@ -95,7 +93,7 @@ class TestPermission:
             resource=StandardResource.USER,
             action=StandardAction.READ,
         )
-        
+
         assert hash(perm1) == hash(perm2)
 
     def test_matches_true(self) -> None:
@@ -104,7 +102,7 @@ class TestPermission:
             resource=StandardResource.USER,
             action=StandardAction.READ,
         )
-        
+
         assert perm.matches(StandardResource.USER, StandardAction.READ) is True
 
     def test_matches_false_resource(self) -> None:
@@ -113,7 +111,7 @@ class TestPermission:
             resource=StandardResource.USER,
             action=StandardAction.READ,
         )
-        
+
         assert perm.matches(StandardResource.ROLE, StandardAction.READ) is False
 
     def test_matches_false_action(self) -> None:
@@ -122,7 +120,7 @@ class TestPermission:
             resource=StandardResource.USER,
             action=StandardAction.READ,
         )
-        
+
         assert perm.matches(StandardResource.USER, StandardAction.DELETE) is False
 
     def test_with_condition(self) -> None:
@@ -131,9 +129,9 @@ class TestPermission:
             resource=StandardResource.DOCUMENT,
             action=StandardAction.READ,
         )
-        
+
         perm_with_cond = perm.with_condition("own")
-        
+
         assert perm_with_cond.conditions == frozenset({"own"})
         assert perm.conditions is None  # Original unchanged
 
@@ -143,10 +141,10 @@ class TestPermission:
             resource=StandardResource.DOCUMENT,
             action=StandardAction.READ,
         )
-        
+
         perm1 = perm.with_condition("own")
         perm2 = perm1.with_condition("department")
-        
+
         assert perm2.conditions == frozenset({"own", "department"})
 
     def test_immutability(self) -> None:
@@ -155,7 +153,7 @@ class TestPermission:
             resource=StandardResource.USER,
             action=StandardAction.READ,
         )
-        
+
         with pytest.raises(AttributeError):
             perm.resource = StandardResource.ROLE  # type: ignore[misc]
 
@@ -166,7 +164,7 @@ class TestPermissionSet:
     def test_empty_set(self) -> None:
         """Test empty permission set."""
         perm_set: PermissionSet[StandardResource, StandardAction] = PermissionSet()
-        
+
         assert len(perm_set) == 0
 
     def test_add_permission(self) -> None:
@@ -176,9 +174,9 @@ class TestPermissionSet:
             resource=StandardResource.USER,
             action=StandardAction.READ,
         )
-        
+
         perm_set.add(perm)
-        
+
         assert len(perm_set) == 1
         assert perm in perm_set
 
@@ -189,9 +187,9 @@ class TestPermissionSet:
             action=StandardAction.READ,
         )
         perm_set: PermissionSet[StandardResource, StandardAction] = PermissionSet({perm})
-        
+
         perm_set.remove(perm)
-        
+
         assert len(perm_set) == 0
 
     def test_has_permission(self) -> None:
@@ -201,7 +199,7 @@ class TestPermissionSet:
             action=StandardAction.READ,
         )
         perm_set: PermissionSet[StandardResource, StandardAction] = PermissionSet({perm})
-        
+
         assert perm_set.has(StandardResource.USER, StandardAction.READ) is True
         assert perm_set.has(StandardResource.USER, StandardAction.DELETE) is False
 
@@ -212,7 +210,7 @@ class TestPermissionSet:
             action=StandardAction.READ,
         )
         perm_set: PermissionSet[StandardResource, StandardAction] = PermissionSet({perm})
-        
+
         assert perm in perm_set
 
     def test_iteration(self) -> None:
@@ -220,21 +218,21 @@ class TestPermissionSet:
         perm1 = Permission(resource=StandardResource.USER, action=StandardAction.READ)
         perm2 = Permission(resource=StandardResource.ROLE, action=StandardAction.READ)
         perm_set: PermissionSet[StandardResource, StandardAction] = PermissionSet({perm1, perm2})
-        
+
         perms = list(perm_set)
-        
+
         assert len(perms) == 2
 
     def test_union(self) -> None:
         """Test union of permission sets."""
         perm1 = Permission(resource=StandardResource.USER, action=StandardAction.READ)
         perm2 = Permission(resource=StandardResource.ROLE, action=StandardAction.READ)
-        
+
         set1: PermissionSet[StandardResource, StandardAction] = PermissionSet({perm1})
         set2: PermissionSet[StandardResource, StandardAction] = PermissionSet({perm2})
-        
+
         union = set1 | set2
-        
+
         assert len(union) == 2
         assert perm1 in union
         assert perm2 in union
@@ -243,12 +241,12 @@ class TestPermissionSet:
         """Test intersection of permission sets."""
         perm1 = Permission(resource=StandardResource.USER, action=StandardAction.READ)
         perm2 = Permission(resource=StandardResource.ROLE, action=StandardAction.READ)
-        
+
         set1: PermissionSet[StandardResource, StandardAction] = PermissionSet({perm1, perm2})
         set2: PermissionSet[StandardResource, StandardAction] = PermissionSet({perm1})
-        
+
         intersection = set1 & set2
-        
+
         assert len(intersection) == 1
         assert perm1 in intersection
 
@@ -259,35 +257,35 @@ class TestCreateCrudPermissions:
     def test_creates_five_permissions(self) -> None:
         """Test creates CRUD + list permissions."""
         perms = create_crud_permissions(StandardResource.USER)
-        
+
         assert len(perms) == 5
 
     def test_has_create(self) -> None:
         """Test has CREATE permission."""
         perms = create_crud_permissions(StandardResource.USER)
-        
+
         assert perms.has(StandardResource.USER, StandardAction.CREATE)
 
     def test_has_read(self) -> None:
         """Test has READ permission."""
         perms = create_crud_permissions(StandardResource.USER)
-        
+
         assert perms.has(StandardResource.USER, StandardAction.READ)
 
     def test_has_update(self) -> None:
         """Test has UPDATE permission."""
         perms = create_crud_permissions(StandardResource.USER)
-        
+
         assert perms.has(StandardResource.USER, StandardAction.UPDATE)
 
     def test_has_delete(self) -> None:
         """Test has DELETE permission."""
         perms = create_crud_permissions(StandardResource.USER)
-        
+
         assert perms.has(StandardResource.USER, StandardAction.DELETE)
 
     def test_has_list(self) -> None:
         """Test has LIST permission."""
         perms = create_crud_permissions(StandardResource.USER)
-        
+
         assert perms.has(StandardResource.USER, StandardAction.LIST)

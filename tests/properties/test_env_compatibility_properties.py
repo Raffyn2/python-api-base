@@ -14,9 +14,7 @@ except ImportError:
 
 
 # Strategy for environment variable values
-env_value_strategy = st.text(
-    min_size=1, max_size=100, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_./:"
-)
+env_value_strategy = st.text(min_size=1, max_size=100, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_./:")
 port_strategy = st.integers(min_value=1, max_value=65535)
 bool_strategy = st.sampled_from(["true", "false", "True", "False", "1", "0"])
 
@@ -25,11 +23,7 @@ class TestEnvironmentVariableCompatibility:
     """Property tests for environment variable backward compatibility."""
 
     @settings(max_examples=20)
-    @given(
-        app_name=st.text(
-            min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz_-"
-        )
-    )
+    @given(app_name=st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz_-"))
     def test_app_name_env_var(self, app_name: str, monkeypatch) -> None:
         """
         **Feature: architecture-restructuring-2025, Property 16: Environment Variable Backward Compatibility**

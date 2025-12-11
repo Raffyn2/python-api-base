@@ -112,7 +112,7 @@ class TestFileValidationRules:
 class TestConfigurableFileValidator:
     """Tests for ConfigurableFileValidator."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def rules(self) -> FileValidationRules:
         """Create validation rules."""
         return FileValidationRules(
@@ -122,7 +122,7 @@ class TestConfigurableFileValidator:
             min_size_bytes=10,
         )
 
-    @pytest.fixture
+    @pytest.fixture()
     def validator(self, rules: FileValidationRules) -> ConfigurableFileValidator[None]:
         """Create validator."""
         return ConfigurableFileValidator[None](rules)
@@ -166,9 +166,7 @@ class TestConfigurableFileValidator:
         assert result.is_err()
         assert "too large" in result.error
 
-    def test_extension_not_allowed(
-        self, validator: ConfigurableFileValidator[None]
-    ) -> None:
+    def test_extension_not_allowed(self, validator: ConfigurableFileValidator[None]) -> None:
         """Test disallowed extension fails."""
         file_info = FileInfo(
             filename="test.exe",
@@ -181,9 +179,7 @@ class TestConfigurableFileValidator:
         assert result.is_err()
         assert "Extension not allowed" in result.error
 
-    def test_content_type_not_allowed(
-        self, validator: ConfigurableFileValidator[None]
-    ) -> None:
+    def test_content_type_not_allowed(self, validator: ConfigurableFileValidator[None]) -> None:
         """Test disallowed content type fails."""
         file_info = FileInfo(
             filename="test.txt",
@@ -215,12 +211,12 @@ class TestConfigurableFileValidator:
 class TestFileUploadHandler:
     """Tests for FileUploadHandler."""
 
-    class TestMetadata(BaseModel):
-        """Test metadata model."""
+    class SampleMetadata(BaseModel):
+        """Sample metadata model for testing."""
 
         description: str
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_storage(self) -> AsyncMock:
         """Create mock storage."""
         storage = AsyncMock()
@@ -228,17 +224,15 @@ class TestFileUploadHandler:
         storage.download = AsyncMock(return_value=Ok(b"content"))
         storage.delete = AsyncMock(return_value=Ok(True))
         storage.exists = AsyncMock(return_value=True)
-        storage.generate_signed_url = AsyncMock(
-            return_value=Ok("https://signed-url")
-        )
+        storage.generate_signed_url = AsyncMock(return_value=Ok("https://signed-url"))
         return storage
 
-    @pytest.fixture
-    def handler(self, mock_storage: AsyncMock) -> FileUploadHandler[TestMetadata]:
+    @pytest.fixture()
+    def handler(self, mock_storage: AsyncMock) -> FileUploadHandler[SampleMetadata]:
         """Create upload handler."""
-        return FileUploadHandler[TestFileUploadHandler.TestMetadata](mock_storage)
+        return FileUploadHandler[TestFileUploadHandler.SampleMetadata](mock_storage)
 
-    @pytest.fixture
+    @pytest.fixture()
     def file_info(self) -> FileInfo:
         """Create file info."""
         return FileInfo(
@@ -250,7 +244,7 @@ class TestFileUploadHandler:
     @pytest.mark.asyncio
     async def test_upload_success(
         self,
-        handler: FileUploadHandler[TestMetadata],
+        handler: FileUploadHandler[SampleMetadata],
         file_info: FileInfo,
     ) -> None:
         """Test successful upload."""
@@ -262,20 +256,18 @@ class TestFileUploadHandler:
     @pytest.mark.asyncio
     async def test_upload_with_metadata(
         self,
-        handler: FileUploadHandler[TestMetadata],
+        handler: FileUploadHandler[SampleMetadata],
         file_info: FileInfo,
     ) -> None:
         """Test upload with metadata."""
-        metadata = TestFileUploadHandler.TestMetadata(description="Test file")
+        metadata = TestFileUploadHandler.SampleMetadata(description="Test file")
 
         result = await handler.upload("upload-1", file_info, b"content", metadata)
 
         assert result.is_ok()
 
     @pytest.mark.asyncio
-    async def test_upload_with_validator_success(
-        self, mock_storage: AsyncMock, file_info: FileInfo
-    ) -> None:
+    async def test_upload_with_validator_success(self, mock_storage: AsyncMock, file_info: FileInfo) -> None:
         """Test upload with passing validation."""
         rules = FileValidationRules(
             allowed_extensions={"txt"},
@@ -289,9 +281,7 @@ class TestFileUploadHandler:
         assert result.is_ok()
 
     @pytest.mark.asyncio
-    async def test_upload_with_validator_failure(
-        self, mock_storage: AsyncMock
-    ) -> None:
+    async def test_upload_with_validator_failure(self, mock_storage: AsyncMock) -> None:
         """Test upload with failing validation."""
         rules = FileValidationRules(allowed_extensions={"pdf"})
         validator = ConfigurableFileValidator[None](rules)
@@ -309,9 +299,7 @@ class TestFileUploadHandler:
         assert "Extension not allowed" in result.error
 
     @pytest.mark.asyncio
-    async def test_upload_storage_error(
-        self, mock_storage: AsyncMock, file_info: FileInfo
-    ) -> None:
+    async def test_upload_storage_error(self, mock_storage: AsyncMock, file_info: FileInfo) -> None:
         """Test upload with storage error."""
         mock_storage.upload.return_value = Err(Exception("Storage error"))
         handler = FileUploadHandler[None](mock_storage)
@@ -322,9 +310,7 @@ class TestFileUploadHandler:
         assert "Storage error" in result.error
 
     @pytest.mark.asyncio
-    async def test_upload_chunk(
-        self, handler: FileUploadHandler[TestMetadata]
-    ) -> None:
+    async def test_upload_chunk(self, handler: FileUploadHandler[SampleMetadata]) -> None:
         """Test chunk upload."""
         chunk_info = ChunkInfo(
             chunk_number=1,
@@ -340,9 +326,7 @@ class TestFileUploadHandler:
         assert progress.chunks_completed == 1
 
     @pytest.mark.asyncio
-    async def test_upload_multiple_chunks(
-        self, handler: FileUploadHandler[TestMetadata]
-    ) -> None:
+    async def test_upload_multiple_chunks(self, handler: FileUploadHandler[SampleMetadata]) -> None:
         """Test multiple chunk uploads."""
         for i in range(3):
             chunk_info = ChunkInfo(
@@ -359,9 +343,7 @@ class TestFileUploadHandler:
         assert progress.chunks_completed == 3
 
     @pytest.mark.asyncio
-    async def test_upload_chunk_storage_error(
-        self, mock_storage: AsyncMock
-    ) -> None:
+    async def test_upload_chunk_storage_error(self, mock_storage: AsyncMock) -> None:
         """Test chunk upload with storage error."""
         mock_storage.upload.return_value = Err(Exception("Storage error"))
         handler = FileUploadHandler[None](mock_storage)
@@ -377,17 +359,13 @@ class TestFileUploadHandler:
 
         assert result.is_err()
 
-    def test_get_progress_nonexistent(
-        self, handler: FileUploadHandler[TestMetadata]
-    ) -> None:
+    def test_get_progress_nonexistent(self, handler: FileUploadHandler[SampleMetadata]) -> None:
         """Test getting progress for nonexistent upload."""
         progress = handler.get_progress("nonexistent")
         assert progress is None
 
     @pytest.mark.asyncio
-    async def test_generate_download_url(
-        self, handler: FileUploadHandler[TestMetadata]
-    ) -> None:
+    async def test_generate_download_url(self, handler: FileUploadHandler[SampleMetadata]) -> None:
         """Test generating download URL."""
         result = await handler.generate_download_url("file.txt")
 
@@ -396,11 +374,9 @@ class TestFileUploadHandler:
 
     @pytest.mark.asyncio
     async def test_generate_download_url_custom_expiration(
-        self, handler: FileUploadHandler[TestMetadata], mock_storage: AsyncMock
+        self, handler: FileUploadHandler[SampleMetadata], mock_storage: AsyncMock
     ) -> None:
         """Test generating download URL with custom expiration."""
         await handler.generate_download_url("file.txt", timedelta(hours=24))
 
-        mock_storage.generate_signed_url.assert_called_with(
-            "file.txt", timedelta(hours=24), "GET"
-        )
+        mock_storage.generate_signed_url.assert_called_with("file.txt", timedelta(hours=24), "GET")

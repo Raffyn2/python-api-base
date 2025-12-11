@@ -4,14 +4,12 @@
 """
 
 import pytest
-
-pytest.skip("Module application.examples.dtos not implemented", allow_module_level=True)
 from fastapi.testclient import TestClient
 
 from main import app
 
 
-@pytest.fixture
+@pytest.fixture()
 def client() -> TestClient:
     """Create sync test client."""
     return TestClient(app)

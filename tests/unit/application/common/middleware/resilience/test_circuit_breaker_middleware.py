@@ -96,7 +96,7 @@ class TestCircuitBreakerStats:
 class TestCircuitBreakerMiddleware:
     """Tests for CircuitBreakerMiddleware."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def middleware(self) -> CircuitBreakerMiddleware:
         """Create middleware with low threshold for testing."""
         config = CircuitBreakerConfig(
@@ -107,9 +107,7 @@ class TestCircuitBreakerMiddleware:
         return CircuitBreakerMiddleware(config)
 
     @pytest.mark.asyncio
-    async def test_closed_state_success(
-        self, middleware: CircuitBreakerMiddleware
-    ) -> None:
+    async def test_closed_state_success(self, middleware: CircuitBreakerMiddleware) -> None:
         """Test successful call in closed state."""
         command = SampleCommand(name="test")
         handler = AsyncMock(return_value="result")
@@ -121,9 +119,7 @@ class TestCircuitBreakerMiddleware:
         assert middleware.stats.success_count == 1
 
     @pytest.mark.asyncio
-    async def test_closed_state_failure(
-        self, middleware: CircuitBreakerMiddleware
-    ) -> None:
+    async def test_closed_state_failure(self, middleware: CircuitBreakerMiddleware) -> None:
         """Test failed call in closed state."""
         command = SampleCommand(name="test")
         handler = AsyncMock(side_effect=ValueError("error"))
@@ -134,9 +130,7 @@ class TestCircuitBreakerMiddleware:
         assert middleware.stats.failure_count == 1
 
     @pytest.mark.asyncio
-    async def test_opens_after_threshold(
-        self, middleware: CircuitBreakerMiddleware
-    ) -> None:
+    async def test_opens_after_threshold(self, middleware: CircuitBreakerMiddleware) -> None:
         """Test circuit opens after failure threshold."""
         command = SampleCommand(name="test")
         handler = AsyncMock(side_effect=ValueError("error"))
@@ -149,9 +143,7 @@ class TestCircuitBreakerMiddleware:
         assert middleware.state == CircuitState.OPEN
 
     @pytest.mark.asyncio
-    async def test_open_state_rejects(
-        self, middleware: CircuitBreakerMiddleware
-    ) -> None:
+    async def test_open_state_rejects(self, middleware: CircuitBreakerMiddleware) -> None:
         """Test open circuit rejects calls."""
         command = SampleCommand(name="test")
         handler = AsyncMock(side_effect=ValueError("error"))
@@ -166,9 +158,7 @@ class TestCircuitBreakerMiddleware:
             await middleware(command, handler)
 
     @pytest.mark.asyncio
-    async def test_half_open_after_timeout(
-        self, middleware: CircuitBreakerMiddleware
-    ) -> None:
+    async def test_half_open_after_timeout(self, middleware: CircuitBreakerMiddleware) -> None:
         """Test circuit enters half-open after timeout."""
         command = SampleCommand(name="test")
         handler = AsyncMock(side_effect=ValueError("error"))
@@ -191,9 +181,7 @@ class TestCircuitBreakerMiddleware:
         assert middleware.state == CircuitState.CLOSED
 
     @pytest.mark.asyncio
-    async def test_half_open_success_closes(
-        self, middleware: CircuitBreakerMiddleware
-    ) -> None:
+    async def test_half_open_success_closes(self, middleware: CircuitBreakerMiddleware) -> None:
         """Test successful call in half-open closes circuit."""
         middleware._stats.state = CircuitState.HALF_OPEN
         command = SampleCommand(name="test")
@@ -205,9 +193,7 @@ class TestCircuitBreakerMiddleware:
         assert middleware.state == CircuitState.CLOSED
 
     @pytest.mark.asyncio
-    async def test_half_open_limit(
-        self, middleware: CircuitBreakerMiddleware
-    ) -> None:
+    async def test_half_open_limit(self, middleware: CircuitBreakerMiddleware) -> None:
         """Test half-open call limit."""
         middleware._stats.state = CircuitState.HALF_OPEN
         middleware._stats.half_open_calls = 1  # Already at limit

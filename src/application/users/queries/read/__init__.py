@@ -15,12 +15,12 @@ from application.users.queries.read.get_user import (
 )
 
 __all__ = [
-    "GetUserByIdQuery",
-    "GetUserByIdHandler",
-    "GetUserByEmailQuery",
-    "GetUserByEmailHandler",
-    "ListUsersQuery",
-    "ListUsersHandler",
-    "CountUsersQuery",
     "CountUsersHandler",
+    "CountUsersQuery",
+    "GetUserByEmailHandler",
+    "GetUserByEmailQuery",
+    "GetUserByIdHandler",
+    "GetUserByIdQuery",
+    "ListUsersHandler",
+    "ListUsersQuery",
 ]

@@ -31,7 +31,7 @@ class SoftDeleteMixin:
         self.deleted_at = None
 
 
-@dataclass
+@dataclass(slots=True)
 class SoftDeleteConfig:
     """Soft delete configuration."""
 
@@ -41,7 +41,7 @@ class SoftDeleteConfig:
     track_deleted_by: bool = True
 
 
-@dataclass
+@dataclass(slots=True)
 class DeletedRecord[T]:
     """Wrapper for soft-deleted records."""
 
@@ -58,9 +58,7 @@ class DeletedRecord[T]:
 class SoftDeleteBackend[T](Protocol):
     """Protocol for soft delete storage."""
 
-    async def mark_deleted(
-        self, entity_type: str, entity_id: str, deleted_by: str | None
-    ) -> None: ...
+    async def mark_deleted(self, entity_type: str, entity_id: str, deleted_by: str | None) -> None: ...
     async def restore(self, entity_type: str, entity_id: str) -> bool: ...
     async def is_deleted(self, entity_type: str, entity_id: str) -> bool: ...
     async def get_deleted(self, entity_type: str) -> list[DeletedRecord[T]]: ...
@@ -70,9 +68,7 @@ class SoftDeleteBackend[T](Protocol):
 class RelationResolver(Protocol):
     """Protocol for resolving entity relations."""
 
-    async def get_dependents(
-        self, entity_type: str, entity_id: str, relation: str
-    ) -> list[tuple[str, str]]: ...
+    async def get_dependents(self, entity_type: str, entity_id: str, relation: str) -> list[tuple[str, str]]: ...
 
 
 class SoftDeleteService[T]:
@@ -97,9 +93,7 @@ class SoftDeleteService[T]:
         """Configure soft delete for an entity type."""
         self._configs[entity_type] = config
 
-    def register_hook(
-        self, event: str, callback: Callable[[str, str], Awaitable[None]]
-    ) -> None:
+    def register_hook(self, event: str, callback: Callable[[str, str], Awaitable[None]]) -> None:
         """Register a hook for delete/restore events."""
         if event in self._hooks:
             self._hooks[event].append(callback)
@@ -108,9 +102,7 @@ class SoftDeleteService[T]:
         for hook in self._hooks.get(event, []):
             await hook(entity_type, entity_id)
 
-    async def delete(
-        self, entity_type: str, entity_id: str, deleted_by: str | None = None
-    ) -> list[tuple[str, str]]:
+    async def delete(self, entity_type: str, entity_id: str, deleted_by: str | None = None) -> list[tuple[str, str]]:
         """Soft delete an entity with cascade."""
         await self._run_hooks("before_delete", entity_type, entity_id)
 
@@ -120,9 +112,7 @@ class SoftDeleteService[T]:
         # Cascade delete
         if self._resolver and config.cascade_relations:
             for relation in config.cascade_relations:
-                dependents = await self._resolver.get_dependents(
-                    entity_type, entity_id, relation
-                )
+                dependents = await self._resolver.get_dependents(entity_type, entity_id, relation)
                 for dep_type, dep_id in dependents:
                     await self._backend.mark_deleted(dep_type, dep_id, deleted_by)
                     deleted_entities.append((dep_type, dep_id))
@@ -144,9 +134,7 @@ class SoftDeleteService[T]:
         # Cascade restore
         if self._resolver and config.restore_cascade and config.cascade_relations:
             for relation in config.cascade_relations:
-                dependents = await self._resolver.get_dependents(
-                    entity_type, entity_id, relation
-                )
+                dependents = await self._resolver.get_dependents(entity_type, entity_id, relation)
                 for dep_type, dep_id in dependents:
                     if await self._backend.is_deleted(dep_type, dep_id):
                         await self._backend.restore(dep_type, dep_id)
@@ -193,9 +181,7 @@ class InMemorySoftDeleteBackend[T]:
     def __init__(self) -> None:
         self._deleted: dict[tuple[str, str], DeletedRecord[T]] = {}
 
-    async def mark_deleted(
-        self, entity_type: str, entity_id: str, deleted_by: str | None
-    ) -> None:
+    async def mark_deleted(self, entity_type: str, entity_id: str, deleted_by: str | None) -> None:
         import uuid
 
         key = (entity_type, entity_id)

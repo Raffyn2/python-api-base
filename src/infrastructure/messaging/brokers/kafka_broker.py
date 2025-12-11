@@ -13,12 +13,13 @@ Implementation guide:
     https://aiokafka.readthedocs.io/
 """
 
-import logging
 import warnings
 from dataclasses import dataclass
 from typing import Any, Never
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 # Warn on import
 warnings.warn(
@@ -29,7 +30,7 @@ warnings.warn(
 )
 
 
-@dataclass
+@dataclass(slots=True)
 class KafkaConfig:
     """Kafka broker configuration."""
 
@@ -57,10 +58,7 @@ class KafkaBroker:
 
     def __init__(self, config: KafkaConfig | None = None) -> None:
         self._config = config or KafkaConfig()
-        logger.warning(
-            "KafkaBroker initialized but NOT IMPLEMENTED. "
-            "All operations will raise NotImplementedError."
-        )
+        logger.warning("KafkaBroker initialized but NOT IMPLEMENTED. All operations will raise NotImplementedError.")
 
     async def connect(self) -> Never:
         """Connect to Kafka broker.
@@ -80,17 +78,13 @@ class KafkaBroker:
         """
         raise NotImplementedError("KafkaBroker.disconnect() not implemented.")
 
-    async def publish(
-        self, topic: str, message: dict[str, Any], key: str | None = None
-    ) -> Never:
+    async def publish(self, topic: str, message: dict[str, Any], key: str | None = None) -> Never:
         """Publish message to Kafka topic.
 
         Raises:
             NotImplementedError: Always. This method is not implemented.
         """
-        raise NotImplementedError(
-            f"KafkaBroker.publish() not implemented. Cannot publish to {topic}."
-        )
+        raise NotImplementedError(f"KafkaBroker.publish() not implemented. Cannot publish to {topic}.")
 
     async def subscribe(self, topics: list[str]) -> Never:
         """Subscribe to Kafka topics.
@@ -98,9 +92,7 @@ class KafkaBroker:
         Raises:
             NotImplementedError: Always. This method is not implemented.
         """
-        raise NotImplementedError(
-            f"KafkaBroker.subscribe() not implemented. Cannot subscribe to {topics}."
-        )
+        raise NotImplementedError(f"KafkaBroker.subscribe() not implemented. Cannot subscribe to {topics}.")
 
     async def consume(self) -> Never:
         """Consume next message from subscribed topics.

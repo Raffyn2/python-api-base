@@ -47,9 +47,7 @@ class RegisterRequest(BaseModel):
     """User registration request."""
 
     email: str = Field(..., min_length=MIN_EMAIL_LENGTH, max_length=MAX_EMAIL_LENGTH)
-    password: str = Field(
-        ..., min_length=MIN_PASSWORD_LENGTH, max_length=MAX_PASSWORD_LENGTH
-    )
+    password: str = Field(..., min_length=MIN_PASSWORD_LENGTH, max_length=MAX_PASSWORD_LENGTH)
     display_name: str = Field(..., min_length=1, max_length=MAX_DISPLAY_NAME_LENGTH)
 
     @field_validator("email")
@@ -64,7 +62,7 @@ class TokenResponse(BaseModel):
     """Token response."""
 
     access_token: str
-    token_type: str = "bearer"  # noqa: S105 - Token type, not password
+    token_type: str = "bearer"
     expires_in: int
     refresh_token: str | None = None
 

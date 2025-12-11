@@ -14,7 +14,6 @@ from infrastructure.auth.jwt.providers import (
     RS256Provider,
 )
 
-
 # Test keys for unit tests only - NOT for production
 TEST_RSA_PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF8PbnGy0AHB7MmM2rMHRqWdSpYfE
@@ -78,9 +77,9 @@ class TestCreateJwtProvider:
             private_key=TEST_RSA_PRIVATE_KEY,
             public_key=TEST_RSA_PUBLIC_KEY,
         )
-        
+
         provider = create_jwt_provider(config)
-        
+
         assert isinstance(provider, RS256Provider)
 
     def test_create_rs256_with_kwargs(self) -> None:
@@ -90,13 +89,13 @@ class TestCreateJwtProvider:
             private_key=TEST_RSA_PRIVATE_KEY,
             public_key=TEST_RSA_PUBLIC_KEY,
         )
-        
+
         provider = create_jwt_provider(
             config,
             issuer="test-issuer",
             audience="test-audience",
         )
-        
+
         assert isinstance(provider, RS256Provider)
 
     def test_create_es256_provider(self) -> None:
@@ -106,9 +105,9 @@ class TestCreateJwtProvider:
             private_key=TEST_EC_PRIVATE_KEY,
             public_key=TEST_EC_PUBLIC_KEY,
         )
-        
+
         provider = create_jwt_provider(config)
-        
+
         assert isinstance(provider, ES256Provider)
 
     def test_create_hs256_provider(self) -> None:
@@ -117,9 +116,9 @@ class TestCreateJwtProvider:
             algorithm="HS256",
             secret_key=TEST_SECRET_KEY,
         )
-        
+
         provider = create_jwt_provider(config)
-        
+
         assert isinstance(provider, HS256Provider)
 
     def test_hs256_without_secret_raises_in_config(self) -> None:
@@ -129,7 +128,7 @@ class TestCreateJwtProvider:
                 algorithm="HS256",
                 secret_key=None,
             )
-        
+
         assert "HS256 requires secret_key" in str(exc_info.value)
 
     def test_unsupported_algorithm_raises_in_config(self) -> None:
@@ -140,5 +139,5 @@ class TestCreateJwtProvider:
                 private_key="key",
                 public_key="key",
             )
-        
+
         assert "Unsupported algorithm" in str(exc_info.value)

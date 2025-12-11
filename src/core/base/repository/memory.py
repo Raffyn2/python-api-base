@@ -99,20 +99,12 @@ class InMemoryRepository[
             Tuple of (entities, total_count).
         """
         # Filter out soft-deleted entities
-        entities = [
-            e
-            for e in self._storage.values()
-            if not (hasattr(e, "is_deleted") and e.is_deleted)
-        ]
+        entities = [e for e in self._storage.values() if not (hasattr(e, "is_deleted") and e.is_deleted)]
 
         # Apply filters
         if filters:
             for field, value in filters.items():
-                entities = [
-                    e
-                    for e in entities
-                    if hasattr(e, field) and getattr(e, field) == value
-                ]
+                entities = [e for e in entities if hasattr(e, field) and getattr(e, field) == value]
 
         total = len(entities)
 
@@ -239,9 +231,7 @@ class InMemoryRepository[
         self._storage.clear()
         self._counter = 0
 
-    async def bulk_update(
-        self, updates: Sequence[tuple[IdType, UpdateT]]
-    ) -> Sequence[T]:
+    async def bulk_update(self, updates: Sequence[tuple[IdType, UpdateT]]) -> Sequence[T]:
         """Bulk update entities.
 
         Args:

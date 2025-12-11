@@ -3,6 +3,10 @@
 Raised when authentication is required but not provided.
 
 **Feature: python-api-base-2025-state-of-art**
+
+Note: This is a simplified version for application layer use.
+For HTTP/API handlers, use core.errors.AuthenticationError which includes
+correlation_id, timestamp, and RFC 7807 support.
 """
 
 from application.common.errors.base.application_error import ApplicationError

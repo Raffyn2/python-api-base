@@ -3,8 +3,6 @@
 Tests AuditQueryFilters, JsonAuditExporter, CsvAuditExporter.
 """
 
-from datetime import datetime
-
 import pytest
 from pydantic import BaseModel
 
@@ -61,12 +59,12 @@ class TestJsonExportConfig:
 class TestJsonAuditExporter:
     """Tests for JsonAuditExporter."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def exporter(self) -> JsonAuditExporter:
         """Create test exporter."""
         return JsonAuditExporter()
 
-    @pytest.fixture
+    @pytest.fixture()
     def sample_records(self) -> list[AuditRecord[SampleEntity]]:
         """Create sample audit records."""
         return [
@@ -157,12 +155,12 @@ class TestCsvExportConfig:
 class TestCsvAuditExporter:
     """Tests for CsvAuditExporter."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def exporter(self) -> CsvAuditExporter:
         """Create test exporter."""
         return CsvAuditExporter()
 
-    @pytest.fixture
+    @pytest.fixture()
     def sample_records(self) -> list[AuditRecord[SampleEntity]]:
         """Create sample audit records."""
         return [

@@ -97,9 +97,7 @@ class TestResilienceMiddleware:
         """Middleware should chain circuit breaker and retry correctly."""
         retry_config = RetryConfig(max_retries=2, base_delay=0.001)
         circuit_config = CircuitBreakerConfig(failure_threshold=5)
-        middleware = ResilienceMiddleware(
-            retry_config=retry_config, circuit_config=circuit_config
-        )
+        middleware = ResilienceMiddleware(retry_config=retry_config, circuit_config=circuit_config)
 
         async def handler(cmd: str) -> str:
             return "ok"

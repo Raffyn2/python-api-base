@@ -5,8 +5,6 @@ Tests for Snapshot class.
 
 from datetime import UTC, datetime
 
-import pytest
-
 from infrastructure.db.event_sourcing.snapshots import Snapshot
 
 

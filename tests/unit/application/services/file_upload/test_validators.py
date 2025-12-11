@@ -4,18 +4,19 @@
 """
 
 import io
+
 import pytest
 
 from application.services.file_upload.models import FileValidationConfig, UploadError
 from application.services.file_upload.validators.validators import (
+    get_safe_filename,
     validate_file,
     validate_file_stream,
     validate_magic_bytes,
-    get_safe_filename,
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def config() -> FileValidationConfig:
     """Create validation config."""
     return FileValidationConfig(
@@ -221,7 +222,7 @@ class TestGetSafeFilename:
 
     def test_special_characters(self) -> None:
         """Should replace special characters."""
-        result = get_safe_filename('file:name|test?.txt')
+        result = get_safe_filename("file:name|test?.txt")
         assert ":" not in result
         assert "|" not in result
         assert "?" not in result

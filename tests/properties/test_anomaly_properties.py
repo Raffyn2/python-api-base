@@ -20,12 +20,8 @@ from infrastructure.observability.anomaly import (
 )
 
 # Strategies
-value_strategy = st.floats(
-    min_value=-1000.0, max_value=1000.0, allow_nan=False, allow_infinity=False
-)
-positive_value_strategy = st.floats(
-    min_value=0.1, max_value=1000.0, allow_nan=False, allow_infinity=False
-)
+value_strategy = st.floats(min_value=-1000.0, max_value=1000.0, allow_nan=False, allow_infinity=False)
+positive_value_strategy = st.floats(min_value=0.1, max_value=1000.0, allow_nan=False, allow_infinity=False)
 values_list_strategy = st.lists(
     st.floats(min_value=-100.0, max_value=100.0, allow_nan=False, allow_infinity=False),
     min_size=2,
@@ -52,9 +48,7 @@ class TestStatisticalAnalyzerProperties:
 
     @given(value=value_strategy, mean=value_strategy, std=positive_value_strategy)
     @settings(max_examples=100)
-    def test_z_score_sign_matches_deviation(
-        self, value: float, mean: float, std: float
-    ) -> None:
+    def test_z_score_sign_matches_deviation(self, value: float, mean: float, std: float) -> None:
         """Property: Z-score sign matches direction of deviation."""
         z = StatisticalAnalyzer.z_score(value, mean, std)
         if value > mean:
@@ -92,9 +86,7 @@ class TestAnomalyProperties:
         expected=st.floats(min_value=0.1, max_value=100.0, allow_nan=False),
     )
     @settings(max_examples=100)
-    def test_deviation_percent_is_non_negative(
-        self, value: float, expected: float
-    ) -> None:
+    def test_deviation_percent_is_non_negative(self, value: float, expected: float) -> None:
         """Property: Deviation percent is non-negative."""
         anomaly = Anomaly(
             anomaly_type=AnomalyType.SPIKE,

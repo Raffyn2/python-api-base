@@ -1,4 +1,14 @@
-"""Structured logging configuration with structlog."""
+"""Structured logging configuration with structlog.
+
+Provides:
+- Request ID context propagation
+- OpenTelemetry trace context injection
+- Automatic PII redaction
+- JSON and console output formats
+
+**Feature: core-config-restructuring-2025**
+**Validates: Requirements 5.1, 5.2**
+"""
 
 import logging
 import sys
@@ -38,9 +48,7 @@ def clear_request_id() -> None:
     request_id_ctx.set(None)
 
 
-def add_request_id(
-    logger: logging.Logger, method_name: str, event_dict: EventDict
-) -> EventDict:
+def add_request_id(logger: logging.Logger, method_name: str, event_dict: EventDict) -> EventDict:
     """Add request ID to log event.
 
     Args:
@@ -57,9 +65,7 @@ def add_request_id(
     return event_dict
 
 
-def add_trace_context(
-    logger: logging.Logger, method_name: str, event_dict: EventDict
-) -> EventDict:
+def add_trace_context(logger: logging.Logger, method_name: str, event_dict: EventDict) -> EventDict:
     """Add OpenTelemetry trace context to log event.
 
     Adds trace_id and span_id from the current trace context for
@@ -77,7 +83,7 @@ def add_trace_context(
         Updated event dictionary with trace context.
     """
     try:
-        from infrastructure.observability.tracing import (
+        from infrastructure.observability.telemetry import (
             get_current_span_id,
             get_current_trace_id,
         )
@@ -96,27 +102,30 @@ def add_trace_context(
 
 
 # PII patterns to redact (immutable default set)
-_DEFAULT_PII_PATTERNS: frozenset[str] = frozenset({
-    "password",
-    "secret",
-    "token",
-    "api_key",
-    "apikey",
-    "authorization",
-    "auth",
-    "credential",
-    "credit_card",
-    "ssn",
-    "social_security",
-})
+_DEFAULT_PII_PATTERNS: frozenset[str] = frozenset(
+    {
+        "password",
+        "secret",
+        "token",
+        "api_key",
+        "apikey",
+        "authorization",
+        "auth",
+        "credential",
+        "credit_card",
+        "ssn",
+        "social_security",
+    }
+)
 
-# Active PII patterns (thread-local would be ideal, but module-level for simplicity)
+# Active PII patterns
+# Note: This is module-level state. For multi-threaded scenarios with different
+# PII patterns per thread, consider using a ContextVar instead.
+# Current design assumes patterns are set once at startup via configure_logging().
 _active_pii_patterns: set[str] = set(_DEFAULT_PII_PATTERNS)
 
 
-def redact_pii(
-    logger: logging.Logger, method_name: str, event_dict: EventDict
-) -> EventDict:
+def redact_pii(logger: logging.Logger, method_name: str, event_dict: EventDict) -> EventDict:
     """Redact PII from log events.
 
     **Feature: infrastructure-code-review**
@@ -175,10 +184,12 @@ def configure_logging(
     # Validate log_level
     valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
     if log_level.upper() not in valid_levels:
-        raise ValueError(
-            f"Invalid log_level: {log_level}. "
-            f"Must be one of: {', '.join(sorted(valid_levels))}"
-        )
+        raise ValueError(f"Invalid log_level: {log_level}. Must be one of: {', '.join(sorted(valid_levels))}")
+
+    # Validate log_format
+    valid_formats = {"json", "console"}
+    if log_format.lower() not in valid_formats:
+        raise ValueError(f"Invalid log_format: {log_format}. Must be one of: {', '.join(sorted(valid_formats))}")
 
     # Add additional PII patterns if provided
     global _active_pii_patterns
@@ -198,7 +209,7 @@ def configure_logging(
         redact_pii,
     ]
 
-    if development or log_format == "console":
+    if development or log_format.lower() == "console":
         # Pretty console output for development
         processors: list[Processor] = [
             *shared_processors,

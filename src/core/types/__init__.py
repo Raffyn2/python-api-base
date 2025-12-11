@@ -15,18 +15,41 @@ Refactored from monolithic types.py into focused modules.
 """
 
 # ID Types
-from core.types.identity import ULID, UUID, UUID7
+# PEP 695 Type Aliases (Python 3.12+)
+from core.types.aliases import (
+    AsyncFactory,
+    AsyncFilter,
+    AsyncHandler,
+    AsyncMapper,
+    AsyncResult,
+    AsyncValidator,
+    Callback,
+    Factory,
+    Filter,
+    Handler,
+    Mapper,
+    Predicate,
+    SyncHandler,
+    Validator,
+    ValidatorWithError,
+    VoidAsyncCallback,
+)
 
 # JSON Type Aliases
 from core.types.data import (
+    # String Types
+    Email,
     FilterDict,
     Headers,
+    HttpUrl,
+    ISODateStr,
     JSONArray,
     JSONObject,
     JSONPrimitive,
     JSONValue,
-    QueryParams,
-    SortOrder,
+    LongStr,
+    MediumStr,
+    NonEmptyStr,
     # Numeric Types
     NonNegativeFloat,
     NonNegativeInt,
@@ -34,18 +57,13 @@ from core.types.data import (
     PageSize,
     Percentage,
     PercentageRange,
+    PhoneNumber,
     PositiveFloat,
     PositiveInt,
-    # String Types
-    Email,
-    HttpUrl,
-    ISODateStr,
-    LongStr,
-    MediumStr,
-    NonEmptyStr,
-    PhoneNumber,
+    QueryParams,
     ShortStr,
     Slug,
+    SortOrder,
     TrimmedStr,
     URLPath,
     VersionStr,
@@ -56,16 +74,17 @@ from core.types.domain import (
     ApiResult,
     CRUDRepository,
     ErrorResult,
-    PaginatedResult,
-    ReadOnlyRepository,
-    ReadOnlyUseCase,
-    StandardUseCase,
-    WriteOnlyRepository,
     # Security Types
     JWTToken,
+    PaginatedResult,
     Password,
+    ReadOnlyRepository,
+    ReadOnlyUseCase,
     SecurePassword,
+    StandardUseCase,
+    WriteOnlyRepository,
 )
+from core.types.identity import ULID, UUID, UUID7
 
 # Result Pattern and Callback Type Aliases
 from core.types.patterns import (
@@ -83,49 +102,36 @@ from core.types.patterns import (
     VoidResult,
 )
 
-# PEP 695 Type Aliases (Python 3.12+)
-from core.types.aliases import (
-    AsyncFilter,
-    AsyncHandler,
-    AsyncMapper,
-    AsyncResult,
-    AsyncValidator,
-    Callback,
-    Factory,
-    Filter,
-    Handler,
-    Mapper,
-    Predicate,
-    SyncHandler,
-    Validator,
-    ValidatorWithError,
-    AsyncCallback as AsyncCallbackAlias,
-    AsyncFactory,
-)
-
 __all__ = [
     # ID Types
     "ULID",
     "UUID",
     "UUID7",
-    # Response Type Aliases
-    "ApiResult",
-    # Callback Type Aliases
-    "AsyncCallback",
-    "AsyncCallbackAlias",
     # Repository/UseCase Type Aliases
+    "ApiResult",
+    # Result Pattern Type Aliases
+    "AsyncCallback",
+    # PEP 695 Type Aliases (Python 3.12+)
+    "AsyncFactory",
+    "AsyncFilter",
+    "AsyncHandler",
+    "AsyncMapper",
+    "AsyncResult",
+    "AsyncValidator",
     "CRUDRepository",
-    # Other
+    "Callback",
     "CompositeSpec",
     # String Types
     "Email",
     "EntityId",
     "ErrorResult",
     "EventCallback",
-    # Result Pattern Type Aliases
+    "Factory",
     "Failure",
+    "Filter",
     # Filter/Query Type Aliases
     "FilterDict",
+    "Handler",
     "Headers",
     "HttpUrl",
     "ISODateStr",
@@ -137,6 +143,7 @@ __all__ = [
     # Security Types
     "JWTToken",
     "LongStr",
+    "Mapper",
     "MediumStr",
     "Middleware",
     "NonEmptyStr",
@@ -144,7 +151,6 @@ __all__ = [
     "NonNegativeFloat",
     "NonNegativeInt",
     "OperationResult",
-    # Pagination Types
     "PageNumber",
     "PageSize",
     "PaginatedResult",
@@ -154,6 +160,7 @@ __all__ = [
     "PhoneNumber",
     "PositiveFloat",
     "PositiveInt",
+    "Predicate",
     "QueryParams",
     "ReadOnlyRepository",
     "ReadOnlyUseCase",
@@ -165,26 +172,14 @@ __all__ = [
     "StandardUseCase",
     "Success",
     "SyncCallback",
+    "SyncHandler",
     "Timestamp",
     "TrimmedStr",
     "URLPath",
-    "VersionStr",
-    "VoidResult",
-    "WriteOnlyRepository",
-    # PEP 695 Type Aliases (Python 3.12+)
-    "AsyncFilter",
-    "AsyncHandler",
-    "AsyncMapper",
-    "AsyncResult",
-    "AsyncValidator",
-    "Callback",
-    "Factory",
-    "AsyncFactory",
-    "Filter",
-    "Handler",
-    "Mapper",
-    "Predicate",
-    "SyncHandler",
     "Validator",
     "ValidatorWithError",
+    "VersionStr",
+    "VoidAsyncCallback",
+    "VoidResult",
+    "WriteOnlyRepository",
 ]

@@ -82,17 +82,15 @@ class TestConfigValidation:
         except ImportError:
             from core.config import ObservabilitySettings
 
-        with patch.dict(
-            os.environ, {"OBSERVABILITY__LOG_LEVEL": log_level}, clear=False
-        ):
+        with patch.dict(os.environ, {"OBSERVABILITY__LOG_LEVEL": log_level}, clear=False):
             settings_obj = ObservabilitySettings()
             assert settings_obj.log_level == log_level
 
     @settings(max_examples=10)
     @given(
-        log_level=st.text(
-            min_size=1, max_size=10, alphabet=st.characters(whitelist_categories=("L",))
-        ).filter(lambda x: x not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+        log_level=st.text(min_size=1, max_size=10, alphabet=st.characters(whitelist_categories=("L",))).filter(
+            lambda x: x not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        ),
     )
     def test_invalid_log_levels_fail_validation(self, log_level: str) -> None:
         """
@@ -104,11 +102,11 @@ class TestConfigValidation:
         except ImportError:
             from core.config import ObservabilitySettings
 
-        with patch.dict(
-            os.environ, {"OBSERVABILITY__LOG_LEVEL": log_level}, clear=False
+        with (
+            patch.dict(os.environ, {"OBSERVABILITY__LOG_LEVEL": log_level}, clear=False),
+            pytest.raises(ValidationError),
         ):
-            with pytest.raises(ValidationError):
-                ObservabilitySettings()
+            ObservabilitySettings()
 
     def test_missing_required_secret_key_fails(self) -> None:
         """
@@ -132,9 +130,7 @@ class TestConfigValidation:
         pool_size=st.integers(min_value=1, max_value=100),
         max_overflow=st.integers(min_value=0, max_value=100),
     )
-    def test_valid_database_pool_settings(
-        self, pool_size: int, max_overflow: int
-    ) -> None:
+    def test_valid_database_pool_settings(self, pool_size: int, max_overflow: int) -> None:
         """
         For any valid pool_size (1-100) and max_overflow (0-100),
         DatabaseSettings SHALL accept the values.
@@ -167,10 +163,12 @@ class TestConfigValidation:
         """
         from core.config import DatabaseSettings
 
-        with patch.dict(
-            os.environ,
-            {"DATABASE__POOL_SIZE": str(pool_size)},
-            clear=False,
+        with (
+            patch.dict(
+                os.environ,
+                {"DATABASE__POOL_SIZE": str(pool_size)},
+                clear=False,
+            ),
+            pytest.raises(ValidationError),
         ):
-            with pytest.raises(ValidationError):
-                DatabaseSettings()
+            DatabaseSettings()

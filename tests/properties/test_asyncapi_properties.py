@@ -82,11 +82,13 @@ class TestMessageObject:
 
     @given(
         name=identifier_strategy,
-        content_type=st.sampled_from([
-            "application/json",
-            "application/xml",
-            "text/plain",
-        ]),
+        content_type=st.sampled_from(
+            [
+                "application/json",
+                "application/xml",
+                "text/plain",
+            ]
+        ),
     )
     @settings(max_examples=50)
     def test_content_type_in_dict(self, name: str, content_type: str):
@@ -101,9 +103,7 @@ class TestMessageObject:
     def test_correlation_id_in_dict(self, name: str, correlation_id: str):
         """Correlation ID should be in to_dict."""
         payload = SchemaObject(schema_type="object")
-        message = MessageObject(
-            name=name, payload=payload, correlation_id=correlation_id
-        )
+        message = MessageObject(name=name, payload=payload, correlation_id=correlation_id)
         result = message.to_dict()
         assert result["correlationId"]["location"] == correlation_id
 
@@ -159,9 +159,7 @@ class TestServerObject:
         protocol=st.sampled_from(list(ProtocolType)),
     )
     @settings(max_examples=50)
-    def test_to_dict_contains_host_and_protocol(
-        self, host: str, protocol: ProtocolType
-    ):
+    def test_to_dict_contains_host_and_protocol(self, host: str, protocol: ProtocolType):
         """to_dict should contain host and protocol."""
         server = ServerObject(host=host, protocol=protocol)
         result = server.to_dict()
@@ -188,9 +186,7 @@ class TestInfoObject:
         contact_email=st.emails(),
     )
     @settings(max_examples=50)
-    def test_contact_in_dict(
-        self, title: str, version: str, contact_name: str, contact_email: str
-    ):
+    def test_contact_in_dict(self, title: str, version: str, contact_name: str, contact_email: str):
         """Contact should be in to_dict."""
         info = InfoObject(
             title=title,
@@ -232,9 +228,7 @@ class TestAsyncAPIDocument:
         host=st.text(min_size=1, max_size=30),
     )
     @settings(max_examples=50)
-    def test_add_server_fluent_api(
-        self, title: str, version: str, server_name: str, host: str
-    ):
+    def test_add_server_fluent_api(self, title: str, version: str, server_name: str, host: str):
         """add_server should return self for fluent API."""
         info = InfoObject(title=title, version=version)
         doc = AsyncAPIDocument(info=info)
@@ -250,9 +244,7 @@ class TestAsyncAPIDocument:
         address=identifier_strategy,
     )
     @settings(max_examples=50)
-    def test_add_channel_fluent_api(
-        self, title: str, version: str, channel_name: str, address: str
-    ):
+    def test_add_channel_fluent_api(self, title: str, version: str, channel_name: str, address: str):
         """add_channel should return self for fluent API."""
         info = InfoObject(title=title, version=version)
         doc = AsyncAPIDocument(info=info)
@@ -281,9 +273,7 @@ class TestAsyncAPIBuilder:
         description=st.text(min_size=1, max_size=100),
     )
     @settings(max_examples=50)
-    def test_with_description_sets_description(
-        self, title: str, version: str, description: str
-    ):
+    def test_with_description_sets_description(self, title: str, version: str, description: str):
         """with_description should set the description."""
         builder = AsyncAPIBuilder(title=title, version=version)
         result = builder.with_description(description)
@@ -298,9 +288,7 @@ class TestAsyncAPIBuilder:
         host=st.text(min_size=1, max_size=30),
     )
     @settings(max_examples=50)
-    def test_add_kafka_server(
-        self, title: str, version: str, server_name: str, host: str
-    ):
+    def test_add_kafka_server(self, title: str, version: str, server_name: str, host: str):
         """add_kafka_server should add a Kafka server."""
         builder = AsyncAPIBuilder(title=title, version=version)
         builder.add_kafka_server(server_name, host)

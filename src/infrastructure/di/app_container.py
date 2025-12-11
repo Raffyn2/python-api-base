@@ -4,10 +4,10 @@
 **Validates: Requirements All**
 """
 
-import logging
 from collections.abc import Callable
 from typing import Any
 
+import structlog
 from dependency_injector import containers, providers
 
 from core.config import Settings
@@ -23,7 +23,7 @@ from application.common.cqrs import CommandBus, QueryBus
 from core.shared.caching import CacheConfig, InMemoryCacheProvider, RedisCacheProvider
 from infrastructure.observability.telemetry import TelemetryProvider
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class Container(containers.DeclarativeContainer):
@@ -36,10 +36,9 @@ class Container(containers.DeclarativeContainer):
 
     wiring_config = containers.WiringConfiguration(
         modules=[
-            "interface.v1.items_router",
-            "interface.v1.health_router",
-            "interface.v1.users_router",
-            "interface.v2.examples_router",
+            "interface.v1.core.health_router",
+            "interface.v1.users",
+            "interface.v1.examples",
         ]
     )
 
@@ -67,9 +66,7 @@ class Container(containers.DeclarativeContainer):
     redis_cache = providers.Singleton(
         RedisCacheProvider,
         redis_url=providers.Factory(
-            lambda cfg: cfg.redis.url
-            if hasattr(cfg, "redis") and cfg.redis.enabled
-            else "redis://localhost:6379",
+            lambda cfg: cfg.redis.url if hasattr(cfg, "redis") and cfg.redis.enabled else "redis://localhost:6379",
             config,
         ),
         config=cache_config,
@@ -85,9 +82,7 @@ class Container(containers.DeclarativeContainer):
     telemetry = providers.Singleton(
         TelemetryProvider,
         service_name=providers.Factory(
-            lambda cfg: cfg.observability.service_name
-            if hasattr(cfg, "observability")
-            else "my-api",
+            lambda cfg: cfg.observability.service_name if hasattr(cfg, "observability") else "my-api",
             config,
         ),
         service_version=providers.Factory(
@@ -95,21 +90,15 @@ class Container(containers.DeclarativeContainer):
             config,
         ),
         otlp_endpoint=providers.Factory(
-            lambda cfg: cfg.observability.otlp_endpoint
-            if hasattr(cfg, "observability")
-            else None,
+            lambda cfg: cfg.observability.otlp_endpoint if hasattr(cfg, "observability") else None,
             config,
         ),
         enable_tracing=providers.Factory(
-            lambda cfg: cfg.observability.enable_tracing
-            if hasattr(cfg, "observability")
-            else True,
+            lambda cfg: cfg.observability.enable_tracing if hasattr(cfg, "observability") else True,
             config,
         ),
         enable_metrics=providers.Factory(
-            lambda cfg: cfg.observability.enable_metrics
-            if hasattr(cfg, "observability")
-            else True,
+            lambda cfg: cfg.observability.enable_metrics if hasattr(cfg, "observability") else True,
             config,
         ),
     )
@@ -223,10 +212,16 @@ class LifecycleManager:
         """
         for hook in self._startup_hooks:
             try:
-                logger.info(f"Running startup hook: {hook.__name__}")
+                logger.info(
+                    "Running startup hook",
+                    hook_name=hook.__name__,
+                )
                 hook()
-            except Exception as e:
-                logger.error(f"Startup hook {hook.__name__} failed: {e}")
+            except Exception:
+                logger.exception(
+                    "Startup hook failed",
+                    hook_name=hook.__name__,
+                )
                 raise
 
     def run_shutdown(self) -> None:
@@ -242,10 +237,16 @@ class LifecycleManager:
 
         for hook in reversed(self._shutdown_hooks):
             try:
-                logger.info(f"Running shutdown hook: {hook.__name__}")
+                logger.info(
+                    "Running shutdown hook",
+                    hook_name=hook.__name__,
+                )
                 hook()
             except Exception as e:
-                logger.error(f"Shutdown hook {hook.__name__} failed: {e}")
+                logger.exception(
+                    "Shutdown hook failed",
+                    hook_name=hook.__name__,
+                )
                 errors.append((hook.__name__, e))
 
         if errors:
@@ -262,10 +263,16 @@ class LifecycleManager:
         """
         for hook in self._async_startup_hooks:
             try:
-                logger.info(f"Running async startup hook: {hook.__name__}")
+                logger.info(
+                    "Running async startup hook",
+                    hook_name=hook.__name__,
+                )
                 await hook()
-            except Exception as e:
-                logger.error(f"Async startup hook {hook.__name__} failed: {e}")
+            except Exception:
+                logger.exception(
+                    "Async startup hook failed",
+                    hook_name=hook.__name__,
+                )
                 raise
 
     async def run_shutdown_async(self) -> None:
@@ -281,10 +288,16 @@ class LifecycleManager:
 
         for hook in reversed(self._async_shutdown_hooks):
             try:
-                logger.info(f"Running async shutdown hook: {hook.__name__}")
+                logger.info(
+                    "Running async shutdown hook",
+                    hook_name=hook.__name__,
+                )
                 await hook()
             except Exception as e:
-                logger.error(f"Async shutdown hook {hook.__name__} failed: {e}")
+                logger.exception(
+                    "Async shutdown hook failed",
+                    hook_name=hook.__name__,
+                )
                 errors.append((hook.__name__, e))
 
         if errors:

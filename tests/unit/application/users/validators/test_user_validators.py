@@ -58,20 +58,18 @@ class TestValidationError:
 class TestEmailUniquenessValidator:
     """Tests for EmailUniquenessValidator."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repository(self) -> AsyncMock:
         """Create mock repository."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def validator(self, mock_repository: AsyncMock) -> EmailUniquenessValidator:
         """Create validator instance."""
         return EmailUniquenessValidator(mock_repository)
 
     @pytest.mark.asyncio
-    async def test_validate_unique_email(
-        self, validator: EmailUniquenessValidator, mock_repository: AsyncMock
-    ) -> None:
+    async def test_validate_unique_email(self, validator: EmailUniquenessValidator, mock_repository: AsyncMock) -> None:
         """Should return Ok for unique email."""
         mock_repository.exists_by_email.return_value = False
         command = CreateUserCommand(email="new@example.com", password="Pass123!")
@@ -96,20 +94,18 @@ class TestEmailUniquenessValidator:
 class TestEmailFormatValidator:
     """Tests for EmailFormatValidator."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_service(self) -> MagicMock:
         """Create mock service."""
         return MagicMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def validator(self, mock_service: MagicMock) -> EmailFormatValidator:
         """Create validator instance."""
         return EmailFormatValidator(mock_service)
 
     @pytest.mark.asyncio
-    async def test_validate_valid_email(
-        self, validator: EmailFormatValidator, mock_service: MagicMock
-    ) -> None:
+    async def test_validate_valid_email(self, validator: EmailFormatValidator, mock_service: MagicMock) -> None:
         """Should return Ok for valid email format."""
         mock_service.validate_email.return_value = (True, None)
         command = CreateUserCommand(email="valid@example.com", password="Pass123!")
@@ -119,9 +115,7 @@ class TestEmailFormatValidator:
         assert result.is_ok()
 
     @pytest.mark.asyncio
-    async def test_validate_invalid_email(
-        self, validator: EmailFormatValidator, mock_service: MagicMock
-    ) -> None:
+    async def test_validate_invalid_email(self, validator: EmailFormatValidator, mock_service: MagicMock) -> None:
         """Should return Err for invalid email format."""
         mock_service.validate_email.return_value = (False, "Invalid format")
         command = CreateUserCommand(email="invalid-email", password="Pass123!")
@@ -134,12 +128,12 @@ class TestEmailFormatValidator:
 class TestPasswordStrengthValidator:
     """Tests for PasswordStrengthValidator."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_service(self) -> MagicMock:
         """Create mock service."""
         return MagicMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def validator(self, mock_service: MagicMock) -> PasswordStrengthValidator:
         """Create validator instance."""
         return PasswordStrengthValidator(mock_service)
@@ -157,9 +151,7 @@ class TestPasswordStrengthValidator:
         assert result.is_ok()
 
     @pytest.mark.asyncio
-    async def test_validate_weak_password(
-        self, validator: PasswordStrengthValidator, mock_service: MagicMock
-    ) -> None:
+    async def test_validate_weak_password(self, validator: PasswordStrengthValidator, mock_service: MagicMock) -> None:
         """Should return Err for weak password."""
         mock_service.validate_password_strength.return_value = (
             False,
@@ -198,9 +190,7 @@ class TestCompositeUserValidator:
         from core.base.patterns.result import Err
 
         validator1 = AsyncMock()
-        validator1.validate = AsyncMock(
-            return_value=Err(ValidationError(message="First error"))
-        )
+        validator1.validate = AsyncMock(return_value=Err(ValidationError(message="First error")))
         validator2 = AsyncMock()
         validator2.validate = AsyncMock()
 

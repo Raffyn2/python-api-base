@@ -15,7 +15,6 @@ from typing import Any
 
 from core.base.patterns.result import Result
 
-
 # =============================================================================
 # AsyncResult Type Alias
 # **Feature: python-api-base-2025-validation**
@@ -176,8 +175,17 @@ Example:
     >>> callback: Callback[User] = on_user_created
 """
 
-type AsyncCallback[T] = Callable[[T], Awaitable[None]]
-"""Async callback function."""
+type VoidAsyncCallback[T] = Callable[[T], Awaitable[None]]
+"""Async callback that receives a value and returns nothing.
+
+Note: Named VoidAsyncCallback to avoid conflict with AsyncCallback in
+core.types.patterns.result_types which has signature Callable[..., Awaitable[T]].
+
+Example:
+    >>> async def on_event(event: Event) -> None:
+    ...     await process(event)
+    >>> callback: VoidAsyncCallback[Event] = on_event
+"""
 
 
 # =============================================================================
@@ -185,25 +193,25 @@ type AsyncCallback[T] = Callable[[T], Awaitable[None]]
 # =============================================================================
 
 __all__ = [
+    "AsyncFactory",
+    "AsyncFilter",
+    "AsyncHandler",
+    "AsyncMapper",
     # AsyncResult
     "AsyncResult",
-    # Handlers
-    "Handler",
-    "SyncHandler",
-    "AsyncHandler",
-    # Validators
-    "Validator",
     "AsyncValidator",
-    "ValidatorWithError",
+    "Callback",
+    "Factory",
     # Filters
     "Filter",
-    "AsyncFilter",
-    "Predicate",
+    # Handlers
+    "Handler",
     # Utilities
     "Mapper",
-    "AsyncMapper",
-    "Factory",
-    "AsyncFactory",
-    "Callback",
-    "AsyncCallback",
+    "Predicate",
+    "SyncHandler",
+    # Validators
+    "Validator",
+    "ValidatorWithError",
+    "VoidAsyncCallback",
 ]

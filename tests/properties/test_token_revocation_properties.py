@@ -114,9 +114,7 @@ class TestTokenRevocationConsistency:
 
     @settings(max_examples=50, deadline=None)
     @given(user_id=user_id_strategy, num_tokens=st.integers(min_value=1, max_value=5))
-    def test_revoke_all_invalidates_all_user_tokens(
-        self, user_id: str, num_tokens: int
-    ) -> None:
+    def test_revoke_all_invalidates_all_user_tokens(self, user_id: str, num_tokens: int) -> None:
         """
         **Feature: api-architecture-review, Property: Token Revocation Consistency**
         **Validates: Requirements 2.10**
@@ -234,9 +232,7 @@ class TestStoredTokenSerialization:
         revoked=st.booleans(),
         hours_until_expiry=st.integers(min_value=-24, max_value=168),
     )
-    def test_stored_token_round_trip(
-        self, user_id: str, jti: str, revoked: bool, hours_until_expiry: int
-    ) -> None:
+    def test_stored_token_round_trip(self, user_id: str, jti: str, revoked: bool, hours_until_expiry: int) -> None:
         """
         **Feature: api-architecture-review, Property: Token Revocation Consistency**
         **Validates: Requirements 2.10**

@@ -37,34 +37,40 @@ safe_text_strategy = st.text(
 ).filter(lambda x: x.strip() != "")
 
 # Strategy for HTML injection patterns
-html_injection_strategy = st.sampled_from([
-    "<script>alert('xss')</script>",
-    "<img onerror='alert(1)' src='x'>",
-    "javascript:alert(1)",
-    "<iframe src='evil.com'>",
-    "<object data='evil.swf'>",
-    "onclick='alert(1)'",
-])
+html_injection_strategy = st.sampled_from(
+    [
+        "<script>alert('xss')</script>",
+        "<img onerror='alert(1)' src='x'>",
+        "javascript:alert(1)",
+        "<iframe src='evil.com'>",
+        "<object data='evil.swf'>",
+        "onclick='alert(1)'",
+    ]
+)
 
 # Strategy for SQL injection patterns
-sql_injection_strategy = st.sampled_from([
-    "'; DROP TABLE users; --",
-    "' OR '1'='1",
-    "'; DELETE FROM items; --",
-    "UNION SELECT * FROM passwords",
-    "/**/OR/**/1=1",
-    "@@version",
-])
+sql_injection_strategy = st.sampled_from(
+    [
+        "'; DROP TABLE users; --",
+        "' OR '1'='1",
+        "'; DELETE FROM items; --",
+        "UNION SELECT * FROM passwords",
+        "/**/OR/**/1=1",
+        "@@version",
+    ]
+)
 
 # Strategy for shell injection patterns
-shell_injection_strategy = st.sampled_from([
-    "; rm -rf /",
-    "| cat /etc/passwd",
-    "& whoami",
-    "`id`",
-    "$(cat /etc/shadow)",
-    "&& ls -la",
-])
+shell_injection_strategy = st.sampled_from(
+    [
+        "; rm -rf /",
+        "| cat /etc/passwd",
+        "& whoami",
+        "`id`",
+        "$(cat /etc/shadow)",
+        "&& ls -la",
+    ]
+)
 
 
 class TestValidCharacterPreservation:
@@ -263,9 +269,7 @@ class TestDangerousCharacterRemoval:
         safe_text=alphanumeric_strategy,
         injection=html_injection_strategy,
     )
-    def test_mixed_content_preserves_safe_removes_dangerous(
-        self, safe_text: str, injection: str
-    ) -> None:
+    def test_mixed_content_preserves_safe_removes_dangerous(self, safe_text: str, injection: str) -> None:
         """
         **Feature: api-base-improvements, Property 20: Dangerous character removal**
         **Validates: Requirements 7.1**

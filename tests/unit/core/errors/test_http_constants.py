@@ -6,8 +6,6 @@ Tests HTTP status codes and error code constants.
 **Requirements: 3.3**
 """
 
-import pytest
-
 from core.errors.http.constants import ErrorCode, ErrorCodes, ErrorMessages, HttpStatus
 
 
@@ -97,17 +95,13 @@ class TestErrorMessages:
 
     def test_entity_not_found_format(self) -> None:
         """Test ENTITY_NOT_FOUND message formatting."""
-        msg = ErrorMessages.ENTITY_NOT_FOUND.format(
-            entity_type="Order", entity_id="456"
-        )
+        msg = ErrorMessages.ENTITY_NOT_FOUND.format(entity_type="Order", entity_id="456")
         assert "Order" in msg
         assert "456" in msg
 
     def test_business_rule_violated_format(self) -> None:
         """Test BUSINESS_RULE_VIOLATED message formatting."""
-        msg = ErrorMessages.BUSINESS_RULE_VIOLATED.format(
-            rule="MAX_ITEMS", message="Limit exceeded"
-        )
+        msg = ErrorMessages.BUSINESS_RULE_VIOLATED.format(rule="MAX_ITEMS", message="Limit exceeded")
         assert "MAX_ITEMS" in msg
         assert "Limit exceeded" in msg
 

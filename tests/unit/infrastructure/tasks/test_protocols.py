@@ -68,9 +68,7 @@ class ConcreteTaskQueue:
     async def update_task(self, task: Task) -> None:
         self._tasks[task.task_id] = task
 
-    async def get_tasks_by_status(
-        self, status: TaskStatus, limit: int = 100
-    ) -> list[Task]:
+    async def get_tasks_by_status(self, status: TaskStatus, limit: int = 100) -> list[Task]:
         return [t for t in list(self._tasks.values())[:limit] if t.status == status]
 
     async def cancel_task(self, task_id: str) -> bool:

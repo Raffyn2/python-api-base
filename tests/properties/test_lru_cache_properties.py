@@ -13,9 +13,7 @@ except ImportError:
     pytest.skip("my_app modules not available", allow_module_level=True)
 
 
-key_strategy = st.text(
-    min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-)
+key_strategy = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789")
 value_strategy = st.one_of(st.integers(), st.text(max_size=100), st.booleans())
 
 

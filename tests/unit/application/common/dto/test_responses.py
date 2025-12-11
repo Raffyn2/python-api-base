@@ -3,7 +3,7 @@
 Tests ApiResponse and PaginatedResponse DTOs.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 import pytest
 from pydantic import ValidationError

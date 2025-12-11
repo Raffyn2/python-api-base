@@ -43,9 +43,7 @@ class ValidationError[T]:
     errors: list[FieldError] = field(default_factory=list)
     context: T | None = None
 
-    def add_error(
-        self, field: str, message: str, code: str = "validation_error"
-    ) -> Self:
+    def add_error(self, field: str, message: str, code: str = "validation_error") -> Self:
         """Add a field error (returns new instance due to immutability)."""
         new_errors = list(self.errors)
         new_errors.append(FieldError(field=field, message=message, code=code))
@@ -64,10 +62,7 @@ class ValidationError[T]:
         """Convert to dictionary for serialization."""
         return {
             "message": self.message,
-            "errors": [
-                {"field": e.field, "message": e.message, "code": e.code}
-                for e in self.errors
-            ],
+            "errors": [{"field": e.field, "message": e.message, "code": e.code} for e in self.errors],
         }
 
 

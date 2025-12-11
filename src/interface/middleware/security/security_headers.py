@@ -1,8 +1,17 @@
-"""Security headers middleware for FastAPI."""
+"""Security headers middleware for FastAPI.
 
+**Feature: api-architecture-analysis**
+**Validates: Requirements 5.3 (Security Headers)**
+"""
+
+from collections.abc import Awaitable, Callable
+
+import structlog
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+
+logger = structlog.get_logger(__name__)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -49,7 +58,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if permissions_policy:
             self.headers["Permissions-Policy"] = permissions_policy
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         """Add security headers to the response.
 
         Args:
@@ -59,9 +72,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         Returns:
             Response with security headers added.
         """
+        correlation_id = getattr(request.state, "correlation_id", None)
+
         response = await call_next(request)
 
         for header_name, header_value in self.headers.items():
             response.headers[header_name] = header_value
+
+        logger.debug(
+            "security_headers_applied",
+            correlation_id=correlation_id,
+            path=request.url.path,
+            headers_count=len(self.headers),
+        )
 
         return response

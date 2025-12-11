@@ -28,9 +28,7 @@ class UpdateUserHandler(CommandHandler[UpdateUserCommand, UserAggregate]):
     def __init__(self, user_repository: IUserRepository) -> None:
         self._repository = user_repository
 
-    async def handle(
-        self, command: UpdateUserCommand
-    ) -> Result[UserAggregate, Exception]:
+    async def handle(self, command: UpdateUserCommand) -> Result[UserAggregate, Exception]:
         """Handle update user command.
 
         Args:
@@ -43,7 +41,7 @@ class UpdateUserHandler(CommandHandler[UpdateUserCommand, UserAggregate]):
             # Get existing user
             user = await self._repository.get_by_id(command.user_id)
             if user is None:
-                return Err(ValueError(f"User {command.user_id} not found"))
+                return Err(ValueError("User not found"))
 
             # Update profile if any fields provided
             if command.username is not None or command.display_name is not None:

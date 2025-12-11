@@ -9,13 +9,16 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
-from application.common.middleware.resilience.retry import (
-    RetryConfig,
-    RetryExhaustedError,
-    RetryMiddleware,
+from application.common.middleware.cache.cache_invalidation import (
+    CacheInvalidationStrategy,
+    InvalidationRule,
+)
+from application.common.middleware.operations.idempotency_middleware import (
+    IdempotencyConfig,
+    IdempotencyMiddleware,
+    InMemoryIdempotencyCache,
 )
 from application.common.middleware.resilience.circuit_breaker import (
     CircuitBreakerConfig,
@@ -23,29 +26,23 @@ from application.common.middleware.resilience.circuit_breaker import (
     CircuitBreakerOpenError,
     CircuitState,
 )
-from application.common.middleware.operations.idempotency_middleware import (
-    IdempotencyConfig,
-    IdempotencyMiddleware,
-    InMemoryIdempotencyCache,
-)
-from application.common.middleware.cache.cache_invalidation import (
-    CacheInvalidationStrategy,
-    InvalidationRule,
+from application.common.middleware.resilience.retry import (
+    RetryConfig,
+    RetryExhaustedError,
+    RetryMiddleware,
 )
 
 
 class TestRetryMiddleware:
     """Tests for RetryMiddleware class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def retry_middleware(self) -> RetryMiddleware:
         """Create retry middleware with default config."""
         return RetryMiddleware(RetryConfig(max_retries=3, base_delay=0.01))
 
     @pytest.mark.asyncio
-    async def test_success_on_first_attempt(
-        self, retry_middleware: RetryMiddleware
-    ) -> None:
+    async def test_success_on_first_attempt(self, retry_middleware: RetryMiddleware) -> None:
         """Test successful execution on first attempt."""
         handler = AsyncMock(return_value="success")
         command = MagicMock()
@@ -56,9 +53,7 @@ class TestRetryMiddleware:
         handler.assert_called_once_with(command)
 
     @pytest.mark.asyncio
-    async def test_retry_on_transient_failure(
-        self, retry_middleware: RetryMiddleware
-    ) -> None:
+    async def test_retry_on_transient_failure(self, retry_middleware: RetryMiddleware) -> None:
         """Test retry on transient failure."""
         handler = AsyncMock(side_effect=[TimeoutError(), "success"])
         command = MagicMock()
@@ -69,9 +64,7 @@ class TestRetryMiddleware:
         assert handler.call_count == 2
 
     @pytest.mark.asyncio
-    async def test_max_retries_exceeded(
-        self, retry_middleware: RetryMiddleware
-    ) -> None:
+    async def test_max_retries_exceeded(self, retry_middleware: RetryMiddleware) -> None:
         """Test RetryExhaustedError when max retries exceeded."""
         handler = AsyncMock(side_effect=TimeoutError("timeout"))
         command = MagicMock()
@@ -83,9 +76,7 @@ class TestRetryMiddleware:
         assert isinstance(exc_info.value.last_error, TimeoutError)
 
     @pytest.mark.asyncio
-    async def test_non_retryable_exception_not_retried(
-        self, retry_middleware: RetryMiddleware
-    ) -> None:
+    async def test_non_retryable_exception_not_retried(self, retry_middleware: RetryMiddleware) -> None:
         """Test non-retryable exceptions are not retried."""
         handler = AsyncMock(side_effect=ValueError("not retryable"))
         command = MagicMock()
@@ -123,21 +114,17 @@ class TestRetryMiddleware:
 class TestCircuitBreakerMiddleware:
     """Tests for CircuitBreakerMiddleware class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def circuit_breaker(self) -> CircuitBreakerMiddleware:
         """Create circuit breaker with test config."""
-        return CircuitBreakerMiddleware(
-            CircuitBreakerConfig(failure_threshold=3, recovery_timeout=0.1)
-        )
+        return CircuitBreakerMiddleware(CircuitBreakerConfig(failure_threshold=3, recovery_timeout=0.1))
 
     def test_initial_state_closed(self, circuit_breaker: CircuitBreakerMiddleware) -> None:
         """Test circuit starts in closed state."""
         assert circuit_breaker.state == CircuitState.CLOSED
 
     @pytest.mark.asyncio
-    async def test_success_keeps_circuit_closed(
-        self, circuit_breaker: CircuitBreakerMiddleware
-    ) -> None:
+    async def test_success_keeps_circuit_closed(self, circuit_breaker: CircuitBreakerMiddleware) -> None:
         """Test successful calls keep circuit closed."""
         handler = AsyncMock(return_value="success")
         command = MagicMock()
@@ -148,9 +135,7 @@ class TestCircuitBreakerMiddleware:
         assert circuit_breaker.state == CircuitState.CLOSED
 
     @pytest.mark.asyncio
-    async def test_failures_open_circuit(
-        self, circuit_breaker: CircuitBreakerMiddleware
-    ) -> None:
+    async def test_failures_open_circuit(self, circuit_breaker: CircuitBreakerMiddleware) -> None:
         """Test circuit opens after failure threshold."""
         handler = AsyncMock(side_effect=Exception("error"))
         command = MagicMock()
@@ -162,9 +147,7 @@ class TestCircuitBreakerMiddleware:
         assert circuit_breaker.state == CircuitState.OPEN
 
     @pytest.mark.asyncio
-    async def test_open_circuit_rejects_requests(
-        self, circuit_breaker: CircuitBreakerMiddleware
-    ) -> None:
+    async def test_open_circuit_rejects_requests(self, circuit_breaker: CircuitBreakerMiddleware) -> None:
         """Test open circuit rejects requests immediately."""
         handler = AsyncMock(side_effect=Exception("error"))
         command = MagicMock()
@@ -179,9 +162,7 @@ class TestCircuitBreakerMiddleware:
             await circuit_breaker(command, handler)
 
     @pytest.mark.asyncio
-    async def test_half_open_after_recovery_timeout(
-        self, circuit_breaker: CircuitBreakerMiddleware
-    ) -> None:
+    async def test_half_open_after_recovery_timeout(self, circuit_breaker: CircuitBreakerMiddleware) -> None:
         """Test circuit enters half-open state after recovery timeout."""
         handler = AsyncMock(side_effect=Exception("error"))
         command = MagicMock()
@@ -202,18 +183,14 @@ class TestCircuitBreakerMiddleware:
         assert result == "success"
         assert circuit_breaker.state == CircuitState.CLOSED
 
-    def test_on_success_resets_failure_count(
-        self, circuit_breaker: CircuitBreakerMiddleware
-    ) -> None:
+    def test_on_success_resets_failure_count(self, circuit_breaker: CircuitBreakerMiddleware) -> None:
         """Test success resets failure count."""
         circuit_breaker._stats.failure_count = 2
         circuit_breaker._on_success()
 
         assert circuit_breaker._stats.failure_count == 0
 
-    def test_on_failure_increments_count(
-        self, circuit_breaker: CircuitBreakerMiddleware
-    ) -> None:
+    def test_on_failure_increments_count(self, circuit_breaker: CircuitBreakerMiddleware) -> None:
         """Test failure increments failure count."""
         circuit_breaker._on_failure(Exception("error"))
 
@@ -223,20 +200,18 @@ class TestCircuitBreakerMiddleware:
 class TestIdempotencyMiddleware:
     """Tests for IdempotencyMiddleware class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def cache(self) -> InMemoryIdempotencyCache:
         """Create in-memory cache."""
         return InMemoryIdempotencyCache()
 
-    @pytest.fixture
+    @pytest.fixture()
     def middleware(self, cache: InMemoryIdempotencyCache) -> IdempotencyMiddleware:
         """Create idempotency middleware."""
         return IdempotencyMiddleware(cache, IdempotencyConfig(ttl_seconds=60))
 
     @pytest.mark.asyncio
-    async def test_first_request_executes(
-        self, middleware: IdempotencyMiddleware
-    ) -> None:
+    async def test_first_request_executes(self, middleware: IdempotencyMiddleware) -> None:
         """Test first request is executed."""
         handler = AsyncMock(return_value="result")
         command = MagicMock()
@@ -248,9 +223,7 @@ class TestIdempotencyMiddleware:
         handler.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_duplicate_request_returns_cached(
-        self, middleware: IdempotencyMiddleware
-    ) -> None:
+    async def test_duplicate_request_returns_cached(self, middleware: IdempotencyMiddleware) -> None:
         """Test duplicate request returns cached result."""
         handler = AsyncMock(return_value="result")
         command = MagicMock()
@@ -266,9 +239,7 @@ class TestIdempotencyMiddleware:
         handler.assert_called_once()  # Only called once
 
     @pytest.mark.asyncio
-    async def test_no_idempotency_key_executes(
-        self, middleware: IdempotencyMiddleware
-    ) -> None:
+    async def test_no_idempotency_key_executes(self, middleware: IdempotencyMiddleware) -> None:
         """Test request without idempotency key is always executed."""
         handler = AsyncMock(return_value="result")
         command = MagicMock(spec=[])  # No idempotency_key attribute
@@ -278,9 +249,7 @@ class TestIdempotencyMiddleware:
         assert result == "result"
         handler.assert_called_once()
 
-    def test_get_idempotency_key_from_attribute(
-        self, middleware: IdempotencyMiddleware
-    ) -> None:
+    def test_get_idempotency_key_from_attribute(self, middleware: IdempotencyMiddleware) -> None:
         """Test extracting idempotency key from attribute."""
         command = MagicMock()
         command.idempotency_key = "key-123"
@@ -289,9 +258,7 @@ class TestIdempotencyMiddleware:
 
         assert key == "key-123"
 
-    def test_get_idempotency_key_from_method(
-        self, middleware: IdempotencyMiddleware
-    ) -> None:
+    def test_get_idempotency_key_from_method(self, middleware: IdempotencyMiddleware) -> None:
         """Test extracting idempotency key from method."""
         command = MagicMock(spec=["get_idempotency_key"])
         command.get_idempotency_key.return_value = "key-456"
@@ -305,7 +272,7 @@ class TestIdempotencyMiddleware:
 class TestInMemoryIdempotencyCache:
     """Tests for InMemoryIdempotencyCache class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def cache(self) -> InMemoryIdempotencyCache:
         """Create cache instance."""
         return InMemoryIdempotencyCache()
@@ -349,7 +316,7 @@ class TestInMemoryIdempotencyCache:
 class TestCacheInvalidationStrategy:
     """Tests for CacheInvalidationStrategy class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_cache(self) -> MagicMock:
         """Create mock cache."""
         cache = MagicMock()
@@ -357,9 +324,7 @@ class TestCacheInvalidationStrategy:
         return cache
 
     @pytest.mark.asyncio
-    async def test_invalidate_with_matching_rule(
-        self, mock_cache: MagicMock
-    ) -> None:
+    async def test_invalidate_with_matching_rule(self, mock_cache: MagicMock) -> None:
         """Test cache invalidation with matching rule."""
 
         class TestEvent:
@@ -381,9 +346,7 @@ class TestCacheInvalidationStrategy:
         assert mock_cache.clear_pattern.call_count == 2
 
     @pytest.mark.asyncio
-    async def test_invalidate_no_matching_rule(
-        self, mock_cache: MagicMock
-    ) -> None:
+    async def test_invalidate_no_matching_rule(self, mock_cache: MagicMock) -> None:
         """Test no invalidation when no matching rule."""
 
         class TestEvent:
@@ -396,9 +359,7 @@ class TestCacheInvalidationStrategy:
             pass
 
         strategy = TestStrategy(mock_cache)
-        strategy.add_rule(
-            InvalidationRule(event_type=TestEvent, patterns=["pattern:*"])
-        )
+        strategy.add_rule(InvalidationRule(event_type=TestEvent, patterns=["pattern:*"]))
 
         await strategy.invalidate(OtherEvent())
 
@@ -418,9 +379,7 @@ class TestRetryMiddlewareProperties:
     )
     @settings(max_examples=100, deadline=5000)
     @pytest.mark.asyncio
-    async def test_retries_until_success_or_exhausted(
-        self, max_retries: int, failures_before_success: int
-    ) -> None:
+    async def test_retries_until_success_or_exhausted(self, max_retries: int, failures_before_success: int) -> None:
         """Property: Retry middleware attempts up to max_retries times.
 
         **Feature: test-coverage-80-percent-v3, Property 4: Middleware Retry Behavior**

@@ -47,12 +47,12 @@ class TestPedidoItemMapper:
 class TestPedidoExampleMapper:
     """Tests for PedidoExampleMapper class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mapper(self) -> PedidoExampleMapper:
         """Create mapper instance."""
         return PedidoExampleMapper()
 
-    @pytest.fixture
+    @pytest.fixture()
     def sample_pedido(self) -> PedidoExample:
         """Create sample pedido for testing."""
         pedido = PedidoExample.create(
@@ -71,9 +71,7 @@ class TestPedidoExampleMapper:
         )
         return pedido
 
-    def test_to_dto_converts_pedido(
-        self, mapper: PedidoExampleMapper, sample_pedido: PedidoExample
-    ) -> None:
+    def test_to_dto_converts_pedido(self, mapper: PedidoExampleMapper, sample_pedido: PedidoExample) -> None:
         """Test pedido to DTO conversion."""
         dto = mapper.to_dto(sample_pedido)
 
@@ -86,9 +84,7 @@ class TestPedidoExampleMapper:
         assert dto.items_count == 2  # quantity is 2
         assert len(dto.items) == 1  # 1 line item
 
-    def test_to_dto_list_converts_multiple(
-        self, mapper: PedidoExampleMapper
-    ) -> None:
+    def test_to_dto_list_converts_multiple(self, mapper: PedidoExampleMapper) -> None:
         """Test batch pedido to DTO conversion."""
         pedidos = [
             PedidoExample.create(
@@ -105,9 +101,7 @@ class TestPedidoExampleMapper:
         for i, dto in enumerate(dtos):
             assert dto.customer_name == f"Customer {i}"
 
-    def test_static_to_response_method(
-        self, sample_pedido: PedidoExample
-    ) -> None:
+    def test_static_to_response_method(self, sample_pedido: PedidoExample) -> None:
         """Test backward compatible static method."""
         dto = PedidoExampleMapper.to_response(sample_pedido)
 

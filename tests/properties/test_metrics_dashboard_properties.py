@@ -80,9 +80,7 @@ class TestMetricSeriesProperties:
         value=metric_value_strategy,
     )
     @settings(max_examples=100)
-    def test_add_point_increases_length(
-        self, name: str, metric_type: MetricType, value: float
-    ) -> None:
+    def test_add_point_increases_length(self, name: str, metric_type: MetricType, value: float) -> None:
         """Property: Adding points increases series length."""
         series = MetricSeries(name=name, metric_type=metric_type)
         initial_len = len(series.points)
@@ -94,9 +92,7 @@ class TestMetricSeriesProperties:
         values=st.lists(metric_value_strategy, min_size=1, max_size=10),
     )
     @settings(max_examples=100)
-    def test_get_latest_returns_last_point(
-        self, name: str, values: list[float]
-    ) -> None:
+    def test_get_latest_returns_last_point(self, name: str, values: list[float]) -> None:
         """Property: get_latest returns the most recent point."""
         series = MetricSeries(name=name, metric_type=MetricType.GAUGE)
         for value in values:
@@ -177,9 +173,7 @@ class TestDashboardProperties:
         widget_count=st.integers(min_value=1, max_value=10),
     )
     @settings(max_examples=50)
-    def test_add_widget_increases_count(
-        self, dashboard_id: str, title: str, widget_count: int
-    ) -> None:
+    def test_add_widget_increases_count(self, dashboard_id: str, title: str, widget_count: int) -> None:
         """Property: Adding widgets increases widget count."""
         dashboard = Dashboard(id=dashboard_id, title=title)
 
@@ -305,9 +299,7 @@ class TestMetricsDashboardProperties:
     )
     @settings(max_examples=100)
     @pytest.mark.anyio
-    async def test_record_metric_stores_data(
-        self, name: str, value: float, metric_type: MetricType
-    ) -> None:
+    async def test_record_metric_stores_data(self, name: str, value: float, metric_type: MetricType) -> None:
         """Property: Recorded metrics are stored."""
         dashboard_service = create_metrics_dashboard()
 
@@ -375,9 +367,7 @@ class TestDashboardBuilderProperties:
         title=st.text(min_size=1, max_size=50).filter(lambda x: x.strip()),
     )
     @settings(max_examples=100)
-    def test_builder_creates_dashboard_with_id_and_title(
-        self, dashboard_id: str, title: str
-    ) -> None:
+    def test_builder_creates_dashboard_with_id_and_title(self, dashboard_id: str, title: str) -> None:
         """Property: Builder creates dashboard with correct ID and title."""
         dashboard = DashboardBuilder(dashboard_id, title).build()
         assert dashboard.id == dashboard_id
@@ -403,9 +393,7 @@ class TestTimeRangeProperties:
 
     @given(time_range=time_range_strategy)
     @settings(max_examples=100)
-    def test_to_timedelta_returns_positive_duration(
-        self, time_range: TimeRange
-    ) -> None:
+    def test_to_timedelta_returns_positive_duration(self, time_range: TimeRange) -> None:
         """Property: to_timedelta returns positive duration."""
         delta = time_range.to_timedelta()
         assert delta.total_seconds() > 0

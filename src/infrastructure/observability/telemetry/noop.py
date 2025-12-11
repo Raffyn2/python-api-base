@@ -4,7 +4,7 @@ Feature: file-size-compliance-phase2
 Improvement: P1-1 - Replaced Any with OpenTelemetry-compliant types
 """
 
-from typing import Any
+from typing import Any, Self
 
 from infrastructure.observability.telemetry.types import Attributes, AttributeValue
 
@@ -12,7 +12,7 @@ from infrastructure.observability.telemetry.types import Attributes, AttributeVa
 class _NoOpSpan:
     """No-op span for when tracing is disabled."""
 
-    def __enter__(self) -> "_NoOpSpan":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args: Any) -> None:

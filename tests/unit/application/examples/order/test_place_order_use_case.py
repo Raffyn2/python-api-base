@@ -6,7 +6,7 @@ Demonstrates testing a complex UseCase with mocked dependencies.
 """
 
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -17,7 +17,7 @@ from application.examples.order.dtos import (
 from application.examples.order.use_cases.place_order import PlaceOrderUseCase
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_catalog() -> AsyncMock:
     """Create mock item catalog."""
     catalog = AsyncMock()
@@ -32,7 +32,7 @@ def mock_catalog() -> AsyncMock:
     return catalog
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_inventory() -> AsyncMock:
     """Create mock inventory service."""
     inventory = AsyncMock()
@@ -41,18 +41,16 @@ def mock_inventory() -> AsyncMock:
     return inventory
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_payment() -> AsyncMock:
     """Create mock payment service."""
     payment = AsyncMock()
-    payment.process_payment = AsyncMock(
-        return_value={"payment_id": "pay-123", "status": "approved"}
-    )
+    payment.process_payment = AsyncMock(return_value={"payment_id": "pay-123", "status": "approved"})
     payment.refund_payment = AsyncMock(return_value=True)
     return payment
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_orders() -> AsyncMock:
     """Create mock order repository."""
     orders = AsyncMock()
@@ -60,7 +58,7 @@ def mock_orders() -> AsyncMock:
     return orders
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_notifications() -> AsyncMock:
     """Create mock notification service."""
     notifications = AsyncMock()
@@ -68,7 +66,7 @@ def mock_notifications() -> AsyncMock:
     return notifications
 
 
-@pytest.fixture
+@pytest.fixture()
 def use_case(
     mock_catalog: AsyncMock,
     mock_inventory: AsyncMock,
@@ -86,7 +84,7 @@ def use_case(
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def valid_input() -> PlaceOrderInput:
     """Create valid order input."""
     return PlaceOrderInput(
@@ -162,9 +160,7 @@ class TestPlaceOrderUseCaseValidation:
     """Tests for input validation."""
 
     @pytest.mark.asyncio
-    async def test_empty_customer_id_fails(
-        self, use_case: PlaceOrderUseCase
-    ) -> None:
+    async def test_empty_customer_id_fails(self, use_case: PlaceOrderUseCase) -> None:
         """Order with empty customer ID fails validation."""
         input_data = PlaceOrderInput(
             customer_id="",
@@ -180,9 +176,7 @@ class TestPlaceOrderUseCaseValidation:
         assert "customer_id" in error.details.get("field", "")
 
     @pytest.mark.asyncio
-    async def test_empty_items_fails(
-        self, use_case: PlaceOrderUseCase
-    ) -> None:
+    async def test_empty_items_fails(self, use_case: PlaceOrderUseCase) -> None:
         """Order with no items fails validation."""
         input_data = PlaceOrderInput(
             customer_id="cust-123",
@@ -197,9 +191,7 @@ class TestPlaceOrderUseCaseValidation:
         assert error.code == "VALIDATION_ERROR"
 
     @pytest.mark.asyncio
-    async def test_zero_quantity_fails(
-        self, use_case: PlaceOrderUseCase
-    ) -> None:
+    async def test_zero_quantity_fails(self, use_case: PlaceOrderUseCase) -> None:
         """Order with zero quantity item fails validation."""
         input_data = PlaceOrderInput(
             customer_id="cust-123",

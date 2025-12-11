@@ -300,11 +300,7 @@ def has_module_docstring(tree: ast.AST) -> bool:
     if not isinstance(tree, ast.Module) or not tree.body:
         return False
     first = tree.body[0]
-    return (
-        isinstance(first, ast.Expr)
-        and isinstance(first.value, ast.Constant)
-        and isinstance(first.value.value, str)
-    )
+    return isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str)
 
 
 def has_docstring(node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef) -> bool:
@@ -312,11 +308,7 @@ def has_docstring(node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef) -
     if not node.body:
         return False
     first = node.body[0]
-    return (
-        isinstance(first, ast.Expr)
-        and isinstance(first.value, ast.Constant)
-        and isinstance(first.value.value, str)
-    )
+    return isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str)
 
 
 def is_public(name: str) -> bool:
@@ -341,8 +333,7 @@ def test_file_size_hard_limit_compliance(file_path: Path) -> None:
     line_count = count_file_lines(file_path)
 
     assert line_count <= FILE_SIZE_HARD_LIMIT, (
-        f"{file_path.name} has {line_count} lines (max {FILE_SIZE_HARD_LIMIT}). "
-        f"File requires immediate modularization."
+        f"{file_path.name} has {line_count} lines (max {FILE_SIZE_HARD_LIMIT}). File requires immediate modularization."
     )
 
 
@@ -416,9 +407,7 @@ def test_class_file_naming_convention(file_path: Path) -> None:
         pytest.skip(f"Could not parse {file_path}")
 
     # Get top-level classes only (not nested)
-    top_level_classes = [
-        node for node in ast.iter_child_nodes(tree) if isinstance(node, ast.ClassDef)
-    ]
+    top_level_classes = [node for node in ast.iter_child_nodes(tree) if isinstance(node, ast.ClassDef)]
 
     if len(top_level_classes) != 1:
         return  # Only check single-class files
@@ -439,8 +428,7 @@ def test_class_file_naming_convention(file_path: Path) -> None:
     other_content = [
         node
         for node in ast.iter_child_nodes(tree)
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-        and not node.name.startswith("_")
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and not node.name.startswith("_")
     ]
     if other_content:
         return  # File has other public functions, naming may differ
@@ -534,10 +522,7 @@ def test_import_ordering_compliance(file_path: Path) -> None:
     for import_type, line_no, module_name in import_groups:
         current_order = order_map[import_type]
         if current_order < last_type_order:
-            violations.append(
-                f"Line {line_no}: {module_name} ({import_type}) appears after "
-                f"higher-order imports"
-            )
+            violations.append(f"Line {line_no}: {module_name} ({import_type}) appears after higher-order imports")
         last_type_order = max(last_type_order, current_order)
 
     # Import ordering is a soft requirement - log but don't fail
@@ -596,7 +581,7 @@ def test_linting_compliance() -> None:
     For any Python file in the codebase, running ruff check should produce
     no errors.
     """
-    result = subprocess.run(
+    subprocess.run(
         ["ruff", "check", str(SRC_ROOT), "--select=E,F", "--quiet"],
         capture_output=True,
         text=True,

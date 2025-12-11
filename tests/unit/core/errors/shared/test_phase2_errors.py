@@ -4,8 +4,6 @@
 **Validates: Requirements 4.2**
 """
 
-import pytest
-
 from core.errors.shared.phase2_errors import (
     EntityResolutionError,
     FederationValidationError,
@@ -87,9 +85,9 @@ class TestSnapshotIntegrityError:
         )
         message = str(error)
         assert "Snapshot integrity check failed" in message
-        assert "my-aggregate" in message
-        assert "0123456789abcdef..." in message
-        assert "fedcba9876543210..." in message
+        # Note: aggregate_id is stored but not in message for security
+        assert "01234567..." in message
+        assert "fedcba98..." in message
 
     def test_inherits_from_phase2_error(self) -> None:
         """Test inheritance from Phase2ModuleError."""
@@ -121,21 +119,25 @@ class TestFilterValidationError:
         assert "Invalid sort field" in str(error)
 
     def test_message_shows_allowed_fields(self) -> None:
-        """Test that message shows allowed fields."""
+        """Test that message does NOT expose allowed fields (security)."""
         error = FilterValidationError(
             field="unknown",
             allowed_fields={"a", "b", "c"},
         )
         message = str(error)
-        assert "Invalid filter field 'unknown'" in message
-        assert "Allowed fields:" in message
+        # Security: allowed fields are stored but NOT exposed in message
+        assert "Invalid filter field specified" in message
+        assert error.field == "unknown"
+        assert error.allowed_fields == {"a", "b", "c"}
 
     def test_message_truncates_many_fields(self) -> None:
-        """Test that message truncates when many allowed fields."""
+        """Test that message does NOT expose allowed fields (security)."""
         many_fields = {f"field_{i}" for i in range(20)}
         error = FilterValidationError(field="bad", allowed_fields=many_fields)
         message = str(error)
-        assert "... (10 more)" in message
+        # Security: allowed fields are stored but NOT exposed in message
+        assert "Invalid filter field specified" in message
+        assert len(error.allowed_fields) == 20
 
     def test_inherits_from_phase2_error(self) -> None:
         """Test inheritance from Phase2ModuleError."""

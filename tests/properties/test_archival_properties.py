@@ -6,9 +6,7 @@
 
 import pytest
 
-pytest.skip(
-    "Module infrastructure.storage.archival not implemented", allow_module_level=True
-)
+pytest.skip("Module infrastructure.storage.archival not implemented", allow_module_level=True)
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -38,9 +36,7 @@ class TestSourceRepository:
     def __init__(self) -> None:
         self._records: list[TestRecord] = []
 
-    async def find_older_than(
-        self, entity_type: str, cutoff_date: datetime, limit: int
-    ) -> list[TestRecord]:
+    async def find_older_than(self, entity_type: str, cutoff_date: datetime, limit: int) -> list[TestRecord]:
         return [r for r in self._records if r.created_at < cutoff_date][:limit]
 
     async def delete_by_ids(self, ids: list[str]) -> int:
@@ -65,9 +61,7 @@ class TestRetentionPolicyProperties:
         st.integers(min_value=0, max_value=400),
     )
     @settings(max_examples=100)
-    def test_tier_assignment_correct(
-        self, hot_days: int, warm_days: int, cold_days: int, age_days: int
-    ) -> None:
+    def test_tier_assignment_correct(self, hot_days: int, warm_days: int, cold_days: int, age_days: int) -> None:
         """Tier assignment based on age is correct."""
         policy = RetentionPolicy(
             name="test",
@@ -92,9 +86,7 @@ class TestRetentionPolicyProperties:
     @settings(max_examples=50)
     def test_hot_tier_for_recent_data(self, age_days: int) -> None:
         """Recent data is always in hot tier."""
-        policy = RetentionPolicy(
-            name="test", entity_type="test", hot_retention_days=100
-        )
+        policy = RetentionPolicy(name="test", entity_type="test", hot_retention_days=100)
 
         tier = policy.get_tier_for_age(age_days)
         assert tier == StorageTier.HOT
@@ -112,9 +104,7 @@ class TestArchivalServiceProperties:
         source = TestSourceRepository()
         service: ArchivalService[TestRecord] = ArchivalService(backend, source)
 
-        policy = RetentionPolicy(
-            name="test", entity_type="test_entity", hot_retention_days=30
-        )
+        policy = RetentionPolicy(name="test", entity_type="test_entity", hot_retention_days=30)
         service.register_policy(policy)
 
         stats = await service.get_archival_stats("test_entity")

@@ -57,11 +57,13 @@ name_strategy = st.text(
 
 value_strategy = st.integers(min_value=-1000000, max_value=1000000)
 
-sample_dict_strategy = st.fixed_dictionaries({
-    "name": name_strategy,
-    "value": value_strategy,
-    "active": st.booleans(),
-})
+sample_dict_strategy = st.fixed_dictionaries(
+    {
+        "name": name_strategy,
+        "value": value_strategy,
+        "active": st.booleans(),
+    }
+)
 
 
 # === Property Tests ===

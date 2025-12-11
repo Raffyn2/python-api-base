@@ -4,16 +4,17 @@
 **Validates: Requirements for container monitoring and debugging**
 """
 
-import logging
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+import structlog
+
 from core.di.lifecycle import Lifetime
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class ContainerStats:
     """Statistics about container usage for observability.
 
@@ -37,21 +38,15 @@ class ContainerHooks(Protocol):
     for logging, monitoring, and debugging purposes.
     """
 
-    def on_service_registered(
-        self, service_type: type, lifetime: Lifetime, factory: Any
-    ) -> None:
+    def on_service_registered(self, service_type: type, lifetime: Lifetime, factory: Any) -> None:
         """Called when a service is registered."""
         ...
 
-    def on_service_resolved(
-        self, service_type: type, instance: Any, is_cached: bool
-    ) -> None:
+    def on_service_resolved(self, service_type: type, instance: Any, is_cached: bool) -> None:
         """Called when a service is successfully resolved."""
         ...
 
-    def on_resolution_error(
-        self, service_type: type, error: Exception, resolution_stack: list[type]
-    ) -> None:
+    def on_resolution_error(self, service_type: type, error: Exception, resolution_stack: list[type]) -> None:
         """Called when service resolution fails."""
         ...
 
@@ -78,17 +73,13 @@ class MetricsTracker:
         """Record a service resolution attempt."""
         self._metrics.total_resolutions += 1
         type_name = service_type.__name__
-        self._metrics.resolutions_by_type[type_name] = (
-            self._metrics.resolutions_by_type.get(type_name, 0) + 1
-        )
+        self._metrics.resolutions_by_type[type_name] = self._metrics.resolutions_by_type.get(type_name, 0) + 1
 
     def record_singleton_created(self, service_type: type) -> None:
         """Record singleton instance creation."""
         if service_type not in self._singleton_instances_created:
             self._singleton_instances_created.add(service_type)
-            self._metrics.singleton_instances_created = len(
-                self._singleton_instances_created
-            )
+            self._metrics.singleton_instances_created = len(self._singleton_instances_created)
 
     def get_stats(self) -> ContainerStats:
         """Get container usage statistics."""
@@ -115,13 +106,10 @@ class MetricsTracker:
             try:
                 hook_method = getattr(hooks, hook_name)
                 hook_method(**kwargs)
-            except Exception as e:
+            except Exception:
                 logger.warning(
                     "Hook execution failed",
-                    extra={
-                        "hook_name": hook_name,
-                        "error": str(e),
-                        "hook_type": type(hooks).__name__,
-                    },
+                    hook_name=hook_name,
+                    hook_type=type(hooks).__name__,
                     exc_info=True,
                 )

@@ -108,7 +108,7 @@ class ExponentialBackoff(RetryPolicy):
         delay = min(delay, self.max_delay)
 
         if self.jitter > 0:
-            jitter_amount = delay * self.jitter * random.random()  # noqa: S311
+            jitter_amount = delay * self.jitter * random.random()
             delay += jitter_amount
 
         return delay

@@ -26,9 +26,7 @@ from domain.common.currency import (
 @st.composite
 def money_strategy(draw: st.DrawFn) -> Money:
     """Generate valid money values."""
-    amount = draw(
-        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("1000000"), places=2)
-    )
+    amount = draw(st.decimals(min_value=Decimal("0.01"), max_value=Decimal(1000000), places=2))
     currency = draw(st.sampled_from([USD, EUR, BRL]))
     return Money(amount=amount, currency=currency)
 
@@ -37,8 +35,8 @@ class TestMoneyProperties:
     """Property tests for Money."""
 
     @given(
-        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
-        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
+        st.decimals(min_value=Decimal("0.01"), max_value=Decimal(10000), places=2),
+        st.decimals(min_value=Decimal("0.01"), max_value=Decimal(10000), places=2),
     )
     @settings(max_examples=100)
     def test_addition_commutative(self, a: Decimal, b: Decimal) -> None:
@@ -52,9 +50,9 @@ class TestMoneyProperties:
         assert result1.amount == result2.amount
 
     @given(
-        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
-        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
-        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
+        st.decimals(min_value=Decimal("0.01"), max_value=Decimal(10000), places=2),
+        st.decimals(min_value=Decimal("0.01"), max_value=Decimal(10000), places=2),
+        st.decimals(min_value=Decimal("0.01"), max_value=Decimal(10000), places=2),
     )
     @settings(max_examples=100)
     def test_addition_associative(self, a: Decimal, b: Decimal, c: Decimal) -> None:
@@ -68,18 +66,18 @@ class TestMoneyProperties:
 
         assert result1.amount == result2.amount
 
-    @given(st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2))
+    @given(st.decimals(min_value=Decimal("0.01"), max_value=Decimal(10000), places=2))
     @settings(max_examples=100)
     def test_subtraction_inverse_of_addition(self, a: Decimal) -> None:
         """Subtraction is inverse of addition."""
         m1 = Money(a, USD)
-        m2 = Money(Decimal("100"), USD)
+        m2 = Money(Decimal(100), USD)
 
         result = (m1 + m2) - m2
         assert result.amount == m1.amount
 
     @given(
-        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2),
+        st.decimals(min_value=Decimal("0.01"), max_value=Decimal(10000), places=2),
         st.integers(min_value=1, max_value=100),
     )
     @settings(max_examples=100)
@@ -90,7 +88,7 @@ class TestMoneyProperties:
 
         assert result.amount == m.amount
 
-    @given(st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=4))
+    @given(st.decimals(min_value=Decimal("0.01"), max_value=Decimal(10000), places=4))
     @settings(max_examples=100)
     def test_round_preserves_currency(self, a: Decimal) -> None:
         """Rounding preserves currency."""
@@ -103,9 +101,7 @@ class TestMoneyProperties:
 class TestCurrencyFormatterProperties:
     """Property tests for currency formatter."""
 
-    @given(
-        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("1000000"), places=2)
-    )
+    @given(st.decimals(min_value=Decimal("0.01"), max_value=Decimal(1000000), places=2))
     @settings(max_examples=100)
     def test_format_contains_symbol(self, amount: Decimal) -> None:
         """Formatted output contains currency symbol."""
@@ -115,9 +111,7 @@ class TestCurrencyFormatterProperties:
         formatted = formatter.format(m)
         assert USD.symbol in formatted
 
-    @given(
-        st.decimals(min_value=Decimal("0.01"), max_value=Decimal("1000000"), places=2)
-    )
+    @given(st.decimals(min_value=Decimal("0.01"), max_value=Decimal(1000000), places=2))
     @settings(max_examples=100)
     def test_format_different_locales(self, amount: Decimal) -> None:
         """Different locales produce different formats."""
@@ -137,7 +131,7 @@ class TestCurrencyFormatterProperties:
 class TestCurrencyConverterProperties:
     """Property tests for currency converter."""
 
-    @given(st.decimals(min_value=Decimal("0.01"), max_value=Decimal("10000"), places=2))
+    @given(st.decimals(min_value=Decimal("0.01"), max_value=Decimal(10000), places=2))
     @settings(max_examples=50)
     @pytest.mark.asyncio
     async def test_convert_same_currency_identity(self, amount: Decimal) -> None:
@@ -151,7 +145,7 @@ class TestCurrencyConverterProperties:
         assert converted.amount == m.amount
         assert converted.currency.code == m.currency.code
 
-    @given(st.decimals(min_value=Decimal("1"), max_value=Decimal("1000"), places=2))
+    @given(st.decimals(min_value=Decimal(1), max_value=Decimal(1000), places=2))
     @settings(max_examples=50)
     @pytest.mark.asyncio
     async def test_convert_preserves_value_approximately(self, amount: Decimal) -> None:

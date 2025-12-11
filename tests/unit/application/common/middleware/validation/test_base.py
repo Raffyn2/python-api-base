@@ -92,39 +92,47 @@ class TestCompositeValidator:
         assert len(errors) == 1
 
     def test_multiple_valid_validators(self):
-        validator = CompositeValidator([
-            AlwaysValidValidator(),
-            AlwaysValidValidator(),
-            AlwaysValidValidator(),
-        ])
+        validator = CompositeValidator(
+            [
+                AlwaysValidValidator(),
+                AlwaysValidValidator(),
+                AlwaysValidValidator(),
+            ]
+        )
         command = SampleCommand(name="test", value=10)
         errors = validator.validate(command)
         assert errors == []
 
     def test_multiple_invalid_validators(self):
-        validator = CompositeValidator([
-            AlwaysInvalidValidator("Error 1"),
-            AlwaysInvalidValidator("Error 2"),
-        ])
+        validator = CompositeValidator(
+            [
+                AlwaysInvalidValidator("Error 1"),
+                AlwaysInvalidValidator("Error 2"),
+            ]
+        )
         command = SampleCommand(name="test", value=10)
         errors = validator.validate(command)
         assert len(errors) == 2
 
     def test_mixed_validators(self):
-        validator = CompositeValidator([
-            AlwaysValidValidator(),
-            AlwaysInvalidValidator(),
-            AlwaysValidValidator(),
-        ])
+        validator = CompositeValidator(
+            [
+                AlwaysValidValidator(),
+                AlwaysInvalidValidator(),
+                AlwaysValidValidator(),
+            ]
+        )
         command = SampleCommand(name="test", value=10)
         errors = validator.validate(command)
         assert len(errors) == 1
 
     def test_collects_all_errors(self):
-        validator = CompositeValidator([
-            NameRequiredValidator(),
-            ValuePositiveValidator(),
-        ])
+        validator = CompositeValidator(
+            [
+                NameRequiredValidator(),
+                ValuePositiveValidator(),
+            ]
+        )
         command = SampleCommand(name=None, value=-5)
         errors = validator.validate(command)
         assert len(errors) == 2
@@ -133,19 +141,23 @@ class TestCompositeValidator:
         assert "value" in fields
 
     def test_passes_when_all_valid(self):
-        validator = CompositeValidator([
-            NameRequiredValidator(),
-            ValuePositiveValidator(),
-        ])
+        validator = CompositeValidator(
+            [
+                NameRequiredValidator(),
+                ValuePositiveValidator(),
+            ]
+        )
         command = SampleCommand(name="test", value=10)
         errors = validator.validate(command)
         assert errors == []
 
     def test_partial_validation_failure(self):
-        validator = CompositeValidator([
-            NameRequiredValidator(),
-            ValuePositiveValidator(),
-        ])
+        validator = CompositeValidator(
+            [
+                NameRequiredValidator(),
+                ValuePositiveValidator(),
+            ]
+        )
         command = SampleCommand(name="test", value=-5)
         errors = validator.validate(command)
         assert len(errors) == 1
@@ -156,13 +168,17 @@ class TestCompositeValidatorNesting:
     """Tests for nested CompositeValidators."""
 
     def test_nested_composite_validators(self):
-        inner = CompositeValidator([
-            NameRequiredValidator(),
-        ])
-        outer = CompositeValidator([
-            inner,
-            ValuePositiveValidator(),
-        ])
+        inner = CompositeValidator(
+            [
+                NameRequiredValidator(),
+            ]
+        )
+        outer = CompositeValidator(
+            [
+                inner,
+                ValuePositiveValidator(),
+            ]
+        )
         command = SampleCommand(name=None, value=-5)
         errors = outer.validate(command)
         assert len(errors) == 2

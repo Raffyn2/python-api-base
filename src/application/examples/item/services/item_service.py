@@ -38,9 +38,7 @@ from core.base.repository.interface import IRepository
 from domain.examples.item.entity import ItemExample
 
 
-class ItemExampleService(
-    GenericService[ItemExample, ItemExampleCreate, ItemExampleUpdate, ItemExampleResponse]
-):
+class ItemExampleService(GenericService[ItemExample, ItemExampleCreate, ItemExampleUpdate, ItemExampleResponse]):
     """Service for ItemExample CRUD operations.
 
     Extends GenericService with custom validation:
@@ -79,9 +77,7 @@ class ItemExampleService(
         super().__init__(repository, mapper, event_bus)
         self._sku_validator = sku_validator
 
-    async def _pre_create(
-        self, data: ItemExampleCreate
-    ) -> Result[ItemExampleCreate, ServiceError]:
+    async def _pre_create(self, data: ItemExampleCreate) -> Result[ItemExampleCreate, ServiceError]:
         """Validate before creating ItemExample.
 
         Validates:

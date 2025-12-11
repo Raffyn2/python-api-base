@@ -2,18 +2,24 @@
 
 **Feature: shared-modules-security-fixes**
 **Validates: Requirements 1.1, 1.2, 1.3, 1.4**
+
+Security:
+    - AES-256-GCM authenticated encryption (NIST recommended)
+    - 96-bit nonces (cryptographically random)
+    - 128-bit authentication tags
+    - Key rotation support for compliance
 """
 
 from __future__ import annotations
 
 import base64
 import secrets
-import warnings
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol
 
+import structlog
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from core.errors.shared.exceptions import (
@@ -21,6 +27,8 @@ from core.errors.shared.exceptions import (
     DecryptionError,
     EncryptionError,
 )
+
+logger = structlog.get_logger(__name__)
 
 
 class EncryptionAlgorithm(Enum):
@@ -37,7 +45,7 @@ KEY_SIZE = 32  # 256 bits
 TAG_SIZE = 16  # 128 bits
 
 
-@dataclass
+@dataclass(slots=True)
 class EncryptionKey:
     """Encryption key metadata."""
 
@@ -49,7 +57,7 @@ class EncryptionKey:
     version: int = 1
 
 
-@dataclass
+@dataclass(slots=True)
 class EncryptedValue:
     """Encrypted value with AES-GCM metadata."""
 
@@ -116,6 +124,12 @@ class FieldEncryptor:
     """AES-256-GCM field-level encryption service.
 
     Provides authenticated encryption using AES-256-GCM algorithm.
+
+    Security Features:
+        - Authenticated encryption prevents tampering
+        - Unique nonce per encryption operation
+        - Key rotation support for compliance
+        - Constant-time tag verification (via cryptography library)
     """
 
     def __init__(self, key_provider: KeyProvider) -> None:
@@ -125,6 +139,7 @@ class FieldEncryptor:
             key_provider: Provider for encryption keys.
         """
         self._key_provider = key_provider
+        self._logger = structlog.get_logger(__name__)
 
     async def encrypt(
         self,
@@ -157,7 +172,7 @@ class FieldEncryptor:
         except Exception as e:
             raise EncryptionError(
                 "Failed to get encryption key",
-                context={"error": str(e)},
+                context={"error_type": type(e).__name__},
             ) from e
 
         if len(key) != KEY_SIZE:
@@ -173,6 +188,13 @@ class FieldEncryptor:
         # AES-GCM appends tag to ciphertext, extract it
         actual_ciphertext = ciphertext[:-TAG_SIZE]
         tag = ciphertext[-TAG_SIZE:]
+
+        self._logger.debug(
+            "Field encrypted",
+            operation="FIELD_ENCRYPT",
+            key_id=key_id,
+            algorithm=algorithm.value,
+        )
 
         return EncryptedValue(
             ciphertext=actual_ciphertext,
@@ -210,52 +232,42 @@ class FieldEncryptor:
             )
 
         # Reconstruct ciphertext with tag for AESGCM
-        if encrypted.tag:
-            ciphertext_with_tag = encrypted.ciphertext + encrypted.tag
-        else:
-            ciphertext_with_tag = encrypted.ciphertext
+        ciphertext_with_tag = encrypted.ciphertext + encrypted.tag if encrypted.tag else encrypted.ciphertext
 
         aesgcm = AESGCM(key)
         try:
-            return aesgcm.decrypt(encrypted.nonce, ciphertext_with_tag, None)
+            plaintext = aesgcm.decrypt(encrypted.nonce, ciphertext_with_tag, None)
+            self._logger.debug(
+                "Field decrypted",
+                operation="FIELD_DECRYPT",
+                key_id=encrypted.key_id,
+            )
+            return plaintext
         except Exception as e:
-            if "tag" in str(e).lower() or "authentication" in str(e).lower():
+            error_msg = str(e).lower()
+            if "tag" in error_msg or "authentication" in error_msg:
+                self._logger.warning(
+                    "Authentication tag verification failed",
+                    operation="FIELD_DECRYPT_TAMPER",
+                    key_id=encrypted.key_id,
+                )
                 raise AuthenticationError(
                     "Authentication tag verification failed - data may be tampered",
                     context={"key_id": encrypted.key_id},
                 ) from e
+            self._logger.error(
+                "Decryption failed",
+                operation="FIELD_DECRYPT_ERROR",
+                key_id=encrypted.key_id,
+                error_type=type(e).__name__,
+            )
             raise DecryptionError(
-                f"Decryption failed: {e}",
-                context={"key_id": encrypted.key_id},
+                "Decryption failed",
+                context={"key_id": encrypted.key_id, "error_type": type(e).__name__},
             ) from e
 
-    def _xor_encrypt(self, data: bytes, key: bytes, nonce: bytes) -> bytes:
-        """Deprecated XOR encryption - DO NOT USE.
-
-        This method is insecure and deprecated. It will raise a DeprecationWarning
-        and then raise an EncryptionError to prevent usage.
-
-        Args:
-            data: Data to encrypt.
-            key: Encryption key.
-            nonce: Nonce value.
-
-        Raises:
-            DeprecationWarning: Always raised to warn about insecure method.
-            EncryptionError: Always raised to prevent usage.
-        """
-        warnings.warn(
-            "XOR encryption is insecure and deprecated. Use AES-256-GCM via encrypt().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        raise EncryptionError(
-            "XOR encryption is deprecated and disabled. Use AES-256-GCM.",
-            context={"method": "_xor_encrypt"},
-        )
-
     async def rotate_encrypted_value(self, encrypted: EncryptedValue) -> EncryptedValue:
-        """Re-encrypt with new key.
+        """Re-encrypt with new key for key rotation compliance.
 
         Args:
             encrypted: Value to re-encrypt.
@@ -263,8 +275,18 @@ class FieldEncryptor:
         Returns:
             Newly encrypted value with current active key.
         """
+        old_key_id = encrypted.key_id
         plaintext = await self.decrypt(encrypted)
-        return await self.encrypt(plaintext, encrypted.algorithm)
+        new_encrypted = await self.encrypt(plaintext, encrypted.algorithm)
+
+        self._logger.info(
+            "Field value rotated to new key",
+            operation="FIELD_KEY_ROTATE",
+            old_key_id=old_key_id,
+            new_key_id=new_encrypted.key_id,
+        )
+
+        return new_encrypted
 
 
 @dataclass

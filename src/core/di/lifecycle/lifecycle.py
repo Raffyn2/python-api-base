@@ -23,7 +23,7 @@ class Lifetime(Enum):
     SCOPED = "scoped"  # Same instance within scope (cached per scope)
 
 
-@dataclass
+@dataclass(slots=True)
 class Registration[T]:
     """Registration entry for a dependency.
 

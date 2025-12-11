@@ -1,14 +1,14 @@
 """Database migration utilities for application startup."""
 
-import logging
 from pathlib import Path
 
+import structlog
 from alembic import command
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def get_alembic_config() -> Config:
@@ -19,9 +19,7 @@ def get_alembic_config() -> Config:
     """
     # Find project root (where alembic.ini is)
     current = Path(__file__).resolve()
-    root = (
-        current.parent.parent.parent.parent.parent
-    )  # src/my_app/infrastructure/database -> root
+    root = current.parent.parent.parent.parent.parent  # src/my_app/infrastructure/database -> root
 
     alembic_ini = root / "alembic.ini"
     if not alembic_ini.exists():
@@ -48,7 +46,6 @@ async def check_pending_migrations(engine: AsyncEngine) -> bool:
         current_rev = context.get_current_revision()
 
         config = get_alembic_config()
-        config.get_main_option("script_location")
 
         # Get head revision from alembic
         from alembic.script import ScriptDirectory
@@ -91,9 +88,9 @@ def run_migrations_sync(database_url: str) -> None:
     config = get_alembic_config()
     config.set_main_option("sqlalchemy.url", database_url)
 
-    logger.info("Running database migrations...")
+    logger.info("Running database migrations", operation="DB_MIGRATE")
     command.upgrade(config, "head")
-    logger.info("Database migrations completed")
+    logger.info("Database migrations completed", operation="DB_MIGRATE")
 
 
 async def ensure_database_ready(engine: AsyncEngine) -> None:
@@ -110,8 +107,13 @@ async def ensure_database_ready(engine: AsyncEngine) -> None:
 
     if has_pending:
         logger.warning(
-            f"Database has pending migrations. Current revision: {current}. "
-            "Run 'python scripts/migrate.py upgrade head' to apply migrations."
+            "Database has pending migrations. Run 'python scripts/migrate.py upgrade head' to apply.",
+            operation="DB_CHECK_MIGRATIONS",
+            current_revision=current,
         )
     else:
-        logger.info(f"Database is up to date at revision: {current}")
+        logger.info(
+            "Database is up to date",
+            operation="DB_CHECK_MIGRATIONS",
+            current_revision=current,
+        )

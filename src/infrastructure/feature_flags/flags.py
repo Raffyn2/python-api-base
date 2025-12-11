@@ -5,13 +5,14 @@
 """
 
 import hashlib
-import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class FlagStatus(Enum):
@@ -40,7 +41,7 @@ class EvaluationContext[TContext]:
     context_data: TContext | None = None
 
 
-@dataclass
+@dataclass(slots=True)
 class FeatureFlag[TContext]:
     """Generic feature flag with typed evaluation context.
 
@@ -60,8 +61,8 @@ class FeatureFlag[TContext]:
     enabled_groups: set[str] = field(default_factory=set)
     disabled_users: set[str] = field(default_factory=set)
     metadata: dict[str, Any] = field(default_factory=dict)
-    created_at: datetime = field(default_factory=datetime.now)
-    updated_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def is_enabled_for(self, context: EvaluationContext[TContext]) -> bool:
         """Check if flag is enabled for given context."""
@@ -93,7 +94,8 @@ class FeatureFlag[TContext]:
     def _check_percentage(self, user_id: str) -> bool:
         """Check percentage rollout using consistent hashing."""
         hash_input = f"{self.key}:{user_id}"
-        hash_value = int(hashlib.md5(hash_input.encode()).hexdigest(), 16)  # noqa: S324
+        # MD5 used for consistent hashing distribution, not security
+        hash_value = int(hashlib.md5(hash_input.encode(), usedforsecurity=False).hexdigest(), 16)
         bucket = hash_value % 100
         return bucket < self.percentage
 
@@ -288,7 +290,11 @@ class FlagAuditLogger:
         )
         self._logs.append(log_entry)
         logger.debug(
-            f"Flag '{result.flag_key}' evaluated: {result.enabled} ({result.reason})"
+            "Flag evaluated",
+            operation="FLAG_EVALUATE",
+            flag_key=result.flag_key,
+            enabled=result.enabled,
+            reason=result.reason,
         )
 
     def get_logs(self, flag_key: str | None = None) -> list[FlagEvaluationLog]:

@@ -58,27 +58,27 @@ class TestCreateUserCommand:
 class TestCreateUserHandler:
     """Tests for CreateUserHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repository(self) -> AsyncMock:
         """Create mock user repository."""
         repo = AsyncMock()
         return repo
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_service(self) -> MagicMock:
         """Create mock user domain service."""
         service = MagicMock()
         service.hash_password.return_value = "hashed_password"
         return service
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_validator(self) -> AsyncMock:
         """Create mock validator."""
         validator = AsyncMock()
         validator.validate.return_value = Ok(None)
         return validator
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(
         self,
         mock_repository: AsyncMock,

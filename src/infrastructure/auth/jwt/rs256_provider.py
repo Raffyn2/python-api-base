@@ -68,7 +68,7 @@ class RS256Provider(BaseJWTProvider):
         """
         if not private_key and not public_key:
             raise InvalidKeyError(
-                "RS256 requires at least one of private_key or public_key"
+                "RS256 requires at least one of private_key or public_key",
             )
 
         self._private_key = private_key
@@ -103,13 +103,11 @@ class RS256Provider(BaseJWTProvider):
         """
         if self._private_key and "-----BEGIN" not in self._private_key:
             raise InvalidKeyError(
-                "Invalid RSA private key format. Expected PEM format "
-                "(must start with -----BEGIN)."
+                "Invalid RSA private key format. Expected PEM format (must start with -----BEGIN).",
             )
         if self._public_key and "-----BEGIN" not in self._public_key:
             raise InvalidKeyError(
-                "Invalid RSA public key format. Expected PEM format "
-                "(must start with -----BEGIN)."
+                "Invalid RSA public key format. Expected PEM format (must start with -----BEGIN).",
             )
 
     @property

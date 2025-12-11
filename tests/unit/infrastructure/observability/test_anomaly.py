@@ -4,7 +4,7 @@
 **Validates: Requirements 7.3**
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
 

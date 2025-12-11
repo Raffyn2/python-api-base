@@ -4,15 +4,16 @@ This module provides middleware support for Dapr request processing.
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Awaitable
+from typing import Any, Self
 
 from core.shared.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class MiddlewareRequest:
     """Request passing through middleware."""
 
@@ -23,7 +24,7 @@ class MiddlewareRequest:
     metadata: dict[str, Any]
 
 
-@dataclass
+@dataclass(slots=True)
 class MiddlewareResponse:
     """Response from middleware processing."""
 
@@ -90,16 +91,18 @@ class TracingMiddleware(Middleware):
         next_handler: Callable[[MiddlewareRequest], Awaitable[MiddlewareResponse]],
     ) -> MiddlewareResponse:
         """Add tracing context to request."""
-        try:
-            from opentelemetry import trace
-            from opentelemetry.trace.propagation.tracecontext import (
-                TraceContextTextMapPropagator,
-            )
+        import importlib.util
 
-            propagator = TraceContextTextMapPropagator()
-            propagator.inject(request.headers)
-        except ImportError:
-            pass
+        if importlib.util.find_spec("opentelemetry") is not None:
+            try:
+                from opentelemetry.trace.propagation.tracecontext import (
+                    TraceContextTextMapPropagator,
+                )
+
+                propagator = TraceContextTextMapPropagator()
+                propagator.inject(request.headers)
+            except ImportError:
+                pass
 
         return await next_handler(request)
 
@@ -115,18 +118,17 @@ class ErrorHandlingMiddleware(Middleware):
         """Handle errors in request processing."""
         try:
             return await next_handler(request)
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "middleware_error",
                 method=request.method,
                 path=request.path,
-                error=str(e),
             )
             return MiddlewareResponse(
                 status_code=500,
                 headers={"Content-Type": "application/json"},
                 body=b'{"error": "Internal server error"}',
-                metadata={"error": str(e)},
+                metadata={},
             )
 
 
@@ -137,7 +139,7 @@ class MiddlewarePipeline:
         """Initialize the middleware pipeline."""
         self._middlewares: list[Middleware] = []
 
-    def add(self, middleware: Middleware) -> "MiddlewarePipeline":
+    def add(self, middleware: Middleware) -> Self:
         """Add middleware to the pipeline.
 
         Args:

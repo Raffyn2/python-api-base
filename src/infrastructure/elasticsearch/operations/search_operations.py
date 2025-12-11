@@ -7,16 +7,16 @@
 from __future__ import annotations
 
 import contextlib
-import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class SearchOperations:
     """Handles Elasticsearch search, count, and scroll operations."""
 
-    def __init__(self, client_getter: callable) -> None:
+    def __init__(self, client_getter: Callable[[], Any]) -> None:
         """Initialize with client getter function.
 
         Args:

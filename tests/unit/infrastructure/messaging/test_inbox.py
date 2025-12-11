@@ -5,7 +5,6 @@
 """
 
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 import pytest
 
@@ -66,22 +65,14 @@ class TestInboxEntry:
 
     def test_generate_idempotency_key_deterministic(self) -> None:
         """Test idempotency key generation is deterministic."""
-        key1 = InboxEntry._generate_idempotency_key(
-            "msg-1", "OrderCreated", {"order_id": "123"}
-        )
-        key2 = InboxEntry._generate_idempotency_key(
-            "msg-1", "OrderCreated", {"order_id": "123"}
-        )
+        key1 = InboxEntry._generate_idempotency_key("msg-1", "OrderCreated", {"order_id": "123"})
+        key2 = InboxEntry._generate_idempotency_key("msg-1", "OrderCreated", {"order_id": "123"})
         assert key1 == key2
 
     def test_generate_idempotency_key_different_for_different_content(self) -> None:
         """Test idempotency key differs for different content."""
-        key1 = InboxEntry._generate_idempotency_key(
-            "msg-1", "OrderCreated", {"order_id": "123"}
-        )
-        key2 = InboxEntry._generate_idempotency_key(
-            "msg-2", "OrderCreated", {"order_id": "123"}
-        )
+        key1 = InboxEntry._generate_idempotency_key("msg-1", "OrderCreated", {"order_id": "123"})
+        key2 = InboxEntry._generate_idempotency_key("msg-2", "OrderCreated", {"order_id": "123"})
         assert key1 != key2
 
     def test_mark_processing(self) -> None:
@@ -207,7 +198,7 @@ class TestInMemoryInboxRepository:
     async def test_delete_processed(self) -> None:
         """Test deleting processed entries."""
         repo = InMemoryInboxRepository()
-        
+
         # Create and process an entry
         entry = InboxEntry.create(
             message_id="msg-1",
@@ -217,7 +208,7 @@ class TestInMemoryInboxRepository:
         entry.mark_processed()
         entry.processed_at = datetime.now(UTC) - timedelta(days=2)
         await repo.save(entry)
-        
+
         # Delete entries older than 1 day
         deleted = await repo.delete_processed(datetime.now(UTC) - timedelta(days=1))
         assert deleted == 1
@@ -227,7 +218,7 @@ class TestInMemoryInboxRepository:
     async def test_delete_processed_keeps_recent(self) -> None:
         """Test delete_processed keeps recent entries."""
         repo = InMemoryInboxRepository()
-        
+
         entry = InboxEntry.create(
             message_id="msg-1",
             message_type="OrderCreated",
@@ -235,7 +226,7 @@ class TestInMemoryInboxRepository:
         )
         entry.mark_processed()
         await repo.save(entry)
-        
+
         # Try to delete entries older than 1 day (entry is recent)
         deleted = await repo.delete_processed(datetime.now(UTC) - timedelta(days=1))
         assert deleted == 0
@@ -246,7 +237,7 @@ class TestInMemoryInboxRepository:
         """Test counting entries."""
         repo = InMemoryInboxRepository()
         assert repo.count() == 0
-        
+
         for i in range(3):
             entry = InboxEntry.create(
                 message_id=f"msg-{i}",
@@ -254,7 +245,7 @@ class TestInMemoryInboxRepository:
                 payload={},
             )
             await repo.save(entry)
-        
+
         assert repo.count() == 3
 
 
@@ -293,13 +284,13 @@ class TestInboxService:
         repo = InMemoryInboxRepository()
         handler = MockMessageHandler()
         service = InboxService(repo, handler)
-        
+
         is_new, entry = await service.receive(
             message_id="msg-1",
             message_type="OrderCreated",
             payload={"order_id": "123"},
         )
-        
+
         assert is_new is True
         assert entry.message_id == "msg-1"
 
@@ -309,21 +300,21 @@ class TestInboxService:
         repo = InMemoryInboxRepository()
         handler = MockMessageHandler()
         service = InboxService(repo, handler)
-        
+
         await service.receive(
             message_id="msg-1",
             message_type="OrderCreated",
             payload={"order_id": "123"},
             idempotency_key="shared-key",
         )
-        
-        is_new, entry = await service.receive(
+
+        is_new, _entry = await service.receive(
             message_id="msg-2",
             message_type="OrderCreated",
             payload={"order_id": "456"},
             idempotency_key="shared-key",
         )
-        
+
         # Same idempotency key means duplicate
         assert is_new is False
 
@@ -333,15 +324,15 @@ class TestInboxService:
         repo = InMemoryInboxRepository()
         handler = MockMessageHandler()
         service = InboxService(repo, handler)
-        
+
         _, entry = await service.receive(
             message_id="msg-1",
             message_type="OrderCreated",
             payload={"order_id": "123"},
         )
-        
+
         success = await service.process(entry)
-        
+
         assert success is True
         assert len(handler.handled_messages) == 1
 
@@ -351,15 +342,15 @@ class TestInboxService:
         repo = InMemoryInboxRepository()
         handler = MockMessageHandler(should_fail=True)
         service = InboxService(repo, handler)
-        
+
         _, entry = await service.receive(
             message_id="msg-1",
             message_type="OrderCreated",
             payload={},
         )
-        
+
         success = await service.process(entry)
-        
+
         assert success is False
         updated = await repo.get_by_id("msg-1")
         assert updated is not None
@@ -371,7 +362,7 @@ class TestInboxService:
         repo = InMemoryInboxRepository()
         handler = MockMessageHandler()
         service = InboxService(repo, handler)
-        
+
         _, entry = await service.receive(
             message_id="msg-1",
             message_type="OrderCreated",
@@ -379,9 +370,9 @@ class TestInboxService:
         )
         entry.mark_processed()
         await repo.update(entry)
-        
+
         success = await service.process(entry)
-        
+
         assert success is True
         assert len(handler.handled_messages) == 0  # Not processed again
 
@@ -391,13 +382,13 @@ class TestInboxService:
         repo = InMemoryInboxRepository()
         handler = MockMessageHandler()
         service = InboxService(repo, handler)
-        
+
         is_new, success = await service.receive_and_process(
             message_id="msg-1",
             message_type="OrderCreated",
             payload={"order_id": "123"},
         )
-        
+
         assert is_new is True
         assert success is True
 
@@ -407,21 +398,21 @@ class TestInboxService:
         repo = InMemoryInboxRepository()
         handler = MockMessageHandler()
         service = InboxService(repo, handler)
-        
+
         await service.receive_and_process(
             message_id="msg-1",
             message_type="OrderCreated",
             payload={"order_id": "123"},
             idempotency_key="shared-key",
         )
-        
+
         is_new, success = await service.receive_and_process(
             message_id="msg-2",
             message_type="OrderCreated",
             payload={"order_id": "456"},
             idempotency_key="shared-key",
         )
-        
+
         assert is_new is False
         assert success is True  # Original was processed
 
@@ -431,7 +422,7 @@ class TestInboxService:
         repo = InMemoryInboxRepository()
         handler = MockMessageHandler()
         service = InboxService(repo, handler)
-        
+
         _, entry = await service.receive(
             message_id="msg-1",
             message_type="OrderCreated",
@@ -440,7 +431,7 @@ class TestInboxService:
         entry.mark_processed()
         entry.processed_at = datetime.now(UTC) - timedelta(days=10)
         await repo.update(entry)
-        
+
         deleted = await service.cleanup(datetime.now(UTC) - timedelta(days=7))
         assert deleted == 1
 
@@ -450,7 +441,7 @@ class TestInboxService:
         repo = InMemoryInboxRepository()
         handler = MockMessageHandler()
         service = InboxService(repo, handler)
-        
+
         entry = InboxEntry.create(
             message_id="msg-1",
             message_type="OrderCreated",
@@ -458,6 +449,6 @@ class TestInboxService:
             idempotency_key="test-key",
         )
         await repo.save(entry)
-        
+
         assert await service.is_duplicate("test-key") is True
         assert await service.is_duplicate("other-key") is False

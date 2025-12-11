@@ -4,8 +4,6 @@
 **Validates: Requirements 7.2**
 """
 
-import pytest
-
 from infrastructure.redis.config import RedisConfig
 
 

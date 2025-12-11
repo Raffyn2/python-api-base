@@ -31,11 +31,13 @@ class TestSecurityHeadersProperties:
     @given(
         x_frame_options=st.sampled_from(["DENY", "SAMEORIGIN"]),
         x_content_type_options=st.just("nosniff"),
-        referrer_policy=st.sampled_from([
-            "no-referrer",
-            "strict-origin-when-cross-origin",
-            "same-origin",
-        ]),
+        referrer_policy=st.sampled_from(
+            [
+                "no-referrer",
+                "strict-origin-when-cross-origin",
+                "same-origin",
+            ]
+        ),
     )
     @settings(max_examples=100)
     def test_security_headers_configuration_valid(
@@ -365,9 +367,7 @@ class TestRequestIDProperties:
         assert _is_valid_request_id(request_id) is True
 
     @given(
-        invalid_id=st.text(min_size=1, max_size=50).filter(
-            lambda x: not x.replace("-", "").isalnum() or len(x) != 36
-        ),
+        invalid_id=st.text(min_size=1, max_size=50).filter(lambda x: not x.replace("-", "").isalnum() or len(x) != 36),
     )
     @settings(max_examples=100)
     def test_invalid_request_id_rejected(self, invalid_id: str) -> None:

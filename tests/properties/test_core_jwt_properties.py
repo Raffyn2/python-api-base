@@ -42,23 +42,19 @@ class TestJWTRequiredClaims:
     """
 
     @given(
-        user_id=st.text(
-            min_size=1, max_size=50, alphabet=string.ascii_letters + string.digits
-        ),
+        user_id=st.text(min_size=1, max_size=50, alphabet=string.ascii_letters + string.digits),
         scopes=st.lists(
             st.text(min_size=1, max_size=20, alphabet=string.ascii_lowercase),
             max_size=5,
         ),
     )
     @settings(max_examples=100)
-    def test_access_token_contains_required_claims(
-        self, user_id: str, scopes: list[str]
-    ):
+    def test_access_token_contains_required_claims(self, user_id: str, scopes: list[str]):
         """For any user_id, created token SHALL contain sub, exp, iat, jti."""
         assume(len(user_id) > 0)
 
         service = JWTService(secret_key="a" * 32)
-        token, payload = service.create_access_token(user_id, scopes)
+        _token, payload = service.create_access_token(user_id, scopes)
 
         # Required claims must be present
         assert payload.sub == user_id
@@ -80,7 +76,7 @@ class TestJWTRequiredClaims:
         assume(len(user_id) > 0)
 
         service = JWTService(secret_key="a" * 32)
-        token, payload = service.create_refresh_token(user_id)
+        _token, payload = service.create_refresh_token(user_id)
 
         assert payload.sub == user_id
         assert payload.exp is not None

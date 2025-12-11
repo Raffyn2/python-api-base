@@ -31,7 +31,7 @@ Configuration:
         - N: Maximum requests allowed
         - unit: Time unit (second, minute, hour, day)
 
-    Examples:
+Examples:
         - "100/minute": 100 requests per minute
         - "1000/hour": 1000 requests per hour
         - "10/second": 10 requests per second
@@ -50,12 +50,14 @@ Example Usage:
 """
 
 import asyncio
-import logging
 import re
 import time
 from dataclasses import dataclass
+from typing import Self
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class RateLimitConfigError(Exception):
@@ -89,7 +91,7 @@ class SlidingWindowConfig:
             raise RateLimitConfigError("window_size_seconds must be positive")
 
     @classmethod
-    def from_string(cls, rate_limit: str) -> "SlidingWindowConfig":
+    def from_string(cls, rate_limit: str) -> Self:
         """Parse rate limit string like '100/minute'.
 
         **Feature: api-base-score-100, Property 6: Rate Limit Format Parsing**
@@ -109,8 +111,7 @@ class SlidingWindowConfig:
 
         if not match:
             raise RateLimitConfigError(
-                f"Invalid rate limit format: '{rate_limit}'. "
-                "Expected format: 'N/unit' (e.g., '100/minute')"
+                f"Invalid rate limit format: '{rate_limit}'. Expected format: 'N/unit' (e.g., '100/minute')"
             )
 
         requests = int(match.group(1))
@@ -128,10 +129,7 @@ class SlidingWindowConfig:
         }
 
         if unit not in unit_seconds:
-            raise RateLimitConfigError(
-                f"Invalid time unit: '{unit}'. "
-                f"Valid units: {', '.join(unit_seconds.keys())}"
-            )
+            raise RateLimitConfigError(f"Invalid time unit: '{unit}'. Valid units: {', '.join(unit_seconds.keys())}")
 
         return cls(
             requests_per_window=requests,
@@ -139,7 +137,7 @@ class SlidingWindowConfig:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class WindowState:
     """State of a rate limit window.
 
@@ -154,7 +152,7 @@ class WindowState:
     previous_count: int = 0
 
 
-@dataclass
+@dataclass(slots=True)
 class RateLimitResult:
     """Result of rate limit check.
 
@@ -203,9 +201,7 @@ class SlidingWindowRateLimiter:
 
     def _get_current_window_start(self, now: float) -> float:
         """Get start timestamp of current window."""
-        return (
-            now // self._config.window_size_seconds
-        ) * self._config.window_size_seconds
+        return (now // self._config.window_size_seconds) * self._config.window_size_seconds
 
     def _calculate_weighted_count(
         self,
@@ -270,26 +266,26 @@ class SlidingWindowRateLimiter:
                 state = WindowState(window_start=current_window_start)
                 self._windows[key] = state
 
+            # Transition to new window if needed
             if state.window_start < current_window_start:
-                if (
-                    current_window_start - state.window_start
-                    >= self._config.window_size_seconds
-                ):
-                    state = WindowState(
-                        window_start=current_window_start,
-                        previous_count=state.current_count,
-                    )
-                else:
-                    state = WindowState(
-                        window_start=current_window_start,
-                        previous_count=state.current_count,
-                    )
+                state = WindowState(
+                    window_start=current_window_start,
+                    previous_count=state.current_count,
+                )
                 self._windows[key] = state
 
             weighted_count = self._calculate_weighted_count(state, now)
 
             if weighted_count >= self._config.requests_per_window:
                 retry_after = self._calculate_retry_after(state, now)
+                logger.debug(
+                    "Rate limit exceeded",
+                    operation="RATE_LIMIT_EXCEEDED",
+                    key=key,
+                    weighted_count=weighted_count,
+                    limit=self._config.requests_per_window,
+                    retry_after=retry_after,
+                )
                 return RateLimitResult(
                     allowed=False,
                     remaining=0,
@@ -298,9 +294,7 @@ class SlidingWindowRateLimiter:
                 )
 
             state.current_count += 1
-            remaining = max(
-                0, self._config.requests_per_window - int(weighted_count) - 1
-            )
+            remaining = max(0, self._config.requests_per_window - int(weighted_count) - 1)
 
             return RateLimitResult(
                 allowed=True,
@@ -333,6 +327,11 @@ class SlidingWindowRateLimiter:
         async with self._lock:
             if key in self._windows:
                 del self._windows[key]
+                logger.debug(
+                    "Rate limit reset",
+                    operation="RATE_LIMIT_RESET",
+                    key=key,
+                )
                 return True
             return False
 
@@ -345,6 +344,11 @@ class SlidingWindowRateLimiter:
         async with self._lock:
             count = len(self._windows)
             self._windows.clear()
+            logger.info(
+                "All rate limits cleared",
+                operation="RATE_LIMIT_CLEAR_ALL",
+                keys_cleared=count,
+            )
             return count
 
 

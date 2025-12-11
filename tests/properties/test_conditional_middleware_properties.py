@@ -5,12 +5,9 @@
 """
 
 import pytest
-
-pytest.skip("Module interface.api not implemented", allow_module_level=True)
-
 from hypothesis import given, settings, strategies as st
 
-from interface.api.middleware.conditional_middleware import (
+from interface.middleware.conditional_middleware import (
     ConditionalMiddlewareRegistry,
     HeaderCondition,
     HttpMethod,
@@ -30,9 +27,7 @@ path_strategy = st.from_regex(r"^/[a-z0-9/]*$", fullmatch=True)
 method_strategy = st.sampled_from([m for m in HttpMethod if m != HttpMethod.ALL])
 
 
-def make_route_info(
-    path: str = "/test", method: HttpMethod = HttpMethod.GET
-) -> RouteInfo:
+def make_route_info(path: str = "/test", method: HttpMethod = HttpMethod.GET) -> RouteInfo:
     """Create a RouteInfo for testing."""
     return RouteInfo(path=path, method=method)
 
@@ -96,9 +91,7 @@ class TestHeaderConditionProperties:
     def test_header_presence(self) -> None:
         """Property: Header presence check works."""
         condition = HeaderCondition("Authorization")
-        route_with = RouteInfo(
-            path="/", method=HttpMethod.GET, headers={"Authorization": "Bearer token"}
-        )
+        route_with = RouteInfo(path="/", method=HttpMethod.GET, headers={"Authorization": "Bearer token"})
         route_without = RouteInfo(path="/", method=HttpMethod.GET, headers={})
 
         assert condition.matches(route_with) is True
@@ -112,9 +105,7 @@ class TestHeaderConditionProperties:
             method=HttpMethod.GET,
             headers={"Content-Type": "application/json"},
         )
-        route_no_match = RouteInfo(
-            path="/", method=HttpMethod.GET, headers={"Content-Type": "text/html"}
-        )
+        route_no_match = RouteInfo(path="/", method=HttpMethod.GET, headers={"Content-Type": "text/html"})
 
         assert condition.matches(route_match) is True
         assert condition.matches(route_no_match) is False
@@ -169,9 +160,7 @@ class TestCompositeConditionProperties:
         assert condition.matches(make_route_info("/api/users", HttpMethod.POST)) is True
         assert condition.matches(make_route_info("/api/users", HttpMethod.GET)) is False
 
-        route_with_header = RouteInfo(
-            path="/other", method=HttpMethod.GET, headers={"X-Admin": "true"}
-        )
+        route_with_header = RouteInfo(path="/other", method=HttpMethod.GET, headers={"X-Admin": "true"})
         assert condition.matches(route_with_header) is True
 
 
@@ -180,9 +169,7 @@ class TestAlwaysNeverConditionProperties:
 
     @given(path_str=path_strategy, http_method=method_strategy)
     @settings(max_examples=100)
-    def test_always_matches_everything(
-        self, path_str: str, http_method: HttpMethod
-    ) -> None:
+    def test_always_matches_everything(self, path_str: str, http_method: HttpMethod) -> None:
         """Property: Always condition matches any route."""
         condition = always()
         route_info = make_route_info(path_str, http_method)
@@ -190,9 +177,7 @@ class TestAlwaysNeverConditionProperties:
 
     @given(path_str=path_strategy, http_method=method_strategy)
     @settings(max_examples=100)
-    def test_never_matches_nothing(
-        self, path_str: str, http_method: HttpMethod
-    ) -> None:
+    def test_never_matches_nothing(self, path_str: str, http_method: HttpMethod) -> None:
         """Property: Never condition matches no route."""
         condition = never()
         route_info = make_route_info(path_str, http_method)
@@ -220,9 +205,7 @@ class TestConditionalMiddlewareRegistryProperties:
     @pytest.mark.anyio
     async def test_registry_executes_matching_middleware(self) -> None:
         """Property: Registry executes only matching middlewares."""
-        registry: ConditionalMiddlewareRegistry[dict, dict] = (
-            ConditionalMiddlewareRegistry()
-        )
+        registry: ConditionalMiddlewareRegistry[dict, dict] = ConditionalMiddlewareRegistry()
         executed: list[str] = []
 
         async def api_middleware(request: dict, next_handler) -> dict:
@@ -256,9 +239,7 @@ class TestConditionalMiddlewareRegistryProperties:
     @pytest.mark.anyio
     async def test_registry_for_methods(self) -> None:
         """Property: for_methods registers correctly."""
-        registry: ConditionalMiddlewareRegistry[dict, dict] = (
-            ConditionalMiddlewareRegistry()
-        )
+        registry: ConditionalMiddlewareRegistry[dict, dict] = ConditionalMiddlewareRegistry()
         executed = False
 
         async def write_middleware(request: dict, next_handler) -> dict:
@@ -273,23 +254,17 @@ class TestConditionalMiddlewareRegistryProperties:
 
         # POST should trigger
         executed = False
-        await registry.execute(
-            {}, make_route_info(method=HttpMethod.POST), final_handler
-        )
+        await registry.execute({}, make_route_info(method=HttpMethod.POST), final_handler)
         assert executed is True
 
         # GET should not trigger
         executed = False
-        await registry.execute(
-            {}, make_route_info(method=HttpMethod.GET), final_handler
-        )
+        await registry.execute({}, make_route_info(method=HttpMethod.GET), final_handler)
         assert executed is False
 
     def test_get_matching_returns_correct_middlewares(self) -> None:
         """Property: get_matching returns only matching middlewares."""
-        registry: ConditionalMiddlewareRegistry[dict, dict] = (
-            ConditionalMiddlewareRegistry()
-        )
+        registry: ConditionalMiddlewareRegistry[dict, dict] = ConditionalMiddlewareRegistry()
 
         async def mw1(r, n):
             return await n(r)
@@ -313,9 +288,7 @@ class TestConditionalMiddlewareRegistryProperties:
 
     def test_registry_length(self) -> None:
         """Property: Registry length matches registered count."""
-        registry: ConditionalMiddlewareRegistry[dict, dict] = (
-            ConditionalMiddlewareRegistry()
-        )
+        registry: ConditionalMiddlewareRegistry[dict, dict] = ConditionalMiddlewareRegistry()
 
         async def mw(r, n):
             return await n(r)

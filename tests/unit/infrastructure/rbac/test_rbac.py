@@ -148,12 +148,16 @@ class TestPermissionSet:
 
     def test_union(self) -> None:
         """Test union of permission sets."""
-        set1 = PermissionSet[TestResource, TestAction]({
-            Permission(TestResource.DOCUMENT, TestAction.READ),
-        })
-        set2 = PermissionSet[TestResource, TestAction]({
-            Permission(TestResource.REPORT, TestAction.READ),
-        })
+        set1 = PermissionSet[TestResource, TestAction](
+            {
+                Permission(TestResource.DOCUMENT, TestAction.READ),
+            }
+        )
+        set2 = PermissionSet[TestResource, TestAction](
+            {
+                Permission(TestResource.REPORT, TestAction.READ),
+            }
+        )
 
         combined = set1 | set2
 
@@ -244,7 +248,7 @@ class TestRole:
 class TestRoleRegistry:
     """Tests for RoleRegistry."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def registry(self) -> RoleRegistry[TestResource, TestAction]:
         """Create test registry."""
         return RoleRegistry[TestResource, TestAction]()
@@ -300,7 +304,7 @@ class TestRoleRegistry:
 class TestRBAC:
     """Tests for RBAC checker."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def registry(self) -> RoleRegistry[TestResource, TestAction]:
         """Create test registry with roles."""
         registry = RoleRegistry[TestResource, TestAction]()
@@ -330,7 +334,7 @@ class TestRBAC:
 
         return registry
 
-    @pytest.fixture
+    @pytest.fixture()
     def rbac(
         self,
         registry: RoleRegistry[TestResource, TestAction],

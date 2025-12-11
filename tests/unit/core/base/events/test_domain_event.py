@@ -3,8 +3,6 @@
 Tests EntityCreatedEvent, EntityUpdatedEvent, EntityDeletedEvent, and EventBus.
 """
 
-from dataclasses import dataclass
-
 import pytest
 
 from core.base.events.domain_event import (
@@ -91,10 +89,10 @@ class TestEventBus:
             handled.append(event)
 
         bus.subscribe("User.created", handler)
-        
+
         event = EntityCreatedEvent(entity_type="User", entity_id="123")
         bus.publish_sync(event)
-        
+
         assert len(handled) == 1
         assert handled[0] == event
 
@@ -107,10 +105,10 @@ class TestEventBus:
             handled.append(event)
 
         bus.subscribe(None, handler)
-        
+
         event = EntityCreatedEvent(entity_type="User", entity_id="123")
         bus.publish_sync(event)
-        
+
         assert len(handled) == 1
 
     def test_subscribe_as_decorator(self) -> None:
@@ -124,7 +122,7 @@ class TestEventBus:
 
         event = EntityCreatedEvent(entity_type="User", entity_id="123")
         bus.publish_sync(event)
-        
+
         assert len(handled) == 1
 
     def test_unsubscribe(self) -> None:
@@ -137,10 +135,10 @@ class TestEventBus:
 
         bus.subscribe("User.created", handler)
         bus.unsubscribe("User.created", handler)
-        
+
         event = EntityCreatedEvent(entity_type="User", entity_id="123")
         bus.publish_sync(event)
-        
+
         assert len(handled) == 0
 
     def test_unsubscribe_global(self) -> None:
@@ -153,10 +151,10 @@ class TestEventBus:
 
         bus.subscribe(None, handler)
         bus.unsubscribe(None, handler)
-        
+
         event = EntityCreatedEvent(entity_type="User", entity_id="123")
         bus.publish_sync(event)
-        
+
         assert len(handled) == 0
 
     def test_handler_exception_logged(self) -> None:
@@ -172,10 +170,10 @@ class TestEventBus:
 
         bus.subscribe("User.created", failing_handler)
         bus.subscribe("User.created", success_handler)
-        
+
         event = EntityCreatedEvent(entity_type="User", entity_id="123")
         bus.publish_sync(event)
-        
+
         # Second handler should still be called
         assert len(handled) == 1
 
@@ -189,10 +187,10 @@ class TestEventBus:
             handled.append(event)
 
         bus.subscribe("User.created", handler)
-        
+
         event = EntityCreatedEvent(entity_type="User", entity_id="123")
         await bus.publish(event)
-        
+
         assert len(handled) == 1
 
     @pytest.mark.asyncio
@@ -205,16 +203,16 @@ class TestEventBus:
             handled.append(event)
 
         bus.subscribe("User.created", async_handler)
-        
+
         event = EntityCreatedEvent(entity_type="User", entity_id="123")
         await bus.publish(event)
-        
+
         assert len(handled) == 1
 
     def test_no_handlers(self) -> None:
         """Test publish with no handlers."""
         bus = EventBus()
         event = EntityCreatedEvent(entity_type="User", entity_id="123")
-        
+
         # Should not raise
         bus.publish_sync(event)

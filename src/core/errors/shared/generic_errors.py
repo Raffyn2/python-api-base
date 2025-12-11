@@ -210,7 +210,6 @@ def map_error[TFrom, TTo](
     Returns:
         New error with mapped context type TTo.
     """
-
     new_context = mapper(error.context) if error.context else None
 
     if isinstance(error, DomainError):

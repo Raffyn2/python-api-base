@@ -4,36 +4,35 @@
 **Validates: Requirements 3.1, 3.2, 3.5**
 """
 
-import pytest
-
-pytest.skip("Module not implemented", allow_module_level=True)
-
 from dataclasses import dataclass, field
 
-import pytest
 from fastapi import FastAPI
 from hypothesis import given, settings, strategies as st
 from starlette.testclient import TestClient
 
-from interface.api.middleware.security_headers import SecurityHeadersMiddleware
+from interface.middleware.security import SecurityHeadersMiddleware
 
 # Strategy for CSP directives
-csp_directive_strategy = st.sampled_from([
-    "default-src 'self'",
-    "default-src 'self'; script-src 'self'",
-    "default-src 'self'; img-src *",
-    "default-src 'none'; script-src 'self'; style-src 'self'",
-    "default-src 'self'; connect-src 'self' https://api.example.com",
-])
+csp_directive_strategy = st.sampled_from(
+    [
+        "default-src 'self'",
+        "default-src 'self'; script-src 'self'",
+        "default-src 'self'; img-src *",
+        "default-src 'none'; script-src 'self'; style-src 'self'",
+        "default-src 'self'; connect-src 'self' https://api.example.com",
+    ]
+)
 
 # Strategy for Permissions-Policy values
-permissions_policy_strategy = st.sampled_from([
-    "geolocation=(), microphone=(), camera=()",
-    "geolocation=(self), microphone=()",
-    "camera=(), payment=()",
-    "fullscreen=(self), geolocation=()",
-    "accelerometer=(), gyroscope=()",
-])
+permissions_policy_strategy = st.sampled_from(
+    [
+        "geolocation=(), microphone=(), camera=()",
+        "geolocation=(self), microphone=()",
+        "camera=(), payment=()",
+        "fullscreen=(self), geolocation=()",
+        "accelerometer=(), gyroscope=()",
+    ]
+)
 
 
 @dataclass
@@ -76,21 +75,15 @@ class SecurityHeadersConfig:
         custom = {k: v for k, v in data.items() if k not in known_keys}
         return cls(
             csp=data.get("csp", "default-src 'self'"),
-            permissions_policy=data.get(
-                "permissions_policy", "geolocation=(), microphone=(), camera=()"
-            ),
+            permissions_policy=data.get("permissions_policy", "geolocation=(), microphone=(), camera=()"),
             x_frame_options=data.get("x_frame_options", "DENY"),
             x_content_type_options=data.get("x_content_type_options", "nosniff"),
-            referrer_policy=data.get(
-                "referrer_policy", "strict-origin-when-cross-origin"
-            ),
+            referrer_policy=data.get("referrer_policy", "strict-origin-when-cross-origin"),
             custom_headers=custom,
         )
 
 
-def create_test_app(
-    csp: str | None = None, permissions_policy: str | None = None
-) -> FastAPI:
+def create_test_app(csp: str | None = None, permissions_policy: str | None = None) -> FastAPI:
     """Create a test FastAPI app with security headers middleware."""
     app = FastAPI()
 
@@ -222,9 +215,7 @@ class TestSecurityHeaderConfigRoundTrip:
         csp=csp_directive_strategy,
         permissions_policy=permissions_policy_strategy,
     )
-    def test_config_serialization_round_trip(
-        self, csp: str, permissions_policy: str
-    ) -> None:
+    def test_config_serialization_round_trip(self, csp: str, permissions_policy: str) -> None:
         """
         **Feature: api-base-improvements, Property 11: Security header config round-trip**
         **Validates: Requirements 3.5**
@@ -252,9 +243,7 @@ class TestSecurityHeaderConfigRoundTrip:
         permissions_policy=permissions_policy_strategy,
         x_frame=st.sampled_from(["DENY", "SAMEORIGIN"]),
     )
-    def test_full_config_round_trip(
-        self, csp: str, permissions_policy: str, x_frame: str
-    ) -> None:
+    def test_full_config_round_trip(self, csp: str, permissions_policy: str, x_frame: str) -> None:
         """
         **Feature: api-base-improvements, Property 11: Security header config round-trip**
         **Validates: Requirements 3.5**

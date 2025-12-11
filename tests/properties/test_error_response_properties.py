@@ -4,7 +4,6 @@
 **Validates: Requirements 6.3**
 """
 
-import pytest
 from hypothesis import given, settings, strategies as st
 
 from core.errors import (
@@ -12,14 +11,10 @@ from core.errors import (
     EntityNotFoundError,
     ErrorContext,
     RateLimitExceededError,
-    ValidationError,
 )
 
-
 error_message_strategy = st.text(
-    min_size=1,
-    max_size=100,
-    alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd", "Zs"))
+    min_size=1, max_size=100, alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd", "Zs"))
 )
 error_code_strategy = st.from_regex(r"^[A-Z][A-Z0-9_]{2,20}$", fullmatch=True)
 status_code_strategy = st.sampled_from([400, 401, 403, 404, 409, 422, 429, 500])
@@ -34,9 +29,7 @@ class TestErrorResponseFormatProperties:
         status_code=status_code_strategy,
     )
     @settings(max_examples=50)
-    def test_app_error_to_dict_has_required_fields(
-        self, message: str, error_code: str, status_code: int
-    ) -> None:
+    def test_app_error_to_dict_has_required_fields(self, message: str, error_code: str, status_code: int) -> None:
         """
         **Feature: test-coverage-80-percent, Property 7: Error Response Format**
 
@@ -56,17 +49,23 @@ class TestErrorResponseFormatProperties:
         assert "timestamp" in result
 
     @given(
-        entity_type=st.text(min_size=1, max_size=30, alphabet=st.characters(
-            whitelist_categories=("Lu", "Ll"),
-        )).filter(lambda s: s.strip()),
-        entity_id=st.text(min_size=1, max_size=36, alphabet=st.characters(
-            whitelist_categories=("Lu", "Ll", "Nd"),
-        )).filter(lambda s: s.strip()),
+        entity_type=st.text(
+            min_size=1,
+            max_size=30,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll"),
+            ),
+        ).filter(lambda s: s.strip()),
+        entity_id=st.text(
+            min_size=1,
+            max_size=36,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"),
+            ),
+        ).filter(lambda s: s.strip()),
     )
     @settings(max_examples=50)
-    def test_entity_not_found_error_format(
-        self, entity_type: str, entity_id: str
-    ) -> None:
+    def test_entity_not_found_error_format(self, entity_type: str, entity_id: str) -> None:
         """
         **Feature: test-coverage-80-percent, Property 7: Error Response Format**
 
@@ -99,10 +98,11 @@ class TestErrorContextProperties:
 
     @given(
         path_segments=st.lists(
-            st.text(min_size=1, max_size=20, alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"),
-                whitelist_characters="_-"
-            )),
+            st.text(
+                min_size=1,
+                max_size=20,
+                alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"),
+            ),
             min_size=1,
             max_size=5,
         )

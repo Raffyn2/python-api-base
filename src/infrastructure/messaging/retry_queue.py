@@ -18,7 +18,7 @@ class MessageStatus(Enum):
     DEAD_LETTER = "dead_letter"
 
 
-@dataclass
+@dataclass(slots=True)
 class RetryConfig:
     """Retry configuration."""
 
@@ -29,7 +29,7 @@ class RetryConfig:
     jitter_factor: float = 0.1
 
 
-@dataclass
+@dataclass(slots=True)
 class QueueMessage[T]:
     """Message in retry queue."""
 
@@ -43,7 +43,7 @@ class QueueMessage[T]:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
-@dataclass
+@dataclass(slots=True)
 class ProcessingResult:
     """Result of message processing."""
 
@@ -88,9 +88,7 @@ class RetryQueue[T]:
             "on_dlq": [],
         }
 
-    def register_hook(
-        self, event: str, callback: Callable[[QueueMessage[T]], Awaitable[None]]
-    ) -> None:
+    def register_hook(self, event: str, callback: Callable[[QueueMessage[T]], Awaitable[None]]) -> None:
         """Register a hook for queue events."""
         if event in self._hooks:
             self._hooks[event].append(callback)
@@ -103,19 +101,16 @@ class RetryQueue[T]:
         """Calculate delay with exponential backoff and jitter."""
         import random
 
-        delay = self._config.initial_delay_ms * (
-            self._config.backoff_multiplier**retry_count
-        )
+        delay = self._config.initial_delay_ms * (self._config.backoff_multiplier**retry_count)
         delay = min(delay, self._config.max_delay_ms)
 
         jitter = delay * self._config.jitter_factor
-        delay += random.uniform(-jitter, jitter)  # noqa: S311 - Jitter for load dist
+
+        delay += random.uniform(-jitter, jitter)
 
         return int(max(0, delay))
 
-    async def enqueue(
-        self, payload: T, metadata: dict[str, Any] | None = None
-    ) -> QueueMessage[T]:
+    async def enqueue(self, payload: T, metadata: dict[str, Any] | None = None) -> QueueMessage[T]:
         """Add a message to the queue."""
         import uuid
 
@@ -155,9 +150,7 @@ class RetryQueue[T]:
                 message.last_error = result.error
                 message.status = MessageStatus.PENDING
                 delay = self._calculate_delay(message.retry_count)
-                message.next_retry_at = datetime.now(UTC) + timedelta(
-                    milliseconds=delay
-                )
+                message.next_retry_at = datetime.now(UTC) + timedelta(milliseconds=delay)
                 await self._backend.update(message)
             else:
                 message.status = MessageStatus.DEAD_LETTER
@@ -171,9 +164,7 @@ class RetryQueue[T]:
                 message.retry_count += 1
                 message.status = MessageStatus.PENDING
                 delay = self._calculate_delay(message.retry_count)
-                message.next_retry_at = datetime.now(UTC) + timedelta(
-                    milliseconds=delay
-                )
+                message.next_retry_at = datetime.now(UTC) + timedelta(milliseconds=delay)
                 await self._backend.update(message)
             else:
                 message.status = MessageStatus.DEAD_LETTER
@@ -234,8 +225,7 @@ class InMemoryQueueBackend[T]:
         return [
             m
             for m in self._queue
-            if m.status == MessageStatus.PENDING
-            and (m.next_retry_at is None or m.next_retry_at <= now)
+            if m.status == MessageStatus.PENDING and (m.next_retry_at is None or m.next_retry_at <= now)
         ][:limit]
 
     async def update(self, message: QueueMessage[T]) -> None:

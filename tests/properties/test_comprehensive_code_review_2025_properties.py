@@ -39,9 +39,7 @@ invalid_ulid_strategy = st.text(min_size=1, max_size=50).filter(
 )
 
 message_strategy = st.text(min_size=1, max_size=200)
-error_code_strategy = st.text(
-    min_size=1, max_size=50, alphabet=string.ascii_uppercase + "_"
-)
+error_code_strategy = st.text(min_size=1, max_size=50, alphabet=string.ascii_uppercase + "_")
 status_code_strategy = st.integers(min_value=400, max_value=599)
 
 # Password strategies
@@ -68,9 +66,7 @@ amount_strategy = st.decimals(
 )
 
 # Secret key strategies
-secret_key_strategy = st.text(
-    min_size=32, max_size=64, alphabet=string.ascii_letters + string.digits
-)
+secret_key_strategy = st.text(min_size=32, max_size=64, alphabet=string.ascii_letters + string.digits)
 short_secret_strategy = st.text(min_size=1, max_size=31, alphabet=string.ascii_letters)
 
 
@@ -141,9 +137,7 @@ class TestExceptionResponseStructure:
         status_code=status_code_strategy,
     )
     @settings(max_examples=100)
-    def test_response_contains_required_fields(
-        self, message: str, error_code: str, status_code: int
-    ):
+    def test_response_contains_required_fields(self, message: str, error_code: str, status_code: int):
         """For any exception, response SHALL contain required fields."""
         assume(len(message) > 0 and len(error_code) > 0)
 
@@ -266,9 +260,7 @@ class TestMonetaryCalculationPrecision:
         currency=currency_strategy,
     )
     @settings(max_examples=100)
-    def test_addition_maintains_precision(
-        self, amount1: Decimal, amount2: Decimal, currency: str
-    ):
+    def test_addition_maintains_precision(self, amount1: Decimal, amount2: Decimal, currency: str):
         """For any monetary addition, precision SHALL be maintained."""
         from domain.value_objects import Money
 
@@ -383,10 +375,12 @@ class TestSoftDeleteExclusion:
 
     @given(
         st.lists(
-            st.fixed_dictionaries({
-                "id": st.integers(min_value=1, max_value=1000),
-                "is_deleted": st.booleans(),
-            }),
+            st.fixed_dictionaries(
+                {
+                    "id": st.integers(min_value=1, max_value=1000),
+                    "is_deleted": st.booleans(),
+                }
+            ),
             min_size=1,
             max_size=20,
         )
@@ -438,9 +432,7 @@ class TestRBACPermissionAggregation:
 
     @given(
         st.lists(
-            st.frozensets(
-                st.text(min_size=1, max_size=20, alphabet=string.ascii_lowercase)
-            ),
+            st.frozensets(st.text(min_size=1, max_size=20, alphabet=string.ascii_lowercase)),
             min_size=1,
             max_size=5,
         )
@@ -604,9 +596,7 @@ class TestAuditLogStructure:
         outcome=st.sampled_from(["success", "failure"]),
     )
     @settings(max_examples=100)
-    def test_audit_log_contains_required_fields(
-        self, user_id: str, action: str, resource: str, outcome: str
-    ):
+    def test_audit_log_contains_required_fields(self, user_id: str, action: str, resource: str, outcome: str):
         """For any audit event, log SHALL contain required fields."""
         assume(len(user_id) > 0 and len(action) > 0 and len(resource) > 0)
 
@@ -843,9 +833,7 @@ class TestIdempotencyKeyBehavior:
     **Validates: Requirements 41.2**
     """
 
-    @given(
-        st.text(min_size=16, max_size=64, alphabet=string.ascii_letters + string.digits)
-    )
+    @given(st.text(min_size=16, max_size=64, alphabet=string.ascii_letters + string.digits))
     @settings(max_examples=100)
     def test_duplicate_key_returns_cached(self, idempotency_key: str):
         """For any duplicate idempotency key, cached response SHALL be returned."""

@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Self
 
 
-@dataclass
+@dataclass(slots=True)
 class BaseConfig:
     """Base configuration class for infrastructure modules.
 

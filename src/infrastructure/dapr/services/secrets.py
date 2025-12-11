@@ -105,9 +105,9 @@ class SecretsManager:
             logger.debug("bulk_secrets_retrieved", store=store, count=len(secrets))
             return secrets
         except Exception as e:
+            logger.exception("Failed to get bulk secrets", store=store)
             raise DaprConnectionError(
                 message=f"Failed to get bulk secrets from {store}",
-                details={"error": str(e)},
             ) from e
 
     def clear_cache(self, store_name: str | None = None) -> None:
@@ -117,9 +117,7 @@ class SecretsManager:
             store_name: If specified, only clear cache for this store.
         """
         if store_name:
-            keys_to_remove = [
-                k for k in self._cache if k.startswith(f"{store_name}:")
-            ]
+            keys_to_remove = [k for k in self._cache if k.startswith(f"{store_name}:")]
             for key in keys_to_remove:
                 del self._cache[key]
         else:

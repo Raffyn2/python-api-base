@@ -8,7 +8,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 # =============================================================================
 # Protocols for Type Bounds
@@ -200,7 +203,7 @@ class PermissionSet[TResource: Enum, TAction: Enum]:
         """Check if permission is in set."""
         return permission in self._permissions
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Permission[TResource, TAction]]:
         """Iterate over permissions."""
         return iter(self._permissions)
 
@@ -239,10 +242,12 @@ def create_crud_permissions[TResource: Enum](
     Returns:
         PermissionSet with create, read, update, delete, list permissions.
     """
-    return PermissionSet({
-        Permission(resource, StandardAction.CREATE),
-        Permission(resource, StandardAction.READ),
-        Permission(resource, StandardAction.UPDATE),
-        Permission(resource, StandardAction.DELETE),
-        Permission(resource, StandardAction.LIST),
-    })
+    return PermissionSet(
+        {
+            Permission(resource, StandardAction.CREATE),
+            Permission(resource, StandardAction.READ),
+            Permission(resource, StandardAction.UPDATE),
+            Permission(resource, StandardAction.DELETE),
+            Permission(resource, StandardAction.LIST),
+        }
+    )

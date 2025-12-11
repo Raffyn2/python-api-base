@@ -3,8 +3,6 @@
 Tests Lifetime enum and Registration dataclass.
 """
 
-import pytest
-
 from core.di.lifecycle import Lifetime, Registration
 
 
@@ -92,4 +90,3 @@ class TestRegistration:
             factory=factory,
         )
         assert reg.service_type is MyService
-

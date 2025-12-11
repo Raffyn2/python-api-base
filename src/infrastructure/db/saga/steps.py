@@ -17,7 +17,7 @@ type StepAction = Callable[[SagaContext], Awaitable[None]]
 type CompensationAction = Callable[[SagaContext], Awaitable[None]]
 
 
-@dataclass
+@dataclass(slots=True)
 class SagaStep:
     """Represents a single step in a saga.
 
@@ -44,7 +44,7 @@ class SagaStep:
         self.completed_at = None
 
 
-@dataclass
+@dataclass(slots=True)
 class StepResult:
     """Result of executing a saga step."""
 

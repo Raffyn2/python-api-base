@@ -6,7 +6,7 @@ Tests User aggregate creation and behavior.
 **Requirements: 2.2**
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 import pytest
 

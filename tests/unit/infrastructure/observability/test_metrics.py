@@ -8,7 +8,6 @@ import pytest
 
 from infrastructure.observability.metrics import (
     CacheMetrics,
-    CacheMetricsDict,
     CacheMetricsExporter,
 )
 
@@ -198,7 +197,7 @@ class TestCacheMetricsExporter:
 class TestMetricsAwareCacheWrapper:
     """Tests for MetricsAwareCacheWrapper."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_provider(self) -> "MockCacheProvider":
         """Create a mock cache provider."""
         return MockCacheProvider()

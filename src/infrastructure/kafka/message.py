@@ -9,14 +9,14 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
 T = TypeVar("T")
 
 
-@dataclass
+@dataclass(slots=True)
 class MessageMetadata:
     """Kafka message metadata.
 
@@ -37,7 +37,7 @@ class MessageMetadata:
     headers: dict[str, str] = field(default_factory=dict)
 
 
-class KafkaMessage(BaseModel, Generic[T]):
+class KafkaMessage[T](BaseModel):
     """Generic Kafka message wrapper.
 
     Type-safe message container for Kafka operations.

@@ -11,6 +11,6 @@ from infrastructure.dapr.patterns.pubsub import PubSub
 
 __all__ = [
     "Binding",
-    "ServiceInvoke",
     "PubSub",
+    "ServiceInvoke",
 ]

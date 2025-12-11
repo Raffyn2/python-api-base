@@ -13,9 +13,7 @@ from collections.abc import Sequence
 
 # OpenTelemetry attribute value types per specification
 type AttributePrimitive = str | bool | int | float
-type AttributeSequence = (
-    Sequence[str] | Sequence[bool] | Sequence[int] | Sequence[float]
-)
+type AttributeSequence = Sequence[str] | Sequence[bool] | Sequence[int] | Sequence[float]
 type AttributeValue = AttributePrimitive | AttributeSequence
 type Attributes = dict[str, AttributeValue]
 

@@ -33,7 +33,7 @@ class TokenCredentials(Credentials):
     """Token-based credentials."""
 
     token: str
-    token_type: str = "Bearer"  # noqa: S105 - Token type, not password
+    token_type: str = "Bearer"
 
 
 class OAuth2Credentials(Credentials):
@@ -61,7 +61,7 @@ class TokenPair[TClaims]:
 
     access_token: str
     refresh_token: str | None
-    token_type: str = "Bearer"  # noqa: S105 - Token type, not password
+    token_type: str = "Bearer"
     expires_in: int = 3600
     scope: str | None = None
     claims: TClaims | None = None
@@ -77,7 +77,7 @@ class TokenPair[TClaims]:
 # =============================================================================
 
 
-@dataclass
+@dataclass(slots=True)
 class AuthResult[TUser, TClaims]:
     """Authentication result with typed user and claims.
 
@@ -169,7 +169,7 @@ class InsufficientScopeError(AuthError):
 # =============================================================================
 
 
-@dataclass
+@dataclass(slots=True)
 class OAuthConfig:
     """Base OAuth configuration."""
 

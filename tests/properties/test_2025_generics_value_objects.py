@@ -29,23 +29,15 @@ class TestMoneyProperties:
     **Validates: Requirements 4.5**
     """
 
-    @given(
-        st.decimals(
-            min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False
-        )
-    )
+    @given(st.decimals(min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False))
     @settings(max_examples=100)
     def test_money_immutability(self, amount: Decimal) -> None:
         """Money instances are immutable."""
         money = Money.create(amount, CurrencyCode.USD)
         with pytest.raises(AttributeError):
-            money.amount = Decimal("999")  # type: ignore
+            money.amount = Decimal(999)  # type: ignore
 
-    @given(
-        st.decimals(
-            min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False
-        )
-    )
+    @given(st.decimals(min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False))
     @settings(max_examples=100)
     def test_money_equality(self, amount: Decimal) -> None:
         """Two Money with same amount and currency are equal."""
@@ -54,12 +46,8 @@ class TestMoneyProperties:
         assert money1 == money2
 
     @given(
-        st.decimals(
-            min_value=0, max_value=500_000, allow_nan=False, allow_infinity=False
-        ),
-        st.decimals(
-            min_value=0, max_value=500_000, allow_nan=False, allow_infinity=False
-        ),
+        st.decimals(min_value=0, max_value=500_000, allow_nan=False, allow_infinity=False),
+        st.decimals(min_value=0, max_value=500_000, allow_nan=False, allow_infinity=False),
     )
     @settings(max_examples=100)
     def test_money_addition_commutative(self, a: Decimal, b: Decimal) -> None:
@@ -75,19 +63,13 @@ class TestMoneyProperties:
         money = Money.from_cents(cents, CurrencyCode.USD)
         assert money.to_cents() == cents
 
-    @given(
-        st.decimals(
-            min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False
-        )
-    )
+    @given(st.decimals(min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False))
     @settings(max_examples=100)
     def test_money_serialization_round_trip(self, amount: Decimal) -> None:
         """Money to_dict preserves data for reconstruction."""
         money = Money.create(amount, CurrencyCode.USD)
         data = money.to_dict()
-        reconstructed = Money.create(
-            Decimal(data["amount"]), CurrencyCode(data["currency"])
-        )
+        reconstructed = Money.create(Decimal(data["amount"]), CurrencyCode(data["currency"]))
         assert money == reconstructed
 
 

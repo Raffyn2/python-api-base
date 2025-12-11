@@ -13,6 +13,11 @@ from core.base.domain.aggregate_root import AggregateRoot
 from domain.users.events import (
     UserDeactivatedEvent,
     UserEmailChangedEvent,
+    UserEmailVerifiedEvent,
+    UserLoggedInEvent,
+    UserPasswordChangedEvent,
+    UserProfileUpdatedEvent,
+    UserReactivatedEvent,
     UserRegisteredEvent,
 )
 from domain.users.value_objects import Email
@@ -31,9 +36,7 @@ class UserAggregate(AggregateRoot[str]):
     display_name: str | None = Field(default=None, description="Display name")
     is_active: bool = Field(default=True, description="Whether user is active")
     is_verified: bool = Field(default=False, description="Whether email is verified")
-    last_login_at: datetime | None = Field(
-        default=None, description="Last login timestamp"
-    )
+    last_login_at: datetime | None = Field(default=None, description="Last login timestamp")
 
     @classmethod
     def create(
@@ -110,10 +113,14 @@ class UserAggregate(AggregateRoot[str]):
         self.mark_updated()
         self.increment_version()
 
+        self.add_event(UserPasswordChangedEvent(user_id=str(self.id)))
+
     def verify_email(self) -> None:
         """Mark email as verified."""
         object.__setattr__(self, "is_verified", True)
         self.mark_updated()
+
+        self.add_event(UserEmailVerifiedEvent(user_id=str(self.id), email=self.email))
 
     def deactivate(self, reason: str = "") -> None:
         """Deactivate the user account.
@@ -138,14 +145,31 @@ class UserAggregate(AggregateRoot[str]):
         self.mark_updated()
         self.increment_version()
 
-    def record_login(self, login_time: datetime) -> None:
+        self.add_event(UserReactivatedEvent(user_id=str(self.id)))
+
+    def record_login(
+        self,
+        login_time: datetime,
+        ip_address: str = "",
+        user_agent: str = "",
+    ) -> None:
         """Record a successful login.
 
         Args:
             login_time: Time of login.
+            ip_address: Client IP address (optional).
+            user_agent: Client user agent (optional).
         """
         object.__setattr__(self, "last_login_at", login_time)
         self.mark_updated()
+
+        self.add_event(
+            UserLoggedInEvent(
+                user_id=str(self.id),
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+        )
 
     def update_profile(
         self,
@@ -158,9 +182,21 @@ class UserAggregate(AggregateRoot[str]):
             username: New username (if provided).
             display_name: New display name (if provided).
         """
-        if username is not None:
+        changed_fields: list[str] = []
+
+        if username is not None and username != self.username:
             object.__setattr__(self, "username", username)
-        if display_name is not None:
+            changed_fields.append("username")
+        if display_name is not None and display_name != self.display_name:
             object.__setattr__(self, "display_name", display_name)
-        self.mark_updated()
-        self.increment_version()
+            changed_fields.append("display_name")
+
+        if changed_fields:
+            self.mark_updated()
+            self.increment_version()
+            self.add_event(
+                UserProfileUpdatedEvent(
+                    user_id=str(self.id),
+                    changed_fields=tuple(changed_fields),
+                )
+            )

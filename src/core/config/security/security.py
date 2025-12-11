@@ -5,15 +5,15 @@
 **Validates: Requirements 1.1, 1.2, 1.4**
 """
 
-import logging
 import os
 import re
 from typing import Final
 
+import structlog
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Rate limit pattern: number/unit (e.g., "100/minute", "10/second")
 RATE_LIMIT_PATTERN: Final = re.compile(r"^\d+/(second|minute|hour|day)$")
@@ -38,9 +38,7 @@ class SecuritySettings(BaseSettings):
         description="Rate limit configuration (format: number/unit)",
     )
     algorithm: str = Field(default="RS256", description="JWT algorithm")
-    access_token_expire_minutes: int = Field(
-        default=30, ge=1, description="Access token expiration in minutes"
-    )
+    access_token_expire_minutes: int = Field(default=30, ge=1, description="Access token expiration in minutes")
     csp: str = Field(
         default="default-src 'self'",
         description="Content-Security-Policy header value",
@@ -56,9 +54,7 @@ class SecuritySettings(BaseSettings):
         """Validate secret key has sufficient entropy (256 bits = 32 chars)."""
         secret = v.get_secret_value()
         if len(secret) < 32:
-            raise ValueError(
-                "Secret key must be at least 32 characters (256 bits) for security"
-            )
+            raise ValueError("Secret key must be at least 32 characters (256 bits) for security")
         return v
 
     @field_validator("cors_origins")
@@ -70,14 +66,11 @@ class SecuritySettings(BaseSettings):
             restricted_envs = {"production", "staging", "prod", "stg"}
             if env in restricted_envs:
                 raise ValueError(
-                    f"SECURITY: Wildcard CORS origin '*' is not allowed in {env}. "
-                    "Specify explicit allowed origins."
+                    f"SECURITY: Wildcard CORS origin '*' is not allowed in {env}. Specify explicit allowed origins."
                 )
             logger.warning(
-                "Wildcard CORS origin '*' detected. "
-                "This will be blocked in production/staging environments. "
-                "Current environment: %s",
-                env or "development",
+                "Wildcard CORS origin detected - blocked in production/staging",
+                environment=env or "development",
             )
         return v
 
@@ -86,10 +79,7 @@ class SecuritySettings(BaseSettings):
     def validate_rate_limit_format(cls, v: str) -> str:
         """Validate rate limit format."""
         if not RATE_LIMIT_PATTERN.match(v):
-            raise ValueError(
-                f"Invalid rate limit format: '{v}'. "
-                "Expected format: 'number/unit' (e.g., '100/minute')"
-            )
+            raise ValueError(f"Invalid rate limit format: '{v}'. Expected format: 'number/unit' (e.g., '100/minute')")
         return v
 
 

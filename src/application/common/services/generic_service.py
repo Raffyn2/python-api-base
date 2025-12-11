@@ -13,109 +13,24 @@ Provides a reusable service layer with:
 
 from __future__ import annotations
 
-import logging
-from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from abc import ABC
+from typing import TYPE_CHECKING, Any
 
+import structlog
 from pydantic import BaseModel
 
-from core.base.patterns.result import Err, Ok, Result
-from core.base.repository.interface import IRepository
+from application.common.services.protocols import IEventBus, IServiceMapper
+from application.common.services.service_errors import (
+    NotFoundError,
+    ServiceError,
+)
+from core.base.patterns.result import Err, Ok
 
 if TYPE_CHECKING:
-    from application.common.mappers.interfaces.mapper_interface import IMapper
+    from collections.abc import Sequence
 
-
-logger = logging.getLogger(__name__)
-
-
-# =============================================================================
-# Error Types
-# =============================================================================
-
-
-class ServiceError(Exception):
-    """Base error for service operations."""
-
-    def __init__(
-        self,
-        message: str,
-        code: str = "SERVICE_ERROR",
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        self.message = message
-        self.code = code
-        self.details = details or {}
-        super().__init__(message)
-
-
-class NotFoundError(ServiceError):
-    """Entity not found error."""
-
-    status_code: int = 404
-
-    def __init__(self, entity_type: str, entity_id: Any) -> None:
-        super().__init__(
-            message=f"{entity_type} with id '{entity_id}' not found",
-            code="NOT_FOUND",
-            details={"entity_type": entity_type, "entity_id": str(entity_id)},
-        )
-        self.entity_type = entity_type
-        self.entity_id = entity_id
-
-
-class ValidationError(ServiceError):
-    """Validation error."""
-
-    status_code: int = 400
-
-    def __init__(
-        self,
-        message: str,
-        field: str | None = None,
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(
-            message=message,
-            code="VALIDATION_ERROR",
-            details={"field": field, **(details or {})},
-        )
-        self.field = field
-
-
-class ConflictError(ServiceError):
-    """Conflict error (e.g., duplicate entry)."""
-
-    status_code: int = 409
-
-    def __init__(self, message: str, *, details: dict[str, Any] | None = None) -> None:
-        super().__init__(message=message, code="CONFLICT", details=details)
-
-
-# =============================================================================
-# Protocols
-# =============================================================================
-
-
-@runtime_checkable
-class IEventBus(Protocol):
-    """Protocol for event bus integration."""
-
-    async def publish(self, event: dict[str, Any]) -> None:
-        """Publish an event."""
-        ...
-
-
-@runtime_checkable
-class IServiceMapper[TEntity, TResponse](Protocol):
-    """Protocol for service mapper."""
-
-    def to_dto(self, entity: TEntity) -> TResponse:
-        """Convert entity to response DTO."""
-        ...
+    from core.base.patterns.result import Result
+    from core.base.repository.interface import IRepository
 
 
 # =============================================================================
@@ -151,7 +66,9 @@ class GenericService[
         ...     def __init__(self, repository: IRepository, mapper: IMapper):
         ...         super().__init__(repository, mapper)
         ...
-        ...     async def _pre_create(self, data: CreateUserDTO) -> Result[CreateUserDTO, ServiceError]:
+        ...     async def _pre_create(
+        ...         self, data: CreateUserDTO
+        ...     ) -> Result[CreateUserDTO, ServiceError]:
         ...         if len(data.password) < 8:
         ...             return Err(ValidationError("Password too short", "password"))
         ...         return Ok(data)
@@ -179,7 +96,7 @@ class GenericService[
         self._repository = repository
         self._mapper = mapper
         self._event_bus = event_bus
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._logger = structlog.get_logger(f"{__name__}.{self.__class__.__name__}")
 
     # =========================================================================
     # Router-Compatible Interface (list, get, create, update, delete)
@@ -270,9 +187,7 @@ class GenericService[
             raise error
         return result.unwrap()
 
-    async def create_with_result(
-        self, data: TCreate
-    ) -> Result[TResponse, ServiceError]:
+    async def create_with_result(self, data: TCreate) -> Result[TResponse, ServiceError]:
         """Create a new entity with Result pattern.
 
         Args:
@@ -328,9 +243,7 @@ class GenericService[
             raise error
         return result.unwrap()
 
-    async def update_with_result(
-        self, entity_id: Any, data: TUpdate
-    ) -> Result[TResponse, ServiceError]:
+    async def update_with_result(self, entity_id: Any, data: TUpdate) -> Result[TResponse, ServiceError]:
         """Update an existing entity with Result pattern.
 
         Args:
@@ -393,9 +306,7 @@ class GenericService[
             raise error
         return result.unwrap()
 
-    async def delete_with_result(
-        self, entity_id: Any, *, soft: bool = True
-    ) -> Result[bool, ServiceError]:
+    async def delete_with_result(self, entity_id: Any, *, soft: bool = True) -> Result[bool, ServiceError]:
         """Delete an entity with Result pattern.
 
         Args:
@@ -434,9 +345,7 @@ class GenericService[
         self._logger.info("Deleted %s %s", self.entity_name, entity_id)
         return Ok(True)
 
-    async def get_by_id(
-        self, entity_id: Any
-    ) -> Result[TResponse | None, ServiceError]:
+    async def get_by_id(self, entity_id: Any) -> Result[TResponse | None, ServiceError]:
         """Get entity by ID with Result pattern.
 
         Args:
@@ -554,9 +463,7 @@ class GenericService[
             entity: Created entity.
         """
 
-    async def _pre_update(
-        self, entity_id: Any, data: TUpdate, existing: TEntity
-    ) -> Result[TUpdate, ServiceError]:
+    async def _pre_update(self, entity_id: Any, data: TUpdate, existing: TEntity) -> Result[TUpdate, ServiceError]:
         """Hook called before updating an entity.
 
         Override to add custom validation or transformation.
@@ -581,9 +488,7 @@ class GenericService[
             previous: Previous entity state.
         """
 
-    async def _pre_delete(
-        self, entity_id: Any, existing: TEntity
-    ) -> Result[None, ServiceError]:
+    async def _pre_delete(self, entity_id: Any, existing: TEntity) -> Result[None, ServiceError]:
         """Hook called before deleting an entity.
 
         Override to add custom validation.
@@ -628,9 +533,7 @@ class GenericService[
             }
             await self._event_bus.publish(event)
         except Exception:
-            self._logger.exception(
-                "Failed to publish %s%s event", self.entity_name, event_type
-            )
+            self._logger.exception("Failed to publish %s%s event", self.entity_name, event_type)
 
     # =========================================================================
     # Helper Methods

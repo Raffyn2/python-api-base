@@ -19,10 +19,7 @@ class PaginatedResponse[T](BaseModel):
 
     Example:
         >>> response = PaginatedResponse(
-        ...     items=[{"id": "1"}, {"id": "2"}],
-        ...     total=100,
-        ...     page=1,
-        ...     size=2
+        ...     items=[{"id": "1"}, {"id": "2"}], total=100, page=1, size=2
         ... )
         >>> response.pages  # 50
         >>> response.has_next  # True

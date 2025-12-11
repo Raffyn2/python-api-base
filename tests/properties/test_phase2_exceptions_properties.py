@@ -60,9 +60,7 @@ class TestPoolInvariantViolationProperties:
         unhealthy=st.integers(min_value=0, max_value=1000),
         total=st.integers(min_value=0, max_value=3000),
     )
-    def test_error_message_contains_all_values(
-        self, idle: int, in_use: int, unhealthy: int, total: int
-    ) -> None:
+    def test_error_message_contains_all_values(self, idle: int, in_use: int, unhealthy: int, total: int) -> None:
         """Error message should contain all counter values."""
         error = PoolInvariantViolation(idle, in_use, unhealthy, total)
         msg = str(error)
@@ -77,9 +75,7 @@ class TestPoolInvariantViolationProperties:
         in_use=st.integers(min_value=0, max_value=1000),
         unhealthy=st.integers(min_value=0, max_value=1000),
     )
-    def test_attributes_stored_correctly(
-        self, idle: int, in_use: int, unhealthy: int
-    ) -> None:
+    def test_attributes_stored_correctly(self, idle: int, in_use: int, unhealthy: int) -> None:
         """Attributes should be stored correctly."""
         total = idle + in_use + unhealthy + 1  # Intentionally wrong
         error = PoolInvariantViolation(idle, in_use, unhealthy, total)
@@ -98,9 +94,7 @@ class TestSnapshotIntegrityErrorProperties:
         expected_hash=st.text(min_size=32, max_size=64, alphabet="0123456789abcdef"),
         actual_hash=st.text(min_size=32, max_size=64, alphabet="0123456789abcdef"),
     )
-    def test_error_message_contains_aggregate_id(
-        self, aggregate_id: str, expected_hash: str, actual_hash: str
-    ) -> None:
+    def test_error_message_contains_aggregate_id(self, aggregate_id: str, expected_hash: str, actual_hash: str) -> None:
         """Error message should contain aggregate ID."""
         error = SnapshotIntegrityError(aggregate_id, expected_hash, actual_hash)
         assert aggregate_id in str(error)
@@ -111,9 +105,7 @@ class TestSnapshotIntegrityErrorProperties:
         expected_hash=st.text(min_size=32, max_size=64, alphabet="0123456789abcdef"),
         actual_hash=st.text(min_size=32, max_size=64, alphabet="0123456789abcdef"),
     )
-    def test_attributes_stored_correctly(
-        self, aggregate_id: str, expected_hash: str, actual_hash: str
-    ) -> None:
+    def test_attributes_stored_correctly(self, aggregate_id: str, expected_hash: str, actual_hash: str) -> None:
         """Attributes should be stored correctly."""
         error = SnapshotIntegrityError(aggregate_id, expected_hash, actual_hash)
         assert error.aggregate_id == aggregate_id
@@ -152,9 +144,7 @@ class TestFilterValidationErrorProperties:
             max_size=20,
         ),
     )
-    def test_attributes_stored_correctly(
-        self, field: str, allowed_fields: set[str]
-    ) -> None:
+    def test_attributes_stored_correctly(self, field: str, allowed_fields: set[str]) -> None:
         """Attributes should be stored correctly."""
         error = FilterValidationError(field, allowed_fields)
         assert error.field == field
@@ -199,9 +189,7 @@ class TestEntityResolutionErrorProperties:
         entity_name=st.text(min_size=1, max_size=50),
         reason=st.text(min_size=1, max_size=200),
     )
-    def test_error_message_contains_entity_and_reason(
-        self, entity_name: str, reason: str
-    ) -> None:
+    def test_error_message_contains_entity_and_reason(self, entity_name: str, reason: str) -> None:
         """Error message should contain entity name and reason."""
         error = EntityResolutionError(entity_name, reason)
         msg = str(error)

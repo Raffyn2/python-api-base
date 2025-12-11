@@ -21,9 +21,7 @@ except ImportError:
 valid_password_strategy = st.text(
     min_size=12,
     max_size=64,
-    alphabet=st.sampled_from(
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()"
-    ),
+    alphabet=st.sampled_from("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()"),
 ).filter(
     lambda p: (
         any(c.isupper() for c in p)
@@ -55,9 +53,7 @@ class TestPasswordHashVerification:
 
     @settings(max_examples=50)
     @given(password=valid_password_strategy, wrong_password=any_password_strategy)
-    def test_verify_wrong_password_returns_false(
-        self, password: str, wrong_password: str
-    ) -> None:
+    def test_verify_wrong_password_returns_false(self, password: str, wrong_password: str) -> None:
         """
         For any password, verifying a different password against its hash
         SHALL return False.

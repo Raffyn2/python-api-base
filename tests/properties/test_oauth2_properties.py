@@ -52,13 +52,13 @@ def oauth_config_strategy(draw: st.DrawFn) -> OAuthConfig:
             ),
         )
     )
-    redirect_uri = f"https://example.com/callback/{draw(st.text(min_size=1, max_size=20, alphabet='abcdefghijklmnopqrstuvwxyz'))}"
+    redirect_uri = (
+        f"https://example.com/callback/{draw(st.text(min_size=1, max_size=20, alphabet='abcdefghijklmnopqrstuvwxyz'))}"
+    )
     scopes = tuple(
         draw(
             st.lists(
-                st.text(
-                    min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz:_"
-                ),
+                st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz:_"),
                 min_size=0,
                 max_size=5,
             )
@@ -73,9 +73,7 @@ def oauth_config_strategy(draw: st.DrawFn) -> OAuthConfig:
         client_secret=client_secret,
         redirect_uri=redirect_uri,
         scopes=scopes,
-        authorize_url=defaults.get(
-            "authorize_url", "https://auth.example.com/authorize"
-        ),
+        authorize_url=defaults.get("authorize_url", "https://auth.example.com/authorize"),
         token_url=defaults.get("token_url", "https://auth.example.com/token"),
         userinfo_url=defaults.get("userinfo_url", "https://auth.example.com/userinfo"),
         jwks_url=defaults.get("jwks_url"),
@@ -135,9 +133,7 @@ def oauth_token_response_strategy(draw: st.DrawFn) -> OAuthTokenResponse:
             )
         ),
         token_type=draw(st.sampled_from(["Bearer", "bearer"])),
-        expires_in=draw(
-            st.one_of(st.none(), st.integers(min_value=60, max_value=86400))
-        ),
+        expires_in=draw(st.one_of(st.none(), st.integers(min_value=60, max_value=86400))),
         refresh_token=draw(
             st.one_of(
                 st.none(),
@@ -192,15 +188,9 @@ class TestAuthorizationUrlProperties:
     """Property tests for authorization URL generation."""
 
     @given(
-        client_id=st.text(
-            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        client_secret=st.text(
-            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        state=st.text(
-            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        state=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
     )
     @settings(max_examples=100)
     def test_google_auth_url_contains_required_params(
@@ -235,18 +225,10 @@ class TestAuthorizationUrlProperties:
         assert params["state"][0] == state
 
     @given(
-        client_id=st.text(
-            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        client_secret=st.text(
-            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        state=st.text(
-            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        nonce=st.text(
-            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        state=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        nonce=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
     )
     @settings(max_examples=100)
     def test_auth_url_includes_nonce_when_provided(
@@ -277,15 +259,9 @@ class TestAuthorizationUrlProperties:
         assert params["nonce"][0] == nonce
 
     @given(
-        client_id=st.text(
-            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        client_secret=st.text(
-            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        state=st.text(
-            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        state=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
     )
     @settings(max_examples=100)
     def test_google_auth_url_uses_correct_endpoint(
@@ -314,15 +290,9 @@ class TestAuthorizationUrlProperties:
         assert "google" in parsed.netloc.lower()
 
     @given(
-        client_id=st.text(
-            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        client_secret=st.text(
-            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        state=st.text(
-            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        state=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
     )
     @settings(max_examples=100)
     def test_github_auth_url_uses_correct_endpoint(
@@ -380,9 +350,7 @@ class TestOAuthStateProperties:
         assert not fresh_state.is_expired(max_age_seconds=600)
 
     @given(
-        state_str=st.text(
-            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        state_str=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
         age_seconds=st.integers(min_value=601, max_value=3600),
     )
     @settings(max_examples=100)
@@ -403,15 +371,11 @@ class TestOAuthStateProperties:
         assert old_state.is_expired(max_age_seconds=600)
 
     @given(
-        state_str=st.text(
-            min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        state_str=st.text(min_size=16, max_size=32, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
         max_age=st.integers(min_value=60, max_value=3600),
     )
     @settings(max_examples=100)
-    def test_state_expiration_respects_max_age(
-        self, state_str: str, max_age: int
-    ) -> None:
+    def test_state_expiration_respects_max_age(self, state_str: str, max_age: int) -> None:
         """**Property 7: State expiration respects configurable max_age**
 
         *For any* max_age value, a state created exactly at max_age boundary
@@ -654,16 +618,16 @@ class TestProviderConfigProperties:
     """Property tests for provider configurations."""
 
     @given(
-        provider=st.sampled_from([
-            OAuthProvider.GOOGLE,
-            OAuthProvider.GITHUB,
-            OAuthProvider.AZURE_AD,
-        ])
+        provider=st.sampled_from(
+            [
+                OAuthProvider.GOOGLE,
+                OAuthProvider.GITHUB,
+                OAuthProvider.AZURE_AD,
+            ]
+        )
     )
     @settings(max_examples=10)
-    def test_known_providers_have_default_configs(
-        self, provider: OAuthProvider
-    ) -> None:
+    def test_known_providers_have_default_configs(self, provider: OAuthProvider) -> None:
         """**Property 16: Known providers have default configurations**
 
         *For any* known OAuth provider (Google, GitHub, Azure AD),
@@ -681,12 +645,8 @@ class TestProviderConfigProperties:
         assert config["token_url"].startswith("https://")
 
     @given(
-        client_id=st.text(
-            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        client_secret=st.text(
-            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
     )
     @settings(max_examples=50)
     def test_google_provider_default_scopes(
@@ -713,12 +673,8 @@ class TestProviderConfigProperties:
         assert "profile" in provider._config.scopes
 
     @given(
-        client_id=st.text(
-            min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
-        client_secret=st.text(
-            min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        client_id=st.text(min_size=10, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+        client_secret=st.text(min_size=20, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
     )
     @settings(max_examples=50)
     def test_github_provider_default_scopes(

@@ -17,14 +17,16 @@ from core.base.patterns.result import Err, Ok, Result
 
 class CircuitState(Enum):
     """Circuit breaker states."""
+
     CLOSED = "closed"
     OPEN = "open"
     HALF_OPEN = "half_open"
 
 
-@dataclass
+@dataclass(slots=True)
 class CircuitBreakerConfig:
     """Circuit breaker configuration."""
+
     failure_threshold: int = 5
     success_threshold: int = 2
     timeout: timedelta = timedelta(seconds=30)

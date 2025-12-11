@@ -9,8 +9,12 @@ Implements FileStorage protocol using MinIO client.
 from collections.abc import AsyncIterator
 from datetime import timedelta
 
+import structlog
+
 from core.base.patterns.result import Err, Ok, Result
 from infrastructure.minio import MinIOClient
+
+logger = structlog.get_logger(__name__)
 
 
 class MinIOStorageProvider:
@@ -52,9 +56,23 @@ class MinIOStorageProvider:
                 collected = b"".join([chunk async for chunk in data])
                 await self._client.upload_bytes(key, collected, content_type)
 
-            url = f"{self._client._config.endpoint}/{self._client._config.bucket}/{key}"
+            # Generate a short-lived URL for the uploaded object
+            url = await self._client.get_presigned_url(key, expires=3600)
+
+            logger.debug(
+                "File uploaded to MinIO",
+                operation="MINIO_UPLOAD",
+                key=key,
+                content_type=content_type,
+            )
             return Ok(url)
         except Exception as e:
+            logger.error(
+                "MinIO upload failed",
+                operation="MINIO_UPLOAD_ERROR",
+                key=key,
+                error_type=type(e).__name__,
+            )
             return Err(e)
 
     async def download(self, key: str) -> Result[bytes, Exception]:
@@ -68,8 +86,20 @@ class MinIOStorageProvider:
         """
         try:
             data = await self._client.download_bytes(key)
+            logger.debug(
+                "File downloaded from MinIO",
+                operation="MINIO_DOWNLOAD",
+                key=key,
+                size_bytes=len(data),
+            )
             return Ok(data)
         except Exception as e:
+            logger.error(
+                "MinIO download failed",
+                operation="MINIO_DOWNLOAD_ERROR",
+                key=key,
+                error_type=type(e).__name__,
+            )
             return Err(e)
 
     async def delete(self, key: str) -> Result[bool, Exception]:
@@ -83,8 +113,19 @@ class MinIOStorageProvider:
         """
         try:
             await self._client.delete(key)
+            logger.debug(
+                "File deleted from MinIO",
+                operation="MINIO_DELETE",
+                key=key,
+            )
             return Ok(True)
         except Exception as e:
+            logger.error(
+                "MinIO delete failed",
+                operation="MINIO_DELETE_ERROR",
+                key=key,
+                error_type=type(e).__name__,
+            )
             return Err(e)
 
     async def exists(self, key: str) -> bool:
@@ -116,8 +157,21 @@ class MinIOStorageProvider:
                 expires=int(expiration.total_seconds()),
                 method=operation,
             )
+            logger.debug(
+                "Signed URL generated",
+                operation="MINIO_SIGNED_URL",
+                key=key,
+                http_operation=operation,
+                expiration_seconds=int(expiration.total_seconds()),
+            )
             return Ok(url)
         except Exception as e:
+            logger.error(
+                "MinIO signed URL generation failed",
+                operation="MINIO_SIGNED_URL_ERROR",
+                key=key,
+                error_type=type(e).__name__,
+            )
             return Err(e)
 
 

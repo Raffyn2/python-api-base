@@ -1,22 +1,21 @@
-"""
-External API clients for sustainability services.
+"""External API clients for sustainability services.
 
 Provides clients for carbon intensity data and Prometheus metrics
 with circuit breaker pattern for fault tolerance.
 """
 
-import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Any
 
 import httpx
+import structlog
 
-from src.infrastructure.sustainability.config import SustainabilitySettings
-from src.infrastructure.sustainability.models import CarbonIntensity, EnergyMetric
+from infrastructure.sustainability.config import SustainabilitySettings
+from infrastructure.sustainability.models import CarbonIntensity, EnergyMetric
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class CircuitState(Enum):
@@ -30,7 +29,7 @@ class CircuitState(Enum):
 class CircuitBreaker:
     """Simple circuit breaker implementation."""
 
-    def __init__(self, failure_threshold: int = 5, recovery_timeout: int = 60):
+    def __init__(self, failure_threshold: int = 5, recovery_timeout: int = 60) -> None:
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
         self.failure_count = 0
@@ -45,7 +44,7 @@ class CircuitBreaker:
     def record_failure(self) -> None:
         """Record failed call."""
         self.failure_count += 1
-        self.last_failure_time = datetime.now()
+        self.last_failure_time = datetime.now(UTC)
         if self.failure_count >= self.failure_threshold:
             self.state = CircuitState.OPEN
 
@@ -55,7 +54,11 @@ class CircuitBreaker:
             return True
         if self.state == CircuitState.OPEN:
             if self.last_failure_time:
-                elapsed = (datetime.now() - self.last_failure_time).total_seconds()
+                # Ensure both datetimes are timezone-aware for comparison
+                last_failure = self.last_failure_time
+                if last_failure.tzinfo is None:
+                    last_failure = last_failure.replace(tzinfo=UTC)
+                elapsed = (datetime.now(UTC) - last_failure).total_seconds()
                 if elapsed >= self.recovery_timeout:
                     self.state = CircuitState.HALF_OPEN
                     return True
@@ -66,19 +69,16 @@ class CircuitBreaker:
 class CarbonIntensityClient:
     """Client for fetching carbon intensity data."""
 
-    def __init__(self, settings: SustainabilitySettings):
+    def __init__(self, settings: SustainabilitySettings) -> None:
         self.settings = settings
         self.circuit_breaker = CircuitBreaker(
             failure_threshold=settings.circuit_breaker_failure_threshold,
             recovery_timeout=settings.circuit_breaker_recovery_timeout,
         )
-        self._client = httpx.AsyncClient(
-            timeout=settings.carbon_intensity_timeout_seconds
-        )
+        self._client = httpx.AsyncClient(timeout=settings.carbon_intensity_timeout_seconds)
 
     async def get_carbon_intensity(self, region: str) -> CarbonIntensity:
-        """
-        Fetch carbon intensity for a region.
+        """Fetch carbon intensity for a region.
 
         Falls back to default values if API unavailable.
         """
@@ -90,8 +90,12 @@ class CarbonIntensityClient:
             intensity = await self._fetch_intensity(region)
             self.circuit_breaker.record_success()
             return intensity
-        except Exception as e:
-            logger.error(f"Failed to fetch carbon intensity: {e}")
+        except Exception:
+            logger.exception(
+                "Failed to fetch carbon intensity",
+                region=region,
+                operation="CARBON_FETCH",
+            )
             self.circuit_breaker.record_failure()
             return self._get_default_intensity()
 
@@ -111,7 +115,7 @@ class CarbonIntensityClient:
         return CarbonIntensity(
             region=region,
             intensity_gco2_per_kwh=Decimal(str(data.get("carbonIntensity", 400))),
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             source="electricity-maps",
             is_default=False,
         )
@@ -121,7 +125,7 @@ class CarbonIntensityClient:
         return CarbonIntensity(
             region=self.settings.default_region,
             intensity_gco2_per_kwh=self.settings.default_carbon_intensity_gco2_per_kwh,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             source="default",
             is_default=True,
         )
@@ -134,7 +138,7 @@ class CarbonIntensityClient:
 class PrometheusClient:
     """Client for querying Prometheus metrics."""
 
-    def __init__(self, settings: SustainabilitySettings):
+    def __init__(self, settings: SustainabilitySettings) -> None:
         self.settings = settings
         self._client = httpx.AsyncClient(timeout=settings.prometheus_timeout_seconds)
 
@@ -199,7 +203,7 @@ class PrometheusClient:
                     pod=metric_labels.get("pod", "unknown"),
                     container=metric_labels.get("container", "unknown"),
                     energy_joules=Decimal(str(value[1])),
-                    timestamp=datetime.now(),
+                    timestamp=datetime.now(UTC),
                     source=metric_labels.get("source", "kepler"),
                 )
             )

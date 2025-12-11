@@ -41,7 +41,8 @@ class TestMapperError:
             field="email",
             context={"reason": "invalid format"},
         )
-        assert str(error) == "Mapping failed"
+        # __str__ includes mapping context for better debugging
+        assert str(error) == "Mapping failed (UserEntity -> UserDTO) [field: email]"
         assert error.source_type == "UserEntity"
         assert error.target_type == "UserDTO"
         assert error.field == "email"
@@ -50,6 +51,32 @@ class TestMapperError:
     def test_is_exception(self) -> None:
         error = MapperError("Test error")
         assert isinstance(error, Exception)
+
+    def test_inherits_from_application_error(self) -> None:
+        """MapperError should inherit from ApplicationError."""
+        from application.common.errors import ApplicationError
+
+        error = MapperError("Test error")
+        assert isinstance(error, ApplicationError)
+
+    def test_has_code_attribute(self) -> None:
+        """MapperError should have MAPPER_ERROR code."""
+        error = MapperError("Test error")
+        assert error.code == "MAPPER_ERROR"
+
+    def test_has_details_with_context(self) -> None:
+        """MapperError should include context in details."""
+        error = MapperError(
+            "Test error",
+            source_type="Source",
+            target_type="Target",
+            field="name",
+            context={"key": "value"},
+        )
+        assert error.details["source_type"] == "Source"
+        assert error.details["target_type"] == "Target"
+        assert error.details["field"] == "name"
+        assert error.details["context"] == {"key": "value"}
 
     def test_can_be_raised(self) -> None:
         with pytest.raises(MapperError) as exc_info:

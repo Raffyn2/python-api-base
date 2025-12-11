@@ -19,6 +19,7 @@ class TestSagaStep:
     @pytest.mark.asyncio
     async def test_create_step(self) -> None:
         """Test creating a saga step."""
+
         async def action(ctx: SagaContext) -> None:
             pass
 
@@ -29,6 +30,7 @@ class TestSagaStep:
     @pytest.mark.asyncio
     async def test_step_with_compensation(self) -> None:
         """Test step with compensation action."""
+
         async def action(ctx: SagaContext) -> None:
             pass
 
@@ -45,6 +47,7 @@ class TestSagaStep:
     @pytest.mark.asyncio
     async def test_step_with_timeout(self) -> None:
         """Test step with timeout."""
+
         async def action(ctx: SagaContext) -> None:
             pass
 
@@ -57,6 +60,7 @@ class TestSagaStep:
 
     def test_default_timeout_is_none(self) -> None:
         """Test default timeout is None."""
+
         async def action(ctx: SagaContext) -> None:
             pass
 
@@ -65,6 +69,7 @@ class TestSagaStep:
 
     def test_default_error_is_none(self) -> None:
         """Test default error is None."""
+
         async def action(ctx: SagaContext) -> None:
             pass
 
@@ -73,6 +78,7 @@ class TestSagaStep:
 
     def test_default_timestamps_are_none(self) -> None:
         """Test default timestamps are None."""
+
         async def action(ctx: SagaContext) -> None:
             pass
 
@@ -82,6 +88,7 @@ class TestSagaStep:
 
     def test_reset(self) -> None:
         """Test resetting step to initial state."""
+
         async def action(ctx: SagaContext) -> None:
             pass
 
@@ -90,9 +97,9 @@ class TestSagaStep:
         step.error = Exception("test error")
         step.started_at = datetime.now(UTC)
         step.completed_at = datetime.now(UTC)
-        
+
         step.reset()
-        
+
         assert step.status == StepStatus.PENDING
         assert step.error is None
         assert step.started_at is None

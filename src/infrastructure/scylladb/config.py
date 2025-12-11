@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-@dataclass
+@dataclass(slots=True)
 class ScyllaDBConfig:
     """Configuration for ScyllaDB client.
 
@@ -73,9 +73,7 @@ class ScyllaDBConfig:
 
         # Load balancing
         if self.local_dc:
-            lb_policy = TokenAwarePolicy(
-                DCAwareRoundRobinPolicy(local_dc=self.local_dc)
-            )
+            lb_policy = TokenAwarePolicy(DCAwareRoundRobinPolicy(local_dc=self.local_dc))
             kwargs["load_balancing_policy"] = lb_policy
 
         # SSL

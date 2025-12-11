@@ -166,12 +166,8 @@ class TestPublicAPIPreservationPhase2:
 
         try:
             module = importlib.import_module(module_name)
-            assert hasattr(module, "__all__"), (
-                f"Module {module_name} should have __all__ defined for explicit exports"
-            )
-            assert len(module.__all__) > 0, (
-                f"Module {module_name} __all__ should not be empty"
-            )
+            assert hasattr(module, "__all__"), f"Module {module_name} should have __all__ defined for explicit exports"
+            assert len(module.__all__) > 0, f"Module {module_name} __all__ should not be empty"
         except ImportError:
             pytest.skip(f"Module {module_name} not importable")
 
@@ -241,10 +237,7 @@ class TestFileSizeCompliancePhase2:
                 f"  {path}: {lines} lines (+{lines - MAX_LINES})"
                 for path, lines in sorted(violations, key=lambda x: x[1], reverse=True)
             ]
-            pytest.fail(
-                f"{len(violations)} files exceed {MAX_LINES} lines:\n"
-                + "\n".join(violation_msgs)
-            )
+            pytest.fail(f"{len(violations)} files exceed {MAX_LINES} lines:\n" + "\n".join(violation_msgs))
 
     @given(st.sampled_from(REFACTORED_PACKAGES_PHASE2))
     @settings(max_examples=100)
@@ -264,9 +257,8 @@ class TestFileSizeCompliancePhase2:
             if line_count > MAX_LINES:
                 violations.append((py_file, line_count))
 
-        assert not violations, (
-            f"Files exceeding {MAX_LINES} lines in {package_path}: "
-            + ", ".join(f"{p}:{c}" for p, c in violations)
+        assert not violations, f"Files exceeding {MAX_LINES} lines in {package_path}: " + ", ".join(
+            f"{p}:{c}" for p, c in violations
         )
 
     def test_refactored_packages_have_multiple_modules(self) -> None:
@@ -293,8 +285,7 @@ class TestFileSizeCompliancePhase2:
             pytest.skip("No Phase 2 packages refactored yet")
 
         assert not single_module_packages, (
-            "Packages with only __init__.py (should have multiple modules): "
-            + ", ".join(single_module_packages)
+            "Packages with only __init__.py (should have multiple modules): " + ", ".join(single_module_packages)
         )
 
 

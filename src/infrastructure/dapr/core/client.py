@@ -10,7 +10,7 @@ from typing import Any
 import httpx
 from dapr.clients import DaprClient
 
-from core.config.dapr import DaprSettings, get_dapr_settings
+from core.config.infrastructure.dapr import DaprSettings, get_dapr_settings
 from core.shared.logging import get_logger
 from infrastructure.dapr.errors import DaprConnectionError, DaprTimeoutError
 
@@ -198,10 +198,14 @@ class DaprClientWrapper:
                 timeout_seconds=timeout or self._settings.timeout_seconds,
             ) from e
         except httpx.RequestError as e:
+            logger.exception(
+                "Service invocation failed",
+                app_id=app_id,
+                method=method_name,
+            )
             raise DaprConnectionError(
                 message=f"Service invocation failed: {app_id}/{method_name}",
                 endpoint=self._settings.http_endpoint,
-                details={"error": str(e)},
             ) from e
 
     async def publish_event(
@@ -237,10 +241,14 @@ class DaprClientWrapper:
             )
             response.raise_for_status()
         except httpx.RequestError as e:
+            logger.exception(
+                "Failed to publish event",
+                pubsub=pubsub_name,
+                topic=topic_name,
+            )
             raise DaprConnectionError(
                 message=f"Failed to publish event to {pubsub_name}/{topic_name}",
                 endpoint=self._settings.http_endpoint,
-                details={"error": str(e)},
             ) from e
 
     async def get_state(
@@ -274,10 +282,14 @@ class DaprClientWrapper:
             etag = response.headers.get("ETag")
             return response.content, etag
         except httpx.RequestError as e:
+            logger.exception(
+                "Failed to get state",
+                store=store_name,
+                key=key,
+            )
             raise DaprConnectionError(
                 message=f"Failed to get state: {store_name}/{key}",
                 endpoint=self._settings.http_endpoint,
-                details={"error": str(e)},
             ) from e
 
     async def save_state(
@@ -320,10 +332,14 @@ class DaprClientWrapper:
             )
             response.raise_for_status()
         except httpx.RequestError as e:
+            logger.exception(
+                "Failed to save state",
+                store=store_name,
+                key=key,
+            )
             raise DaprConnectionError(
                 message=f"Failed to save state: {store_name}/{key}",
                 endpoint=self._settings.http_endpoint,
-                details={"error": str(e)},
             ) from e
 
     async def delete_state(
@@ -352,10 +368,14 @@ class DaprClientWrapper:
             response = await self.http_client.delete(url, headers=headers)
             return response.status_code in (200, 204)
         except httpx.RequestError as e:
+            logger.exception(
+                "Failed to delete state",
+                store=store_name,
+                key=key,
+            )
             raise DaprConnectionError(
                 message=f"Failed to delete state: {store_name}/{key}",
                 endpoint=self._settings.http_endpoint,
-                details={"error": str(e)},
             ) from e
 
     async def get_secret(
@@ -394,10 +414,14 @@ class DaprClientWrapper:
             response.raise_for_status()
             return response.json()
         except httpx.RequestError as e:
+            logger.exception(
+                "Failed to get secret",
+                store=store_name,
+                key=key,
+            )
             raise DaprConnectionError(
                 message=f"Failed to get secret: {store_name}/{key}",
                 endpoint=self._settings.http_endpoint,
-                details={"error": str(e)},
             ) from e
 
 

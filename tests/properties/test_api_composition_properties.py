@@ -39,9 +39,7 @@ class TestCallResultProperties:
         duration=st.floats(min_value=0, max_value=10000, allow_nan=False),
     )
     @settings(max_examples=100)
-    def test_ok_creates_successful_result(
-        self, name: str, data: int, duration: float
-    ) -> None:
+    def test_ok_creates_successful_result(self, name: str, data: int, duration: float) -> None:
         """Property: ok() creates a successful result."""
         result = CallResult.ok(name, data, duration)
         assert result.success is True
@@ -55,9 +53,7 @@ class TestCallResultProperties:
         duration=st.floats(min_value=0, max_value=10000, allow_nan=False),
     )
     @settings(max_examples=100)
-    def test_fail_creates_failed_result(
-        self, name: str, error: str, duration: float
-    ) -> None:
+    def test_fail_creates_failed_result(self, name: str, error: str, duration: float) -> None:
         """Property: fail() creates a failed result."""
         result = CallResult.fail(name, error, duration)
         assert result.success is False
@@ -74,9 +70,7 @@ class TestCompositionResultProperties:
         failure_count=st.integers(min_value=0, max_value=5),
     )
     @settings(max_examples=50)
-    def test_success_and_failure_counts(
-        self, success_count: int, failure_count: int
-    ) -> None:
+    def test_success_and_failure_counts(self, success_count: int, failure_count: int) -> None:
         """Property: success_count and failure_count are accurate."""
         results: dict[str, CallResult[int]] = {}
 
@@ -285,13 +279,7 @@ class TestCompositionBuilderProperties:
         async def call2() -> int:
             return 2
 
-        composer = (
-            CompositionBuilder[int]()
-            .parallel()
-            .add("call1", call1)
-            .add("call2", call2)
-            .build()
-        )
+        composer = CompositionBuilder[int]().parallel().add("call1", call1).add("call2", call2).build()
 
         result = await composer.execute()
         assert result.success_count == 2
@@ -303,12 +291,7 @@ class TestCompositionBuilderProperties:
         async def failing() -> int:
             raise ValueError("error")
 
-        composer = (
-            CompositionBuilder[int]()
-            .parallel_with_fallback()
-            .add_optional("test", failing, fallback=99)
-            .build()
-        )
+        composer = CompositionBuilder[int]().parallel_with_fallback().add_optional("test", failing, fallback=99).build()
 
         result = await composer.execute()
         assert result.get("test") == 99

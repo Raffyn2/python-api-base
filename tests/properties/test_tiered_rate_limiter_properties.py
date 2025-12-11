@@ -29,9 +29,7 @@ from infrastructure.security.tiered_rate_limiter import (
 )
 
 # Strategies
-user_id_strategy = st.text(
-    min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))
-)
+user_id_strategy = st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N")))
 
 tier_strategy = st.sampled_from(list(UserTier))
 
@@ -119,7 +117,7 @@ class TestRateLimitEnforcement:
         **Validates: Requirements 5.4**
         """
         limiter = TieredRateLimiter()
-        config = limiter.get_config(tier)
+        limiter.get_config(tier)
 
         info1 = asyncio.run(limiter.record_request(user_id, tier))
         info2 = asyncio.run(limiter.record_request(user_id, tier))
@@ -248,9 +246,7 @@ class TestRateLimitConfig:
         multiplier=st.floats(min_value=0.1, max_value=10.0, allow_nan=False),
     )
     @settings(max_examples=50)
-    def test_scale_preserves_ratios(
-        self, config: RateLimitConfig, multiplier: float
-    ) -> None:
+    def test_scale_preserves_ratios(self, config: RateLimitConfig, multiplier: float) -> None:
         """Property: Scaling preserves relative ratios.
 
         *For any* config and multiplier, scaled values are proportional.
@@ -259,21 +255,9 @@ class TestRateLimitConfig:
         scaled = config.scale(multiplier)
 
         # Allow for integer rounding
-        assert (
-            abs(
-                scaled.requests_per_minute
-                - int(config.requests_per_minute * multiplier)
-            )
-            <= 1
-        )
-        assert (
-            abs(scaled.requests_per_hour - int(config.requests_per_hour * multiplier))
-            <= 1
-        )
-        assert (
-            abs(scaled.requests_per_day - int(config.requests_per_day * multiplier))
-            <= 1
-        )
+        assert abs(scaled.requests_per_minute - int(config.requests_per_minute * multiplier)) <= 1
+        assert abs(scaled.requests_per_hour - int(config.requests_per_hour * multiplier)) <= 1
+        assert abs(scaled.requests_per_day - int(config.requests_per_day * multiplier)) <= 1
 
 
 class TestInMemoryStore:
@@ -297,14 +281,10 @@ class TestInMemoryStore:
     @given(
         key=st.text(min_size=1, max_size=50),
         window=st.integers(min_value=1, max_value=3600),
-        increments=st.lists(
-            st.integers(min_value=1, max_value=10), min_size=1, max_size=10
-        ),
+        increments=st.lists(st.integers(min_value=1, max_value=10), min_size=1, max_size=10),
     )
     @settings(max_examples=50)
-    def test_increment_accumulates(
-        self, key: str, window: int, increments: list[int]
-    ) -> None:
+    def test_increment_accumulates(self, key: str, window: int, increments: list[int]) -> None:
         """Property: Increments accumulate correctly.
 
         *For any* sequence of increments, total equals sum.
@@ -352,9 +332,7 @@ class TestTieredRateLimiterBuilder:
         day=st.integers(min_value=100, max_value=10000),
     )
     @settings(max_examples=50)
-    def test_builder_configures_free_tier(
-        self, minute: int, hour: int, day: int
-    ) -> None:
+    def test_builder_configures_free_tier(self, minute: int, hour: int, day: int) -> None:
         """Property: Builder correctly configures free tier.
 
         *For any* limits, builder sets them correctly.
@@ -373,17 +351,13 @@ class TestTieredRateLimiterBuilder:
         multiplier=st.floats(min_value=0.1, max_value=10.0, allow_nan=False),
     )
     @settings(max_examples=50)
-    def test_builder_configures_endpoint_cost(
-        self, endpoint: str, multiplier: float
-    ) -> None:
+    def test_builder_configures_endpoint_cost(self, endpoint: str, multiplier: float) -> None:
         """Property: Builder correctly configures endpoint costs.
 
         *For any* endpoint and multiplier, cost is applied.
         **Validates: Requirements 5.4**
         """
-        limiter = (
-            TieredRateLimiterBuilder().with_endpoint_cost(endpoint, multiplier).build()
-        )
+        limiter = TieredRateLimiterBuilder().with_endpoint_cost(endpoint, multiplier).build()
 
         assert endpoint in limiter.endpoint_multipliers
         assert limiter.endpoint_multipliers[endpoint] == multiplier
@@ -403,19 +377,13 @@ class TestEndpointCosts:
         *For any* user, expensive endpoints reduce remaining faster.
         **Validates: Requirements 5.4**
         """
-        limiter = (
-            TieredRateLimiterBuilder().with_endpoint_cost("/api/expensive", 5.0).build()
-        )
+        limiter = TieredRateLimiterBuilder().with_endpoint_cost("/api/expensive", 5.0).build()
 
         # Record normal request
         info1 = asyncio.run(limiter.record_request(f"{user_id}_normal", tier))
 
         # Record expensive request
-        info2 = asyncio.run(
-            limiter.record_request(
-                f"{user_id}_expensive", tier, endpoint="/api/expensive"
-            )
-        )
+        info2 = asyncio.run(limiter.record_request(f"{user_id}_expensive", tier, endpoint="/api/expensive"))
 
         # Expensive endpoint should have consumed more
         config = limiter.get_config(tier)

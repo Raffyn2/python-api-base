@@ -5,7 +5,7 @@
 """
 
 from datetime import timedelta
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -76,25 +76,23 @@ class TestRateLimitResult:
 class TestInMemoryRateLimiter:
     """Tests for InMemoryRateLimiter."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def config(self) -> RateLimitConfig:
         """Create rate limit config."""
         return RateLimitConfig()
 
-    @pytest.fixture
+    @pytest.fixture()
     def limiter(self, config: RateLimitConfig) -> InMemoryRateLimiter[str]:
         """Create in-memory rate limiter."""
         return InMemoryRateLimiter[str](config)
 
-    @pytest.fixture
+    @pytest.fixture()
     def limit(self) -> RateLimit:
         """Create rate limit."""
         return RateLimit(requests=5, window=timedelta(seconds=60))
 
     @pytest.mark.asyncio
-    async def test_allows_under_limit(
-        self, limiter: InMemoryRateLimiter[str], limit: RateLimit
-    ) -> None:
+    async def test_allows_under_limit(self, limiter: InMemoryRateLimiter[str], limit: RateLimit) -> None:
         """Test requests under limit are allowed."""
         result = await limiter.check("user-1", limit)
 
@@ -103,9 +101,7 @@ class TestInMemoryRateLimiter:
         assert result.client == "user-1"
 
     @pytest.mark.asyncio
-    async def test_denies_over_limit(
-        self, limiter: InMemoryRateLimiter[str], limit: RateLimit
-    ) -> None:
+    async def test_denies_over_limit(self, limiter: InMemoryRateLimiter[str], limit: RateLimit) -> None:
         """Test requests over limit are denied."""
         # Exhaust the limit
         for _ in range(5):
@@ -118,9 +114,7 @@ class TestInMemoryRateLimiter:
         assert result.retry_after is not None
 
     @pytest.mark.asyncio
-    async def test_separate_clients(
-        self, limiter: InMemoryRateLimiter[str], limit: RateLimit
-    ) -> None:
+    async def test_separate_clients(self, limiter: InMemoryRateLimiter[str], limit: RateLimit) -> None:
         """Test different clients have separate limits."""
         # Exhaust user-1's limit
         for _ in range(5):
@@ -132,9 +126,7 @@ class TestInMemoryRateLimiter:
         assert result.is_allowed is True
 
     @pytest.mark.asyncio
-    async def test_separate_endpoints(
-        self, limiter: InMemoryRateLimiter[str], limit: RateLimit
-    ) -> None:
+    async def test_separate_endpoints(self, limiter: InMemoryRateLimiter[str], limit: RateLimit) -> None:
         """Test different endpoints have separate limits."""
         # Exhaust limit for endpoint-1
         for _ in range(5):
@@ -146,9 +138,7 @@ class TestInMemoryRateLimiter:
         assert result.is_allowed is True
 
     @pytest.mark.asyncio
-    async def test_reset_clears_limit(
-        self, limiter: InMemoryRateLimiter[str], limit: RateLimit
-    ) -> None:
+    async def test_reset_clears_limit(self, limiter: InMemoryRateLimiter[str], limit: RateLimit) -> None:
         """Test reset clears rate limit."""
         # Exhaust the limit
         for _ in range(5):
@@ -163,17 +153,13 @@ class TestInMemoryRateLimiter:
         assert check_result.is_allowed is True
 
     @pytest.mark.asyncio
-    async def test_reset_nonexistent_returns_false(
-        self, limiter: InMemoryRateLimiter[str]
-    ) -> None:
+    async def test_reset_nonexistent_returns_false(self, limiter: InMemoryRateLimiter[str]) -> None:
         """Test reset for nonexistent client returns False."""
         result = await limiter.reset("nonexistent")
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_configure_limits(
-        self, limiter: InMemoryRateLimiter[str]
-    ) -> None:
+    async def test_configure_limits(self, limiter: InMemoryRateLimiter[str]) -> None:
         """Test configuring per-endpoint limits."""
         custom_limit = RateLimit(requests=10, window=timedelta(seconds=30))
         limiter.configure({"custom": custom_limit})
@@ -183,9 +169,7 @@ class TestInMemoryRateLimiter:
         assert retrieved.requests == 10
 
     @pytest.mark.asyncio
-    async def test_get_default_limit(
-        self, limiter: InMemoryRateLimiter[str], config: RateLimitConfig
-    ) -> None:
+    async def test_get_default_limit(self, limiter: InMemoryRateLimiter[str], config: RateLimitConfig) -> None:
         """Test getting default limit for unknown endpoint."""
         retrieved = limiter.get_limit("unknown")
 
@@ -195,20 +179,18 @@ class TestInMemoryRateLimiter:
 class TestSlidingWindowLimiter:
     """Tests for SlidingWindowLimiter."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def config(self) -> RateLimitConfig:
         """Create rate limit config."""
         return RateLimitConfig()
 
-    @pytest.fixture
+    @pytest.fixture()
     def limit(self) -> RateLimit:
         """Create rate limit."""
         return RateLimit(requests=5, window=timedelta(seconds=60))
 
     @pytest.mark.asyncio
-    async def test_fallback_without_redis(
-        self, config: RateLimitConfig, limit: RateLimit
-    ) -> None:
+    async def test_fallback_without_redis(self, config: RateLimitConfig, limit: RateLimit) -> None:
         """Test fallback to in-memory without Redis."""
         limiter = SlidingWindowLimiter[str](config, redis_client=None)
 
@@ -217,9 +199,7 @@ class TestSlidingWindowLimiter:
         assert result.is_allowed is True
 
     @pytest.mark.asyncio
-    async def test_fallback_on_redis_error(
-        self, config: RateLimitConfig, limit: RateLimit
-    ) -> None:
+    async def test_fallback_on_redis_error(self, config: RateLimitConfig, limit: RateLimit) -> None:
         """Test fallback to in-memory on Redis error."""
         mock_redis = AsyncMock()
         mock_redis.pipeline.side_effect = Exception("Redis error")
@@ -231,9 +211,7 @@ class TestSlidingWindowLimiter:
         assert result.is_allowed is True
 
     @pytest.mark.asyncio
-    async def test_reset_fallback_without_redis(
-        self, config: RateLimitConfig, limit: RateLimit
-    ) -> None:
+    async def test_reset_fallback_without_redis(self, config: RateLimitConfig, limit: RateLimit) -> None:
         """Test reset fallback without Redis."""
         limiter = SlidingWindowLimiter[str](config, redis_client=None)
 
@@ -245,9 +223,7 @@ class TestSlidingWindowLimiter:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_reset_fallback_on_redis_error(
-        self, config: RateLimitConfig
-    ) -> None:
+    async def test_reset_fallback_on_redis_error(self, config: RateLimitConfig) -> None:
         """Test reset fallback on Redis error."""
         mock_redis = AsyncMock()
         mock_redis.delete.side_effect = Exception("Redis error")

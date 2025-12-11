@@ -119,6 +119,14 @@ class Ok[T]:
         """No-op for Ok."""
         return self
 
+    def unwrap_err(self) -> None:
+        """Raises ValueError since Ok has no error.
+
+        Raises:
+            ValueError: Always, since Ok has no error.
+        """
+        raise ValueError(f"Called unwrap_err on Ok: {self.value}")
+
 
 @dataclass(frozen=True, slots=True)
 class Err[E]:
@@ -219,6 +227,14 @@ class Err[E]:
         """Call function with error for side effects, return self."""
         fn(self.error)
         return self
+
+    def unwrap_err(self) -> E:
+        """Get the error value.
+
+        Returns:
+            The error value.
+        """
+        return self.error
 
 
 # Type alias for Result using PEP 695

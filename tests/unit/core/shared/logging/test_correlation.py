@@ -100,4 +100,3 @@ class TestCorrelationIdIsolation:
         # Each task should have its own correlation ID
         for task_id, cid in results:
             assert cid == f"task-{task_id}"
-

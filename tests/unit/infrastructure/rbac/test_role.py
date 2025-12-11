@@ -44,9 +44,7 @@ class TestRole:
 
     def test_init_with_description(self) -> None:
         """Role should store description."""
-        role: Role[Permission[Resource, Action]] = Role(
-            name="admin", description="Administrator"
-        )
+        role: Role[Permission[Resource, Action]] = Role(name="admin", description="Administrator")
         assert role.description == "Administrator"
 
     def test_init_default_permissions(self) -> None:
@@ -57,17 +55,13 @@ class TestRole:
     def test_init_with_permissions(self) -> None:
         """Role should store permissions."""
         perm = Permission(Resource.USER, Action.READ)
-        role: Role[Permission[Resource, Action]] = Role(
-            name="viewer", permissions={perm}
-        )
+        role: Role[Permission[Resource, Action]] = Role(name="viewer", permissions={perm})
         assert perm in role.permissions
 
     def test_has_permission_direct(self) -> None:
         """has_permission should return True for direct permission."""
         perm = Permission(Resource.USER, Action.READ)
-        role: Role[Permission[Resource, Action]] = Role(
-            name="viewer", permissions={perm}
-        )
+        role: Role[Permission[Resource, Action]] = Role(name="viewer", permissions={perm})
         assert role.has_permission(perm) is True
 
     def test_has_permission_missing(self) -> None:
@@ -79,9 +73,7 @@ class TestRole:
     def test_has_permission_inherited(self) -> None:
         """has_permission should check parent role."""
         parent_perm = Permission(Resource.USER, Action.READ)
-        parent: Role[Permission[Resource, Action]] = Role(
-            name="parent", permissions={parent_perm}
-        )
+        parent: Role[Permission[Resource, Action]] = Role(name="parent", permissions={parent_perm})
         child: Role[Permission[Resource, Action]] = Role(name="child", parent=parent)
         assert child.has_permission(parent_perm) is True
 
@@ -95,9 +87,7 @@ class TestRole:
     def test_remove_permission(self) -> None:
         """remove_permission should remove permission from role."""
         perm = Permission(Resource.USER, Action.READ)
-        role: Role[Permission[Resource, Action]] = Role(
-            name="test", permissions={perm}
-        )
+        role: Role[Permission[Resource, Action]] = Role(name="test", permissions={perm})
         role.remove_permission(perm)
         assert perm not in role.permissions
 
@@ -110,21 +100,15 @@ class TestRole:
     def test_get_all_permissions_direct(self) -> None:
         """get_all_permissions should return direct permissions."""
         perm = Permission(Resource.USER, Action.READ)
-        role: Role[Permission[Resource, Action]] = Role(
-            name="test", permissions={perm}
-        )
+        role: Role[Permission[Resource, Action]] = Role(name="test", permissions={perm})
         assert perm in role.get_all_permissions()
 
     def test_get_all_permissions_inherited(self) -> None:
         """get_all_permissions should include inherited permissions."""
         parent_perm = Permission(Resource.USER, Action.READ)
         child_perm = Permission(Resource.USER, Action.CREATE)
-        parent: Role[Permission[Resource, Action]] = Role(
-            name="parent", permissions={parent_perm}
-        )
-        child: Role[Permission[Resource, Action]] = Role(
-            name="child", permissions={child_perm}, parent=parent
-        )
+        parent: Role[Permission[Resource, Action]] = Role(name="parent", permissions={parent_perm})
+        child: Role[Permission[Resource, Action]] = Role(name="child", permissions={child_perm}, parent=parent)
         all_perms = child.get_all_permissions()
         assert parent_perm in all_perms
         assert child_perm in all_perms

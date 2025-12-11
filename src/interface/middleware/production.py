@@ -22,18 +22,18 @@ from interface.middleware.production import (
 )
 
 __all__ = [
-    # Resilience
-    "ResilienceConfig",
-    "ResilienceMiddleware",
-    # Multitenancy
-    "MultitenancyConfig",
-    "MultitenancyMiddleware",
-    # Feature Flags
-    "FeatureFlagMiddleware",
-    "is_feature_enabled",
     # Audit
     "AuditConfig",
     "AuditMiddleware",
+    # Feature Flags
+    "FeatureFlagMiddleware",
+    # Multitenancy
+    "MultitenancyConfig",
+    "MultitenancyMiddleware",
+    # Resilience
+    "ResilienceConfig",
+    "ResilienceMiddleware",
+    "is_feature_enabled",
     # Setup
     "setup_production_middleware",
 ]

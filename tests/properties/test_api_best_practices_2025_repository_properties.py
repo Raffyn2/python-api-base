@@ -72,9 +72,7 @@ class InMemoryRepository:
         self._storage[entity_id] = entity
         return entity
 
-    async def update(
-        self, entity_id: str, data: SampleUpdateDTO
-    ) -> SampleEntity | None:
+    async def update(self, entity_id: str, data: SampleUpdateDTO) -> SampleEntity | None:
         """Update existing entity."""
         entity = self._storage.get(entity_id)
         if entity is None:
@@ -132,7 +130,7 @@ create_dto_strategy = st.builds(
 # === Test Fixtures ===
 
 
-@pytest.fixture
+@pytest.fixture()
 def repository() -> InMemoryRepository:
     """Fresh repository for each test."""
     return InMemoryRepository()
@@ -154,9 +152,7 @@ class TestCRUDRoundTrip:
     @settings(max_examples=50, deadline=None)
     @given(create_dto=create_dto_strategy)
     @pytest.mark.asyncio
-    async def test_create_then_get_returns_same_data(
-        self, create_dto: SampleCreateDTO
-    ) -> None:
+    async def test_create_then_get_returns_same_data(self, create_dto: SampleCreateDTO) -> None:
         """Created entity SHALL be retrievable with same data.
 
         **Feature: api-best-practices-review-2025, Property 7: CRUD Round-trip**
@@ -347,9 +343,7 @@ class TestRepositoryPagination:
         limit=st.integers(min_value=1, max_value=10),
     )
     @pytest.mark.asyncio
-    async def test_pagination_respects_skip_and_limit(
-        self, count: int, skip: int, limit: int
-    ) -> None:
+    async def test_pagination_respects_skip_and_limit(self, count: int, skip: int, limit: int) -> None:
         """Pagination SHALL respect skip and limit.
 
         **Feature: api-best-practices-review-2025**
@@ -441,9 +435,7 @@ class TestPartialUpdate:
         new_name=name_strategy,
     )
     @pytest.mark.asyncio
-    async def test_partial_update_preserves_other_fields(
-        self, create_dto: SampleCreateDTO, new_name: str
-    ) -> None:
+    async def test_partial_update_preserves_other_fields(self, create_dto: SampleCreateDTO, new_name: str) -> None:
         """Partial update SHALL preserve unspecified fields.
 
         **Feature: api-best-practices-review-2025**

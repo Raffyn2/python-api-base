@@ -72,9 +72,7 @@ class ObservabilitySettings(BaseSettings):
     kafka_bootstrap_servers: list[str] = Field(default=["localhost:9092"])
     kafka_client_id: str = Field(default="python-api-base")
     kafka_group_id: str = Field(default="python-api-base-group")
-    kafka_auto_offset_reset: str = Field(
-        default="earliest", pattern="^(earliest|latest)$"
-    )
+    kafka_auto_offset_reset: str = Field(default="earliest", pattern="^(earliest|latest)$")
     kafka_enable_auto_commit: bool = Field(default=True)
     kafka_security_protocol: str = Field(default="PLAINTEXT")
     kafka_sasl_mechanism: str | None = Field(default=None)
@@ -99,7 +97,7 @@ class ObservabilitySettings(BaseSettings):
     prometheus_namespace: str = Field(default="python_api")
     prometheus_subsystem: str = Field(default="")
 
-    # Redis
+    # Redis (for caching/observability - separate from security.RedisSettings for tokens)
     redis_enabled: bool = Field(default=False)
     redis_url: str = Field(default="redis://localhost:6379/0")
     redis_pool_size: int = Field(default=10)
@@ -165,9 +163,24 @@ class ObservabilitySettings(BaseSettings):
         # Keycloak validation
         if self.keycloak_enabled and not self.keycloak_client_secret:
             msg = (
-                "Keycloak client secret required when keycloak_enabled=True. "
-                "Set OBSERVABILITY__KEYCLOAK_CLIENT_SECRET"
+                "Keycloak client secret required when keycloak_enabled=True. Set OBSERVABILITY__KEYCLOAK_CLIENT_SECRET"
             )
             raise ValueError(msg)
+
+        # Kafka SASL validation
+        sasl_protocols = {"SASL_PLAINTEXT", "SASL_SSL"}
+        if self.kafka_enabled and self.kafka_security_protocol in sasl_protocols:
+            if not self.kafka_sasl_mechanism:
+                msg = (
+                    "Kafka SASL mechanism required when using SASL security protocol. "
+                    "Set OBSERVABILITY__KAFKA_SASL_MECHANISM"
+                )
+                raise ValueError(msg)
+            if not self.kafka_sasl_username or not self.kafka_sasl_password:
+                msg = (
+                    "Kafka SASL credentials required when using SASL security protocol. "
+                    "Set OBSERVABILITY__KAFKA_SASL_USERNAME and OBSERVABILITY__KAFKA_SASL_PASSWORD"
+                )
+                raise ValueError(msg)
 
         return self

@@ -85,9 +85,7 @@ field_name_strategy = st.text(
 ).filter(lambda x: x.lower() not in PYTHON_KEYWORDS and len(x) >= 3)
 
 field_strategy = st.tuples(field_name_strategy, field_type_strategy)
-fields_strategy = st.lists(
-    field_strategy, min_size=0, max_size=5, unique_by=lambda x: x[0]
-)
+fields_strategy = st.lists(field_strategy, min_size=0, max_size=5, unique_by=lambda x: x[0])
 
 
 class TestCodeGenerationCompleteness:
@@ -121,9 +119,7 @@ class TestCodeGenerationCompleteness:
 
     @settings(max_examples=30)
     @given(name=entity_name_strategy, fields=fields_strategy)
-    def test_entity_with_fields_includes_all_fields(
-        self, name: str, fields: list[tuple[str, str]]
-    ) -> None:
+    def test_entity_with_fields_includes_all_fields(self, name: str, fields: list[tuple[str, str]]) -> None:
         """
         For any entity with fields, all field definitions SHALL be included.
         """
@@ -215,9 +211,7 @@ class TestCodeGenerationCompleteness:
 
     @settings(max_examples=30)
     @given(name=entity_name_strategy, fields=fields_strategy)
-    def test_property_tests_generation_produces_valid_python(
-        self, name: str, fields: list[tuple[str, str]]
-    ) -> None:
+    def test_property_tests_generation_produces_valid_python(self, name: str, fields: list[tuple[str, str]]) -> None:
         """
         For any entity, the test generator SHALL produce valid Python test code.
         """

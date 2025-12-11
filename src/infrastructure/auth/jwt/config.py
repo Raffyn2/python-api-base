@@ -48,7 +48,7 @@ class JWTKeyConfig:
         if self.algorithm in ("RS256", "ES256"):
             if not self.private_key and not self.public_key:
                 raise InvalidKeyError(
-                    f"{self.algorithm} requires private_key or public_key"
+                    f"{self.algorithm} requires private_key or public_key",
                 )
         elif self.algorithm == "HS256":
             if not self.secret_key:

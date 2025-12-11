@@ -10,14 +10,15 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from application.common.use_cases.base.use_case import BaseUseCase
 from application.common.errors import NotFoundError, ValidationError
-from core.base.patterns.result import Ok, Err
+from application.common.use_cases.base.use_case import BaseUseCase
+from core.base.patterns.result import Err
 
 
 @dataclass
 class TestEntity:
     """Test entity for use case tests."""
+
     id: str
     name: str
     value: int
@@ -40,7 +41,7 @@ class TestUseCase(BaseUseCase[TestEntity, str]):
         return "TestEntity"
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_repo() -> AsyncMock:
     """Create mock repository."""
     repo = AsyncMock()
@@ -52,7 +53,7 @@ def mock_repo() -> AsyncMock:
     return repo
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_uow() -> MagicMock:
     """Create mock unit of work."""
     uow = MagicMock()
@@ -63,13 +64,13 @@ def mock_uow() -> MagicMock:
     return uow
 
 
-@pytest.fixture
+@pytest.fixture()
 def use_case(mock_repo: AsyncMock, mock_uow: MagicMock) -> TestUseCase:
     """Create test use case."""
     return TestUseCase(mock_repo, mock_uow)
 
 
-@pytest.fixture
+@pytest.fixture()
 def sample_entity() -> TestEntity:
     """Create sample entity."""
     return TestEntity(id="1", name="Test", value=100)
@@ -89,18 +90,14 @@ class TestBaseUseCaseGet:
         assert result == sample_entity
         mock_repo.get_by_id.assert_called_once_with("1")
 
-    async def test_get_missing_entity_raises(
-        self, use_case: TestUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_get_missing_entity_raises(self, use_case: TestUseCase, mock_repo: AsyncMock) -> None:
         """Test getting missing entity raises NotFoundError."""
         mock_repo.get_by_id.return_value = None
 
         with pytest.raises(NotFoundError):
             await use_case.get("999", raise_on_missing=True)
 
-    async def test_get_missing_entity_returns_none(
-        self, use_case: TestUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_get_missing_entity_returns_none(self, use_case: TestUseCase, mock_repo: AsyncMock) -> None:
         """Test getting missing entity returns None when not raising."""
         mock_repo.get_by_id.return_value = None
 
@@ -123,9 +120,7 @@ class TestBaseUseCaseGetResult:
         assert result.is_ok()
         assert result.unwrap() == sample_entity
 
-    async def test_get_result_not_found(
-        self, use_case: TestUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_get_result_not_found(self, use_case: TestUseCase, mock_repo: AsyncMock) -> None:
         """Test get_result returns Err on not found."""
         mock_repo.get_by_id.return_value = None
 
@@ -137,9 +132,7 @@ class TestBaseUseCaseGetResult:
 class TestBaseUseCaseList:
     """Tests for list method."""
 
-    async def test_list_entities(
-        self, use_case: TestUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_list_entities(self, use_case: TestUseCase, mock_repo: AsyncMock) -> None:
         """Test listing entities with pagination."""
         entities = [
             TestEntity(id="1", name="Test1", value=100),
@@ -154,9 +147,7 @@ class TestBaseUseCaseList:
         assert result.page == 1
         assert result.size == 10
 
-    async def test_list_with_filters(
-        self, use_case: TestUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_list_with_filters(self, use_case: TestUseCase, mock_repo: AsyncMock) -> None:
         """Test listing with filters."""
         mock_repo.get_all.return_value = ([], 0)
 
@@ -184,10 +175,9 @@ class TestBaseUseCaseCreate:
         assert result.unwrap() == sample_entity
         mock_uow.commit.assert_called_once()
 
-    async def test_create_validation_error(
-        self, use_case: TestUseCase, mock_repo: AsyncMock
-    ) -> None:
+    async def test_create_validation_error(self, use_case: TestUseCase, mock_repo: AsyncMock) -> None:
         """Test create with validation error."""
+
         # Override validation to return error
         async def failing_validation(data: Any) -> Any:
             return Err(ValidationError("Invalid data"))
@@ -213,9 +203,7 @@ class TestBaseUseCaseUpdate:
         assert result.is_ok()
         mock_uow.commit.assert_called_once()
 
-    async def test_update_not_found(
-        self, use_case: TestUseCase, mock_repo: AsyncMock, mock_uow: MagicMock
-    ) -> None:
+    async def test_update_not_found(self, use_case: TestUseCase, mock_repo: AsyncMock, mock_uow: MagicMock) -> None:
         """Test update returns error when entity not found."""
         mock_repo.update.return_value = None
 
@@ -227,9 +215,7 @@ class TestBaseUseCaseUpdate:
 class TestBaseUseCaseDelete:
     """Tests for delete method."""
 
-    async def test_delete_success(
-        self, use_case: TestUseCase, mock_repo: AsyncMock, mock_uow: MagicMock
-    ) -> None:
+    async def test_delete_success(self, use_case: TestUseCase, mock_repo: AsyncMock, mock_uow: MagicMock) -> None:
         """Test successful entity deletion."""
         mock_repo.delete.return_value = True
 
@@ -239,9 +225,7 @@ class TestBaseUseCaseDelete:
         assert result.unwrap() is True
         mock_uow.commit.assert_called_once()
 
-    async def test_delete_not_found(
-        self, use_case: TestUseCase, mock_repo: AsyncMock, mock_uow: MagicMock
-    ) -> None:
+    async def test_delete_not_found(self, use_case: TestUseCase, mock_repo: AsyncMock, mock_uow: MagicMock) -> None:
         """Test delete returns error when entity not found."""
         mock_repo.delete.return_value = False
 

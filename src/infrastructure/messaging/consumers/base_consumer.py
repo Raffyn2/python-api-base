@@ -5,17 +5,18 @@
 """
 
 import asyncio
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import TypeVar
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 TMessage = TypeVar("TMessage")
 
 
-@dataclass
+@dataclass(slots=True)
 class ConsumerConfig:
     """Consumer configuration."""
 
@@ -25,7 +26,7 @@ class ConsumerConfig:
     prefetch_count: int = 10
 
 
-class BaseConsumer(ABC, Generic[TMessage]):
+class BaseConsumer[TMessage](ABC):
     """Base class for message consumers."""
 
     def __init__(self, config: ConsumerConfig | None = None) -> None:
@@ -55,21 +56,32 @@ class BaseConsumer(ABC, Generic[TMessage]):
     async def start(self) -> None:
         """Start consuming messages."""
         self._running = True
-        logger.info(f"Starting consumer: {self.__class__.__name__}")
+        logger.info(
+            "Starting consumer",
+            operation="CONSUMER_START",
+            consumer=self.__class__.__name__,
+        )
 
         while self._running:
             try:
                 messages = await self.fetch_messages(self._config.batch_size)
                 for message in messages:
                     await self._process_with_retry(message)
-            except Exception as e:
-                logger.error(f"Consumer error: {e}", exc_info=True)
+            except Exception:
+                logger.exception(
+                    "Consumer error",
+                    operation="CONSUMER_ERROR",
+                )
                 await asyncio.sleep(self._config.retry_delay_seconds)
 
     def stop(self) -> None:
         """Stop consuming messages."""
         self._running = False
-        logger.info(f"Stopping consumer: {self.__class__.__name__}")
+        logger.info(
+            "Stopping consumer",
+            operation="CONSUMER_STOP",
+            consumer=self.__class__.__name__,
+        )
 
     async def _process_with_retry(self, message: TMessage) -> None:
         """Process message with retry logic."""
@@ -81,12 +93,21 @@ class BaseConsumer(ABC, Generic[TMessage]):
                     await self.acknowledge(message)
                     return
                 retries += 1
-            except Exception as e:
-                logger.warning(f"Processing failed (attempt {retries + 1}): {e}")
+            except Exception:
+                logger.warning(
+                    "Processing failed",
+                    operation="CONSUMER_PROCESS",
+                    attempt=retries + 1,
+                    exc_info=True,
+                )
                 retries += 1
                 if retries <= self._config.max_retries:
                     await asyncio.sleep(self._config.retry_delay_seconds * retries)
 
         # Max retries exceeded - send to DLQ
         await self.reject(message, requeue=False)
-        logger.error(f"Message sent to DLQ after {self._config.max_retries} retries")
+        logger.error(
+            "Message sent to DLQ after max retries",
+            operation="CONSUMER_DLQ",
+            max_retries=self._config.max_retries,
+        )

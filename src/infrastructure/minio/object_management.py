@@ -7,9 +7,10 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
+
+import structlog
 
 from core.base.patterns.result import Err, Ok
 
@@ -18,10 +19,10 @@ if TYPE_CHECKING:
 
     from core.base.patterns.result import Result
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class ObjectMetadata:
     """Metadata for a stored object.
 
@@ -87,7 +88,10 @@ class ObjectManagement:
             return Ok(url)
 
         except Exception as e:
-            logger.error(f"Presigned URL generation failed: {e}")
+            logger.exception(
+                "Presigned URL generation failed",
+                operation="MINIO_PRESIGNED_URL",
+            )
             return Err(e)
 
     async def delete(
@@ -104,11 +108,14 @@ class ObjectManagement:
                 target_bucket,
                 key,
             )
-            logger.info("Object deleted", extra={"bucket": target_bucket, "key": key})
+            logger.info("Object deleted", bucket=target_bucket, key=key)
             return Ok(True)
 
         except Exception as e:
-            logger.error(f"Delete failed: {e}")
+            logger.exception(
+                "Delete failed",
+                operation="MINIO_DELETE",
+            )
             return Err(e)
 
     async def exists(
@@ -159,7 +166,10 @@ class ObjectManagement:
             )
 
         except Exception as e:
-            logger.error(f"Get metadata failed: {e}")
+            logger.exception(
+                "Get metadata failed",
+                operation="MINIO_GET_METADATA",
+            )
             return Err(e)
 
     async def list_objects(
@@ -198,7 +208,10 @@ class ObjectManagement:
             return Ok(result)
 
         except Exception as e:
-            logger.error(f"List objects failed: {e}")
+            logger.exception(
+                "List objects failed",
+                operation="MINIO_LIST_OBJECTS",
+            )
             return Err(e)
 
     async def list_buckets(self) -> list[str]:
@@ -206,6 +219,9 @@ class ObjectManagement:
         try:
             buckets = await asyncio.to_thread(self._client.list_buckets)
             return [b.name for b in buckets]
-        except Exception as e:
-            logger.error(f"List buckets failed: {e}")
+        except Exception:
+            logger.exception(
+                "List buckets failed",
+                operation="MINIO_LIST_BUCKETS",
+            )
             return []

@@ -4,9 +4,10 @@
 **Validates: Requirements 3.1**
 """
 
-import logging
 import time
 from dataclasses import dataclass
+
+import structlog
 
 from application.common.cqrs.handlers import CommandHandler
 from application.users.validators import CompositeUserValidator
@@ -17,7 +18,7 @@ from domain.users.aggregates import UserAggregate
 from domain.users.repositories import IUserRepository
 from domain.users.services import UserDomainService
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -43,9 +44,7 @@ class CreateUserHandler(CommandHandler[CreateUserCommand, UserAggregate]):
         self._service = user_service
         self._validator = validator
 
-    async def handle(
-        self, command: CreateUserCommand
-    ) -> Result[UserAggregate, Exception]:
+    async def handle(self, command: CreateUserCommand) -> Result[UserAggregate, Exception]:
         """Handle create user command.
 
         Args:
@@ -58,12 +57,10 @@ class CreateUserHandler(CommandHandler[CreateUserCommand, UserAggregate]):
 
         logger.info(
             "command_started",
-            extra={
-                "command_type": "CreateUserCommand",
-                "email": command.email,
-                "has_username": command.username is not None,
-                "operation": "CREATE_USER",
-            },
+            command_type="CreateUserCommand",
+            email=command.email,
+            has_username=command.username is not None,
+            operation="CREATE_USER",
         )
 
         try:
@@ -86,12 +83,10 @@ class CreateUserHandler(CommandHandler[CreateUserCommand, UserAggregate]):
 
             logger.debug(
                 "user_aggregate_created",
-                extra={
-                    "command_type": "CreateUserCommand",
-                    "user_id": user.id,
-                    "email": command.email,
-                    "operation": "CREATE_USER",
-                },
+                command_type="CreateUserCommand",
+                user_id=user.id,
+                email=command.email,
+                operation="CREATE_USER",
             )
 
             # Save user
@@ -101,32 +96,25 @@ class CreateUserHandler(CommandHandler[CreateUserCommand, UserAggregate]):
 
             logger.info(
                 "command_completed",
-                extra={
-                    "command_type": "CreateUserCommand",
-                    "user_id": saved_user.id,
-                    "email": saved_user.email,
-                    "duration_ms": duration_ms,
-                    "operation": "CREATE_USER",
-                    "status": "SUCCESS",
-                },
+                command_type="CreateUserCommand",
+                user_id=saved_user.id,
+                email=saved_user.email,
+                duration_ms=duration_ms,
+                operation="CREATE_USER",
+                status="SUCCESS",
             )
 
             return Ok(saved_user)
 
-        except Exception as e:
+        except Exception:
             duration_ms = (time.perf_counter() - start_time) * 1000
 
-            logger.error(
+            logger.exception(
                 "command_failed",
-                exc_info=True,
-                extra={
-                    "command_type": "CreateUserCommand",
-                    "email": command.email,
-                    "duration_ms": duration_ms,
-                    "operation": "CREATE_USER",
-                    "status": "ERROR",
-                    "error_type": type(e).__name__,
-                    "error_message": str(e),
-                },
+                command_type="CreateUserCommand",
+                email=command.email,
+                duration_ms=duration_ms,
+                operation="CREATE_USER",
+                status="ERROR",
             )
             raise

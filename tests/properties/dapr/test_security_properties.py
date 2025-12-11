@@ -3,9 +3,7 @@
 These tests verify correctness properties for security operations.
 """
 
-import pytest
 from hypothesis import given, settings, strategies as st
-from unittest.mock import MagicMock
 
 
 class TestMtlsEnforcement:
@@ -18,14 +16,12 @@ class TestMtlsEnforcement:
     """
 
     @given(
-        app_id=st.text(min_size=1, max_size=50, alphabet=st.characters(
-            whitelist_categories=("L", "N"),
-            whitelist_characters="-_"
-        )).filter(lambda x: x.strip()),
-        method=st.text(min_size=1, max_size=50, alphabet=st.characters(
-            whitelist_categories=("L", "N"),
-            whitelist_characters="-_/"
-        )).filter(lambda x: x.strip()),
+        app_id=st.text(
+            min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="-_")
+        ).filter(lambda x: x.strip()),
+        method=st.text(
+            min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="-_/")
+        ).filter(lambda x: x.strip()),
     )
     @settings(max_examples=100, deadline=5000)
     def test_service_invocation_uses_dapr_endpoint(
@@ -36,16 +32,15 @@ class TestMtlsEnforcement:
         """Service invocation should use Dapr endpoint (mTLS handled by sidecar)."""
         dapr_endpoint = "http://localhost:3500"
         expected_url = f"{dapr_endpoint}/v1.0/invoke/{app_id}/method/{method}"
-        
+
         assert "/v1.0/invoke/" in expected_url
         assert app_id in expected_url
         assert method in expected_url
 
     @given(
-        trust_domain=st.text(min_size=1, max_size=50, alphabet=st.characters(
-            whitelist_categories=("L", "N"),
-            whitelist_characters=".-"
-        )).filter(lambda x: x.strip()),
+        trust_domain=st.text(
+            min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters=".-")
+        ).filter(lambda x: x.strip()),
     )
     @settings(max_examples=50, deadline=5000)
     def test_mtls_config_trust_domain(
@@ -59,7 +54,7 @@ class TestMtlsEnforcement:
             "allowedClockSkew": "15m",
             "workloadCertTTL": "24h",
         }
-        
+
         assert mtls_config["enabled"] is True
         assert mtls_config["trustDomain"] == trust_domain
 
@@ -81,7 +76,7 @@ class TestMtlsEnforcement:
                 "workloadCertTTL": cert_ttl,
             }
         }
-        
+
         assert sentry_config["spec"]["workloadCertTTL"] == cert_ttl
         assert sentry_config["spec"]["allowedClockSkew"] == clock_skew
 
@@ -93,10 +88,11 @@ class TestApiTokenAuthentication:
     """
 
     @given(
-        api_token=st.text(min_size=10, max_size=100, alphabet=st.characters(
-            whitelist_categories=("L", "N"),
-            whitelist_characters="-_"
-        )).filter(lambda x: x.strip()),
+        api_token=st.text(
+            min_size=10,
+            max_size=100,
+            alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="-_"),
+        ).filter(lambda x: x.strip()),
     )
     @settings(max_examples=50, deadline=5000)
     def test_api_token_header_added(
@@ -107,15 +103,16 @@ class TestApiTokenAuthentication:
         headers = {}
         if api_token:
             headers["dapr-api-token"] = api_token
-        
+
         assert "dapr-api-token" in headers
         assert headers["dapr-api-token"] == api_token
 
     @given(
-        api_token=st.text(min_size=10, max_size=100, alphabet=st.characters(
-            whitelist_categories=("L", "N"),
-            whitelist_characters="-_"
-        )).filter(lambda x: x.strip()),
+        api_token=st.text(
+            min_size=10,
+            max_size=100,
+            alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="-_"),
+        ).filter(lambda x: x.strip()),
     )
     @settings(max_examples=50, deadline=5000)
     def test_api_token_not_logged(
@@ -123,9 +120,9 @@ class TestApiTokenAuthentication:
         api_token: str,
     ) -> None:
         """API token should not appear in log messages."""
-        log_message = f"Request to /v1.0/invoke/service/method"
+        log_message = "Request to /v1.0/invoke/service/method"
         safe_headers = {"Content-Type": "application/json"}
-        
+
         assert api_token not in log_message
         assert api_token not in str(safe_headers)
 
@@ -137,10 +134,9 @@ class TestAccessControlPolicies:
     """
 
     @given(
-        app_id=st.text(min_size=1, max_size=50, alphabet=st.characters(
-            whitelist_categories=("L", "N"),
-            whitelist_characters="-_"
-        )).filter(lambda x: x.strip()),
+        app_id=st.text(
+            min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="-_")
+        ).filter(lambda x: x.strip()),
         operation=st.sampled_from(["allow", "deny"]),
     )
     @settings(max_examples=50, deadline=5000)
@@ -156,16 +152,17 @@ class TestAccessControlPolicies:
             "trustDomain": "public",
             "namespace": "default",
         }
-        
+
         assert policy["appId"] == app_id
         assert policy["defaultAction"] in ["allow", "deny"]
 
     @given(
         allowed_apps=st.lists(
-            st.text(min_size=1, max_size=30, alphabet=st.characters(
-                whitelist_categories=("L", "N"),
-                whitelist_characters="-_"
-            )).filter(lambda x: x.strip()),
+            st.text(
+                min_size=1,
+                max_size=30,
+                alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="-_"),
+            ).filter(lambda x: x.strip()),
             min_size=1,
             max_size=10,
             unique=True,
@@ -179,15 +176,12 @@ class TestAccessControlPolicies:
         """Access control should support app allowlists."""
         access_control = {
             "defaultAction": "deny",
-            "policies": [
-                {"appId": app, "defaultAction": "allow"}
-                for app in allowed_apps
-            ]
+            "policies": [{"appId": app, "defaultAction": "allow"} for app in allowed_apps],
         }
-        
+
         assert access_control["defaultAction"] == "deny"
         assert len(access_control["policies"]) == len(allowed_apps)
-        
+
         for policy in access_control["policies"]:
             assert policy["appId"] in allowed_apps
             assert policy["defaultAction"] == "allow"

@@ -249,9 +249,7 @@ class TestModelAutoDiscovery:
             max_size=5,
         )
     )
-    def test_import_models_excludes_private_modules(
-        self, module_names: list[str]
-    ) -> None:
+    def test_import_models_excludes_private_modules(self, module_names: list[str]) -> None:
         """Private modules (starting with _) should be excluded.
 
         *For any* module name starting with underscore,
@@ -294,9 +292,7 @@ class TestMigrationFKIntegrity:
 
             # Extract revision
             rev_match = re.search(r'revision:\s*str\s*=\s*["\']([^"\']+)["\']', content)
-            down_rev_match = re.search(
-                r"down_revision:\s*Union\[str,\s*None\]\s*=\s*([^\n]+)", content
-            )
+            down_rev_match = re.search(r"down_revision:\s*Union\[str,\s*None\]\s*=\s*([^\n]+)", content)
 
             if rev_match:
                 revision = rev_match.group(1)
@@ -338,9 +334,7 @@ class TestMigrationFKIntegrity:
                 continue
 
             # Find all create_table calls
-            create_matches = re.findall(
-                r'op\.create_table\(\s*["\']([^"\']+)["\']', content
-            )
+            create_matches = re.findall(r'op\.create_table\(\s*["\']([^"\']+)["\']', content)
             tables.update(create_matches)
 
         return tables
@@ -368,9 +362,7 @@ class TestMigrationFKIntegrity:
                 continue
 
             # Find ForeignKey references
-            fk_matches = re.findall(
-                r'sa\.ForeignKey\(["\']([^"\']+)\.([^"\']+)["\']', content
-            )
+            fk_matches = re.findall(r'sa\.ForeignKey\(["\']([^"\']+)\.([^"\']+)["\']', content)
             for table, _column in fk_matches:
                 fk_refs.append((file_path.name, table))
 
@@ -388,8 +380,7 @@ class TestMigrationFKIntegrity:
         for filename, revision, down_revision in migrations:
             if down_revision is not None:
                 assert down_revision in revisions, (
-                    f"Migration {filename} (rev={revision}) references "
-                    f"non-existent down_revision={down_revision}"
+                    f"Migration {filename} (rev={revision}) references non-existent down_revision={down_revision}"
                 )
 
     def test_fk_references_have_prior_table_creation(self) -> None:
@@ -429,17 +420,13 @@ class TestMigrationFKIntegrity:
         # Build cumulative tables at each revision
         tables_at_revision: dict[str, set[str]] = {}
 
-        for _, revision, down_revision in sorted(
-            migrations, key=lambda x: revision_order.get(x[1], 0)
-        ):
+        for _, revision, down_revision in sorted(migrations, key=lambda x: revision_order.get(x[1], 0)):
             if down_revision and down_revision in tables_at_revision:
                 tables_at_revision[revision] = tables_at_revision[down_revision].copy()
             else:
                 tables_at_revision[revision] = set()
 
-            tables_at_revision[revision].update(
-                self._get_tables_created_by_revision(revision)
-            )
+            tables_at_revision[revision].update(self._get_tables_created_by_revision(revision))
 
         # Check FK references
         for _, revision, _ in migrations:
@@ -503,9 +490,7 @@ class TestFloatToNumericConversion:
 
         # Simulate the conversion that happens in the migration
         # Float -> Numeric(10,2) with rounding
-        decimal_value = Decimal(str(value)).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        decimal_value = Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         # Convert back to float for comparison
         converted_back = float(decimal_value)
@@ -515,9 +500,7 @@ class TestFloatToNumericConversion:
         original_rounded = round(value, 2)
 
         assert abs(converted_back - original_rounded) < 0.001, (
-            f"Value {value} was not preserved. "
-            f"Original rounded: {original_rounded}, "
-            f"After conversion: {converted_back}"
+            f"Value {value} was not preserved. Original rounded: {original_rounded}, After conversion: {converted_back}"
         )
 
     @settings(max_examples=100)
@@ -542,23 +525,17 @@ class TestFloatToNumericConversion:
         stored = Decimal(str(price)).quantize(Decimal("0.01"))
 
         # Value should be exactly preserved
-        assert stored == price.quantize(Decimal("0.01")), (
-            f"Precision lost: original={price}, stored={stored}"
-        )
+        assert stored == price.quantize(Decimal("0.01")), f"Precision lost: original={price}, stored={stored}"
 
     def test_migration_uses_correct_numeric_type(self) -> None:
         """Migration should use Numeric(10,2) for price and tax columns."""
         from pathlib import Path
 
-        migration_file = Path(
-            "alembic/versions/20241128_000000_004_migrate_float_to_numeric.py"
-        )
+        migration_file = Path("alembic/versions/20241128_000000_004_migrate_float_to_numeric.py")
         content = migration_file.read_text()
 
         # Check that Numeric with correct precision is used
-        assert "Numeric(precision=10, scale=2)" in content, (
-            "Migration should use Numeric(precision=10, scale=2)"
-        )
+        assert "Numeric(precision=10, scale=2)" in content, "Migration should use Numeric(precision=10, scale=2)"
 
         # Check both columns are migrated
         assert '"price"' in content, "Migration should alter price column"

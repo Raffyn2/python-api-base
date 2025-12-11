@@ -7,15 +7,20 @@ between domain entities and Protocol Buffer messages.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from google.protobuf.timestamp_pb2 import Timestamp
 
 TEntity = TypeVar("TEntity")
 TProto = TypeVar("TProto")
 
 
-class ProtobufMapper(ABC, Generic[TEntity, TProto]):
+class ProtobufMapper[TEntity, TProto](ABC):
     """Abstract base class for entity <-> protobuf mapping.
-    
+
     This class defines the interface for bidirectional mapping
     between domain entities and Protocol Buffer messages.
     """
@@ -23,10 +28,10 @@ class ProtobufMapper(ABC, Generic[TEntity, TProto]):
     @abstractmethod
     def to_proto(self, entity: TEntity) -> TProto:
         """Convert domain entity to protobuf message.
-        
+
         Args:
             entity: The domain entity
-            
+
         Returns:
             The protobuf message
         """
@@ -35,10 +40,10 @@ class ProtobufMapper(ABC, Generic[TEntity, TProto]):
     @abstractmethod
     def from_proto(self, proto: TProto) -> TEntity:
         """Convert protobuf message to domain entity.
-        
+
         Args:
             proto: The protobuf message
-            
+
         Returns:
             The domain entity
         """
@@ -46,10 +51,10 @@ class ProtobufMapper(ABC, Generic[TEntity, TProto]):
 
     def to_proto_list(self, entities: list[TEntity]) -> list[TProto]:
         """Convert list of entities to list of protobuf messages.
-        
+
         Args:
             entities: List of domain entities
-            
+
         Returns:
             List of protobuf messages
         """
@@ -57,10 +62,10 @@ class ProtobufMapper(ABC, Generic[TEntity, TProto]):
 
     def from_proto_list(self, protos: list[TProto]) -> list[TEntity]:
         """Convert list of protobuf messages to list of entities.
-        
+
         Args:
             protos: List of protobuf messages
-            
+
         Returns:
             List of domain entities
         """
@@ -71,45 +76,40 @@ class TimestampMapper:
     """Utility class for timestamp conversions."""
 
     @staticmethod
-    def to_proto_timestamp(dt: object) -> object:
+    def to_proto_timestamp(dt: datetime | None) -> Timestamp | None:
         """Convert datetime to protobuf Timestamp.
-        
+
         Args:
             dt: Python datetime object
-            
+
         Returns:
             Protobuf Timestamp message
         """
-        from google.protobuf.timestamp_pb2 import Timestamp
-        from datetime import datetime
-        
         if dt is None:
             return None
-            
-        if isinstance(dt, datetime):
-            ts = Timestamp()
-            ts.FromDatetime(dt)
-            return ts
-        return dt
+
+        from google.protobuf.timestamp_pb2 import Timestamp
+
+        ts = Timestamp()
+        ts.FromDatetime(dt)
+        return ts
 
     @staticmethod
-    def from_proto_timestamp(ts: object) -> object:
+    def from_proto_timestamp(ts: Timestamp | None) -> datetime | None:
         """Convert protobuf Timestamp to datetime.
-        
+
         Args:
             ts: Protobuf Timestamp message
-            
+
         Returns:
             Python datetime object
         """
-        from datetime import datetime
-        
         if ts is None:
             return None
-            
+
         if hasattr(ts, "ToDatetime"):
             return ts.ToDatetime()
-        return ts
+        return None
 
 
 class OptionalFieldMapper:
@@ -118,12 +118,12 @@ class OptionalFieldMapper:
     @staticmethod
     def get_optional(proto: object, field_name: str, default: object = None) -> object:
         """Get optional field value from protobuf message.
-        
+
         Args:
             proto: The protobuf message
             field_name: Name of the field
             default: Default value if field is not set
-            
+
         Returns:
             Field value or default
         """
@@ -134,7 +134,7 @@ class OptionalFieldMapper:
             except ValueError:
                 # Field is not a singular field
                 pass
-        
+
         value = getattr(proto, field_name, default)
         if value == "" or value == 0:
             return default
@@ -143,7 +143,7 @@ class OptionalFieldMapper:
     @staticmethod
     def set_optional(proto: object, field_name: str, value: object) -> None:
         """Set optional field value on protobuf message.
-        
+
         Args:
             proto: The protobuf message
             field_name: Name of the field

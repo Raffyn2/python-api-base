@@ -21,7 +21,7 @@ from domain.examples.item.specifications import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def active_item() -> ItemExample:
     """Create active item with stock."""
     return ItemExample(
@@ -37,7 +37,7 @@ def active_item() -> ItemExample:
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def inactive_item() -> ItemExample:
     """Create inactive item."""
     return ItemExample(
@@ -51,7 +51,7 @@ def inactive_item() -> ItemExample:
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def out_of_stock_item() -> ItemExample:
     """Create out of stock item."""
     return ItemExample(
@@ -104,17 +104,17 @@ class TestItemExamplePriceRangeSpec:
 
     def test_price_in_range_satisfies(self, active_item: ItemExample) -> None:
         """Test item with price in range satisfies spec."""
-        spec = ItemExamplePriceRangeSpec(Decimal("0"), Decimal("100"))
+        spec = ItemExamplePriceRangeSpec(Decimal(0), Decimal(100))
         assert spec.is_satisfied_by(active_item) is True
 
     def test_price_below_range_not_satisfies(self, active_item: ItemExample) -> None:
         """Test item with price below range does not satisfy spec."""
-        spec = ItemExamplePriceRangeSpec(Decimal("100"), Decimal("200"))
+        spec = ItemExamplePriceRangeSpec(Decimal(100), Decimal(200))
         assert spec.is_satisfied_by(active_item) is False
 
     def test_price_above_range_not_satisfies(self, active_item: ItemExample) -> None:
         """Test item with price above range does not satisfy spec."""
-        spec = ItemExamplePriceRangeSpec(Decimal("0"), Decimal("10"))
+        spec = ItemExamplePriceRangeSpec(Decimal(0), Decimal(10))
         assert spec.is_satisfied_by(active_item) is False
 
     def test_price_at_boundary_satisfies(self) -> None:
@@ -126,7 +126,7 @@ class TestItemExamplePriceRangeSpec:
             price=Money(Decimal("100.00")),
             sku="TST-001",
         )
-        spec = ItemExamplePriceRangeSpec(Decimal("100"), Decimal("200"))
+        spec = ItemExamplePriceRangeSpec(Decimal(100), Decimal(200))
         assert spec.is_satisfied_by(item) is True
 
 

@@ -2,8 +2,6 @@
 
 from datetime import UTC, datetime, timedelta, timezone
 
-import pytest
-
 from core.shared.utils.time import (
     add_duration,
     end_of_day,

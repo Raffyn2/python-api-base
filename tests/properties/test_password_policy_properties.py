@@ -82,9 +82,7 @@ class TestMinimumLengthEnforcement:
         validator = PasswordValidator()
         result = validator.validate(password)
 
-        assert not result.valid, (
-            f"Password '{password}' should fail (length={len(password)})"
-        )
+        assert not result.valid, f"Password '{password}' should fail (length={len(password)})"
         assert any("at least 12 characters" in error.lower() for error in result.errors)
 
     @settings(max_examples=50, deadline=None)
@@ -105,9 +103,7 @@ class TestMinimumLengthEnforcement:
 
     @settings(max_examples=50, deadline=None)
     @given(extra_length=st.integers(min_value=0, max_value=20))
-    def test_password_at_or_above_minimum_passes_length_check(
-        self, extra_length: int
-    ) -> None:
+    def test_password_at_or_above_minimum_passes_length_check(self, extra_length: int) -> None:
         """
         **Feature: api-base-improvements, Property 26: Password minimum length enforcement**
         **Validates: Requirements 10.1**
@@ -120,9 +116,7 @@ class TestMinimumLengthEnforcement:
         result = validator.validate(password)
 
         # Should not have length error
-        assert not any(
-            "at least 12 characters" in error.lower() for error in result.errors
-        )
+        assert not any("at least 12 characters" in error.lower() for error in result.errors)
 
     def test_custom_minimum_length(self) -> None:
         """
@@ -231,9 +225,7 @@ class TestComplexityRequirements:
         validator = PasswordValidator()
         result = validator.validate(password)
 
-        assert result.valid, (
-            f"Password '{password}' should be valid, errors: {result.errors}"
-        )
+        assert result.valid, f"Password '{password}' should be valid, errors: {result.errors}"
 
 
 class TestValidationFeedbackSpecificity:
@@ -277,10 +269,9 @@ class TestValidationFeedbackSpecificity:
 
         for error in result.errors:
             # Each error should mention what's required
-            assert any(
-                keyword in error.lower()
-                for keyword in ["must", "at least", "contain", "required"]
-            ), f"Error '{error}' should be actionable"
+            assert any(keyword in error.lower() for keyword in ["must", "at least", "contain", "required"]), (
+                f"Error '{error}' should be actionable"
+            )
 
     def test_get_requirements_lists_all_rules(self) -> None:
         """
@@ -334,10 +325,7 @@ class TestCommonPasswordRejection:
         result = validator.validate(password)
 
         assert not result.valid
-        assert any(
-            "common" in error.lower() or "guessable" in error.lower()
-            for error in result.errors
-        )
+        assert any("common" in error.lower() or "guessable" in error.lower() for error in result.errors)
 
     def test_common_password_case_insensitive(self) -> None:
         """

@@ -11,11 +11,13 @@ from core.types.domain.security_types import JWTToken, Password
 
 class PasswordModel(BaseModel):
     """Model with Password field."""
+
     password: Password
 
 
 class JWTTokenModel(BaseModel):
     """Model with JWTToken field."""
+
     token: JWTToken
 
 

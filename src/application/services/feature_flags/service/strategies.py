@@ -1,14 +1,14 @@
 """Feature flag evaluation strategies.
 
-Re-exports all strategy classes for backward compatibility.
-Implementation split into strategies/ submodule for one-class-per-file compliance.
+DEPRECATED: Import directly from application.services.feature_flags.strategies
+
+This module exists only for backward compatibility.
+All strategy classes are now in the strategies/ submodule.
 
 **Feature: application-layer-improvements-2025**
-**Validates: Strategy pattern for FeatureFlagService**
-**Refactored: Split into strategies/ submodule for one-class-per-file compliance**
 """
 
-# Re-export all classes for backward compatibility
+# Re-export for backward compatibility only
 from application.services.feature_flags.strategies import (
     CustomRuleStrategy,
     DefaultValueStrategy,

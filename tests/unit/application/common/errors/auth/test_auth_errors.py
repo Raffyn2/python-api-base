@@ -83,6 +83,3 @@ class TestAuthErrorsDistinction:
             raise UnauthorizedError("Not logged in")
         except UnauthorizedError as e:
             assert e.code == "UNAUTHORIZED"
-
-
-

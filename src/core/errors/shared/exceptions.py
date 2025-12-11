@@ -34,26 +34,26 @@ from core.errors.shared.task_errors import (
 from core.errors.shared.validation_errors import ValidationError
 
 __all__ = [
-    # Base
-    "SharedModuleError",
-    # Task errors
-    "TaskExecutionError",
+    "AuthenticationError",
     "BanOperationError",
+    "DecryptionError",
+    "EncryptionError",
+    "EntityResolutionError",
+    "FederationValidationError",
+    "FilterValidationError",
     "LockAcquisitionTimeoutError",
-    "RollbackError",
-    # Validation
-    "ValidationError",
+    "PatternValidationError",
     # Phase 2
     "Phase2ModuleError",
     "PoolInvariantViolationError",
-    "SnapshotIntegrityError",
-    "FilterValidationError",
-    "FederationValidationError",
-    "EntityResolutionError",
+    "RollbackError",
     # Security
     "SecurityModuleError",
-    "EncryptionError",
-    "DecryptionError",
-    "AuthenticationError",
-    "PatternValidationError",
+    # Base
+    "SharedModuleError",
+    "SnapshotIntegrityError",
+    # Task errors
+    "TaskExecutionError",
+    # Validation
+    "ValidationError",
 ]

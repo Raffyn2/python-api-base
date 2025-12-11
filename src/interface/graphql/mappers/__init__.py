@@ -1,12 +1,9 @@
 """GraphQL mappers.
 
 Contains DTO mappers for GraphQL types.
+Mappers are centralized in application.mappers.graphql module.
 
 **Feature: interface-restructuring-2025**
 """
 
-from interface.graphql.mappers.mapper import map_user_to_graphql
-
-__all__ = [
-    "map_user_to_graphql",
-]
+__all__: list[str] = []

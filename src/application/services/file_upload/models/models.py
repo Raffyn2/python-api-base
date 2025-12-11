@@ -81,25 +81,29 @@ class FileValidationConfig:
     """
 
     max_size_bytes: int = 10 * 1024 * 1024  # 10MB default
-    allowed_types: frozenset[str] = frozenset({
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-        "application/pdf",
-        "text/plain",
-        "text/csv",
-    })
-    allowed_extensions: frozenset[str] = frozenset({
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".gif",
-        ".webp",
-        ".pdf",
-        ".txt",
-        ".csv",
-    })
+    allowed_types: frozenset[str] = frozenset(
+        {
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+            "application/pdf",
+            "text/plain",
+            "text/csv",
+        }
+    )
+    allowed_extensions: frozenset[str] = frozenset(
+        {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".webp",
+            ".pdf",
+            ".txt",
+            ".csv",
+        }
+    )
     scan_for_viruses: bool = False
 
 

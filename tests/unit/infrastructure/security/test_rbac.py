@@ -10,13 +10,13 @@ import pytest
 
 from core.errors import AuthorizationError
 from infrastructure.security.rbac import (
+    ROLE_ADMIN,
+    ROLE_USER,
+    ROLE_VIEWER,
     Permission,
     RBACService,
     RBACUser,
     Role,
-    ROLE_ADMIN,
-    ROLE_USER,
-    ROLE_VIEWER,
     get_rbac_service,
 )
 
@@ -209,9 +209,7 @@ class TestRBACService:
         service = RBACService()
         user = RBACUser(id="user-123", roles=["viewer"])
 
-        result = service.check_any_permission(
-            user, [Permission.WRITE, Permission.READ]
-        )
+        result = service.check_any_permission(user, [Permission.WRITE, Permission.READ])
 
         assert result is True
 
@@ -220,9 +218,7 @@ class TestRBACService:
         service = RBACService()
         user = RBACUser(id="user-123", roles=["user"])
 
-        result = service.check_all_permissions(
-            user, [Permission.READ, Permission.WRITE]
-        )
+        result = service.check_all_permissions(user, [Permission.READ, Permission.WRITE])
 
         assert result is True
 
@@ -231,9 +227,7 @@ class TestRBACService:
         service = RBACService()
         user = RBACUser(id="user-123", roles=["viewer"])
 
-        result = service.check_all_permissions(
-            user, [Permission.READ, Permission.WRITE]
-        )
+        result = service.check_all_permissions(user, [Permission.READ, Permission.WRITE])
 
         assert result is False
 

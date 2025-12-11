@@ -4,8 +4,6 @@
 **Validates: Requirements 28.1, 28.2, 28.3**
 """
 
-import pytest
-
 from core.di.lifecycle.lifecycle import Lifetime, Registration
 
 

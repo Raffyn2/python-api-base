@@ -110,17 +110,17 @@ class TestImportResult:
 class TestItemExampleExportService:
     """Tests for ItemExampleExportService."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repository(self) -> AsyncMock:
         """Create mock repository."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def service(self, mock_repository: AsyncMock) -> ItemExampleExportService:
         """Create export service."""
         return ItemExampleExportService(mock_repository)
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_item(self) -> MagicMock:
         """Create mock ItemExample."""
         item = MagicMock(spec=ItemExample)
@@ -161,9 +161,7 @@ class TestItemExampleExportService:
         assert data["data"][0]["name"] == "Test Item"
 
     @pytest.mark.asyncio
-    async def test_export_to_json_with_items(
-        self, service: ItemExampleExportService, mock_item: MagicMock
-    ) -> None:
+    async def test_export_to_json_with_items(self, service: ItemExampleExportService, mock_item: MagicMock) -> None:
         """Should export provided items to JSON."""
         result = await service.export_to_json(items=[mock_item])
 
@@ -184,9 +182,7 @@ class TestItemExampleExportService:
         assert "Test Item" in result.data
 
     @pytest.mark.asyncio
-    async def test_export_to_csv_empty(
-        self, service: ItemExampleExportService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_export_to_csv_empty(self, service: ItemExampleExportService, mock_repository: AsyncMock) -> None:
         """Should handle empty export to CSV."""
         mock_repository.get_all.return_value = []
 
@@ -248,34 +244,34 @@ class TestItemExampleExportService:
 class TestItemExampleImportService:
     """Tests for ItemExampleImportService."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repository(self) -> AsyncMock:
         """Create mock repository."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def service(self, mock_repository: AsyncMock) -> ItemExampleImportService:
         """Create import service."""
         return ItemExampleImportService(mock_repository)
 
     @pytest.mark.asyncio
-    async def test_import_from_json(
-        self, service: ItemExampleImportService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_import_from_json(self, service: ItemExampleImportService, mock_repository: AsyncMock) -> None:
         """Should import items from JSON."""
-        json_data = json.dumps({
-            "data": [
-                {
-                    "name": "Item 1",
-                    "description": "Desc 1",
-                    "sku": "SKU-1",
-                    "price": {"amount": "10.00", "currency": "BRL"},
-                    "quantity": 5,
-                    "category": "Cat1",
-                    "tags": ["tag1"],
-                }
-            ]
-        })
+        json_data = json.dumps(
+            {
+                "data": [
+                    {
+                        "name": "Item 1",
+                        "description": "Desc 1",
+                        "sku": "SKU-1",
+                        "price": {"amount": "10.00", "currency": "BRL"},
+                        "quantity": 5,
+                        "category": "Cat1",
+                        "tags": ["tag1"],
+                    }
+                ]
+            }
+        )
 
         result = await service.import_from_json(json_data, created_by="user-1")
 
@@ -285,9 +281,7 @@ class TestItemExampleImportService:
         mock_repository.create.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_import_from_json_invalid(
-        self, service: ItemExampleImportService
-    ) -> None:
+    async def test_import_from_json_invalid(self, service: ItemExampleImportService) -> None:
         """Should handle invalid JSON."""
         result = await service.import_from_json("not valid json")
 
@@ -302,9 +296,7 @@ class TestItemExampleImportService:
     ) -> None:
         """Should handle import errors."""
         mock_repository.create.side_effect = Exception("DB error")
-        json_data = json.dumps({
-            "data": [{"name": "Item 1", "sku": "SKU-1"}]
-        })
+        json_data = json.dumps({"data": [{"name": "Item 1", "sku": "SKU-1"}]})
 
         result = await service.import_from_json(json_data)
 
@@ -313,9 +305,7 @@ class TestItemExampleImportService:
         assert result.failed == 1
 
     @pytest.mark.asyncio
-    async def test_import_from_csv(
-        self, service: ItemExampleImportService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_import_from_csv(self, service: ItemExampleImportService, mock_repository: AsyncMock) -> None:
         """Should import items from CSV."""
         csv_data = """name,description,sku,price_amount,price_currency,quantity,category,tags
 Item 1,Desc 1,SKU-1,10.00,BRL,5,Cat1,tag1
@@ -342,9 +332,7 @@ Item 1,Desc 1,SKU-1,10.00,BRL,5,Cat1,tag1"""
         assert result.failed == 1
 
     @pytest.mark.asyncio
-    async def test_import_from_jsonl(
-        self, service: ItemExampleImportService, mock_repository: AsyncMock
-    ) -> None:
+    async def test_import_from_jsonl(self, service: ItemExampleImportService, mock_repository: AsyncMock) -> None:
         """Should import items from JSONL."""
         jsonl_data = """{"name": "Item 1", "sku": "SKU-1", "price": {"amount": "10", "currency": "BRL"}}
 {"name": "Item 2", "sku": "SKU-2", "price": {"amount": "20", "currency": "USD"}}"""

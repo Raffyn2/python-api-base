@@ -4,10 +4,14 @@ import json
 from datetime import datetime
 from typing import Any
 
-from src.infrastructure.eventing.cloudevents.models import (
+import structlog
+
+from infrastructure.eventing.cloudevents.models import (
     CloudEvent,
     CloudEventSerializationError,
 )
+
+logger = structlog.get_logger(__name__)
 
 
 # CloudEvents HTTP header prefix for binary mode
@@ -34,7 +38,10 @@ class CloudEventParser:
     """Parser for CloudEvents in structured and binary content modes."""
 
     @staticmethod
-    def parse_structured(body: bytes | str, content_type: str = "application/cloudevents+json") -> CloudEvent:
+    def parse_structured(
+        body: bytes | str,
+        content_type: str = "application/cloudevents+json",
+    ) -> CloudEvent:
         """Parse CloudEvent from structured content mode (JSON body).
 
         Args:
@@ -48,9 +55,7 @@ class CloudEventParser:
             CloudEventSerializationError: If parsing fails
         """
         if not content_type.startswith("application/cloudevents"):
-            raise CloudEventSerializationError(
-                f"Invalid content type for structured mode: {content_type}"
-            )
+            raise CloudEventSerializationError(f"Invalid content type for structured mode: {content_type}")
 
         try:
             if isinstance(body, bytes):
@@ -75,48 +80,59 @@ class CloudEventParser:
         Raises:
             CloudEventSerializationError: If parsing fails
         """
-        # Normalize headers to lowercase
         normalized_headers = {k.lower(): v for k, v in headers.items()}
-
-        # Extract required attributes
-        attrs: dict[str, Any] = {}
-        for header, attr in CE_REQUIRED_HEADERS.items():
-            if header not in normalized_headers:
-                raise CloudEventSerializationError(
-                    f"Missing required CloudEvent header: {header}"
-                )
-            attrs[attr] = normalized_headers[header]
-
-        # Extract optional attributes
-        for header, attr in CE_OPTIONAL_HEADERS.items():
-            if header in normalized_headers:
-                value = normalized_headers[header]
-                if attr == "time":
-                    value = CloudEventParser._parse_time(value)
-                attrs[attr] = value
-
-        # Extract extension attributes
-        extensions: dict[str, Any] = {}
-        for key, value in normalized_headers.items():
-            if key.startswith(CE_HEADER_PREFIX) and key not in CE_REQUIRED_HEADERS and key not in CE_OPTIONAL_HEADERS:
-                ext_name = key[len(CE_HEADER_PREFIX):]
-                extensions[ext_name] = value
-
-        # Parse body as data
-        content_type = normalized_headers.get("content-type", "application/json")
-        if body:
-            try:
-                if isinstance(body, bytes):
-                    body = body.decode("utf-8")
-                if content_type.startswith("application/json"):
-                    attrs["data"] = json.loads(body)
-                else:
-                    attrs["data"] = {"raw": body}
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                attrs["data"] = {"raw": body if isinstance(body, str) else body.decode("utf-8", errors="replace")}
-
+        attrs = CloudEventParser._extract_required_attrs(normalized_headers)
+        CloudEventParser._extract_optional_attrs(normalized_headers, attrs)
+        extensions = CloudEventParser._extract_extensions(normalized_headers)
+        CloudEventParser._parse_body_data(normalized_headers, body, attrs)
         attrs["extensions"] = extensions
         return CloudEvent(**attrs)
+
+    @staticmethod
+    def _extract_required_attrs(headers: dict[str, str]) -> dict[str, Any]:
+        """Extract required CloudEvent attributes from headers."""
+        attrs: dict[str, Any] = {}
+        for header, attr in CE_REQUIRED_HEADERS.items():
+            if header not in headers:
+                raise CloudEventSerializationError(f"Missing required CloudEvent header: {header}")
+            attrs[attr] = headers[header]
+        return attrs
+
+    @staticmethod
+    def _extract_optional_attrs(headers: dict[str, str], attrs: dict[str, Any]) -> None:
+        """Extract optional CloudEvent attributes from headers."""
+        for header, attr in CE_OPTIONAL_HEADERS.items():
+            if header in headers:
+                value = headers[header]
+                attrs[attr] = CloudEventParser._parse_time(value) if attr == "time" else value
+
+    @staticmethod
+    def _extract_extensions(headers: dict[str, str]) -> dict[str, Any]:
+        """Extract extension attributes from headers."""
+        extensions: dict[str, Any] = {}
+        for key, value in headers.items():
+            is_extension = (
+                key.startswith(CE_HEADER_PREFIX) and key not in CE_REQUIRED_HEADERS and key not in CE_OPTIONAL_HEADERS
+            )
+            if is_extension:
+                extensions[key[len(CE_HEADER_PREFIX) :]] = value
+        return extensions
+
+    @staticmethod
+    def _parse_body_data(headers: dict[str, str], body: bytes | str, attrs: dict[str, Any]) -> None:
+        """Parse body data and add to attributes."""
+        if not body:
+            return
+        content_type = headers.get("content-type", "application/json")
+        try:
+            decoded = body.decode("utf-8") if isinstance(body, bytes) else body
+            if content_type.startswith("application/json"):
+                attrs["data"] = json.loads(decoded)
+            else:
+                attrs["data"] = {"raw": decoded}
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            raw = body if isinstance(body, str) else body.decode("utf-8", errors="replace")
+            attrs["data"] = {"raw": raw}
 
     @staticmethod
     def detect_content_mode(headers: dict[str, str]) -> str:
@@ -146,7 +162,10 @@ class CloudEventParser:
         """
         mode = CloudEventParser.detect_content_mode(headers)
         if mode == "structured":
-            content_type = headers.get("content-type", headers.get("Content-Type", "application/cloudevents+json"))
+            content_type = headers.get(
+                "content-type",
+                headers.get("Content-Type", "application/cloudevents+json"),
+            )
             return CloudEventParser.parse_structured(body, content_type)
         return CloudEventParser.parse_binary(headers, body)
 
@@ -184,8 +203,16 @@ class CloudEventParser:
 
         # Extension attributes (anything not in known attributes)
         known_attrs = {
-            "specversion", "id", "source", "type", "datacontenttype",
-            "dataschema", "subject", "time", "data", "data_base64"
+            "specversion",
+            "id",
+            "source",
+            "type",
+            "datacontenttype",
+            "dataschema",
+            "subject",
+            "time",
+            "data",
+            "data_base64",
         }
         extensions = {k: v for k, v in data.items() if k not in known_attrs}
         attrs["extensions"] = extensions

@@ -46,9 +46,7 @@ class SampleEntity:
 entity_strategy = st.builds(
     SampleEntity,
     id=st.integers(min_value=1, max_value=10000),
-    name=st.text(
-        min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))
-    ),
+    name=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))),
     age=st.integers(min_value=0, max_value=150),
     score=st.floats(min_value=0.0, max_value=100.0, allow_nan=False),
     status=st.sampled_from(["active", "inactive", "pending", "deleted"]),
@@ -65,9 +63,7 @@ class TestSpecificationOperatorCorrectness:
 
     @settings(max_examples=100)
     @given(entity=entity_strategy, threshold=st.integers(min_value=0, max_value=150))
-    def test_eq_operator_correctness(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_eq_operator_correctness(self, entity: SampleEntity, threshold: int) -> None:
         """
         **Feature: advanced-reusability, Property 2: Specification Operator Correctness**
 
@@ -80,9 +76,7 @@ class TestSpecificationOperatorCorrectness:
 
     @settings(max_examples=100)
     @given(entity=entity_strategy, threshold=st.integers(min_value=0, max_value=150))
-    def test_ne_operator_correctness(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_ne_operator_correctness(self, entity: SampleEntity, threshold: int) -> None:
         """
         **Feature: advanced-reusability, Property 2: Specification Operator Correctness**
 
@@ -95,9 +89,7 @@ class TestSpecificationOperatorCorrectness:
 
     @settings(max_examples=100)
     @given(entity=entity_strategy, threshold=st.integers(min_value=0, max_value=150))
-    def test_gt_operator_correctness(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_gt_operator_correctness(self, entity: SampleEntity, threshold: int) -> None:
         """
         **Feature: advanced-reusability, Property 2: Specification Operator Correctness**
 
@@ -110,9 +102,7 @@ class TestSpecificationOperatorCorrectness:
 
     @settings(max_examples=100)
     @given(entity=entity_strategy, threshold=st.integers(min_value=0, max_value=150))
-    def test_ge_operator_correctness(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_ge_operator_correctness(self, entity: SampleEntity, threshold: int) -> None:
         """
         **Feature: advanced-reusability, Property 2: Specification Operator Correctness**
 
@@ -125,9 +115,7 @@ class TestSpecificationOperatorCorrectness:
 
     @settings(max_examples=100)
     @given(entity=entity_strategy, threshold=st.integers(min_value=0, max_value=150))
-    def test_lt_operator_correctness(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_lt_operator_correctness(self, entity: SampleEntity, threshold: int) -> None:
         """
         **Feature: advanced-reusability, Property 2: Specification Operator Correctness**
 
@@ -140,9 +128,7 @@ class TestSpecificationOperatorCorrectness:
 
     @settings(max_examples=100)
     @given(entity=entity_strategy, threshold=st.integers(min_value=0, max_value=150))
-    def test_le_operator_correctness(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_le_operator_correctness(self, entity: SampleEntity, threshold: int) -> None:
         """
         **Feature: advanced-reusability, Property 2: Specification Operator Correctness**
 
@@ -162,9 +148,7 @@ class TestSpecificationOperatorCorrectness:
             max_size=4,
         ),
     )
-    def test_in_operator_correctness(
-        self, entity: SampleEntity, values: list[str]
-    ) -> None:
+    def test_in_operator_correctness(self, entity: SampleEntity, values: list[str]) -> None:
         """
         **Feature: advanced-reusability, Property 2: Specification Operator Correctness**
 
@@ -181,9 +165,7 @@ class TestSpecificationOperatorCorrectness:
         low=st.integers(min_value=0, max_value=75),
         high=st.integers(min_value=75, max_value=150),
     )
-    def test_between_operator_correctness(
-        self, entity: SampleEntity, low: int, high: int
-    ) -> None:
+    def test_between_operator_correctness(self, entity: SampleEntity, low: int, high: int) -> None:
         """
         **Feature: advanced-reusability, Property 2: Specification Operator Correctness**
 
@@ -208,9 +190,7 @@ class TestSpecificationComposition:
         threshold_a=st.integers(min_value=0, max_value=150),
         threshold_b=st.integers(min_value=0, max_value=150),
     )
-    def test_and_composition_correctness(
-        self, entity: SampleEntity, threshold_a: int, threshold_b: int
-    ) -> None:
+    def test_and_composition_correctness(self, entity: SampleEntity, threshold_a: int, threshold_b: int) -> None:
         """
         **Feature: advanced-reusability, Property 3: Specification Composition**
 
@@ -234,9 +214,7 @@ class TestSpecificationComposition:
         threshold_a=st.integers(min_value=0, max_value=150),
         threshold_b=st.integers(min_value=0, max_value=150),
     )
-    def test_or_composition_correctness(
-        self, entity: SampleEntity, threshold_a: int, threshold_b: int
-    ) -> None:
+    def test_or_composition_correctness(self, entity: SampleEntity, threshold_a: int, threshold_b: int) -> None:
         """
         **Feature: advanced-reusability, Property 3: Specification Composition**
 
@@ -260,9 +238,7 @@ class TestSpecificationComposition:
         threshold_a=st.integers(min_value=0, max_value=150),
         threshold_b=st.integers(min_value=0, max_value=150),
     )
-    def test_operator_and_equals_and_method(
-        self, entity: SampleEntity, threshold_a: int, threshold_b: int
-    ) -> None:
+    def test_operator_and_equals_and_method(self, entity: SampleEntity, threshold_a: int, threshold_b: int) -> None:
         """
         The & operator SHALL produce the same result as and_().
         """
@@ -280,9 +256,7 @@ class TestSpecificationComposition:
         threshold_a=st.integers(min_value=0, max_value=150),
         threshold_b=st.integers(min_value=0, max_value=150),
     )
-    def test_operator_or_equals_or_method(
-        self, entity: SampleEntity, threshold_a: int, threshold_b: int
-    ) -> None:
+    def test_operator_or_equals_or_method(self, entity: SampleEntity, threshold_a: int, threshold_b: int) -> None:
         """
         The | operator SHALL produce the same result as or_().
         """
@@ -304,9 +278,7 @@ class TestSpecificationNegation:
 
     @settings(max_examples=100)
     @given(entity=entity_strategy, threshold=st.integers(min_value=0, max_value=150))
-    def test_not_negates_specification(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_not_negates_specification(self, entity: SampleEntity, threshold: int) -> None:
         """
         **Feature: advanced-reusability, Property 4: Specification Negation**
 
@@ -323,9 +295,7 @@ class TestSpecificationNegation:
 
     @settings(max_examples=50)
     @given(entity=entity_strategy, threshold=st.integers(min_value=0, max_value=150))
-    def test_operator_invert_equals_not_method(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_operator_invert_equals_not_method(self, entity: SampleEntity, threshold: int) -> None:
         """
         The ~ operator SHALL produce the same result as not_().
         """
@@ -338,9 +308,7 @@ class TestSpecificationNegation:
 
     @settings(max_examples=50)
     @given(entity=entity_strategy, threshold=st.integers(min_value=0, max_value=150))
-    def test_double_negation_returns_original(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_double_negation_returns_original(self, entity: SampleEntity, threshold: int) -> None:
         """
         Double negation SHALL return to original result: NOT(NOT(A)) == A.
         """
@@ -358,22 +326,14 @@ class TestSpecificationBuilder:
         entity=entity_strategy,
         threshold=st.integers(min_value=0, max_value=150),
     )
-    def test_builder_where_equals_direct_spec(
-        self, entity: SampleEntity, threshold: int
-    ) -> None:
+    def test_builder_where_equals_direct_spec(self, entity: SampleEntity, threshold: int) -> None:
         """
         Builder.where() SHALL produce equivalent result to direct FieldSpecification.
         """
         direct_spec = FieldSpecification("age", ComparisonOperator.GE, threshold)
-        builder_spec = (
-            SpecificationBuilder[SampleEntity]()
-            .where("age", ComparisonOperator.GE, threshold)
-            .build()
-        )
+        builder_spec = SpecificationBuilder[SampleEntity]().where("age", ComparisonOperator.GE, threshold).build()
 
-        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(
-            entity
-        )
+        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(entity)
 
     @settings(max_examples=50)
     @given(
@@ -395,9 +355,7 @@ class TestSpecificationBuilder:
             .build()
         )
 
-        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(
-            entity
-        )
+        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(entity)
 
     @settings(max_examples=50)
     @given(
@@ -419,9 +377,7 @@ class TestSpecificationBuilder:
             .build()
         )
 
-        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(
-            entity
-        )
+        assert direct_spec.is_satisfied_by(entity) == builder_spec.is_satisfied_by(entity)
 
 
 class TestSpecificationSQLEquivalence:
@@ -440,9 +396,7 @@ class TestSpecificationSQLEquivalence:
         entities=st.lists(entity_strategy, min_size=1, max_size=20),
         threshold=st.integers(min_value=0, max_value=150),
     )
-    def test_in_memory_filter_equals_sql_filter_eq(
-        self, entities: list[SampleEntity], threshold: int
-    ) -> None:
+    def test_in_memory_filter_equals_sql_filter_eq(self, entities: list[SampleEntity], threshold: int) -> None:
         """
         **Feature: advanced-reusability, Property 5: Specification SQL Equivalence**
 
@@ -498,9 +452,7 @@ class TestSpecificationSQLEquivalence:
         entities=st.lists(entity_strategy, min_size=1, max_size=20),
         threshold=st.integers(min_value=0, max_value=150),
     )
-    def test_negated_spec_sql_generation(
-        self, entities: list[SampleEntity], threshold: int
-    ) -> None:
+    def test_negated_spec_sql_generation(self, entities: list[SampleEntity], threshold: int) -> None:
         """
         **Feature: advanced-reusability, Property 5: Specification SQL Equivalence**
 
@@ -526,9 +478,7 @@ class TestSpecificationSQLEquivalence:
         low=st.integers(min_value=0, max_value=50),
         high=st.integers(min_value=100, max_value=150),
     )
-    def test_between_spec_sql_generation(
-        self, entities: list[SampleEntity], low: int, high: int
-    ) -> None:
+    def test_between_spec_sql_generation(self, entities: list[SampleEntity], low: int, high: int) -> None:
         """
         **Feature: advanced-reusability, Property 5: Specification SQL Equivalence**
 
@@ -558,9 +508,7 @@ class TestSpecificationSQLEquivalence:
             unique=True,
         ),
     )
-    def test_in_spec_sql_generation(
-        self, entities: list[SampleEntity], values: list[str]
-    ) -> None:
+    def test_in_spec_sql_generation(self, entities: list[SampleEntity], values: list[str]) -> None:
         """
         **Feature: advanced-reusability, Property 5: Specification SQL Equivalence**
 

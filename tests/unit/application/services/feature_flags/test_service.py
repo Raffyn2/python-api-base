@@ -47,12 +47,12 @@ class TestFlagEvaluation:
 class TestFeatureFlagService:
     """Tests for FeatureFlagService."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def service(self) -> FeatureFlagService:
         """Create service instance."""
         return FeatureFlagService(seed=42)
 
-    @pytest.fixture
+    @pytest.fixture()
     def sample_flag(self) -> FlagConfig:
         """Create sample flag config."""
         return FlagConfig(

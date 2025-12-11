@@ -12,10 +12,11 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+
+import structlog
 
 from infrastructure.observability.elasticsearch_buffer import (
     BulkIndexer,
@@ -91,7 +92,7 @@ class ElasticsearchHandler:
         self._indexer = BulkIndexer(config.index_prefix)
         self._client: AsyncElasticsearch | None = None
         self._flush_task: asyncio.Task[None] | None = None
-        self._logger = logging.getLogger(__name__)
+        self._logger = structlog.get_logger(__name__)
         self._consecutive_failures = 0
         self._max_consecutive_failures = 5
 
@@ -177,11 +178,13 @@ class ElasticsearchHandler:
             client = await self._get_client()
             await self._indexer.bulk_index(client, events)
             self._consecutive_failures = 0
-        except Exception as e:
+        except Exception:
             self._consecutive_failures += 1
             self._logger.warning(
-                f"Failed to send logs to Elasticsearch: {e}. "
-                f"Consecutive failures: {self._consecutive_failures}"
+                "Failed to send logs to Elasticsearch",
+                operation="ES_FLUSH",
+                consecutive_failures=self._consecutive_failures,
+                exc_info=True,
             )
 
             # Fallback to local file

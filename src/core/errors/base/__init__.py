@@ -29,9 +29,16 @@ from core.errors.base.domain_errors import (
     ValidationError,
 )
 from core.errors.base.infrastructure_errors import (
+    AuditLogError,
+    CacheError,
+    ConfigurationError,
+    ConnectionPoolError,
     DatabaseError,
     ExternalServiceError,
     InfrastructureError,
+    TelemetryError,
+    TokenStoreError,
+    TokenValidationError,
 )
 
 __all__ = [
@@ -40,12 +47,16 @@ __all__ = [
     "AppException",  # Backwards compatibility alias
     # Application
     "ApplicationError",
+    "AuditLogError",
     "AuthenticationError",
     "AuthorizationError",
     "BusinessRuleViolationError",
+    "CacheError",
     "CommandHandlerError",
     "ConcurrencyError",
+    "ConfigurationError",
     "ConflictError",
+    "ConnectionPoolError",
     "DatabaseError",
     "EntityNotFoundError",
     "ErrorContext",
@@ -57,6 +68,9 @@ __all__ = [
     "InvalidQueryError",
     "QueryHandlerError",
     "RateLimitExceededError",
+    "TelemetryError",
+    "TokenStoreError",
+    "TokenValidationError",
     "TransactionError",
     "UseCaseError",
     "ValidationError",

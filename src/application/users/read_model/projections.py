@@ -7,10 +7,11 @@ to maintain eventually consistent query-optimized views.
 **Validates: Requirements 4.2, 4.4**
 """
 
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Protocol
+
+import structlog
 
 from core.base.events.domain_event import DomainEvent
 from domain.users.events import (
@@ -23,7 +24,7 @@ from domain.users.events import (
     UserRegisteredEvent,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class IUserReadModelRepository(Protocol):
@@ -100,22 +101,30 @@ class UserProjectionHandler(ProjectionHandler):
         if handler:
             await handler(event)
             logger.debug(
-                f"Processed {type(event).__name__} for projection",
-                extra={"event_id": str(event.event_id)},
+                "Event processed for projection",
+                event_type=type(event).__name__,
+                event_id=str(event.event_id),
+                operation="PROJECTION_PROCESSED",
             )
         else:
-            logger.warning(f"No handler for event type: {type(event).__name__}")
+            logger.warning(
+                "No handler for event type",
+                event_type=type(event).__name__,
+                operation="PROJECTION_HANDLER_MISSING",
+            )
 
     async def _handle_user_registered(self, event: UserRegisteredEvent) -> None:
         """Handle UserRegisteredEvent - create new read model entry."""
-        await self.repository.create({
-            "id": event.user_id,
-            "email": event.email,
-            "is_active": True,
-            "is_verified": False,
-            "created_at": event.occurred_at,
-            "updated_at": event.occurred_at,
-        })
+        await self.repository.create(
+            {
+                "id": event.user_id,
+                "email": event.email,
+                "is_active": True,
+                "is_verified": False,
+                "created_at": event.occurred_at,
+                "updated_at": event.occurred_at,
+            }
+        )
 
     async def _handle_user_deactivated(self, event: UserDeactivatedEvent) -> None:
         """Handle UserDeactivatedEvent - mark user as inactive."""
@@ -214,15 +223,13 @@ class UserReadModelProjector:
         for handler in handlers:
             try:
                 await handler.handle(event)
-            except Exception as e:
-                logger.error(
-                    f"Projection handler failed: {e}",
-                    extra={
-                        "event_type": type(event).__name__,
-                        "event_id": str(event.event_id),
-                        "handler": type(handler).__name__,
-                    },
-                    exc_info=True,
+            except Exception:
+                logger.exception(
+                    "Projection handler failed",
+                    event_type=type(event).__name__,
+                    event_id=str(event.event_id),
+                    handler=type(handler).__name__,
+                    operation="PROJECTION_HANDLER_ERROR",
                 )
                 # Continue with other handlers even if one fails
 
@@ -240,5 +247,9 @@ class UserReadModelProjector:
             await self.project(event)
             processed += 1
 
-        logger.info(f"Rebuilt read models from {processed} events")
+        logger.info(
+            "Read models rebuilt from events",
+            events_processed=processed,
+            operation="PROJECTION_REBUILD_COMPLETE",
+        )
         return processed

@@ -44,7 +44,7 @@ class PasswordPolicy:
     special_characters: str = "!@#$%^&*()_+-=[]{}|;:,.<>?"
 
 
-@dataclass
+@dataclass(slots=True)
 class PasswordValidationResult:
     """Result of password validation.
 
@@ -91,19 +91,21 @@ class PasswordValidator:
         score = 0
         if len(password) < self._policy.min_length:
             result.add_error(
-                f"Password must be at least {self._policy.min_length} characters long"
+                f"Password must be at least {self._policy.min_length} characters long",
             )
         else:
             score = SCORE_PER_REQUIREMENT
 
         if len(password) > self._policy.max_length:
             result.add_error(
-                f"Password must be at most {self._policy.max_length} characters long"
+                f"Password must be at most {self._policy.max_length} characters long",
             )
         return score
 
     def _check_character_requirements(
-        self, password: str, result: PasswordValidationResult
+        self,
+        password: str,
+        result: PasswordValidationResult,
     ) -> int:
         """Check character type requirements. Returns score contribution."""
         score = 0
@@ -126,13 +128,15 @@ class PasswordValidator:
                 score += SCORE_PER_REQUIREMENT
             else:
                 result.add_error(
-                    f"Password must contain at least one special character "
-                    f"({self._policy.special_characters})"
+                    f"Password must contain at least one special character ({self._policy.special_characters})",
                 )
         return score
 
     def _check_common_password(
-        self, password: str, result: PasswordValidationResult, score: int
+        self,
+        password: str,
+        result: PasswordValidationResult,
+        score: int,
     ) -> int:
         """Check against common passwords. Returns adjusted score."""
         if self._policy.check_common_passwords and password.lower() in COMMON_PASSWORDS:
@@ -201,7 +205,7 @@ class PasswordValidator:
 
         if self._policy.require_special:
             requirements.append(
-                f"At least one special character ({self._policy.special_characters})"
+                f"At least one special character ({self._policy.special_characters})",
             )
 
         if self._policy.check_common_passwords:
@@ -224,7 +228,7 @@ class PasswordValidator:
         result = self.validate(password)
         if not result.valid:
             raise ValueError(
-                f"Password does not meet policy requirements: {', '.join(result.errors)}"
+                f"Password does not meet policy requirements: {', '.join(result.errors)}",
             )
         return hash_password(password)
 

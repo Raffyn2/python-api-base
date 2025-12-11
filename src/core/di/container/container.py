@@ -13,14 +13,14 @@ This file now contains the main Container class only.
 **Refactored: 2025 - Split into focused modules, uses MetricsTracker**
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from typing import Any
 
-from core.di.resolution import CircularDependencyError, ServiceNotRegisteredError, Resolver
+from core.di.container.scopes import Scope
 from core.di.lifecycle import Lifetime, Registration
 from core.di.observability import ContainerHooks, ContainerStats, MetricsTracker
-from core.di.container.scopes import Scope
+from core.di.resolution import CircularDependencyError, Resolver, ServiceNotRegisteredError
 
 # Re-export for backward compatibility
 __all__ = [
@@ -165,9 +165,7 @@ class Container:
 
         return self._resolve_transient(service_type, registration)
 
-    def _resolve_singleton[T](
-        self, service_type: type[T], registration: Registration[T]
-    ) -> T:
+    def _resolve_singleton[T](self, service_type: type[T], registration: Registration[T]) -> T:
         """Resolve singleton service."""
         if service_type in self._singletons:
             instance = self._singletons[service_type]
@@ -204,9 +202,7 @@ class Container:
 
         return instance
 
-    def _resolve_transient[T](
-        self, service_type: type[T], registration: Registration[T]
-    ) -> T:
+    def _resolve_transient[T](self, service_type: type[T], registration: Registration[T]) -> T:
         """Resolve transient/scoped service."""
         self._resolution_stack.append(service_type)
         try:
@@ -274,14 +270,15 @@ class Container:
         Useful for testing to ensure clean state between tests.
         Does not remove registrations, only cached instances.
         """
+        count = len(self._singletons)
         self._singletons.clear()
         self._metrics_tracker.trigger_hook(
             "on_singletons_cleared",
-            count=len(self._singletons),
+            count=count,
         )
 
     @contextmanager
-    def create_scope(self):
+    def create_scope(self) -> Generator[Scope]:
         """Create a new scope for scoped dependencies.
 
         Yields:

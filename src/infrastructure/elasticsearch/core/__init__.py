@@ -10,7 +10,7 @@ from infrastructure.elasticsearch.core.config import ElasticsearchConfig
 from infrastructure.elasticsearch.core.document import Document
 
 __all__ = [
+    "Document",
     "ElasticsearchClient",
     "ElasticsearchConfig",
-    "Document",
 ]

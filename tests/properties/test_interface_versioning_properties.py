@@ -59,9 +59,7 @@ class TestApiVersionImmutability:
 
     @given(version=version_int_strategy, deprecated=st.booleans())
     @settings(max_examples=100)
-    def test_api_version_deprecated_is_frozen(
-        self, version: int, deprecated: bool
-    ) -> None:
+    def test_api_version_deprecated_is_frozen(self, version: int, deprecated: bool) -> None:
         """ApiVersion deprecated field SHALL be immutable."""
         api_version = ApiVersion[int](version=version, deprecated=deprecated)
 
@@ -111,9 +109,7 @@ class TestVersionedRouterPrefixFormat:
 
     @given(version=version_int_strategy, prefix=prefix_strategy)
     @settings(max_examples=100)
-    def test_versioned_router_with_custom_prefix(
-        self, version: int, prefix: str
-    ) -> None:
+    def test_versioned_router_with_custom_prefix(self, version: int, prefix: str) -> None:
         """VersionedRouter SHALL include custom prefix after version."""
         api_version = ApiVersion[int](version=version)
         router = VersionedRouter[int](version=api_version, prefix=prefix)
@@ -166,9 +162,7 @@ class TestResponseTransformerFieldMapping:
         unchanged=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=100)
-    def test_transformer_maps_fields(
-        self, old_name: str, value: int, unchanged: str
-    ) -> None:
+    def test_transformer_maps_fields(self, old_name: str, value: int, unchanged: str) -> None:
         """BaseResponseTransformer SHALL map fields according to mapping."""
         assume(len(old_name.strip()) > 0 and len(unchanged.strip()) > 0)
 
@@ -190,9 +184,7 @@ class TestResponseTransformerFieldMapping:
         unchanged=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=100)
-    def test_transformer_preserves_unmapped_fields(
-        self, old_name: str, value: int, unchanged: str
-    ) -> None:
+    def test_transformer_preserves_unmapped_fields(self, old_name: str, value: int, unchanged: str) -> None:
         """BaseResponseTransformer SHALL preserve unmapped fields."""
         assume(len(old_name.strip()) > 0 and len(unchanged.strip()) > 0)
 
@@ -257,9 +249,7 @@ class TestVersionRouterVersionExtraction:
         ),
     )
     @settings(max_examples=100)
-    def test_version_router_extracts_from_header(
-        self, version: str, header_name: str
-    ) -> None:
+    def test_version_router_extracts_from_header(self, version: str, header_name: str) -> None:
         """VersionRouter SHALL extract version from specified header."""
         assume(len(version.strip()) > 0 and len(header_name.strip()) > 0)
         router = VersionRouter(header_name=header_name, default_version="1")

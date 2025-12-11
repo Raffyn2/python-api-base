@@ -43,9 +43,7 @@ class TestHealthCheckDependencyVerification:
         mock_session = AsyncMock()
         mock_session.execute = AsyncMock()
         mock_db.session = MagicMock(
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session), __aexit__=AsyncMock()
-            )
+            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_session), __aexit__=AsyncMock())
         )
         mock_request.app.state.db = mock_db
 
@@ -253,9 +251,7 @@ class TestHealthStatusDetermination:
         db_status=st.sampled_from(list(HealthStatus)),
         redis_status=st.sampled_from(list(HealthStatus)),
     )
-    def test_status_determination_property(
-        self, db_status: HealthStatus, redis_status: HealthStatus
-    ) -> None:
+    def test_status_determination_property(self, db_status: HealthStatus, redis_status: HealthStatus) -> None:
         """
         **Feature: advanced-reusability, Property 15: Health Check Dependency Verification**
 
@@ -277,14 +273,9 @@ class TestHealthStatusDetermination:
             expected = HealthStatus.HEALTHY
 
         # Verify the logic
-        if (
-            db_status == HealthStatus.UNHEALTHY
-            or redis_status == HealthStatus.UNHEALTHY
-        ):
+        if db_status == HealthStatus.UNHEALTHY or redis_status == HealthStatus.UNHEALTHY:
             assert expected == HealthStatus.UNHEALTHY
-        elif (
-            db_status == HealthStatus.DEGRADED or redis_status == HealthStatus.DEGRADED
-        ):
+        elif db_status == HealthStatus.DEGRADED or redis_status == HealthStatus.DEGRADED:
             assert expected == HealthStatus.DEGRADED
         else:
             assert expected == HealthStatus.HEALTHY

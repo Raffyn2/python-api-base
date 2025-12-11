@@ -37,7 +37,7 @@ class MockEmailValidator:
 class TestUserDomainServicePasswordHashing:
     """Tests for password hashing functionality."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def service(self) -> UserDomainService:
         return UserDomainService(password_hasher=MockPasswordHasher())
 
@@ -71,12 +71,12 @@ class TestUserDomainServiceEmailValidation:
 
     def test_basic_email_validation_no_at(self) -> None:
         service = UserDomainService(password_hasher=MockPasswordHasher())
-        is_valid, error = service.validate_email("userexample.com")
+        is_valid, _error = service.validate_email("userexample.com")
         assert is_valid is False
 
     def test_basic_email_validation_no_domain(self) -> None:
         service = UserDomainService(password_hasher=MockPasswordHasher())
-        is_valid, error = service.validate_email("user@")
+        is_valid, _error = service.validate_email("user@")
         assert is_valid is False
 
     def test_with_validator_valid_email(self) -> None:
@@ -110,7 +110,7 @@ class TestUserDomainServiceEmailValidation:
 class TestUserDomainServicePasswordStrength:
     """Tests for password strength validation."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def service(self) -> UserDomainService:
         return UserDomainService(password_hasher=MockPasswordHasher())
 
@@ -153,5 +153,5 @@ class TestUserDomainServicePasswordStrength:
         special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
         for char in special_chars:
             password = f"SecurePass1{char}"
-            is_valid, errors = service.validate_password_strength(password)
+            is_valid, _errors = service.validate_password_strength(password)
             assert is_valid is True, f"Special char '{char}' should be accepted"

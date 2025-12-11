@@ -3,14 +3,14 @@
 **Feature: test-coverage-90-percent**
 """
 
-import pytest
 from datetime import timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
+
+import pytest
 
 from infrastructure.auth.jwt.es256_provider import ES256Provider
-from infrastructure.auth.jwt.rs256_provider import RS256Provider
 from infrastructure.auth.jwt.exceptions import InvalidKeyError
-
+from infrastructure.auth.jwt.rs256_provider import RS256Provider
 
 # Test PEM keys (for testing only - not real keys)
 MOCK_RSA_PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
@@ -35,19 +35,19 @@ class TestRS256Provider:
 
     def test_init_with_private_key(self) -> None:
         """Should initialize with private key only."""
-        with patch.object(RS256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(RS256Provider, "_generate_kid", return_value="test-kid"):
             provider = RS256Provider(private_key=MOCK_RSA_PRIVATE_KEY)
             assert provider.algorithm == "RS256"
 
     def test_init_with_public_key(self) -> None:
         """Should initialize with public key only."""
-        with patch.object(RS256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(RS256Provider, "_generate_kid", return_value="test-kid"):
             provider = RS256Provider(public_key=MOCK_RSA_PUBLIC_KEY)
             assert provider.algorithm == "RS256"
 
     def test_init_with_both_keys(self) -> None:
         """Should initialize with both keys."""
-        with patch.object(RS256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(RS256Provider, "_generate_kid", return_value="test-kid"):
             provider = RS256Provider(
                 private_key=MOCK_RSA_PRIVATE_KEY,
                 public_key=MOCK_RSA_PUBLIC_KEY,
@@ -74,7 +74,7 @@ class TestRS256Provider:
 
     def test_init_with_custom_params(self) -> None:
         """Should accept custom issuer, audience, and expiry."""
-        with patch.object(RS256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(RS256Provider, "_generate_kid", return_value="test-kid"):
             provider = RS256Provider(
                 private_key=MOCK_RSA_PRIVATE_KEY,
                 issuer="test-issuer",
@@ -94,7 +94,7 @@ class TestRS256Provider:
 
     def test_get_signing_key_without_private_key(self) -> None:
         """Should raise error when signing without private key."""
-        with patch.object(RS256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(RS256Provider, "_generate_kid", return_value="test-kid"):
             provider = RS256Provider(public_key=MOCK_RSA_PUBLIC_KEY)
             with pytest.raises(InvalidKeyError) as exc_info:
                 provider._get_signing_key()
@@ -102,14 +102,14 @@ class TestRS256Provider:
 
     def test_get_verification_key_with_public_key(self) -> None:
         """Should return public key for verification."""
-        with patch.object(RS256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(RS256Provider, "_generate_kid", return_value="test-kid"):
             provider = RS256Provider(public_key=MOCK_RSA_PUBLIC_KEY)
             key = provider._get_verification_key()
             assert key == MOCK_RSA_PUBLIC_KEY
 
     def test_get_verification_key_fallback_to_private(self) -> None:
         """Should fallback to private key for verification."""
-        with patch.object(RS256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(RS256Provider, "_generate_kid", return_value="test-kid"):
             provider = RS256Provider(private_key=MOCK_RSA_PRIVATE_KEY)
             key = provider._get_verification_key()
             assert key == MOCK_RSA_PRIVATE_KEY
@@ -120,19 +120,19 @@ class TestES256Provider:
 
     def test_init_with_private_key(self) -> None:
         """Should initialize with private key only."""
-        with patch.object(ES256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(ES256Provider, "_generate_kid", return_value="test-kid"):
             provider = ES256Provider(private_key=MOCK_EC_PRIVATE_KEY)
             assert provider.algorithm == "ES256"
 
     def test_init_with_public_key(self) -> None:
         """Should initialize with public key only."""
-        with patch.object(ES256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(ES256Provider, "_generate_kid", return_value="test-kid"):
             provider = ES256Provider(public_key=MOCK_EC_PUBLIC_KEY)
             assert provider.algorithm == "ES256"
 
     def test_init_with_both_keys(self) -> None:
         """Should initialize with both keys."""
-        with patch.object(ES256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(ES256Provider, "_generate_kid", return_value="test-kid"):
             provider = ES256Provider(
                 private_key=MOCK_EC_PRIVATE_KEY,
                 public_key=MOCK_EC_PUBLIC_KEY,
@@ -159,7 +159,7 @@ class TestES256Provider:
 
     def test_init_with_custom_params(self) -> None:
         """Should accept custom issuer, audience, and expiry."""
-        with patch.object(ES256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(ES256Provider, "_generate_kid", return_value="test-kid"):
             provider = ES256Provider(
                 private_key=MOCK_EC_PRIVATE_KEY,
                 issuer="test-issuer",
@@ -179,7 +179,7 @@ class TestES256Provider:
 
     def test_get_signing_key_without_private_key(self) -> None:
         """Should raise error when signing without private key."""
-        with patch.object(ES256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(ES256Provider, "_generate_kid", return_value="test-kid"):
             provider = ES256Provider(public_key=MOCK_EC_PUBLIC_KEY)
             with pytest.raises(InvalidKeyError) as exc_info:
                 provider._get_signing_key()
@@ -187,14 +187,14 @@ class TestES256Provider:
 
     def test_get_verification_key_with_public_key(self) -> None:
         """Should return public key for verification."""
-        with patch.object(ES256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(ES256Provider, "_generate_kid", return_value="test-kid"):
             provider = ES256Provider(public_key=MOCK_EC_PUBLIC_KEY)
             key = provider._get_verification_key()
             assert key == MOCK_EC_PUBLIC_KEY
 
     def test_get_verification_key_fallback_to_private(self) -> None:
         """Should fallback to private key for verification."""
-        with patch.object(ES256Provider, '_generate_kid', return_value='test-kid'):
+        with patch.object(ES256Provider, "_generate_kid", return_value="test-kid"):
             provider = ES256Provider(private_key=MOCK_EC_PRIVATE_KEY)
             key = provider._get_verification_key()
             assert key == MOCK_EC_PRIVATE_KEY

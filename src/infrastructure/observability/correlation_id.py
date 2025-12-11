@@ -13,21 +13,17 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Self
+
+import structlog
+
+_logger = structlog.get_logger(__name__)
 
 # Context variable for correlation ID
-_correlation_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "correlation_id", default=None
-)
-_request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "request_id", default=None
-)
-_span_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "span_id", default=None
-)
-_parent_span_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "parent_span_id", default=None
-)
+_correlation_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("correlation_id", default=None)
+_request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("request_id", default=None)
+_span_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("span_id", default=None)
+_parent_span_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("parent_span_id", default=None)
 
 
 class IdFormat(Enum):
@@ -101,7 +97,7 @@ def clear_context() -> None:
     _parent_span_id.set(None)
 
 
-@dataclass
+@dataclass(slots=True)
 class CorrelationContext:
     """Complete correlation context for a request."""
 
@@ -151,7 +147,7 @@ class CorrelationContext:
         headers: dict[str, str],
         generate_missing: bool = True,
         id_format: IdFormat = IdFormat.UUID4_HEX,
-    ) -> "CorrelationContext":
+    ) -> Self:
         """Create context from HTTP headers."""
         correlation_id = headers.get("X-Correlation-ID", "")
         request_id = headers.get("X-Request-ID", "")
@@ -176,7 +172,7 @@ class CorrelationContext:
         cls,
         service_name: str | None = None,
         id_format: IdFormat = IdFormat.UUID4_HEX,
-    ) -> "CorrelationContext":
+    ) -> Self:
         """Create a new correlation context."""
         return cls(
             correlation_id=generate_id(id_format),
@@ -207,11 +203,7 @@ class CorrelationContextManager:
         """Enter context and set correlation IDs."""
         if self._entered:
             # Already entered - log warning and return existing context
-            import logging
-
-            logging.getLogger(__name__).warning(
-                "CorrelationContextManager entered multiple times"
-            )
+            _logger.warning("CorrelationContextManager entered multiple times")
             return self._context
 
         self._entered = True
@@ -229,19 +221,15 @@ class CorrelationContextManager:
         Handles already-reset tokens gracefully by catching ValueError
         and logging a warning instead of raising an exception.
         """
-        import logging
-
-        logger = logging.getLogger(__name__)
-
         for token in reversed(self._tokens):
             try:
                 if hasattr(token, "var"):
                     token.var.reset(token)
             except ValueError:
                 # Token already reset - log and continue
-                logger.warning(
+                _logger.warning(
                     "Correlation context token already reset",
-                    extra={"token_var": getattr(token, "var", None)},
+                    token_var=str(getattr(token, "var", None)),
                 )
 
         self._tokens.clear()
@@ -308,9 +296,7 @@ def propagate_correlation(
 
 
 # Structlog processor for correlation
-def add_correlation_context(
-    logger: Any, method_name: str, event_dict: dict[str, Any]
-) -> dict[str, Any]:
+def add_correlation_context(logger: Any, method_name: str, event_dict: dict[str, Any]) -> dict[str, Any]:
     """Structlog processor to add correlation context to logs."""
     correlation_id = get_correlation_id()
     request_id = get_request_id()
@@ -326,7 +312,7 @@ def add_correlation_context(
     return event_dict
 
 
-@dataclass
+@dataclass(slots=True)
 class CorrelationConfig:
     """Configuration for correlation ID handling."""
 

@@ -5,11 +5,11 @@
 **Refactored: Split from production.py for one-class-per-file compliance**
 """
 
-import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
+import structlog
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -19,10 +19,10 @@ from infrastructure.multitenancy import (
     TenantResolutionStrategy,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class MultitenancyConfig:
     """Configuration for multitenancy middleware."""
 
@@ -61,12 +61,24 @@ class MultitenancyMiddleware(BaseHTTPMiddleware):
 
         if tenant_id is None:
             if self._config.required:
+                from core.errors.http import PROBLEM_JSON_MEDIA_TYPE, ProblemDetail
+
+                problem = ProblemDetail(
+                    type="https://api.example.com/errors/TENANT_REQUIRED",
+                    title="Tenant ID Required",
+                    status=400,
+                    detail=f"Header '{self._config.header_name}' is required",
+                    instance=str(request.url),
+                )
                 return Response(
-                    content='{"error": "Tenant ID required"}',
+                    content=problem.model_dump_json(),
                     status_code=400,
-                    media_type="application/json",
+                    media_type=PROBLEM_JSON_MEDIA_TYPE,
                 )
             tenant_id = self._config.default_tenant_id
+
+        # Get correlation_id for logging
+        correlation_id = request.headers.get("X-Request-ID") or request.headers.get("X-Correlation-ID")
 
         # Set tenant context
         if tenant_id:
@@ -75,7 +87,11 @@ class MultitenancyMiddleware(BaseHTTPMiddleware):
                 name=f"Tenant {tenant_id}",
             )
             TenantContext.set_current(tenant)
-            logger.debug(f"Tenant context set: {tenant_id}")
+            logger.debug(
+                "tenant_context_set",
+                correlation_id=correlation_id,
+                tenant_id=tenant_id,
+            )
 
         try:
             return await call_next(request)

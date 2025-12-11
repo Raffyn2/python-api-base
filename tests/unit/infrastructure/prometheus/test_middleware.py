@@ -43,7 +43,7 @@ class TestPrometheusMiddlewareInit:
         """Test that metrics are created on init."""
         app = MagicMock()
         mock_registry = MagicMock()
-        middleware = PrometheusMiddleware(app, registry=mock_registry)
+        PrometheusMiddleware(app, registry=mock_registry)
         mock_registry.counter.assert_called_once()
         mock_registry.histogram.assert_called_once()
         mock_registry.gauge.assert_called_once()

@@ -129,9 +129,7 @@ class TestScyllaDBEntity:
         """Test from_row with named tuple."""
         from collections import namedtuple
 
-        Row = namedtuple(
-            "Row", ["id", "name", "email", "age", "created_at", "updated_at"]
-        )
+        Row = namedtuple("Row", ["id", "name", "email", "age", "created_at", "updated_at"])
         row = Row(
             id=uuid4(),
             name="Jane",

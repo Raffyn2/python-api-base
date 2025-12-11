@@ -36,7 +36,7 @@ class AddItemRequest(BaseModel):
 
     item_id: str = Field(..., min_length=1)
     quantity: int = Field(..., ge=1, le=9999)
-    discount: Decimal = Field(default=Decimal("0"), ge=0, le=100)
+    discount: Decimal = Field(default=Decimal(0), ge=0, le=100)
 
 
 class PedidoExampleCreate(BaseModel):

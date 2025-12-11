@@ -10,18 +10,17 @@ Demonstrates:
 **Feature: example-system-demo**
 """
 
-from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
 from uuid import uuid4
 
 from pydantic import Field, PrivateAttr
 
 from core.base.domain.entity import AuditableEntity
 from core.base.events.domain_event import DomainEvent
-from domain.examples.item.entity import Money
+from domain.common.value_objects import Money
 from domain.examples.pedido.events import (
     PedidoCancelled,
     PedidoCompleted,
@@ -29,15 +28,18 @@ from domain.examples.pedido.events import (
     PedidoItemAdded,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 # Re-export events for backward compatibility
 __all__ = [
-    "PedidoStatus",
-    "PedidoItemExample",
-    "PedidoExample",
-    "PedidoCreated",
-    "PedidoItemAdded",
-    "PedidoCompleted",
     "PedidoCancelled",
+    "PedidoCompleted",
+    "PedidoCreated",
+    "PedidoExample",
+    "PedidoItemAdded",
+    "PedidoItemExample",
+    "PedidoStatus",
 ]
 
 
@@ -58,7 +60,7 @@ class PedidoStatus(Enum):
 # === Entities ===
 
 
-@dataclass
+@dataclass(slots=True)
 class PedidoItemExample:
     """Order line item entity.
 
@@ -71,7 +73,7 @@ class PedidoItemExample:
     item_name: str
     quantity: int
     unit_price: Money
-    discount: Decimal = Decimal("0")
+    discount: Decimal = Decimal(0)
 
     @classmethod
     def create(
@@ -81,8 +83,8 @@ class PedidoItemExample:
         item_name: str,
         quantity: int,
         unit_price: Money,
-        discount: Decimal = Decimal("0"),
-    ) -> "PedidoItemExample":
+        discount: Decimal = Decimal(0),
+    ) -> Self:
         """Factory method to create order item."""
         if quantity <= 0:
             raise ValueError("Quantity must be positive")
@@ -134,9 +136,7 @@ class PedidoExample(AuditableEntity[str]):
         ...     customer_id="cust-123",
         ...     customer_name="John Doe",
         ... )
-        >>> pedido.add_item(
-        ...     item_id="item-1", name="Widget", qty=2, price=Money(Decimal("50"))
-        ... )
+        >>> pedido.add_item(item_id="item-1", name="Widget", qty=2, price=Money(Decimal("50")))
         >>> pedido.confirm()
     """
 
@@ -163,7 +163,7 @@ class PedidoExample(AuditableEntity[str]):
         notes: str = "",
         tenant_id: str | None = None,
         created_by: str = "system",
-    ) -> "PedidoExample":
+    ) -> Self:
         """Factory method to create a new order."""
         pedido = cls(
             id=str(uuid4()),
@@ -176,9 +176,7 @@ class PedidoExample(AuditableEntity[str]):
             created_by=created_by,
             updated_by=created_by,
         )
-        pedido._events.append(
-            PedidoCreated(pedido_id=pedido.id, customer_id=customer_id)
-        )
+        pedido._events.append(PedidoCreated(pedido_id=pedido.id, customer_id=customer_id))
         return pedido
 
     def add_item(
@@ -187,7 +185,7 @@ class PedidoExample(AuditableEntity[str]):
         item_name: str,
         quantity: int,
         unit_price: Money,
-        discount: Decimal = Decimal("0"),
+        discount: Decimal = Decimal(0),
     ) -> PedidoItemExample:
         """Add an item to the order.
 
@@ -227,9 +225,7 @@ class PedidoExample(AuditableEntity[str]):
     def remove_item(self, item_id: str) -> bool:
         """Remove an item from the order."""
         if self.status != PedidoStatus.PENDING:
-            raise ValueError(
-                f"Cannot remove items from order in {self.status.value} status"
-            )
+            raise ValueError(f"Cannot remove items from order in {self.status.value} status")
 
         original_count = len(self.items)
         self.items = [i for i in self.items if i.item_id != item_id]
@@ -286,14 +282,12 @@ class PedidoExample(AuditableEntity[str]):
         self.mark_updated_by(updated_by)
         self._events.append(PedidoCancelled(pedido_id=self.id, reason=reason))
 
-    def _aggregate_money(
-        self, getter: "Callable[[PedidoItemExample], Money]"
-    ) -> Money:
+    def _aggregate_money(self, getter: "Callable[[PedidoItemExample], Money]") -> Money:
         """Aggregate money values from items using provided getter."""
         if not self.items:
-            return Money(Decimal("0"))
+            return Money(Decimal(0))
         currency = self.items[0].unit_price.currency
-        total = sum((getter(item).amount for item in self.items), Decimal("0"))
+        total = sum((getter(item).amount for item in self.items), Decimal(0))
         return Money(total, currency)
 
     @property

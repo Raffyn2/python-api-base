@@ -26,14 +26,14 @@ from infrastructure.messaging.outbox.outbox_publisher import (
 from infrastructure.messaging.outbox.outbox_repository import OutboxRepository
 
 __all__ = [
+    # Repository
+    "IOutboxRepository",
     # Message
     "OutboxMessage",
     "OutboxMessageStatus",
-    "create_outbox_message",
-    # Repository
-    "IOutboxRepository",
-    "OutboxRepository",
     # Publisher
     "OutboxPublisher",
     "OutboxPublisherContext",
+    "OutboxRepository",
+    "create_outbox_message",
 ]

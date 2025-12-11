@@ -1,5 +1,4 @@
-"""
-Alert generator module for sustainability metrics.
+"""Alert generator module for sustainability metrics.
 
 Generates Prometheus alert rules for energy consumption
 and carbon emission thresholds.
@@ -7,12 +6,15 @@ and carbon emission thresholds.
 
 from decimal import Decimal
 
-from src.infrastructure.sustainability.models import AlertRule, AlertThreshold
+import structlog
+
+from infrastructure.sustainability.models import AlertRule, AlertThreshold
+
+logger = structlog.get_logger(__name__)
 
 
 def generate_alert_rule(threshold: AlertThreshold) -> AlertRule:
-    """
-    Generate Prometheus alert rule from threshold configuration.
+    """Generate Prometheus alert rule from threshold configuration.
 
     Property 9: Alert Rule Generation
     Generated rule contains correct threshold value in expression.
@@ -42,10 +44,7 @@ def generate_alert_rule(threshold: AlertThreshold) -> AlertRule:
     name = f"sustainability_energy_threshold_{scope}_{threshold.severity}"
 
     # Build PromQL expression
-    expr = (
-        f"sum(rate(kepler_container_joules_total{label_selector}[5m])) "
-        f"/ 3600000 > {threshold.energy_threshold_kwh}"
-    )
+    expr = f"sum(rate(kepler_container_joules_total{label_selector}[5m])) / 3600000 > {threshold.energy_threshold_kwh}"
 
     return AlertRule(
         name=name,
@@ -144,8 +143,7 @@ def generate_cost_alert_rule(threshold: AlertThreshold, price_per_kwh: Decimal) 
         annotations={
             "summary": f"Energy cost exceeds threshold (${threshold.cost_threshold})",
             "description": (
-                f"Energy cost in {scope} has exceeded "
-                f"${threshold.cost_threshold} for more than 5 minutes."
+                f"Energy cost in {scope} has exceeded ${threshold.cost_threshold} for more than 5 minutes."
             ),
             "runbook_url": "https://docs.example.com/runbooks/sustainability/cost-threshold",
         },
@@ -161,8 +159,18 @@ def generate_all_alerts(
     price_per_kwh: Decimal = Decimal("0.12"),
 ) -> list[AlertRule]:
     """Generate all alert rules for a threshold configuration."""
-    return [
+    alerts = [
         generate_alert_rule(threshold),
         generate_carbon_alert_rule(threshold),
         generate_cost_alert_rule(threshold, price_per_kwh),
     ]
+
+    logger.debug(
+        "Generated sustainability alerts",
+        operation="ALERTS_GENERATED",
+        alert_count=len(alerts),
+        namespace=threshold.namespace,
+        severity=threshold.severity,
+    )
+
+    return alerts

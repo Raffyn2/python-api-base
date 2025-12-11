@@ -30,20 +30,24 @@ from interface.api.bff import (
 # Strategies
 client_type_strategy = st.sampled_from(list(ClientType))
 
-user_agent_strategy = st.sampled_from([
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0) Safari/604.1",
-    "Mozilla/5.0 (Linux; Android 11) Chrome/91.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1",
-    "curl/7.68.0",
-    "PostmanRuntime/7.28.0",
-    "Electron/13.0.0",
-    "",
-])
+user_agent_strategy = st.sampled_from(
+    [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0) Safari/604.1",
+        "Mozilla/5.0 (Linux; Android 11) Chrome/91.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1",
+        "curl/7.68.0",
+        "PostmanRuntime/7.28.0",
+        "Electron/13.0.0",
+        "",
+    ]
+)
 
-headers_strategy = st.fixed_dictionaries({
-    "user-agent": user_agent_strategy,
-}).map(lambda d: {k: v for k, v in d.items() if v})
+headers_strategy = st.fixed_dictionaries(
+    {
+        "user-agent": user_agent_strategy,
+    }
+).map(lambda d: {k: v for k, v in d.items() if v})
 
 field_name_strategy = st.text(
     alphabet=st.characters(whitelist_categories=("L",)),
@@ -57,9 +61,7 @@ class TestClientInfoProperties:
 
     @given(headers=headers_strategy)
     @settings(max_examples=100)
-    def test_from_headers_returns_valid_client_info(
-        self, headers: dict[str, str]
-    ) -> None:
+    def test_from_headers_returns_valid_client_info(self, headers: dict[str, str]) -> None:
         """Property: from_headers always returns valid ClientInfo."""
         client_info = ClientInfo.from_headers(headers)
         assert isinstance(client_info, ClientInfo)
@@ -149,7 +151,7 @@ class TestFieldConfigProperties:
         if not data:
             return
 
-        exclude_key = list(data.keys())[0]
+        exclude_key = next(iter(data.keys()))
         config = FieldConfig(exclude={exclude_key})
         result = config.apply(data)
 
@@ -170,7 +172,7 @@ class TestFieldConfigProperties:
         if not data:
             return
 
-        include_key = list(data.keys())[0]
+        include_key = next(iter(data.keys()))
         config = FieldConfig(include={include_key})
         result = config.apply(data)
 
@@ -262,9 +264,7 @@ class TestTransformerProperties:
         max_size=st.integers(min_value=1, max_value=50),
     )
     @settings(max_examples=50)
-    def test_list_transformer_respects_max_size(
-        self, list_size: int, max_size: int
-    ) -> None:
+    def test_list_transformer_respects_max_size(self, list_size: int, max_size: int) -> None:
         """Property: ListTransformer respects max_list_size."""
         bff_config = BFFConfig()
         client_config = ClientConfig(
@@ -393,12 +393,7 @@ class TestBFFConfigBuilderProperties:
 
     def test_builder_creates_valid_config(self) -> None:
         """Property: Builder creates valid configuration."""
-        config = (
-            BFFConfigBuilder()
-            .for_mobile(max_list_size=20, compress_images=True)
-            .for_web(max_list_size=50)
-            .build()
-        )
+        config = BFFConfigBuilder().for_mobile(max_list_size=20, compress_images=True).for_web(max_list_size=50).build()
 
         mobile_config = config.get_config(ClientType.MOBILE)
         assert mobile_config.max_list_size == 20

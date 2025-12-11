@@ -9,16 +9,15 @@ Tests verify that hooks are called at the correct times:
 - on_resolution_error when resolution fails
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from core.di import Container, Lifetime, ServiceNotRegisteredError
 
 
 class Database:
     """Mock database service."""
-
-    pass
 
 
 class BrokenService:
@@ -38,12 +37,12 @@ class UserService:
 class TestContainerHooks:
     """Tests for Container observability hooks."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def container(self) -> Container:
         """Create container."""
         return Container()
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_hooks(self) -> Mock:
         """Create mock hooks object."""
         hooks = Mock()
@@ -52,9 +51,7 @@ class TestContainerHooks:
         hooks.on_resolution_error = Mock()
         return hooks
 
-    def test_on_service_registered_called_for_register(
-        self, container: Container, mock_hooks: Mock
-    ) -> None:
+    def test_on_service_registered_called_for_register(self, container: Container, mock_hooks: Mock) -> None:
         """Test that on_service_registered is called when registering a service."""
         container.add_hooks(mock_hooks)
 
@@ -66,9 +63,7 @@ class TestContainerHooks:
             factory=Database,
         )
 
-    def test_on_service_registered_called_for_register_singleton(
-        self, container: Container, mock_hooks: Mock
-    ) -> None:
+    def test_on_service_registered_called_for_register_singleton(self, container: Container, mock_hooks: Mock) -> None:
         """Test that hook is called for register_singleton."""
         container.add_hooks(mock_hooks)
 
@@ -80,12 +75,12 @@ class TestContainerHooks:
             factory=Database,
         )
 
-    def test_on_service_registered_called_with_custom_factory(
-        self, container: Container, mock_hooks: Mock
-    ) -> None:
+    def test_on_service_registered_called_with_custom_factory(self, container: Container, mock_hooks: Mock) -> None:
         """Test that hook receives custom factory."""
         container.add_hooks(mock_hooks)
-        factory = lambda: Database()
+
+        def factory():
+            return Database()
 
         container.register(Database, factory=factory)
 
@@ -94,9 +89,7 @@ class TestContainerHooks:
         assert call_args.kwargs["service_type"] == Database
         assert call_args.kwargs["factory"] == factory
 
-    def test_on_service_resolved_called_for_new_singleton(
-        self, container: Container, mock_hooks: Mock
-    ) -> None:
+    def test_on_service_resolved_called_for_new_singleton(self, container: Container, mock_hooks: Mock) -> None:
         """Test that hook is called when resolving a new singleton."""
         container.register_singleton(Database)
         container.add_hooks(mock_hooks)
@@ -109,9 +102,7 @@ class TestContainerHooks:
         assert call_args.kwargs["instance"] == db
         assert call_args.kwargs["is_cached"] is False
 
-    def test_on_service_resolved_called_for_cached_singleton(
-        self, container: Container, mock_hooks: Mock
-    ) -> None:
+    def test_on_service_resolved_called_for_cached_singleton(self, container: Container, mock_hooks: Mock) -> None:
         """Test that hook is called for cached singleton with is_cached=True."""
         container.register_singleton(Database)
 
@@ -129,9 +120,7 @@ class TestContainerHooks:
         call_args = mock_hooks.on_service_resolved.call_args
         assert call_args.kwargs["is_cached"] is True
 
-    def test_on_service_resolved_called_for_transient(
-        self, container: Container, mock_hooks: Mock
-    ) -> None:
+    def test_on_service_resolved_called_for_transient(self, container: Container, mock_hooks: Mock) -> None:
         """Test that hook is called for transient services with is_cached=False."""
         container.register(Database, lifetime=Lifetime.TRANSIENT)
         container.add_hooks(mock_hooks)
@@ -145,9 +134,7 @@ class TestContainerHooks:
         for call in mock_hooks.on_service_resolved.call_args_list:
             assert call.kwargs["is_cached"] is False
 
-    def test_on_resolution_error_called_on_missing_service(
-        self, container: Container, mock_hooks: Mock
-    ) -> None:
+    def test_on_resolution_error_called_on_missing_service(self, container: Container, mock_hooks: Mock) -> None:
         """Test that hook is called when service is not registered."""
         container.add_hooks(mock_hooks)
 
@@ -159,9 +146,7 @@ class TestContainerHooks:
         assert call_args.kwargs["service_type"] == Database
         assert isinstance(call_args.kwargs["error"], ServiceNotRegisteredError)
 
-    def test_on_resolution_error_called_on_construction_failure(
-        self, container: Container, mock_hooks: Mock
-    ) -> None:
+    def test_on_resolution_error_called_on_construction_failure(self, container: Container, mock_hooks: Mock) -> None:
         """Test that hook is called when service construction fails."""
         container.register_singleton(BrokenService)
         container.add_hooks(mock_hooks)
@@ -175,9 +160,7 @@ class TestContainerHooks:
         assert isinstance(call_args.kwargs["error"], RuntimeError)
         assert call_args.kwargs["resolution_stack"] == [BrokenService]
 
-    def test_multiple_hooks_all_called(
-        self, container: Container
-    ) -> None:
+    def test_multiple_hooks_all_called(self, container: Container) -> None:
         """Test that multiple hooks are all called."""
         hooks1 = Mock()
         hooks1.on_service_registered = Mock()
@@ -214,9 +197,7 @@ class TestContainerHooks:
         # Verify warning was logged (check for the warning)
         assert any("Hook execution failed" in record.message for record in caplog.records)
 
-    def test_hooks_with_partial_implementation(
-        self, container: Container
-    ) -> None:
+    def test_hooks_with_partial_implementation(self, container: Container) -> None:
         """Test that hooks can implement only some methods."""
 
         class PartialHooks:
@@ -225,6 +206,7 @@ class TestContainerHooks:
 
             def on_service_registered(self, service_type, lifetime, factory):
                 self.registered_services.append(service_type)
+
             # Note: Not implementing on_service_resolved or on_resolution_error
 
         hooks = PartialHooks()
@@ -236,9 +218,7 @@ class TestContainerHooks:
         # Should work fine, only on_service_registered was called
         assert Database in hooks.registered_services
 
-    def test_hooks_called_in_order_registered(
-        self, container: Container
-    ) -> None:
+    def test_hooks_called_in_order_registered(self, container: Container) -> None:
         """Test that hooks are called in the order they were added."""
         call_order = []
 
@@ -262,9 +242,7 @@ class TestContainerHooks:
 
         assert call_order == ["hook1", "hook2", "hook3"]
 
-    def test_hook_receives_correct_resolution_stack(
-        self, container: Container
-    ) -> None:
+    def test_hook_receives_correct_resolution_stack(self, container: Container) -> None:
         """Test that hook receives the full resolution stack on error."""
         from core.di import DependencyResolutionError
 

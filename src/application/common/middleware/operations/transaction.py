@@ -10,14 +10,15 @@ This module provides:
 **Validates: Requirements 2.3, Transaction boundary configuration**
 """
 
-import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
+import structlog
+
 from core.base.patterns.result import Ok
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
@@ -221,10 +222,8 @@ class TransactionMiddleware:
         if not config.enabled:
             logger.debug(
                 "transaction_disabled",
-                extra={
-                    "command_type": command_name,
-                    "operation": "TRANSACTION_BYPASS",
-                },
+                command_type=command_name,
+                operation="TRANSACTION_BYPASS",
             )
             return await next_handler(command)
 
@@ -233,13 +232,11 @@ class TransactionMiddleware:
 
         logger.debug(
             "transaction_started",
-            extra={
-                "command_type": command_name,
-                "read_only": config.read_only,
-                "isolation_level": config.isolation_level,
-                "timeout_seconds": config.timeout_seconds,
-                "operation": "TRANSACTION_START",
-            },
+            command_type=command_name,
+            read_only=config.read_only,
+            isolation_level=config.isolation_level,
+            timeout_seconds=config.timeout_seconds,
+            operation="TRANSACTION_START",
         )
 
         async with uow:
@@ -264,18 +261,14 @@ class TransactionMiddleware:
                 await uow.commit()
                 logger.debug(
                     "transaction_committed",
-                    extra={
-                        "command_type": command_name,
-                        "operation": "TRANSACTION_COMMIT",
-                    },
+                    command_type=command_name,
+                    operation="TRANSACTION_COMMIT",
                 )
             elif not config.auto_commit:
                 logger.debug(
                     "transaction_auto_commit_disabled",
-                    extra={
-                        "command_type": command_name,
-                        "operation": "TRANSACTION_NO_AUTO_COMMIT",
-                    },
+                    command_type=command_name,
+                    operation="TRANSACTION_NO_AUTO_COMMIT",
                 )
 
             return result

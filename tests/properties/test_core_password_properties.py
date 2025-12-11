@@ -26,9 +26,7 @@ class TestPasswordComplexityValidation:
     **Validates: Requirements 7.1**
     """
 
-    @given(
-        st.text(min_size=1, max_size=11, alphabet=string.ascii_letters + string.digits)
-    )
+    @given(st.text(min_size=1, max_size=11, alphabet=string.ascii_letters + string.digits))
     @settings(max_examples=100)
     def test_short_passwords_rejected(self, password: str):
         """Passwords shorter than min_length SHALL be rejected."""

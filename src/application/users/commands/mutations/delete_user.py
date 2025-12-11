@@ -43,7 +43,7 @@ class DeleteUserHandler(CommandHandler[DeleteUserCommand, bool]):
             # Get existing user
             user = await self._repository.get_by_id(command.user_id)
             if user is None:
-                return Err(ValueError(f"User {command.user_id} not found"))
+                return Err(ValueError("User not found"))
 
             # Deactivate user (soft delete)
             user.deactivate(reason=command.reason)

@@ -3,6 +3,10 @@
 Raised when a requested entity cannot be found.
 
 **Feature: python-api-base-2025-state-of-art**
+
+Note: This is a simplified version for application layer use.
+For HTTP/API handlers, use core.errors.EntityNotFoundError which includes
+correlation_id, timestamp, and RFC 7807 support.
 """
 
 from typing import Any

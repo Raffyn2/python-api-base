@@ -4,11 +4,11 @@ These tests verify correctness properties for resiliency behavior.
 """
 
 import asyncio
+
 import pytest
 from hypothesis import given, settings, strategies as st
-from unittest.mock import AsyncMock, MagicMock, patch
 
-from infrastructure.dapr.errors import DaprTimeoutError, DaprConnectionError
+from infrastructure.dapr.errors import DaprConnectionError
 
 
 class TestTimeoutEnforcement:
@@ -32,6 +32,7 @@ class TestTimeoutEnforcement:
         operation_duration: float,
     ) -> None:
         """Operations exceeding timeout should fail."""
+
         async def slow_operation() -> str:
             await asyncio.sleep(operation_duration)
             return "completed"
@@ -75,7 +76,7 @@ class TestRetryBackoff:
                 raise DaprConnectionError(message="Simulated failure")
 
         for i in range(max_retries):
-            delay = base_delay * (2 ** i)
+            delay = base_delay * (2**i)
             delays.append(delay)
 
         for i in range(1, len(delays)):

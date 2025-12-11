@@ -4,13 +4,12 @@
 **Validates: Requirements 23.1, 23.5, 23.6**
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from starlette.responses import JSONResponse
 
-from infrastructure.idempotency.errors import IdempotencyKeyConflictError
-from infrastructure.idempotency.handler import IdempotencyConfig, IdempotencyRecord
+from infrastructure.idempotency.handler import IdempotencyConfig
 from infrastructure.idempotency.middleware import IdempotencyMiddleware
 
 
@@ -122,17 +121,13 @@ class TestIdempotencyMiddlewareHelpers:
     def test_is_required_true(self) -> None:
         """Test is_required for required endpoint."""
         app = MagicMock()
-        middleware = IdempotencyMiddleware(
-            app, required_endpoints={"/api/payments"}
-        )
+        middleware = IdempotencyMiddleware(app, required_endpoints={"/api/payments"})
         assert middleware._is_required("/api/payments/123") is True
 
     def test_is_required_false(self) -> None:
         """Test is_required for non-required endpoint."""
         app = MagicMock()
-        middleware = IdempotencyMiddleware(
-            app, required_endpoints={"/api/payments"}
-        )
+        middleware = IdempotencyMiddleware(app, required_endpoints={"/api/payments"})
         assert middleware._is_required("/api/users") is False
 
     def test_get_handler_from_init(self) -> None:
@@ -227,9 +222,7 @@ class TestIdempotencyMiddlewareDispatch:
         app = MagicMock()
         handler = MagicMock()
         handler._config = IdempotencyConfig()
-        middleware = IdempotencyMiddleware(
-            app, handler=handler, required_endpoints={"/api/payments"}
-        )
+        middleware = IdempotencyMiddleware(app, handler=handler, required_endpoints={"/api/payments"})
         request = MagicMock()
         request.method = "POST"
         request.url.path = "/api/payments"

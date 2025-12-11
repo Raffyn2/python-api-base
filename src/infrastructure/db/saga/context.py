@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-@dataclass
+@dataclass(slots=True)
 class SagaContext:
     """Context passed between saga steps.
 

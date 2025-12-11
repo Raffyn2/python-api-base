@@ -80,13 +80,15 @@ item_name_strategy = st.text(
     max_size=100,
 )
 
-category_strategy = st.sampled_from([
-    "electronics",
-    "clothing",
-    "food",
-    "books",
-    "other",
-])
+category_strategy = st.sampled_from(
+    [
+        "electronics",
+        "clothing",
+        "food",
+        "books",
+        "other",
+    ]
+)
 
 price_strategy = st.floats(min_value=0.01, max_value=10000.0, allow_nan=False)
 
@@ -121,12 +123,7 @@ class TestGraphQLSingleEntityQuery:
             from interface.graphql.schema import ItemExampleType
 
             # Get field names from strawberry type
-            fields = {
-                f.name
-                for f in strawberry.type(
-                    ItemExampleType
-                ).__strawberry_definition__.fields
-            }
+            fields = {f.name for f in strawberry.type(ItemExampleType).__strawberry_definition__.fields}
             required_fields = {
                 "id",
                 "name",
@@ -139,9 +136,7 @@ class TestGraphQLSingleEntityQuery:
                 "updated_at",
             }
 
-            assert required_fields.issubset(fields), (
-                f"Missing fields: {required_fields - fields}"
-            )
+            assert required_fields.issubset(fields), f"Missing fields: {required_fields - fields}"
         except ImportError:
             pytest.skip("strawberry-graphql not installed")
 
@@ -152,12 +147,7 @@ class TestGraphQLSingleEntityQuery:
 
             from interface.graphql.schema import PedidoExampleType
 
-            fields = {
-                f.name
-                for f in strawberry.type(
-                    PedidoExampleType
-                ).__strawberry_definition__.fields
-            }
+            fields = {f.name for f in strawberry.type(PedidoExampleType).__strawberry_definition__.fields}
             required_fields = {
                 "id",
                 "customer_id",
@@ -169,9 +159,7 @@ class TestGraphQLSingleEntityQuery:
                 "cancelled_at",
             }
 
-            assert required_fields.issubset(fields), (
-                f"Missing fields: {required_fields - fields}"
-            )
+            assert required_fields.issubset(fields), f"Missing fields: {required_fields - fields}"
         except ImportError:
             pytest.skip("strawberry-graphql not installed")
 
@@ -217,17 +205,10 @@ class TestGraphQLPagination:
 
             from interface.graphql.schema import ItemConnection
 
-            fields = {
-                f.name
-                for f in strawberry.type(
-                    ItemConnection
-                ).__strawberry_definition__.fields
-            }
+            fields = {f.name for f in strawberry.type(ItemConnection).__strawberry_definition__.fields}
             required_fields = {"edges", "page_info", "total_count"}
 
-            assert required_fields.issubset(fields), (
-                f"Missing fields: {required_fields - fields}"
-            )
+            assert required_fields.issubset(fields), f"Missing fields: {required_fields - fields}"
         except ImportError:
             pytest.skip("strawberry-graphql not installed")
 
@@ -238,17 +219,10 @@ class TestGraphQLPagination:
 
             from interface.graphql.schema import PedidoConnection
 
-            fields = {
-                f.name
-                for f in strawberry.type(
-                    PedidoConnection
-                ).__strawberry_definition__.fields
-            }
+            fields = {f.name for f in strawberry.type(PedidoConnection).__strawberry_definition__.fields}
             required_fields = {"edges", "page_info", "total_count"}
 
-            assert required_fields.issubset(fields), (
-                f"Missing fields: {required_fields - fields}"
-            )
+            assert required_fields.issubset(fields), f"Missing fields: {required_fields - fields}"
         except ImportError:
             pytest.skip("strawberry-graphql not installed")
 
@@ -259,10 +233,7 @@ class TestGraphQLPagination:
 
             from interface.graphql.schema import PageInfoType
 
-            fields = {
-                f.name
-                for f in strawberry.type(PageInfoType).__strawberry_definition__.fields
-            }
+            fields = {f.name for f in strawberry.type(PageInfoType).__strawberry_definition__.fields}
             required_fields = {
                 "has_next_page",
                 "has_previous_page",
@@ -270,9 +241,7 @@ class TestGraphQLPagination:
                 "end_cursor",
             }
 
-            assert required_fields.issubset(fields), (
-                f"Missing fields: {required_fields - fields}"
-            )
+            assert required_fields.issubset(fields), f"Missing fields: {required_fields - fields}"
         except ImportError:
             pytest.skip("strawberry-graphql not installed")
 
@@ -335,17 +304,10 @@ class TestGraphQLCreateMutation:
 
             from interface.graphql.schema import ItemCreateInput
 
-            fields = {
-                f.name
-                for f in strawberry.input(
-                    ItemCreateInput
-                ).__strawberry_definition__.fields
-            }
+            fields = {f.name for f in strawberry.input(ItemCreateInput).__strawberry_definition__.fields}
             required_fields = {"name", "category", "price"}
 
-            assert required_fields.issubset(fields), (
-                f"Missing fields: {required_fields - fields}"
-            )
+            assert required_fields.issubset(fields), f"Missing fields: {required_fields - fields}"
         except ImportError:
             pytest.skip("strawberry-graphql not installed")
 
@@ -356,17 +318,10 @@ class TestGraphQLCreateMutation:
 
             from interface.graphql.schema import ItemMutationResult
 
-            fields = {
-                f.name
-                for f in strawberry.type(
-                    ItemMutationResult
-                ).__strawberry_definition__.fields
-            }
+            fields = {f.name for f in strawberry.type(ItemMutationResult).__strawberry_definition__.fields}
             required_fields = {"success", "item", "error"}
 
-            assert required_fields.issubset(fields), (
-                f"Missing fields: {required_fields - fields}"
-            )
+            assert required_fields.issubset(fields), f"Missing fields: {required_fields - fields}"
         except ImportError:
             pytest.skip("strawberry-graphql not installed")
 
@@ -399,17 +354,10 @@ class TestGraphQLUpdateMutation:
 
             from interface.graphql.schema import ItemUpdateInput
 
-            fields = {
-                f.name
-                for f in strawberry.input(
-                    ItemUpdateInput
-                ).__strawberry_definition__.fields
-            }
+            fields = {f.name for f in strawberry.input(ItemUpdateInput).__strawberry_definition__.fields}
             expected_fields = {"name", "description", "category", "price", "quantity"}
 
-            assert expected_fields.issubset(fields), (
-                f"Missing fields: {expected_fields - fields}"
-            )
+            assert expected_fields.issubset(fields), f"Missing fields: {expected_fields - fields}"
         except ImportError:
             pytest.skip("strawberry-graphql not installed")
 
@@ -442,17 +390,10 @@ class TestGraphQLDeleteMutation:
 
             from interface.graphql.schema import MutationResult
 
-            fields = {
-                f.name
-                for f in strawberry.type(
-                    MutationResult
-                ).__strawberry_definition__.fields
-            }
+            fields = {f.name for f in strawberry.type(MutationResult).__strawberry_definition__.fields}
             required_fields = {"success", "message"}
 
-            assert required_fields.issubset(fields), (
-                f"Missing fields: {required_fields - fields}"
-            )
+            assert required_fields.issubset(fields), f"Missing fields: {required_fields - fields}"
         except ImportError:
             pytest.skip("strawberry-graphql not installed")
 
@@ -485,16 +426,9 @@ class TestGraphQLConfirmPedido:
 
             from interface.graphql.schema import PedidoMutationResult
 
-            fields = {
-                f.name
-                for f in strawberry.type(
-                    PedidoMutationResult
-                ).__strawberry_definition__.fields
-            }
+            fields = {f.name for f in strawberry.type(PedidoMutationResult).__strawberry_definition__.fields}
             required_fields = {"success", "pedido", "error"}
 
-            assert required_fields.issubset(fields), (
-                f"Missing fields: {required_fields - fields}"
-            )
+            assert required_fields.issubset(fields), f"Missing fields: {required_fields - fields}"
         except ImportError:
             pytest.skip("strawberry-graphql not installed")

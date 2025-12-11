@@ -7,7 +7,7 @@ from typing import Any
 from application.services.feature_flags.core import FlagStatus
 
 
-@dataclass
+@dataclass(slots=True)
 class FlagConfig:
     """Feature flag configuration.
 

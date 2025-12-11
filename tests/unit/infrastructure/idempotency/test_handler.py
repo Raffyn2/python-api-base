@@ -151,12 +151,8 @@ class TestComputeRequestHash:
         assert hash1 != hash2
 
     def test_content_type_affects_hash(self) -> None:
-        hash1 = compute_request_hash(
-            "POST", "/api/users", b'{"name": "test"}', "application/json"
-        )
-        hash2 = compute_request_hash(
-            "POST", "/api/users", b'{"name": "test"}', "text/plain"
-        )
+        hash1 = compute_request_hash("POST", "/api/users", b'{"name": "test"}', "application/json")
+        hash2 = compute_request_hash("POST", "/api/users", b'{"name": "test"}', "text/plain")
         assert hash1 != hash2
 
     def test_none_content_type(self) -> None:

@@ -49,9 +49,7 @@ class UserReadDTO:
             "is_verified": self.is_verified,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "last_login_at": self.last_login_at.isoformat()
-            if self.last_login_at
-            else None,
+            "last_login_at": self.last_login_at.isoformat() if self.last_login_at else None,
             "role_names": list(self.role_names),
             "permission_count": self.permission_count,
         }
@@ -120,11 +118,7 @@ class UserActivityReadDTO:
         return {
             "user_id": self.user_id,
             "total_logins": self.total_logins,
-            "last_login_at": self.last_login_at.isoformat()
-            if self.last_login_at
-            else None,
-            "last_activity_at": self.last_activity_at.isoformat()
-            if self.last_activity_at
-            else None,
+            "last_login_at": self.last_login_at.isoformat() if self.last_login_at else None,
+            "last_activity_at": self.last_activity_at.isoformat() if self.last_activity_at else None,
             "active_sessions": self.active_sessions,
         }

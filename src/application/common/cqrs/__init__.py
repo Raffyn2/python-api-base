@@ -6,6 +6,7 @@ Provides Command Query Responsibility Segregation pattern implementation:
 - EventBus: Publishes domain events to subscribers
 
 **Architecture: CQRS Pattern**
+**Refactored: 2025 - Improved exports, added new type aliases**
 """
 
 # Re-export from bus module (main façade)
@@ -14,40 +15,50 @@ from application.common.cqrs.bus import (
     Command,
     CommandBus,
     CommandHandler,
+    CommandHandlerFunc,
     ConflictError,
+    CQRSError,
     EventHandler,
     EventHandlerError,
     ForbiddenError,
+    HandlerAlreadyRegisteredError,
     HandlerNotFoundError,
+    MiddlewareError,
+    MiddlewareFunc,
     NotFoundError,
     Query,
     QueryBus,
     QueryHandler,
+    QueryHandlerFunc,
     TypedEventBus,
     UnauthorizedError,
     ValidationError,
 )
-from application.common.cqrs.commands import MiddlewareFunc
 
 __all__ = [
     # Exceptions
     "ApplicationError",
+    "CQRSError",
     # Command Bus
     "Command",
     "CommandBus",
     "CommandHandler",
+    "CommandHandlerFunc",
     "ConflictError",
     # Event Bus
     "EventHandler",
     "EventHandlerError",
     "ForbiddenError",
+    "HandlerAlreadyRegisteredError",
     "HandlerNotFoundError",
+    "MiddlewareError",
     "MiddlewareFunc",
     "NotFoundError",
     # Query Bus
     "Query",
     "QueryBus",
     "QueryHandler",
+    "QueryHandlerFunc",
     "TypedEventBus",
     "UnauthorizedError",
     "ValidationError",

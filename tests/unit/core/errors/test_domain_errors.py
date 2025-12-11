@@ -6,7 +6,7 @@ Tests domain error creation, message formatting, and serialization.
 **Requirements: 3.3**
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 import pytest
 
@@ -38,9 +38,7 @@ class TestErrorContext:
 
     def test_custom_values(self) -> None:
         """Test ErrorContext with custom values."""
-        ctx = ErrorContext(
-            correlation_id="test-123", request_path="/api/users"
-        )
+        ctx = ErrorContext(correlation_id="test-123", request_path="/api/users")
 
         assert ctx.correlation_id == "test-123"
         assert ctx.request_path == "/api/users"
@@ -91,9 +89,7 @@ class TestAppError:
     def test_with_context(self) -> None:
         """Test AppError with custom context."""
         ctx = ErrorContext(correlation_id="custom-123")
-        error = AppError(
-            message="Test error", error_code="TEST_ERROR", context=ctx
-        )
+        error = AppError(message="Test error", error_code="TEST_ERROR", context=ctx)
 
         assert error.correlation_id == "custom-123"
 
@@ -215,9 +211,7 @@ class TestBusinessRuleViolationError:
 
     def test_creation(self) -> None:
         """Test BusinessRuleViolationError creation."""
-        error = BusinessRuleViolationError(
-            rule="MAX_ITEMS", message="Cannot exceed 100 items"
-        )
+        error = BusinessRuleViolationError(rule="MAX_ITEMS", message="Cannot exceed 100 items")
 
         assert "MAX_ITEMS" in error.message
         assert "Cannot exceed 100 items" in error.message

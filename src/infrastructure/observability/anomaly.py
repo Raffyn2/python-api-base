@@ -7,14 +7,15 @@ statistical methods for automatic problem detection.
 **Validates: Requirements 7.3**
 """
 
-import logging
 import math
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Protocol, runtime_checkable
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class AnomalyType(Enum):
@@ -45,7 +46,7 @@ class DataPoint:
     labels: dict[str, str] = field(default_factory=dict)
 
 
-@dataclass
+@dataclass(slots=True)
 class Anomaly:
     """A detected anomaly."""
 
@@ -66,7 +67,7 @@ class Anomaly:
         return abs(self.value - self.expected_value) / abs(self.expected_value) * 100
 
 
-@dataclass
+@dataclass(slots=True)
 class AnomalyConfig:
     """Configuration for anomaly detection."""
 
@@ -101,14 +102,12 @@ class LogAnomalyHandler:
         """Log the anomaly."""
         logger.warning(
             "Anomaly detected",
-            extra={
-                "severity": anomaly.severity.value,
-                "metric_name": anomaly.metric_name,
-                "anomaly_type": anomaly.anomaly_type.value,
-                "value": anomaly.value,
-                "expected_value": anomaly.expected_value,
-                "deviation_percent": anomaly.deviation_percent,
-            },
+            severity=anomaly.severity.value,
+            metric_name=anomaly.metric_name,
+            anomaly_type=anomaly.anomaly_type.value,
+            value=anomaly.value,
+            expected_value=anomaly.expected_value,
+            deviation_percent=anomaly.deviation_percent,
         )
 
 
@@ -176,6 +175,10 @@ class StatisticalAnalyzer:
 class AnomalyDetector:
     """Detects anomalies in metric data."""
 
+    # Maximum data points per metric to prevent memory exhaustion
+    MAX_DATA_POINTS_PER_METRIC: int = 10000
+    MAX_METRICS: int = 1000
+
     def __init__(
         self,
         config: AnomalyConfig | None = None,
@@ -186,21 +189,30 @@ class AnomalyDetector:
         self._data: dict[str, list[DataPoint]] = {}
         self._stats = StatisticalAnalyzer()
 
-    async def record(
-        self, metric_name: str, value: float, labels: dict[str, str] | None = None
-    ) -> Anomaly | None:
+    async def record(self, metric_name: str, value: float, labels: dict[str, str] | None = None) -> Anomaly | None:
         """Record a data point and check for anomalies."""
+        # Prevent unbounded metric growth (DoS protection)
+        if metric_name not in self._data and len(self._data) >= self.MAX_METRICS:
+            logger.warning(
+                "Max metrics limit reached, dropping new metric",
+                metric_name=metric_name,
+                max_metrics=self.MAX_METRICS,
+            )
+            return None
+
         point = DataPoint(value=value, timestamp=datetime.now(UTC), labels=labels or {})
 
         if metric_name not in self._data:
             self._data[metric_name] = []
         self._data[metric_name].append(point)
 
-        # Trim old data
+        # Trim old data by time
         cutoff = datetime.now(UTC) - timedelta(hours=24)
-        self._data[metric_name] = [
-            p for p in self._data[metric_name] if p.timestamp > cutoff
-        ]
+        self._data[metric_name] = [p for p in self._data[metric_name] if p.timestamp > cutoff]
+
+        # Enforce max data points per metric (memory protection)
+        if len(self._data[metric_name]) > self.MAX_DATA_POINTS_PER_METRIC:
+            self._data[metric_name] = self._data[metric_name][-self.MAX_DATA_POINTS_PER_METRIC :]
 
         # Check for anomalies
         anomaly = self._detect_anomaly(metric_name, point)
@@ -243,9 +255,7 @@ class AnomalyDetector:
             normalized_slope = slope / (mean if mean != 0 else 1)
 
             if abs(normalized_slope) > self._config.trend_threshold:
-                anomaly_type = (
-                    AnomalyType.TREND_UP if slope > 0 else AnomalyType.TREND_DOWN
-                )
+                anomaly_type = AnomalyType.TREND_UP if slope > 0 else AnomalyType.TREND_DOWN
                 return Anomaly(
                     anomaly_type=anomaly_type,
                     severity=AnomalySeverity.WARNING,

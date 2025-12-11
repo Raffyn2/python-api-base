@@ -26,12 +26,14 @@ from interface.api.middleware.request_logger import (
 method_strategy = st.sampled_from(["GET", "POST", "PUT", "PATCH", "DELETE"])
 
 # Strategy for paths
-path_strategy = st.sampled_from([
-    "/api/v1/items",
-    "/api/v1/users",
-    "/health/ready",
-    "/api/v1/auth/login",
-])
+path_strategy = st.sampled_from(
+    [
+        "/api/v1/items",
+        "/api/v1/users",
+        "/health/ready",
+        "/api/v1/auth/login",
+    ]
+)
 
 # Strategy for request IDs
 request_id_strategy = st.text(
@@ -50,14 +52,16 @@ sensitive_field_strategy = st.sampled_from(list(SENSITIVE_FIELDS))
 sensitive_header_strategy = st.sampled_from(list(SENSITIVE_HEADERS))
 
 # Strategy for non-sensitive field names
-safe_field_strategy = st.sampled_from([
-    "name",
-    "email",
-    "id",
-    "created_at",
-    "status",
-    "count",
-])
+safe_field_strategy = st.sampled_from(
+    [
+        "name",
+        "email",
+        "id",
+        "created_at",
+        "status",
+        "count",
+    ]
+)
 
 
 class TestRequestLoggingCompleteness:
@@ -69,9 +73,7 @@ class TestRequestLoggingCompleteness:
         method=method_strategy,
         path=path_strategy,
     )
-    def test_request_log_contains_required_fields(
-        self, request_id: str, method: str, path: str
-    ) -> None:
+    def test_request_log_contains_required_fields(self, request_id: str, method: str, path: str) -> None:
         """
         **Feature: api-base-improvements, Property 23: Request logging completeness**
         **Validates: Requirements 9.1**
@@ -100,9 +102,7 @@ class TestRequestLoggingCompleteness:
         method=method_strategy,
         path=path_strategy,
     )
-    def test_request_log_includes_optional_fields(
-        self, request_id: str, method: str, path: str
-    ) -> None:
+    def test_request_log_includes_optional_fields(self, request_id: str, method: str, path: str) -> None:
         """
         **Feature: api-base-improvements, Property 23: Request logging completeness**
         **Validates: Requirements 9.1**
@@ -134,9 +134,7 @@ class TestRequestLoggingCompleteness:
         status_code=status_code_strategy,
         duration=st.floats(min_value=0.1, max_value=10000.0),
     )
-    def test_response_log_contains_required_fields(
-        self, request_id: str, status_code: int, duration: float
-    ) -> None:
+    def test_response_log_contains_required_fields(self, request_id: str, status_code: int, duration: float) -> None:
         """
         **Feature: api-base-improvements, Property 23: Request logging completeness**
         **Validates: Requirements 9.1**
@@ -312,19 +310,14 @@ class TestRequestIDCorrelation:
         )
 
         assert request_entry.request_id == response_entry.request_id
-        assert (
-            request_entry.to_dict()["request_id"]
-            == response_entry.to_dict()["request_id"]
-        )
+        assert request_entry.to_dict()["request_id"] == response_entry.to_dict()["request_id"]
 
     @settings(max_examples=50, deadline=None)
     @given(
         request_id1=request_id_strategy,
         request_id2=request_id_strategy,
     )
-    def test_different_requests_have_different_ids(
-        self, request_id1: str, request_id2: str
-    ) -> None:
+    def test_different_requests_have_different_ids(self, request_id1: str, request_id2: str) -> None:
         """
         **Feature: api-base-improvements, Property 25: Request ID correlation**
         **Validates: Requirements 9.5**

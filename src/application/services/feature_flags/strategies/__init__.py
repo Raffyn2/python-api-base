@@ -24,23 +24,22 @@ from application.services.feature_flags.strategies.targeting import (
 )
 
 __all__ = [
-    # Base
-    "EvaluationStrategy",
-    "FlagEvaluationResult",
+    # Custom rule
+    "CustomRuleStrategy",
+    # Fallback
+    "DefaultValueStrategy",
     # Status strategies
     "DisabledStrategy",
     "EnabledStrategy",
-    # Custom rule
-    "CustomRuleStrategy",
-    # Targeting
-    "UserTargetingStrategy",
+    # Base
+    "EvaluationStrategy",
+    "FlagEvaluationResult",
     "GroupTargetingStrategy",
     # Rollout
     "PercentageRolloutStrategy",
-    # Fallback
-    "DefaultValueStrategy",
     # Chain
     "StrategyChain",
+    # Targeting
+    "UserTargetingStrategy",
     "create_default_strategy_chain",
 ]
-

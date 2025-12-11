@@ -31,7 +31,7 @@ class AddItemToPedidoCommand(BaseCommand):
     pedido_id: str
     item_id: str
     quantity: int = 1
-    discount: Decimal = field(default_factory=lambda: Decimal("0"))
+    discount: Decimal = field(default_factory=lambda: Decimal(0))
 
 
 @dataclass(frozen=True, kw_only=True)

@@ -2,8 +2,6 @@
 
 from dataclasses import dataclass
 
-import pytest
-
 from src.application.common.middleware.validation.validators import (
     RangeValidator,
     RequiredFieldValidator,

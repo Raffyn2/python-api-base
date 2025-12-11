@@ -9,8 +9,8 @@ import types
 from collections.abc import Callable
 from typing import Any, Union, get_args, get_origin, get_type_hints
 
-from core.di.resolution.exceptions import DependencyResolutionError, InvalidFactoryError
 from core.di.lifecycle import Registration
+from core.di.resolution.exceptions import DependencyResolutionError, InvalidFactoryError
 
 
 class Resolver:
@@ -87,10 +87,7 @@ class Resolver:
 
         # Get type hints for auto-wiring
         try:
-            if inspect.isclass(factory):
-                hints = get_type_hints(factory.__init__)
-            else:
-                hints = get_type_hints(factory)
+            hints = get_type_hints(factory.__init__) if inspect.isclass(factory) else get_type_hints(factory)
         except Exception as e:
             # If we can't get hints, try to call without args
             try:

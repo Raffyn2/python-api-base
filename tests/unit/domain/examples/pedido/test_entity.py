@@ -49,7 +49,7 @@ class TestPedidoItemExample:
         assert item.item_name == "Widget"
         assert item.quantity == 2
         assert item.unit_price.amount == Decimal("50.00")
-        assert item.discount == Decimal("0")
+        assert item.discount == Decimal(0)
 
     def test_create_item_with_discount(self) -> None:
         item = PedidoItemExample.create(
@@ -58,9 +58,9 @@ class TestPedidoItemExample:
             item_name="Widget",
             quantity=1,
             unit_price=Money(Decimal("100.00")),
-            discount=Decimal("10"),
+            discount=Decimal(10),
         )
-        assert item.discount == Decimal("10")
+        assert item.discount == Decimal(10)
 
     def test_create_item_invalid_quantity(self) -> None:
         with pytest.raises(ValueError, match="Quantity must be positive"):
@@ -90,7 +90,7 @@ class TestPedidoItemExample:
                 item_name="Widget",
                 quantity=1,
                 unit_price=Money(Decimal("50.00")),
-                discount=Decimal("-5"),
+                discount=Decimal(-5),
             )
 
     def test_create_item_invalid_discount_over_100(self) -> None:
@@ -101,7 +101,7 @@ class TestPedidoItemExample:
                 item_name="Widget",
                 quantity=1,
                 unit_price=Money(Decimal("50.00")),
-                discount=Decimal("101"),
+                discount=Decimal(101),
             )
 
     def test_subtotal_calculation(self) -> None:
@@ -121,7 +121,7 @@ class TestPedidoItemExample:
             item_name="Widget",
             quantity=2,
             unit_price=Money(Decimal("100.00")),
-            discount=Decimal("10"),
+            discount=Decimal(10),
         )
         # Subtotal = 200, 10% discount = 20
         assert item.discount_amount.amount == Decimal("20.00")
@@ -133,7 +133,7 @@ class TestPedidoItemExample:
             item_name="Widget",
             quantity=2,
             unit_price=Money(Decimal("100.00")),
-            discount=Decimal("10"),
+            discount=Decimal(10),
         )
         # Subtotal = 200, discount = 20, total = 180
         assert item.total.amount == Decimal("180.00")
@@ -301,7 +301,7 @@ class TestPedidoExampleRemoveItem:
 class TestPedidoExampleStatusTransitions:
     """Tests for order status transitions."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def pedido_with_item(self) -> PedidoExample:
         pedido = PedidoExample.create(
             customer_id="cust-123",
@@ -414,7 +414,7 @@ class TestPedidoExampleCalculations:
             item_name="Widget",
             quantity=2,
             unit_price=Money(Decimal("100.00")),
-            discount=Decimal("10"),
+            discount=Decimal(10),
         )
         # Subtotal = 200, discount = 20, total = 180
         assert pedido.total.amount == Decimal("180.00")
@@ -443,8 +443,8 @@ class TestPedidoExampleCalculations:
             customer_id="cust-123",
             customer_name="John Doe",
         )
-        assert pedido.subtotal.amount == Decimal("0")
-        assert pedido.total.amount == Decimal("0")
+        assert pedido.subtotal.amount == Decimal(0)
+        assert pedido.total.amount == Decimal(0)
 
 
 class TestPedidoExampleProperties:

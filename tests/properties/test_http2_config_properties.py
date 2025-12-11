@@ -29,21 +29,21 @@ from core.shared.http2_config import (
 )
 
 # Strategies
-content_types = st.sampled_from([
-    "text/css",
-    "application/javascript",
-    "text/javascript",
-    "image/png",
-    "image/jpeg",
-    "font/woff2",
-    "application/json",
-    "text/html",
-])
+content_types = st.sampled_from(
+    [
+        "text/css",
+        "application/javascript",
+        "text/javascript",
+        "image/png",
+        "image/jpeg",
+        "font/woff2",
+        "application/json",
+        "text/html",
+    ]
+)
 
 paths = st.text(
-    alphabet=st.characters(
-        whitelist_categories=("L", "N"), whitelist_characters="/-_."
-    ),
+    alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="/-_."),
     min_size=1,
     max_size=100,
 ).map(lambda s: "/" + s.lstrip("/"))
@@ -81,9 +81,7 @@ class TestPushResource:
 
     @given(path=paths, content_type=content_types, priority=push_priorities)
     @settings(max_examples=50)
-    def test_link_header_contains_path(
-        self, path: str, content_type: str, priority: PushPriority
-    ) -> None:
+    def test_link_header_contains_path(self, path: str, content_type: str, priority: PushPriority) -> None:
         """Link header always contains the resource path."""
         resource = PushResource(path=path, content_type=content_type, priority=priority)
         header = resource.to_link_header()
@@ -130,9 +128,7 @@ class TestMultiplexConfig:
         frame_size=valid_frame_size,
     )
     @settings(max_examples=50)
-    def test_invalid_concurrent_streams(
-        self, max_concurrent: int, window_size: int, frame_size: int
-    ) -> None:
+    def test_invalid_concurrent_streams(self, max_concurrent: int, window_size: int, frame_size: int) -> None:
         """Invalid max_concurrent_streams produces error."""
         config = MultiplexConfig(
             max_concurrent_streams=max_concurrent,
@@ -188,9 +184,7 @@ class TestHTTP2Config:
         priority=push_priorities,
     )
     @settings(max_examples=100)
-    def test_add_push_resource(
-        self, path: str, content_type: str, priority: PushPriority
-    ) -> None:
+    def test_add_push_resource(self, path: str, content_type: str, priority: PushPriority) -> None:
         """Adding push resource increases count."""
         config = HTTP2Config()
         initial_count = len(config.push_resources)
@@ -227,9 +221,7 @@ class TestServerPushManager:
 
     @given(route=paths, resources=st.lists(push_resources, min_size=1, max_size=5))
     @settings(max_examples=100)
-    def test_register_and_retrieve(
-        self, route: str, resources: list[PushResource]
-    ) -> None:
+    def test_register_and_retrieve(self, route: str, resources: list[PushResource]) -> None:
         """Registered resources can be retrieved."""
         config = HTTP2Config(server_push_enabled=True)
         manager = ServerPushManager(config)
@@ -239,9 +231,7 @@ class TestServerPushManager:
 
     @given(route=paths, resources=st.lists(push_resources, min_size=1, max_size=5))
     @settings(max_examples=100)
-    def test_should_push_with_resources(
-        self, route: str, resources: list[PushResource]
-    ) -> None:
+    def test_should_push_with_resources(self, route: str, resources: list[PushResource]) -> None:
         """should_push returns True when resources registered."""
         config = HTTP2Config(server_push_enabled=True)
         manager = ServerPushManager(config)
@@ -258,9 +248,7 @@ class TestServerPushManager:
 
     @given(route=paths, resources=st.lists(push_resources, min_size=1, max_size=5))
     @settings(max_examples=100)
-    def test_link_header_not_none(
-        self, route: str, resources: list[PushResource]
-    ) -> None:
+    def test_link_header_not_none(self, route: str, resources: list[PushResource]) -> None:
         """Link header is not None when resources exist."""
         config = HTTP2Config(server_push_enabled=True)
         manager = ServerPushManager(config)
@@ -338,9 +326,7 @@ class TestFlowController:
         size=st.integers(min_value=1, max_value=500),
     )
     @settings(max_examples=100)
-    def test_consume_reduces_window(
-        self, initial: int, stream_id: int, size: int
-    ) -> None:
+    def test_consume_reduces_window(self, initial: int, stream_id: int, size: int) -> None:
         """Consuming reduces window size."""
         assume(size <= initial)
         controller = FlowController(initial)

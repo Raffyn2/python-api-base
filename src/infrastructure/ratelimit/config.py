@@ -16,7 +16,7 @@ class RateLimitAlgorithm(Enum):
 
     SLIDING_WINDOW = "sliding_window"
     FIXED_WINDOW = "fixed_window"
-    TOKEN_BUCKET = "token_bucket"  # noqa: S105 - Enum value, not password
+    TOKEN_BUCKET = "token_bucket"
     LEAKY_BUCKET = "leaky_bucket"
 
 
@@ -68,9 +68,7 @@ class RateLimitConfig:
     algorithm: RateLimitAlgorithm = RateLimitAlgorithm.SLIDING_WINDOW
     redis_url: str = "redis://localhost:6379/0"
     key_prefix: str = "ratelimit:"
-    default_limit: RateLimit = field(
-        default_factory=lambda: RateLimit(requests=100, window=timedelta(minutes=1))
-    )
+    default_limit: RateLimit = field(default_factory=lambda: RateLimit(requests=100, window=timedelta(minutes=1)))
     enabled: bool = True
 
     def get_redis_key(self, client_id: str, endpoint: str = "default") -> str:

@@ -23,8 +23,7 @@ class TestKafkaMessageRoundTrip:
             min_size=1,
             max_size=3,
         ),
-        key=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz")
-        | st.none(),
+        key=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz") | st.none(),
         headers=st.dictionaries(
             st.text(min_size=1, max_size=10, alphabet="abcdefghijklmnopqrstuvwxyz"),
             st.text(max_size=20),
@@ -32,9 +31,7 @@ class TestKafkaMessageRoundTrip:
         ),
     )
     @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow])
-    def test_message_serialization_round_trip(
-        self, payload_data: dict, key: str | None, headers: dict
-    ) -> None:
+    def test_message_serialization_round_trip(self, payload_data: dict, key: str | None, headers: dict) -> None:
         """
         *For any* valid KafkaMessage with payload and headers,
         serializing then deserializing SHALL produce equivalent message.
@@ -180,19 +177,13 @@ class TestEventPublisher:
         await publisher.publish(event, "items-events")
 
     @given(
-        entity_id=st.text(
-            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        entity_id=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
         name=st.text(min_size=1, max_size=50),
-        sku=st.text(
-            min_size=1, max_size=20, alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        ),
+        sku=st.text(min_size=1, max_size=20, alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"),
         quantity=st.integers(min_value=0, max_value=10000),
     )
     @settings(max_examples=50)
-    def test_domain_event_creation(
-        self, entity_id: str, name: str, sku: str, quantity: int
-    ) -> None:
+    def test_domain_event_creation(self, entity_id: str, name: str, sku: str, quantity: int) -> None:
         """
         *For any* valid ItemCreatedEvent data,
         creating a DomainEvent SHALL preserve all fields.
@@ -268,14 +259,10 @@ class TestKafkaConfig:
             min_size=1,
             max_size=3,
         ),
-        client_id=st.text(
-            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-"
-        ),
+        client_id=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-"),
     )
     @settings(max_examples=30)
-    def test_config_to_producer_config_preserves_servers(
-        self, bootstrap_servers: list[str], client_id: str
-    ) -> None:
+    def test_config_to_producer_config_preserves_servers(self, bootstrap_servers: list[str], client_id: str) -> None:
         """
         *For any* KafkaConfig with bootstrap_servers,
         to_producer_config SHALL include joined servers string.

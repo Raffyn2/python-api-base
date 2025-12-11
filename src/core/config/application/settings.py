@@ -54,9 +54,7 @@ class Settings(BaseSettings):
     database: Annotated[DatabaseSettings, Field(default_factory=DatabaseSettings)]
     security: Annotated[SecuritySettings, Field(default_factory=SecuritySettings)]
     redis: Annotated[RedisSettings, Field(default_factory=RedisSettings)]
-    observability: Annotated[
-        ObservabilitySettings, Field(default_factory=ObservabilitySettings)
-    ]
+    observability: Annotated[ObservabilitySettings, Field(default_factory=ObservabilitySettings)]
 
 
 @lru_cache

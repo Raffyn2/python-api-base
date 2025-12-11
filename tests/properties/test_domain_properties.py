@@ -1,4 +1,4 @@
-﻿"""Property-based tests for domain layer.
+"""Property-based tests for domain layer.
 
 **Feature: domain-code-review-fixes**
 **Feature: python-api-base-2025-validation**
@@ -23,8 +23,7 @@ from core.base.domain.value_object import (
 )
 from core.base.events.domain_event import EntityCreatedEvent
 from domain.common.value_objects import Money
-from domain.examples.item.entity import ItemExample
-from domain.examples.item.entity import Money as ItemMoney
+from domain.examples.item.entity import ItemExample, Money as ItemMoney
 
 
 class TestEntityTimestampsTimezoneAware:
@@ -48,15 +47,13 @@ class TestEntityTimestampsTimezoneAware:
         name=st.text(min_size=1, max_size=100).filter(lambda x: x.strip()),
         price=st.decimals(
             min_value=Decimal("0.01"),
-            max_value=Decimal("10000"),
+            max_value=Decimal(10000),
             allow_nan=False,
             places=2,
         ),
     )
     @settings(max_examples=50)
-    def test_item_serialization_includes_timezone(
-        self, name: str, price: Decimal
-    ) -> None:
+    def test_item_serialization_includes_timezone(self, name: str, price: Decimal) -> None:
         """ItemExample datetime serialization includes timezone info."""
         item = ItemExample.create(
             name=name,
@@ -86,9 +83,7 @@ class TestValueObjectEquality:
         currency=st.sampled_from(["USD", "EUR", "GBP", "BRL"]),
     )
     @settings(max_examples=100)
-    def test_money_equality_by_attributes(
-        self, amount: Decimal, currency: str
-    ) -> None:
+    def test_money_equality_by_attributes(self, amount: Decimal, currency: str) -> None:
         """Two Money objects with same attributes are equal."""
         money1 = Money(amount, currency)
         money2 = Money(amount, currency)
@@ -113,9 +108,7 @@ class TestValueObjectEquality:
         ),
     )
     @settings(max_examples=100)
-    def test_money_inequality_different_amounts(
-        self, amount1: Decimal, amount2: Decimal
-    ) -> None:
+    def test_money_inequality_different_amounts(self, amount1: Decimal, amount2: Decimal) -> None:
         """Two Money objects with different amounts are not equal."""
         money1 = Money(amount1, "USD")
         money2 = Money(amount2, "USD")
@@ -245,9 +238,7 @@ class TestValueObjectImmutability:
         st.integers(),
     )
     @settings(max_examples=100)
-    def test_frozen_dataclass_raises_on_modification(
-        self, value: str, number: int
-    ) -> None:
+    def test_frozen_dataclass_raises_on_modification(self, value: str, number: int) -> None:
         """Frozen dataclass value objects raise error on modification."""
 
         @dataclass(frozen=True)

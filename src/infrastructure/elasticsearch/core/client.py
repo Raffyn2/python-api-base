@@ -23,6 +23,10 @@ from infrastructure.elasticsearch.index_operations import (
 from infrastructure.elasticsearch.search_operations import SearchOperations
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+    from elasticsearch import AsyncElasticsearch
+
     from infrastructure.elasticsearch.config import (
         ElasticsearchClientConfig,
     )
@@ -51,12 +55,13 @@ class ElasticsearchClient:
             config: Elasticsearch client configuration
         """
         self._connection = ElasticsearchConnection(config)
-        self._index_ops = IndexOperations(self._connection._get_client)
-        self._doc_ops = DocumentOperations(self._connection._get_client)
-        self._search_ops = SearchOperations(self._connection._get_client)
+        client_getter = self._connection.get_client_getter()
+        self._index_ops = IndexOperations(client_getter)
+        self._doc_ops = DocumentOperations(client_getter)
+        self._search_ops = SearchOperations(client_getter)
 
     @property
-    def client(self):
+    def client(self) -> AsyncElasticsearch:
         """Get the raw Elasticsearch client."""
         return self._connection.client
 
@@ -175,9 +180,7 @@ class ElasticsearchClient:
         aggs: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Search documents."""
-        return await self._search_ops.search(
-            index, query, size, from_, sort, source, aggs
-        )
+        return await self._search_ops.search(index, query, size, from_, sort, source, aggs)
 
     async def count(
         self,
@@ -193,7 +196,7 @@ class ElasticsearchClient:
         query: dict[str, Any] | None = None,
         size: int = 100,
         scroll: str = "5m",
-    ):
+    ) -> AsyncIterator[dict[str, Any]]:
         """Scroll through all documents matching query."""
         async for hit in self._search_ops.scroll(index, query, size, scroll):
             yield hit

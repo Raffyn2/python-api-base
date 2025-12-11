@@ -5,13 +5,14 @@
 **Refactored: Split from providers.py for one-class-per-file compliance**
 """
 
-import logging
 from datetime import timedelta
+
+import structlog
 
 from infrastructure.auth.jwt.exceptions import InvalidKeyError
 from infrastructure.auth.jwt.protocols import BaseJWTProvider
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class HS256Provider(BaseJWTProvider):
@@ -63,7 +64,7 @@ class HS256Provider(BaseJWTProvider):
 
         if not secret_key or len(secret_key) < 32:
             raise InvalidKeyError(
-                "HS256 secret_key must be at least 32 characters for security"
+                "HS256 secret_key must be at least 32 characters for security",
             )
 
         self._secret_key = secret_key
@@ -73,11 +74,9 @@ class HS256Provider(BaseJWTProvider):
                 "SECURITY WARNING: HS256 algorithm used in production mode. "
                 "HS256 is a symmetric algorithm and NOT recommended for production. "
                 "Consider using RS256 or ES256 for enhanced security.",
-                extra={
-                    "algorithm": "HS256",
-                    "operation": "INIT",
-                    "security_level": "LOW",
-                },
+                algorithm="HS256",
+                operation="INIT",
+                security_level="LOW",
             )
 
     @property

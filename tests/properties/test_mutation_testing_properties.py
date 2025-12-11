@@ -27,9 +27,7 @@ from core.shared.mutation_testing import (
 
 # Strategies
 file_paths = st.text(
-    alphabet=st.characters(
-        whitelist_categories=("L", "N"), whitelist_characters="/_-."
-    ),
+    alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="/_-."),
     min_size=1,
     max_size=50,
 ).map(lambda s: s + ".py")
@@ -201,9 +199,7 @@ class TestMutationReport:
         )
     )
     @settings(max_examples=100)
-    def test_add_mutant_updates_modules(
-        self, mutants: list[tuple[str, int, MutantStatus]]
-    ) -> None:
+    def test_add_mutant_updates_modules(self, mutants: list[tuple[str, int, MutantStatus]]) -> None:
         """Adding mutants updates module scores."""
         report = MutationReport()
         for file, line, status in mutants:
@@ -219,9 +215,7 @@ class TestMutationReport:
         )
     )
     @settings(max_examples=100)
-    def test_survived_mutants_filter(
-        self, mutants: list[tuple[str, int, MutantStatus]]
-    ) -> None:
+    def test_survived_mutants_filter(self, mutants: list[tuple[str, int, MutantStatus]]) -> None:
         """survived_mutants returns only survived."""
         report = MutationReport()
         for file, line, status in mutants:
@@ -297,9 +291,7 @@ class TestMutantIdGeneration:
         replacement=code_snippets,
     )
     @settings(max_examples=100)
-    def test_id_deterministic(
-        self, file: str, line: int, operator: str, replacement: str
-    ) -> None:
+    def test_id_deterministic(self, file: str, line: int, operator: str, replacement: str) -> None:
         """Same inputs produce same ID."""
         id1 = generate_mutant_id(file, line, operator, replacement)
         id2 = generate_mutant_id(file, line, operator, replacement)
@@ -339,9 +331,7 @@ class TestMutmutCommand:
         workers=st.integers(min_value=1, max_value=8),
     )
     @settings(max_examples=100)
-    def test_command_contains_paths(
-        self, sources: list[str], tests: list[str], workers: int
-    ) -> None:
+    def test_command_contains_paths(self, sources: list[str], tests: list[str], workers: int) -> None:
         """Command contains source and test paths."""
         config = MutationConfig(
             source_paths=sources,
@@ -381,9 +371,7 @@ class TestMutationTestRunner:
         report = MutationReport()
         # Add 10 killed, 0 survived = 100% score
         for i in range(10):
-            mutant = create_mutant(
-                "test.py", i, MutationOperator.AOR, "a", "b", MutantStatus.KILLED
-            )
+            mutant = create_mutant("test.py", i, MutationOperator.AOR, "a", "b", MutantStatus.KILLED)
             report.add_mutant(mutant)
 
         # 100% score should always meet threshold

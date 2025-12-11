@@ -13,6 +13,6 @@ from infrastructure.dapr.core.middleware import DaprMiddleware
 __all__ = [
     "DaprClient",
     "DaprError",
-    "HealthCheck",
     "DaprMiddleware",
+    "HealthCheck",
 ]

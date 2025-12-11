@@ -113,9 +113,7 @@ class TestSagaContextProperties:
         ctx.set(key, "value")
         assert ctx.has(key)
 
-    @given(
-        st.dictionaries(st.text(min_size=1, max_size=20), st.integers(), max_size=10)
-    )
+    @given(st.dictionaries(st.text(min_size=1, max_size=20), st.integers(), max_size=10))
     @settings(max_examples=100)
     def test_context_clear_removes_all_results(self, values: dict[str, int]) -> None:
         """Property: clear_results removes all stored values.
@@ -208,9 +206,7 @@ class TestSagaExecutionProperties:
 
     @given(step_names())
     @settings(max_examples=50)
-    async def test_compensation_executes_in_reverse_order(
-        self, names: list[str]
-    ) -> None:
+    async def test_compensation_executes_in_reverse_order(self, names: list[str]) -> None:
         """Property: Compensation executes in reverse order of completion.
 
         **Feature: api-architecture-analysis, Property: Reverse compensation**
@@ -450,9 +446,7 @@ class TestSagaOrchestratorProperties:
 
     @given(st.integers(min_value=1, max_value=10))
     @settings(max_examples=50)
-    async def test_orchestrator_tracks_execution_history(
-        self, num_executions: int
-    ) -> None:
+    async def test_orchestrator_tracks_execution_history(self, num_executions: int) -> None:
         """Property: Orchestrator tracks all executions in history.
 
         **Feature: api-architecture-analysis, Property: Orchestrator history**
@@ -542,9 +536,7 @@ class TestSagaCompensationProperties:
 
     @given(st.integers(min_value=1, max_value=5), st.integers(min_value=0, max_value=4))
     @settings(max_examples=50)
-    async def test_only_completed_steps_are_compensated(
-        self, num_steps: int, fail_at_index: int
-    ) -> None:
+    async def test_only_completed_steps_are_compensated(self, num_steps: int, fail_at_index: int) -> None:
         """Property: Only completed steps are compensated.
 
         **Feature: code-review-refactoring, Property 3: Saga Compensation Completeness**
@@ -605,9 +597,7 @@ class TestSagaCompensationProperties:
         async def compensation(ctx: SagaContext) -> None:
             tracker.compensated.append("success")
 
-        saga = (
-            SagaBuilder(saga_name).step("success", success_action, compensation).build()
-        )
+        saga = SagaBuilder(saga_name).step("success", success_action, compensation).build()
 
         result = await saga.execute()
 

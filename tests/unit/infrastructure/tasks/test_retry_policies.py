@@ -3,8 +3,6 @@
 Tests NoRetry, FixedDelay, and ExponentialBackoff policies.
 """
 
-import pytest
-
 from infrastructure.tasks.retry import (
     DEFAULT_RETRY_POLICY,
     ExponentialBackoff,

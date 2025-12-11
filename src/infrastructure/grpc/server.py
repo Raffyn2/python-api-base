@@ -7,19 +7,20 @@ existing Clean Architecture infrastructure.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import grpc
 from grpc import aio
 from structlog import get_logger
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 logger = get_logger(__name__)
 
 
 class GRPCServer:
     """Async gRPC server with interceptor and health check support.
-    
+
     This server integrates with the existing infrastructure including
     observability, authentication, and resilience patterns.
     """
@@ -36,7 +37,7 @@ class GRPCServer:
         health_check_enabled: bool = True,
     ) -> None:
         """Initialize gRPC server.
-        
+
         Args:
             host: Server host address
             port: Server port
@@ -55,7 +56,7 @@ class GRPCServer:
         self._max_message_size = max_message_size
         self._reflection_enabled = reflection_enabled
         self._health_check_enabled = health_check_enabled
-        
+
         self._server: aio.Server | None = None
         self._servicers: list[tuple[Any, Callable[[Any, aio.Server], None]]] = []
         self._is_running = False
@@ -77,7 +78,7 @@ class GRPCServer:
         add_func: Callable[[Any, aio.Server], None],
     ) -> None:
         """Register a servicer with the server.
-        
+
         Args:
             servicer: The servicer instance
             add_func: Function to add servicer to server
@@ -90,7 +91,7 @@ class GRPCServer:
 
     def add_interceptor(self, interceptor: aio.ServerInterceptor) -> None:
         """Add an interceptor to the server.
-        
+
         Args:
             interceptor: The interceptor to add
         """
@@ -136,11 +137,11 @@ class GRPCServer:
 
         # Bind to address
         self._server.add_insecure_port(self.address)
-        
+
         await self._server.start()
         self._is_running = True
         self._shutdown_event.clear()
-        
+
         logger.info(
             "grpc_server_started",
             address=self.address,
@@ -152,7 +153,7 @@ class GRPCServer:
 
     async def stop(self, grace: float = 5.0) -> None:
         """Gracefully stop the server.
-        
+
         Args:
             grace: Grace period in seconds for pending RPCs
         """
@@ -161,16 +162,16 @@ class GRPCServer:
             return
 
         logger.info("grpc_server_stopping", grace_period=grace)
-        
+
         # Signal shutdown
         self._shutdown_event.set()
-        
+
         # Stop accepting new RPCs and wait for pending ones
         await self._server.stop(grace)
-        
+
         self._is_running = False
         self._server = None
-        
+
         logger.info("grpc_server_stopped")
 
     async def wait_for_termination(self) -> None:
@@ -183,10 +184,7 @@ class GRPCServer:
         try:
             from grpc_reflection.v1alpha import reflection
 
-            service_names = [
-                servicer.__class__.__name__
-                for servicer, _ in self._servicers
-            ]
+            service_names = [servicer.__class__.__name__ for servicer, _ in self._servicers]
             reflection.enable_server_reflection(service_names, self._server)
             logger.info("grpc_reflection_enabled", services=service_names)
         except ImportError:
@@ -198,9 +196,7 @@ class GRPCServer:
             from grpc_health.v1 import health, health_pb2_grpc
 
             health_servicer = health.HealthServicer()
-            health_pb2_grpc.add_HealthServicer_to_server(
-                health_servicer, self._server
-            )
+            health_pb2_grpc.add_HealthServicer_to_server(health_servicer, self._server)
             logger.info("grpc_health_check_enabled")
         except ImportError:
             logger.warning("grpc_health_check_not_available")
@@ -211,11 +207,11 @@ async def create_server_from_settings(
     interceptors: Sequence[aio.ServerInterceptor] | None = None,
 ) -> GRPCServer:
     """Create gRPC server from settings.
-    
+
     Args:
         settings: GRPCServerSettings instance
         interceptors: Optional list of interceptors
-        
+
     Returns:
         Configured GRPCServer instance
     """

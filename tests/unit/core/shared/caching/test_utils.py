@@ -3,8 +3,6 @@
 **Feature: test-coverage-95-percent**
 """
 
-import pytest
-
 from core.shared.caching.utils import generate_cache_key
 
 
@@ -76,6 +74,7 @@ class TestGenerateCacheKey:
 
     def test_different_functions_produce_different_keys(self) -> None:
         """Should produce different keys for different functions."""
+
         def another_function() -> None:
             pass
 

@@ -3,7 +3,11 @@
 Defines protocols for application patterns including event handlers,
 CQRS commands/queries, and entity mappers.
 
-Feature: file-size-compliance-phase2
+Note:
+    For simplified mapper protocol used by BaseUseCase, see:
+    - core.base.patterns.use_case.IMapper
+
+**Feature: file-size-compliance-phase2**
 """
 
 from abc import abstractmethod

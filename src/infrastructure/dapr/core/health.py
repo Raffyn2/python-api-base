@@ -22,7 +22,7 @@ class HealthStatus(Enum):
     UNHEALTHY = "unhealthy"
 
 
-@dataclass
+@dataclass(slots=True)
 class ComponentHealth:
     """Health status of a Dapr component."""
 
@@ -32,7 +32,7 @@ class ComponentHealth:
     message: str | None = None
 
 
-@dataclass
+@dataclass(slots=True)
 class DaprHealth:
     """Overall Dapr health status."""
 
@@ -133,12 +133,16 @@ class HealthChecker:
                     status=HealthStatus.DEGRADED,
                     message=f"Metadata request failed: {response.status_code}",
                 )
-        except httpx.RequestError as e:
+        except httpx.RequestError:
+            logger.exception(
+                "Component health check failed",
+                component=component_name,
+            )
             return ComponentHealth(
                 name=component_name,
                 type=component_type,
                 status=HealthStatus.UNHEALTHY,
-                message=str(e),
+                message="Health check failed",
             )
 
     async def get_full_health(self) -> DaprHealth:
@@ -161,14 +165,14 @@ class HealthChecker:
                     metadata = response.json()
                     version = metadata.get("runtimeVersion")
 
-                    for comp in metadata.get("components", []):
-                        components.append(
-                            ComponentHealth(
-                                name=comp.get("name", "unknown"),
-                                type=comp.get("type", "unknown"),
-                                status=HealthStatus.HEALTHY,
-                            )
+                    components.extend(
+                        ComponentHealth(
+                            name=comp.get("name", "unknown"),
+                            type=comp.get("type", "unknown"),
+                            status=HealthStatus.HEALTHY,
                         )
+                        for comp in metadata.get("components", [])
+                    )
         except httpx.RequestError:
             pass
 

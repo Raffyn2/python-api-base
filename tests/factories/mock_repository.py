@@ -22,7 +22,7 @@ Usage:
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Generic, ParamSpec, TypeVar, cast
+from typing import Any, ParamSpec, TypeVar, cast
 from unittest.mock import AsyncMock, MagicMock
 
 from pydantic import BaseModel
@@ -36,7 +36,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
-class MockRepository(IRepository[T, CreateT, UpdateT], Generic[T, CreateT, UpdateT]):
+class MockRepository[T: BaseModel, CreateT: BaseModel, UpdateT: BaseModel](IRepository[T, CreateT, UpdateT]):
     """Configurable mock repository for testing.
 
     Allows configuring return values and behaviors for each method.
@@ -108,13 +108,15 @@ class MockRepository(IRepository[T, CreateT, UpdateT], Generic[T, CreateT, Updat
         sort_order: str = "asc",
     ) -> tuple[Sequence[T], int]:
         """Get paginated list of entities."""
-        self.get_all_calls.append({
-            "skip": skip,
-            "limit": limit,
-            "filters": filters,
-            "sort_by": sort_by,
-            "sort_order": sort_order,
-        })
+        self.get_all_calls.append(
+            {
+                "skip": skip,
+                "limit": limit,
+                "filters": filters,
+                "sort_by": sort_by,
+                "sort_order": sort_order,
+            }
+        )
         return self._get_all_return
 
     async def create(self, data: CreateT) -> T:
@@ -232,7 +234,7 @@ class MockRepositoryFactory:
 
 
 @dataclass
-class CallRecord(Generic[P, R]):
+class CallRecord[**P, R]:
     """Record of a single method call with typed arguments and return value."""
 
     args: tuple[Any, ...]
@@ -242,7 +244,7 @@ class CallRecord(Generic[P, R]):
 
 
 @dataclass
-class MethodCallTracker(Generic[P, R]):
+class MethodCallTracker[**P, R]:
     """Tracks calls to a specific method with type information."""
 
     calls: list[CallRecord[P, R]] = field(default_factory=list)
@@ -270,9 +272,7 @@ class MethodCallTracker(Generic[P, R]):
     def assert_called_once(self) -> None:
         """Assert that the method was called exactly once."""
         if self.call_count != 1:
-            raise AssertionError(
-                f"Method was called {self.call_count} times, expected 1"
-            )
+            raise AssertionError(f"Method was called {self.call_count} times, expected 1")
 
     def assert_called_with(self, *args: Any, **kwargs: Any) -> None:
         """Assert that the last call had the specified arguments."""
@@ -283,8 +283,7 @@ class MethodCallTracker(Generic[P, R]):
             raise AssertionError("No calls recorded")
         if last.args != args or last.kwargs != kwargs:
             raise AssertionError(
-                f"Expected call with args={args}, kwargs={kwargs}, "
-                f"got args={last.args}, kwargs={last.kwargs}"
+                f"Expected call with args={args}, kwargs={kwargs}, got args={last.args}, kwargs={last.kwargs}"
             )
 
     def reset(self) -> None:
@@ -292,7 +291,7 @@ class MethodCallTracker(Generic[P, R]):
         self.calls.clear()
 
 
-class TypedMock(Generic[T]):
+class TypedMock[T: BaseModel]:
     """Type-safe mock wrapper that preserves interface type information.
 
     Wraps a MagicMock or AsyncMock while providing type hints for the
@@ -421,9 +420,7 @@ class TypedMock(Generic[T]):
         method_mock = getattr(self._mock, method_name)
         method_mock.assert_called_once()
 
-    def assert_method_called_with(
-        self, method_name: str, *args: Any, **kwargs: Any
-    ) -> None:
+    def assert_method_called_with(self, method_name: str, *args: Any, **kwargs: Any) -> None:
         """Assert that a method was called with specific arguments."""
         method_mock = getattr(self._mock, method_name)
         method_mock.assert_called_with(*args, **kwargs)
@@ -435,7 +432,7 @@ class TypedMock(Generic[T]):
             tracker.reset()
 
 
-def create_typed_mock(
+def create_typed_mock[T: BaseModel](
     interface_type: type[T],
     *,
     use_async: bool = True,

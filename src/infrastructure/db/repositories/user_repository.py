@@ -101,11 +101,7 @@ class SQLAlchemyUserRepository(IUserRepository):
 
     async def exists_by_email(self, email: str) -> bool:
         """Check if a user exists with the given email."""
-        stmt = (
-            select(func.count())
-            .select_from(UserModel)
-            .where(UserModel.email == email.lower())
-        )
+        stmt = select(func.count()).select_from(UserModel).where(UserModel.email == email.lower())
         result = await self._session.execute(stmt)
         count = result.scalar_one()
         return count > 0

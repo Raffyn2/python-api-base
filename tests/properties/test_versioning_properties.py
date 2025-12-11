@@ -26,12 +26,14 @@ from interface.api.versioning import (
 version_strategy = st.sampled_from(list(APIVersion))
 
 # Strategy for endpoint paths
-path_strategy = st.sampled_from([
-    "/items",
-    "/users",
-    "/health",
-    "/config",
-])
+path_strategy = st.sampled_from(
+    [
+        "/items",
+        "/users",
+        "/health",
+        "/config",
+    ]
+)
 
 
 def create_versioned_app(
@@ -129,9 +131,7 @@ class TestVersionRouting:
 
     @settings(max_examples=50, deadline=None)
     @given(version=version_strategy, path=path_strategy)
-    def test_versioned_paths_have_correct_prefix(
-        self, version: APIVersion, path: str
-    ) -> None:
+    def test_versioned_paths_have_correct_prefix(self, version: APIVersion, path: str) -> None:
         """
         **Feature: api-base-improvements, Property 16: API version routing**
         **Validates: Requirements 5.1, 5.5**

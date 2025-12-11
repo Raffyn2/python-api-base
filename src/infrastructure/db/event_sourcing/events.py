@@ -30,7 +30,7 @@ class SourcedEvent:
         return self.__class__.__name__
 
 
-@dataclass
+@dataclass(slots=True)
 class EventStream:
     """Represents a stream of events for an aggregate.
 

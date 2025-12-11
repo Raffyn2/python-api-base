@@ -8,7 +8,7 @@ optimized for read operations in CQRS pattern.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Self
 
 from sqlalchemy import Boolean, DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -88,15 +88,13 @@ class UserReadModel(Base):
             "is_verified": self.is_verified,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "last_login_at": self.last_login_at.isoformat()
-            if self.last_login_at
-            else None,
+            "last_login_at": self.last_login_at.isoformat() if self.last_login_at else None,
             "role_names": self.role_names.split(",") if self.role_names else [],
             "permission_count": self.permission_count,
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "UserReadModel":
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create model from dictionary."""
         role_names = data.get("role_names")
         if isinstance(role_names, list):

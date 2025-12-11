@@ -26,11 +26,7 @@ class TestSecretKeyEntropyValidation:
     **Validates: Requirements 1.1**
     """
 
-    @given(
-        st.text(
-            min_size=32, max_size=128, alphabet=string.ascii_letters + string.digits
-        )
-    )
+    @given(st.text(min_size=32, max_size=128, alphabet=string.ascii_letters + string.digits))
     @settings(max_examples=100)
     def test_valid_secret_keys_accepted(self, secret: str):
         """For any secret key >= 32 chars, validation SHALL pass."""
@@ -40,9 +36,7 @@ class TestSecretKeyEntropyValidation:
             settings_obj = SecuritySettings()
             assert len(settings_obj.secret_key.get_secret_value()) >= 32
 
-    @given(
-        st.text(min_size=1, max_size=31, alphabet=string.ascii_letters + string.digits)
-    )
+    @given(st.text(min_size=1, max_size=31, alphabet=string.ascii_letters + string.digits))
     @settings(max_examples=100)
     def test_short_secret_keys_rejected(self, secret: str):
         """For any secret key < 32 chars, validation SHALL raise ValueError."""
@@ -128,15 +122,17 @@ class TestRateLimitValidation:
         ]
 
         for invalid_rate in invalid_rates:
-            with patch.dict(
-                os.environ,
-                {
-                    "SECURITY__SECRET_KEY": "a" * 32,
-                    "SECURITY__RATE_LIMIT": invalid_rate,
-                },
+            with (
+                patch.dict(
+                    os.environ,
+                    {
+                        "SECURITY__SECRET_KEY": "a" * 32,
+                        "SECURITY__RATE_LIMIT": invalid_rate,
+                    },
+                ),
+                pytest.raises(ValidationError),
             ):
-                with pytest.raises(ValidationError):
-                    SecuritySettings()
+                SecuritySettings()
 
 
 class TestDatabaseSettingsSafeRepr:
@@ -144,9 +140,7 @@ class TestDatabaseSettingsSafeRepr:
 
     def test_repr_does_not_expose_password(self):
         """__repr__ SHALL NOT expose database password."""
-        settings_obj = DatabaseSettings(
-            url="postgresql://user:secretpassword@localhost/mydb"
-        )
+        settings_obj = DatabaseSettings(url="postgresql://user:secretpassword@localhost/mydb")
         repr_str = repr(settings_obj)
 
         assert "secretpassword" not in repr_str

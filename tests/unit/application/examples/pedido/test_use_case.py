@@ -6,7 +6,6 @@
 
 from decimal import Decimal
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -64,20 +63,18 @@ class MockItemRepository:
 class TestPedidoExampleUseCaseCreate:
     """Tests for PedidoExampleUseCase.create method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def pedido_repo(self) -> MockPedidoRepository:
         """Create mock pedido repository."""
         return MockPedidoRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def item_repo(self) -> MockItemRepository:
         """Create mock item repository."""
         return MockItemRepository()
 
-    @pytest.fixture
-    def use_case(
-        self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository
-    ) -> PedidoExampleUseCase:
+    @pytest.fixture()
+    def use_case(self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository) -> PedidoExampleUseCase:
         """Create use case with mocks."""
         return PedidoExampleUseCase(
             pedido_repo=pedido_repo,
@@ -85,9 +82,7 @@ class TestPedidoExampleUseCaseCreate:
         )
 
     @pytest.mark.asyncio
-    async def test_create_pedido_success(
-        self, use_case: PedidoExampleUseCase
-    ) -> None:
+    async def test_create_pedido_success(self, use_case: PedidoExampleUseCase) -> None:
         """Test successful pedido creation without items."""
         data = PedidoExampleCreate(
             customer_id="cust-001",
@@ -135,9 +130,7 @@ class TestPedidoExampleUseCaseCreate:
         assert response.items_count == 2  # quantity is 2
 
     @pytest.mark.asyncio
-    async def test_create_pedido_item_not_found(
-        self, use_case: PedidoExampleUseCase
-    ) -> None:
+    async def test_create_pedido_item_not_found(self, use_case: PedidoExampleUseCase) -> None:
         """Test creating pedido with non-existent item fails."""
         data = PedidoExampleCreate(
             customer_id="cust-001",
@@ -154,24 +147,22 @@ class TestPedidoExampleUseCaseCreate:
 class TestPedidoExampleUseCaseGet:
     """Tests for PedidoExampleUseCase.get method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def pedido_repo(self) -> MockPedidoRepository:
         """Create mock pedido repository."""
         return MockPedidoRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def item_repo(self) -> MockItemRepository:
         """Create mock item repository."""
         return MockItemRepository()
 
-    @pytest.fixture
-    def use_case(
-        self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository
-    ) -> PedidoExampleUseCase:
+    @pytest.fixture()
+    def use_case(self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository) -> PedidoExampleUseCase:
         """Create use case with mocks."""
         return PedidoExampleUseCase(pedido_repo=pedido_repo, item_repo=item_repo)
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_pedido(self, pedido_repo: MockPedidoRepository) -> PedidoExample:
         """Create existing pedido in repository."""
         pedido = PedidoExample.create(
@@ -183,9 +174,7 @@ class TestPedidoExampleUseCaseGet:
         return pedido
 
     @pytest.mark.asyncio
-    async def test_get_pedido_success(
-        self, use_case: PedidoExampleUseCase, existing_pedido: PedidoExample
-    ) -> None:
+    async def test_get_pedido_success(self, use_case: PedidoExampleUseCase, existing_pedido: PedidoExample) -> None:
         """Test successful pedido retrieval."""
         result = await use_case.get(existing_pedido.id)
 
@@ -194,9 +183,7 @@ class TestPedidoExampleUseCaseGet:
         assert response.customer_name == "Test Customer"
 
     @pytest.mark.asyncio
-    async def test_get_nonexistent_pedido_fails(
-        self, use_case: PedidoExampleUseCase
-    ) -> None:
+    async def test_get_nonexistent_pedido_fails(self, use_case: PedidoExampleUseCase) -> None:
         """Test getting non-existent pedido fails."""
         result = await use_case.get("nonexistent-id")
 
@@ -206,27 +193,23 @@ class TestPedidoExampleUseCaseGet:
 class TestPedidoExampleUseCaseConfirm:
     """Tests for PedidoExampleUseCase.confirm method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def pedido_repo(self) -> MockPedidoRepository:
         """Create mock pedido repository."""
         return MockPedidoRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def item_repo(self) -> MockItemRepository:
         """Create mock item repository."""
         return MockItemRepository()
 
-    @pytest.fixture
-    def use_case(
-        self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository
-    ) -> PedidoExampleUseCase:
+    @pytest.fixture()
+    def use_case(self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository) -> PedidoExampleUseCase:
         """Create use case with mocks."""
         return PedidoExampleUseCase(pedido_repo=pedido_repo, item_repo=item_repo)
 
-    @pytest.fixture
-    def existing_pedido(
-        self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository
-    ) -> PedidoExample:
+    @pytest.fixture()
+    def existing_pedido(self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository) -> PedidoExample:
         """Create existing pedido with items in repository."""
         # Add item first
         item = ItemExample.create(
@@ -254,9 +237,7 @@ class TestPedidoExampleUseCaseConfirm:
         return pedido
 
     @pytest.mark.asyncio
-    async def test_confirm_pedido_success(
-        self, use_case: PedidoExampleUseCase, existing_pedido: PedidoExample
-    ) -> None:
+    async def test_confirm_pedido_success(self, use_case: PedidoExampleUseCase, existing_pedido: PedidoExample) -> None:
         """Test successful pedido confirmation."""
         result = await use_case.confirm(existing_pedido.id, confirmed_by="test_user")
 
@@ -265,9 +246,7 @@ class TestPedidoExampleUseCaseConfirm:
         assert response.status == "confirmed"
 
     @pytest.mark.asyncio
-    async def test_confirm_nonexistent_pedido_fails(
-        self, use_case: PedidoExampleUseCase
-    ) -> None:
+    async def test_confirm_nonexistent_pedido_fails(self, use_case: PedidoExampleUseCase) -> None:
         """Test confirming non-existent pedido fails."""
         result = await use_case.confirm("nonexistent-id")
 
@@ -277,24 +256,22 @@ class TestPedidoExampleUseCaseConfirm:
 class TestPedidoExampleUseCaseCancel:
     """Tests for PedidoExampleUseCase.cancel method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def pedido_repo(self) -> MockPedidoRepository:
         """Create mock pedido repository."""
         return MockPedidoRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def item_repo(self) -> MockItemRepository:
         """Create mock item repository."""
         return MockItemRepository()
 
-    @pytest.fixture
-    def use_case(
-        self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository
-    ) -> PedidoExampleUseCase:
+    @pytest.fixture()
+    def use_case(self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository) -> PedidoExampleUseCase:
         """Create use case with mocks."""
         return PedidoExampleUseCase(pedido_repo=pedido_repo, item_repo=item_repo)
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_pedido(self, pedido_repo: MockPedidoRepository) -> PedidoExample:
         """Create existing pedido in repository."""
         pedido = PedidoExample.create(
@@ -306,22 +283,16 @@ class TestPedidoExampleUseCaseCancel:
         return pedido
 
     @pytest.mark.asyncio
-    async def test_cancel_pedido_success(
-        self, use_case: PedidoExampleUseCase, existing_pedido: PedidoExample
-    ) -> None:
+    async def test_cancel_pedido_success(self, use_case: PedidoExampleUseCase, existing_pedido: PedidoExample) -> None:
         """Test successful pedido cancellation."""
-        result = await use_case.cancel(
-            existing_pedido.id, reason="Customer request", cancelled_by="test_user"
-        )
+        result = await use_case.cancel(existing_pedido.id, reason="Customer request", cancelled_by="test_user")
 
         assert result.is_ok()
         response = result.unwrap()
         assert response.status == "cancelled"
 
     @pytest.mark.asyncio
-    async def test_cancel_nonexistent_pedido_fails(
-        self, use_case: PedidoExampleUseCase
-    ) -> None:
+    async def test_cancel_nonexistent_pedido_fails(self, use_case: PedidoExampleUseCase) -> None:
         """Test cancelling non-existent pedido fails."""
         result = await use_case.cancel("nonexistent-id", reason="Test")
 
@@ -331,20 +302,18 @@ class TestPedidoExampleUseCaseCancel:
 class TestPedidoExampleUseCaseList:
     """Tests for PedidoExampleUseCase.list method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def pedido_repo(self) -> MockPedidoRepository:
         """Create mock pedido repository."""
         return MockPedidoRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def item_repo(self) -> MockItemRepository:
         """Create mock item repository."""
         return MockItemRepository()
 
-    @pytest.fixture
-    def use_case(
-        self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository
-    ) -> PedidoExampleUseCase:
+    @pytest.fixture()
+    def use_case(self, pedido_repo: MockPedidoRepository, item_repo: MockItemRepository) -> PedidoExampleUseCase:
         """Create use case with mocks."""
         return PedidoExampleUseCase(pedido_repo=pedido_repo, item_repo=item_repo)
 

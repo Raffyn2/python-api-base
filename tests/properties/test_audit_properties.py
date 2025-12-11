@@ -9,9 +9,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-pytest.skip(
-    "Module infrastructure.audit.logger not implemented", allow_module_level=True
-)
+pytest.skip("Module infrastructure.audit.logger not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -38,29 +36,31 @@ action_strategy = st.sampled_from(list(AuditAction))
 result_strategy = st.sampled_from(list(AuditResult))
 
 # Strategy for resource types
-resource_type_strategy = st.sampled_from([
-    "user",
-    "item",
-    "role",
-    "session",
-    "token",
-    "config",
-])
+resource_type_strategy = st.sampled_from(
+    [
+        "user",
+        "item",
+        "role",
+        "session",
+        "token",
+        "config",
+    ]
+)
 
 # Strategy for IP addresses
-ip_strategy = st.sampled_from([
-    "192.168.1.1",
-    "10.0.0.1",
-    "172.16.0.1",
-    "::1",
-    "2001:db8::1",
-])
+ip_strategy = st.sampled_from(
+    [
+        "192.168.1.1",
+        "10.0.0.1",
+        "172.16.0.1",
+        "::1",
+        "2001:db8::1",
+    ]
+)
 
 # Strategy for details dict
 details_strategy = st.dictionaries(
-    keys=st.text(
-        min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))
-    ),
+    keys=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))),
     values=st.one_of(st.text(max_size=100), st.integers(), st.booleans()),
     max_size=5,
 )

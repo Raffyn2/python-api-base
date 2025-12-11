@@ -4,11 +4,14 @@
 **Refactored: Split from strategies.py for one-class-per-file compliance**
 """
 
-from abc import ABC, abstractmethod
-from typing import Any
+from __future__ import annotations
 
-from application.services.feature_flags.config import FlagConfig
-from application.services.feature_flags.models import EvaluationContext
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, Self
+
+if TYPE_CHECKING:
+    from application.services.feature_flags.config import FlagConfig
+    from application.services.feature_flags.models import EvaluationContext
 
 
 class FlagEvaluationResult:
@@ -20,18 +23,18 @@ class FlagEvaluationResult:
         reason: Human-readable reason for the result.
     """
 
-    def __init__(self, matched: bool, value: Any, reason: str):
+    def __init__(self, matched: bool, value: Any, reason: str) -> None:
         self.matched = matched
         self.value = value
         self.reason = reason
 
     @classmethod
-    def no_match(cls) -> "FlagEvaluationResult":
+    def no_match(cls) -> Self:
         """Create a no-match result."""
         return cls(matched=False, value=None, reason="No match")
 
     @classmethod
-    def match(cls, value: Any, reason: str) -> "FlagEvaluationResult":
+    def match(cls, value: Any, reason: str) -> Self:
         """Create a match result."""
         return cls(matched=True, value=value, reason=reason)
 

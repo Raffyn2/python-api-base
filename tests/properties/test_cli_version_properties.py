@@ -41,9 +41,7 @@ class TestVersionFormatConsistency:
         """get_version returns valid semver format."""
         version = get_version()
         # Should match semver or end with -dev
-        is_valid = self.SEMVER_PATTERN.match(version) is not None or version.endswith(
-            "-dev"
-        )
+        is_valid = self.SEMVER_PATTERN.match(version) is not None or version.endswith("-dev")
         assert is_valid, f"Version '{version}' does not match expected format"
 
     @given(
@@ -52,9 +50,7 @@ class TestVersionFormatConsistency:
         patch=st.integers(min_value=0, max_value=99),
     )
     @settings(max_examples=100)
-    def test_semver_pattern_accepts_valid_versions(
-        self, major: int, minor: int, patch: int
-    ) -> None:
+    def test_semver_pattern_accepts_valid_versions(self, major: int, minor: int, patch: int) -> None:
         """Semver pattern accepts valid version strings."""
         version = f"{major}.{minor}.{patch}"
         assert self.SEMVER_PATTERN.match(version)
@@ -66,9 +62,7 @@ class TestVersionFormatConsistency:
         prerelease=st.sampled_from(["alpha", "beta", "rc1", "dev"]),
     )
     @settings(max_examples=100)
-    def test_semver_pattern_accepts_prerelease(
-        self, major: int, minor: int, patch: int, prerelease: str
-    ) -> None:
+    def test_semver_pattern_accepts_prerelease(self, major: int, minor: int, patch: int, prerelease: str) -> None:
         """Semver pattern accepts prerelease versions."""
         version = f"{major}.{minor}.{patch}-{prerelease}"
         assert self.SEMVER_PATTERN.match(version)

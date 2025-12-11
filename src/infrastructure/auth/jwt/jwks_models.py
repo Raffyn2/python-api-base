@@ -78,7 +78,7 @@ class JWKSResponse:
         return {"keys": [key.to_dict() for key in self.keys]}
 
 
-@dataclass
+@dataclass(slots=True)
 class KeyEntry:
     """Internal key entry with metadata for rotation.
 

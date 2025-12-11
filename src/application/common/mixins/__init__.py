@@ -8,6 +8,14 @@ Organized into subpackages by responsibility:
 **Feature: architecture-restructuring-2025**
 """
 
-from application.common.mixins.event_publishing import EventPublishingMixin
+from application.common.mixins.event_publishing import (
+    EventBusProtocol,
+    EventPublishingMixin,
+    HasEvents,
+)
 
-__all__ = ["EventPublishingMixin"]
+__all__ = [
+    "EventBusProtocol",
+    "EventPublishingMixin",
+    "HasEvents",
+]

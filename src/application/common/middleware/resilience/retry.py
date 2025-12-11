@@ -2,20 +2,33 @@
 
 **Feature: enterprise-features-2025**
 **Validates: Requirement 11.1 - Automatic retry with exponential backoff**
+
+Note: This is the CQRS/Application layer retry for CommandBus.
+Architecture decision documented in: docs/architecture/adr/ADR-003-resilience-layers.md
 """
 
 import asyncio
-import logging
 import secrets
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
-logger = logging.getLogger(__name__)
+import structlog
+
+from application.common.errors import ApplicationError
+
+logger = structlog.get_logger(__name__)
 
 
-class RetryExhaustedError(Exception):
-    """Raised when all retry attempts have been exhausted."""
+class RetryExhaustedError(ApplicationError):
+    """Raised when all retry attempts have been exhausted.
+
+    Inherits from ApplicationError for consistent error handling.
+
+    Attributes:
+        attempts: Number of attempts made.
+        last_error: The last exception that occurred.
+    """
 
     def __init__(
         self,
@@ -25,7 +38,15 @@ class RetryExhaustedError(Exception):
     ) -> None:
         self.attempts = attempts
         self.last_error = last_error
-        super().__init__(message)
+        super().__init__(
+            message=message,
+            code="RETRY_EXHAUSTED",
+            details={
+                "attempts": attempts,
+                "last_error_type": type(last_error).__name__,
+                "last_error_message": str(last_error),
+            },
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,17 +74,29 @@ class RetryMiddleware:
     - Configurable retryable exceptions
 
     Example:
-        >>> retry = RetryMiddleware(RetryConfig(max_retries=3))
+        >>> retry = RetryMiddleware(name="payment-retry", config=RetryConfig(max_retries=3))
         >>> bus.add_middleware(retry)
     """
 
-    def __init__(self, config: RetryConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: RetryConfig | None = None,
+        *,
+        name: str = "default",
+    ) -> None:
         """Initialize retry middleware.
 
         Args:
             config: Retry configuration.
+            name: Middleware name for identification in logs/metrics.
         """
         self._config = config or RetryConfig()
+        self._name = name
+
+    @property
+    def name(self) -> str:
+        """Get middleware name."""
+        return self._name
 
     def _calculate_delay(self, attempt: int) -> float:
         """Calculate delay for the current attempt.
@@ -120,12 +153,11 @@ class RetryMiddleware:
 
                 if attempt > 0:
                     logger.info(
-                        f"Command {command_type} succeeded after {attempt + 1} attempts",
-                        extra={
-                            "command_type": command_type,
-                            "attempts": attempt + 1,
-                            "operation": "RETRY_SUCCESS",
-                        },
+                        "Retry succeeded after attempts",
+                        retry_name=self._name,
+                        command_type=command_type,
+                        attempts=attempt + 1,
+                        operation="RETRY_SUCCESS",
                     )
 
                 return result
@@ -135,32 +167,33 @@ class RetryMiddleware:
 
                 if not self._is_retryable(e):
                     logger.debug(
-                        f"Non-retryable error for {command_type}: {type(e).__name__}"
+                        "Non-retryable error, not retrying",
+                        retry_name=self._name,
+                        command_type=command_type,
+                        error_type=type(e).__name__,
+                        operation="RETRY_SKIP",
                     )
                     raise
 
                 if attempt < self._config.max_retries:
                     delay = self._calculate_delay(attempt)
                     logger.warning(
-                        f"Command {command_type} failed (attempt {attempt + 1}), "
-                        f"retrying in {delay:.2f}s: {e}",
-                        extra={
-                            "command_type": command_type,
-                            "attempt": attempt + 1,
-                            "delay_seconds": delay,
-                            "error_type": type(e).__name__,
-                            "operation": "RETRY_ATTEMPT",
-                        },
+                        "Retry attempt failed, will retry",
+                        retry_name=self._name,
+                        command_type=command_type,
+                        attempt=attempt + 1,
+                        delay_seconds=round(delay, 2),
+                        error_type=type(e).__name__,
+                        operation="RETRY_ATTEMPT",
                     )
                     await asyncio.sleep(delay)
                 else:
-                    logger.error(
-                        f"Command {command_type} failed after {attempt + 1} attempts",
-                        extra={
-                            "command_type": command_type,
-                            "attempts": attempt + 1,
-                            "operation": "RETRY_EXHAUSTED",
-                        },
+                    logger.exception(
+                        "Retry exhausted after attempts",
+                        retry_name=self._name,
+                        command_type=command_type,
+                        attempts=attempt + 1,
+                        operation="RETRY_EXHAUSTED",
                     )
 
         raise RetryExhaustedError(

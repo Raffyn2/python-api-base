@@ -3,6 +3,8 @@
 Provides data access abstractions:
 - IRepository: Generic CRUD interface
 - InMemoryRepository: Testing implementation
+
+**Feature: architecture-restructuring-2025**
 """
 
 from core.base.repository.interface import IRepository

@@ -8,16 +8,16 @@ Demonstrates MinIO storage usage with upload, download, and presigned URLs.
 
 from __future__ import annotations
 
-import logging
 from datetime import timedelta
 from typing import Any
 
+import structlog
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 
 from core.config import MAX_STORAGE_LIST_KEYS, PRESIGNED_URL_EXPIRE_SECONDS
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/storage", tags=["Storage"])
 
@@ -96,7 +96,8 @@ async def storage_upload(
     )
 
     if result.is_err():
-        raise HTTPException(status_code=500, detail=str(result.unwrap_err()))
+        logger.error("storage_upload_failed", key=key, error_type=type(result.unwrap_err()).__name__)
+        raise HTTPException(status_code=500, detail="Failed to upload file")
 
     return StorageUploadResponse(
         key=key,
@@ -173,7 +174,8 @@ async def storage_delete(
     result = await minio.delete(key)
 
     if result.is_err():
-        raise HTTPException(status_code=500, detail=str(result.unwrap_err()))
+        logger.error("storage_delete_failed", key=key, error_type=type(result.unwrap_err()).__name__)
+        raise HTTPException(status_code=500, detail="Failed to delete file")
 
     return {
         "key": key,
@@ -199,7 +201,8 @@ async def storage_list(
     result = await minio.list_objects(prefix=prefix, max_keys=max_keys)
 
     if result.is_err():
-        raise HTTPException(status_code=500, detail=str(result.unwrap_err()))
+        logger.error("storage_list_failed", prefix=prefix, error_type=type(result.unwrap_err()).__name__)
+        raise HTTPException(status_code=500, detail="Failed to list files")
 
     objects = result.unwrap()
 
@@ -211,9 +214,7 @@ async def storage_list(
                 "key": obj.key,
                 "size": obj.size,
                 "content_type": obj.content_type,
-                "last_modified": obj.last_modified.isoformat()
-                if obj.last_modified
-                else None,
+                "last_modified": obj.last_modified.isoformat() if obj.last_modified else None,
             }
             for obj in objects
         ],

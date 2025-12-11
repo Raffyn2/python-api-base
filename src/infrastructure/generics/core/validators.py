@@ -15,7 +15,7 @@ from infrastructure.generics.core.errors import ErrorMessages, ValidationError
 T = TypeVar("T")
 
 
-@dataclass
+@dataclass(slots=True)
 class ValidationResult:
     """Result of a validation operation.
 

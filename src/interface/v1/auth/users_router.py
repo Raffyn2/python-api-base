@@ -19,8 +19,7 @@ from application.common.dto import ApiResponse, PaginatedResponse
 from interface.v1.auth.router import _user_roles, _users
 
 warnings.warn(
-    "interface.v1.auth.users_router is deprecated. "
-    "Use interface.v1.users_router instead.",
+    "interface.v1.auth.users_router is deprecated. Use interface.v1.users_router instead.",
     DeprecationWarning,
     stacklevel=2,
 )
@@ -229,9 +228,7 @@ async def assign_role(
         raise HTTPException(status_code=404, detail="User not found")
 
     if data.role_name not in _roles:
-        raise HTTPException(
-            status_code=400, detail=f"Role '{data.role_name}' not found"
-        )
+        raise HTTPException(status_code=400, detail=f"Role '{data.role_name}' not found")
 
     if user_id not in _user_roles:
         _user_roles[user_id] = []

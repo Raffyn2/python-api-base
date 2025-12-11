@@ -1,7 +1,5 @@
 """Tests for infrastructure/db/middleware/query_timing.py - Query timing middleware."""
 
-import pytest
-
 from src.infrastructure.db.middleware.query_timing import QueryStats
 
 

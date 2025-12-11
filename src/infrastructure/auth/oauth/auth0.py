@@ -6,11 +6,11 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import httpx
+import structlog
 from pydantic import BaseModel
 
 from infrastructure.auth.oauth.provider import (
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
         Credentials,
     )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
@@ -84,7 +84,7 @@ class Auth0Config(OAuthConfig):
 
 
 class Auth0Provider[TUser: BaseModel, TClaims: BaseModel](
-    OAuthProvider[TUser, TClaims]
+    OAuthProvider[TUser, TClaims],
 ):
     """Auth0 OAuth provider.
 
@@ -163,9 +163,12 @@ class Auth0Provider[TUser: BaseModel, TClaims: BaseModel](
                 "unsupported_grant_type",
                 "Credentials type not supported",
             )
-        except httpx.HTTPError as e:
-            logger.error(f"Auth0 auth error: {e}")
-            return AuthResult.fail("server_error", str(e))
+        except httpx.HTTPError:
+            logger.exception(
+                "Auth0 authentication failed",
+                operation="AUTH0_AUTHENTICATE",
+            )
+            return AuthResult.fail("server_error", "Authentication service unavailable")
 
     async def _password_flow(
         self,
@@ -240,6 +243,7 @@ class Auth0Provider[TUser: BaseModel, TClaims: BaseModel](
         """Validate token and return user."""
         # For Auth0, we validate by calling userinfo
         # In production, verify JWT with JWKS
+        logger.debug("Validating token via userinfo", operation="AUTH0_VALIDATE")
         return await self._get_user_info(token)
 
     async def refresh(self, refresh_token: str) -> TokenPair[TClaims]:
@@ -257,8 +261,14 @@ class Auth0Provider[TUser: BaseModel, TClaims: BaseModel](
         )
 
         if response.status_code != 200:
+            logger.warning(
+                "Token refresh failed",
+                operation="AUTH0_REFRESH",
+                status_code=response.status_code,
+            )
             raise InvalidTokenError("Invalid refresh token")
 
+        logger.debug("Token refreshed successfully", operation="AUTH0_REFRESH")
         token_data = response.json()
         return self._parse_tokens(token_data)
 
@@ -276,7 +286,7 @@ class Auth0Provider[TUser: BaseModel, TClaims: BaseModel](
 
             return self._parse_claims(decoded)
         except jwt.PyJWTError as e:
-            raise InvalidTokenError(f"Failed to decode token: {e}") from e
+            raise InvalidTokenError("Failed to decode token") from e
 
     async def revoke(self, token: str) -> bool:
         """Revoke refresh token."""
@@ -291,7 +301,16 @@ class Auth0Provider[TUser: BaseModel, TClaims: BaseModel](
             },
         )
 
-        return response.status_code == 200
+        success = response.status_code == 200
+        if success:
+            logger.info("Token revoked successfully", operation="AUTH0_REVOKE")
+        else:
+            logger.warning(
+                "Token revocation failed",
+                operation="AUTH0_REVOKE",
+                status_code=response.status_code,
+            )
+        return success
 
     async def _get_user_info(self, token: str) -> TUser:
         """Get user info from userinfo endpoint."""

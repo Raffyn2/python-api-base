@@ -127,12 +127,8 @@ class TestRouterDependencyProperties:
         source = inspect.getsource(router_module)
 
         # Verify no mock usage in Depends()
-        assert (
-            "get_mock_item_use_case" not in source or "Depends(get_mock" not in source
-        )
-        assert (
-            "get_mock_pedido_use_case" not in source or "Depends(get_mock" not in source
-        )
+        assert "get_mock_item_use_case" not in source or "Depends(get_mock" not in source
+        assert "get_mock_pedido_use_case" not in source or "Depends(get_mock" not in source
 
     @pytest.mark.asyncio
     async def test_get_item_repository_returns_correct_type(self) -> None:
@@ -191,10 +187,7 @@ class TestBootstrapHandlerRegistrationProperties:
 
         source = inspect.getsource(main)
         assert "bootstrap_examples" in source
-        assert (
-            "from infrastructure.di.examples_bootstrap import bootstrap_examples"
-            in source
-        )
+        assert "from infrastructure.di.examples_bootstrap import bootstrap_examples" in source
 
     def test_main_imports_example_repositories(self) -> None:
         """Verify main.py imports example repositories."""
@@ -290,15 +283,11 @@ class TestItemPersistenceRoundTripProperties:
 
     @given(
         name=st.text(min_size=1, max_size=100).filter(lambda x: x.strip()),
-        sku=st.text(
-            alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-", min_size=3, max_size=20
-        ),
+        sku=st.text(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-", min_size=3, max_size=20),
         quantity=st.integers(min_value=0, max_value=10000),
     )
     @settings(max_examples=100)
-    def test_item_entity_preserves_essential_fields(
-        self, name: str, sku: str, quantity: int
-    ) -> None:
+    def test_item_entity_preserves_essential_fields(self, name: str, sku: str, quantity: int) -> None:
         """
         *For any* valid ItemExample data, creating an entity SHALL preserve
         essential fields (name, sku, quantity).

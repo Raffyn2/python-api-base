@@ -11,18 +11,6 @@ Provides common components for all bounded contexts:
 """
 
 # Base classes (directly from specialized subpackages)
-from application.common.dto import ApiResponse, PaginatedResponse, ProblemDetail
-from application.common.errors import (
-    ApplicationError as BaseApplicationError,
-    ConflictError as BaseConflictError,
-    ForbiddenError as BaseForbiddenError,
-    NotFoundError as BaseNotFoundError,
-    UnauthorizedError as BaseUnauthorizedError,
-    ValidationError as BaseValidationError,
-)
-from application.common.mappers import IMapper, Mapper
-from application.common.use_cases import BaseUseCase
-
 # CQRS
 from application.common.cqrs import (
     # Exceptions
@@ -47,34 +35,50 @@ from application.common.cqrs import (
     UnauthorizedError,
     ValidationError,
 )
+from application.common.dto import ApiResponse, PaginatedResponse, ProblemDetail
+from application.common.errors import (
+    ApplicationError as BaseApplicationError,
+    ConflictError as BaseConflictError,
+    ForbiddenError as BaseForbiddenError,
+    NotFoundError as BaseNotFoundError,
+    UnauthorizedError as BaseUnauthorizedError,
+    ValidationError as BaseValidationError,
+)
+from application.common.mappers import IMapper, Mapper
 
 # Middleware
 from application.common.middleware import (
+    # Cache
+    CacheInvalidationMiddleware,
+    # Resilience
     CircuitBreakerConfig,
     CircuitBreakerMiddleware,
+    CircuitBreakerOpenError,
+    # Validation
     CompositeValidator,
+    # Operations
     IdempotencyCache,
     IdempotencyMiddleware,
-    LoggingMiddleware,
     # Observability
+    LoggingMiddleware,
     MetricsMiddleware,
-    # Transaction
+    QueryCacheMiddleware,
     ResilienceMiddleware,
     RetryConfig,
-    # Resilience
+    RetryExhaustedError,
     RetryMiddleware,
     TransactionMiddleware,
-    # Validation
     ValidationMiddleware,
     Validator,
 )
+from application.common.use_cases import BaseUseCase
 
 __all__ = [
     # DTOs
     "ApiResponse",
-    # Exceptions
+    # CQRS - Errors
     "ApplicationError",
-    # Base Exceptions (re-exports)
+    # Base Exceptions (re-exports with Base prefix)
     "BaseApplicationError",
     "BaseConflictError",
     "BaseForbiddenError",
@@ -83,12 +87,19 @@ __all__ = [
     # UseCase
     "BaseUseCase",
     "BaseValidationError",
+    # Middleware - Cache
+    "CacheInvalidationMiddleware",
+    # Middleware - Resilience
     "CircuitBreakerConfig",
     "CircuitBreakerMiddleware",
+    "CircuitBreakerOpenError",
+    # CQRS - Types
     "Command",
-    # CQRS
+    # CQRS - Buses
     "CommandBus",
+    # CQRS - Handlers
     "CommandHandler",
+    # Middleware - Validation
     "CompositeValidator",
     "ConflictError",
     "EventHandler",
@@ -97,21 +108,24 @@ __all__ = [
     "HandlerNotFoundError",
     # Mapper
     "IMapper",
+    # Middleware - Operations
     "IdempotencyCache",
     "IdempotencyMiddleware",
+    # Middleware - Observability
     "LoggingMiddleware",
     "Mapper",
     "MetricsMiddleware",
-    # Middleware
     "MiddlewareFunc",
     "NotFoundError",
     "PaginatedResponse",
     "ProblemDetail",
     "Query",
     "QueryBus",
+    "QueryCacheMiddleware",
     "QueryHandler",
     "ResilienceMiddleware",
     "RetryConfig",
+    "RetryExhaustedError",
     "RetryMiddleware",
     "TransactionMiddleware",
     "TypedEventBus",

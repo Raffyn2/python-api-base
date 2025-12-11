@@ -157,9 +157,7 @@ class TestSecretAccessLoggingSafety:
     """
 
     @given(
-        secret_name=st.text(
-            min_size=1, max_size=50, alphabet=string.ascii_letters + "_"
-        ),
+        secret_name=st.text(min_size=1, max_size=50, alphabet=string.ascii_letters + "_"),
         accessor=st.text(min_size=1, max_size=30, alphabet=string.ascii_letters),
     )
     @settings(max_examples=50)

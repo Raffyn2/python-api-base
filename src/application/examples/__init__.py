@@ -31,6 +31,7 @@ from application.examples.item import (
     ItemExampleImportService,
     ItemExampleMapper,
     ItemExampleResponse,
+    ItemExampleService,
     ItemExampleUpdate,
     ItemExampleUseCase,
     ListItemsQuery,
@@ -39,12 +40,23 @@ from application.examples.item import (
     UpdateItemCommandHandler,
 )
 
+# Order bounded context
+from application.examples.order import (
+    OrderItemInput,
+    OrderItemOutput,
+    PlaceOrderInput,
+    PlaceOrderOutput,
+    PlaceOrderUseCase,
+)
+
 # Pedido bounded context
 from application.examples.pedido import (
+    AddItemRequest,
     AddItemToPedidoCommand,
     AddItemToPedidoCommandHandler,
     CancelPedidoCommand,
     CancelPedidoCommandHandler,
+    CancelPedidoRequest,
     ConfirmPedidoCommand,
     ConfirmPedidoCommandHandler,
     CreatePedidoCommand,
@@ -69,65 +81,76 @@ from application.examples.shared import (
 )
 
 __all__ = [
-    # Item Commands
-    "CreateItemCommand",
-    "UpdateItemCommand",
-    "DeleteItemCommand",
-    # Item Queries
-    "GetItemQuery",
-    "ListItemsQuery",
-    # Item Handlers
-    "CreateItemCommandHandler",
-    "UpdateItemCommandHandler",
-    "DeleteItemCommandHandler",
-    "GetItemQueryHandler",
-    "ListItemsQueryHandler",
-    # Item DTOs
-    "ItemExampleCreate",
-    "ItemExampleUpdate",
-    "ItemExampleResponse",
-    # Item Mapper
-    "ItemExampleMapper",
+    # Pedido DTOs
+    "AddItemRequest",
+    "AddItemToPedidoCommand",
+    "AddItemToPedidoCommandHandler",
     # Item Batch
     "BatchCreateRequest",
     "BatchUpdateRequest",
-    "ItemExampleBatchService",
+    "CancelPedidoCommand",
+    "CancelPedidoCommandHandler",
+    "CancelPedidoRequest",
+    "ConfirmPedidoCommand",
+    "ConfirmPedidoCommandHandler",
+    # Item Commands
+    "CreateItemCommand",
+    # Item Handlers
+    "CreateItemCommandHandler",
+    # Pedido Commands
+    "CreatePedidoCommand",
+    # Pedido Handlers
+    "CreatePedidoCommandHandler",
+    "DeleteItemCommand",
+    "DeleteItemCommandHandler",
     # Item Export
     "ExportFormat",
     "ExportMetadata",
     "ExportResult",
-    "ImportResult",
-    "ItemExampleExportService",
-    "ItemExampleImportService",
-    # Item Use Case
-    "ItemExampleUseCase",
-    # Pedido Commands
-    "CreatePedidoCommand",
-    "AddItemToPedidoCommand",
-    "ConfirmPedidoCommand",
-    "CancelPedidoCommand",
+    # Item Queries
+    "GetItemQuery",
+    "GetItemQueryHandler",
     # Pedido Queries
     "GetPedidoQuery",
-    "ListPedidosQuery",
-    # Pedido Handlers
-    "CreatePedidoCommandHandler",
-    "AddItemToPedidoCommandHandler",
-    "ConfirmPedidoCommandHandler",
-    "CancelPedidoCommandHandler",
     "GetPedidoQueryHandler",
+    "ImportResult",
+    "ItemExampleBatchService",
+    # Item DTOs
+    "ItemExampleCreate",
+    "ItemExampleExportService",
+    "ItemExampleImportService",
+    # Item Mapper
+    "ItemExampleMapper",
+    "ItemExampleResponse",
+    # Item Service
+    "ItemExampleService",
+    "ItemExampleUpdate",
+    # Item Use Case
+    "ItemExampleUseCase",
+    "ListItemsQuery",
+    "ListItemsQueryHandler",
+    "ListPedidosQuery",
     "ListPedidosQueryHandler",
-    # Pedido DTOs
-    "PedidoExampleCreate",
-    "PedidoExampleUpdate",
-    "PedidoExampleResponse",
-    # Pedido Mapper
-    "PedidoExampleMapper",
-    # Pedido Use Case
-    "PedidoExampleUseCase",
     # Shared DTOs
     "MoneyDTO",
     # Shared Errors
     "NotFoundError",
+    # Order DTOs
+    "OrderItemInput",
+    "OrderItemOutput",
+    "PedidoExampleCreate",
+    # Pedido Mapper
+    "PedidoExampleMapper",
+    "PedidoExampleResponse",
+    "PedidoExampleUpdate",
+    # Pedido Use Case
+    "PedidoExampleUseCase",
+    "PlaceOrderInput",
+    "PlaceOrderOutput",
+    # Order Use Case
+    "PlaceOrderUseCase",
+    "UpdateItemCommand",
+    "UpdateItemCommandHandler",
     "UseCaseError",
     "ValidationError",
 ]

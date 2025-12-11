@@ -49,9 +49,7 @@ class PasswordValidator(Validator[CreateUserCommand]):
         if not command.password:
             errors.append({"field": "password", "message": "Password is required"})
         elif len(command.password) < 8:
-            errors.append(
-                {"field": "password", "message": "Password must be at least 8 characters"}
-            )
+            errors.append({"field": "password", "message": "Password must be at least 8 characters"})
         return errors
 
 

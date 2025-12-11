@@ -11,18 +11,14 @@ from pathlib import Path
 
 import pytest
 import yaml
-from hypothesis import given, settings
-from hypothesis import strategies as st
 
 from tests.properties.deployments.validators import (
-    DockerComposeValidator,
     HelmChartValidator,
     IstioValidator,
     K8sManifestValidator,
     KnativeValidator,
     Severity,
     TerraformValidator,
-    load_yaml_file,
 )
 
 # Base paths
@@ -149,7 +145,7 @@ class TestNetworkPolicyProperties:
             pytest.skip("Not a NetworkPolicy manifest")
 
         results = self.validator.validate_network_policy(manifest, str(manifest_path))
-        errors = [r for r in results if not r.passed]
+        [r for r in results if not r.passed]
 
         # Network policy warnings are acceptable
         assert True
@@ -175,7 +171,7 @@ class TestLabelsConventionProperties:
         if not manifest:
             pytest.skip(f"Could not load manifest: {manifest_path}")
 
-        results = self.validator.validate_labels(manifest, str(manifest_path))
+        self.validator.validate_labels(manifest, str(manifest_path))
         # Labels are warnings, not errors
         assert True
 
@@ -292,7 +288,7 @@ class TestIstioProperties:
         if manifest.get("kind") != "PeerAuthentication":
             pytest.skip("Not a PeerAuthentication manifest")
 
-        results = self.validator.validate_peer_authentication(manifest, str(manifest_path))
+        self.validator.validate_peer_authentication(manifest, str(manifest_path))
         # mTLS warnings are acceptable in base (overlays set STRICT)
         assert True
 
@@ -311,7 +307,7 @@ class TestIstioProperties:
         if manifest.get("kind") != "EnvoyFilter":
             pytest.skip("Not an EnvoyFilter manifest")
 
-        results = self.validator.validate_envoy_filter(manifest, str(manifest_path))
+        self.validator.validate_envoy_filter(manifest, str(manifest_path))
         # Rate limiting is informational
         assert True
 
@@ -390,7 +386,7 @@ class TestProbeProperties:
         if kind not in ["Deployment", "StatefulSet", "DaemonSet"]:
             pytest.skip(f"Not a workload manifest: {kind}")
 
-        results = self.validator.validate_probes(manifest, str(manifest_path))
+        self.validator.validate_probes(manifest, str(manifest_path))
         # Probes are warnings
         assert True
 
@@ -410,7 +406,7 @@ class TestProbeProperties:
         if kind not in ["Deployment", "StatefulSet", "DaemonSet"]:
             pytest.skip(f"Not a workload manifest: {kind}")
 
-        results = self.validator.validate_probes(manifest, str(manifest_path))
+        self.validator.validate_probes(manifest, str(manifest_path))
         # Probes are warnings
         assert True
 
@@ -472,9 +468,7 @@ class TestHighAvailabilityProperties:
         topology_constraints = pod_spec.get("topologySpreadConstraints", [])
 
         # Check for zone topology
-        has_zone_constraint = any(
-            c.get("topologyKey") == "topology.kubernetes.io/zone" for c in topology_constraints
-        )
+        has_zone_constraint = any(c.get("topologyKey") == "topology.kubernetes.io/zone" for c in topology_constraints)
 
         assert has_zone_constraint, "Deployment should have zone topology spread constraint"
 

@@ -2,8 +2,6 @@
 
 from decimal import Decimal
 
-import pytest
-
 from src.infrastructure.sustainability.alerts import (
     generate_alert_rule,
     generate_all_alerts,
@@ -21,9 +19,9 @@ class TestGenerateAlertRule:
         threshold = AlertThreshold(
             namespace=None,
             deployment=None,
-            energy_threshold_kwh=Decimal("100"),
-            carbon_threshold_gco2=Decimal("40000"),
-            cost_threshold=Decimal("12"),
+            energy_threshold_kwh=Decimal(100),
+            carbon_threshold_gco2=Decimal(40000),
+            cost_threshold=Decimal(12),
             severity="warning",
         )
 
@@ -43,9 +41,9 @@ class TestGenerateAlertRule:
         threshold = AlertThreshold(
             namespace="production",
             deployment=None,
-            energy_threshold_kwh=Decimal("50"),
-            carbon_threshold_gco2=Decimal("20000"),
-            cost_threshold=Decimal("6"),
+            energy_threshold_kwh=Decimal(50),
+            carbon_threshold_gco2=Decimal(20000),
+            cost_threshold=Decimal(6),
             severity="critical",
         )
 
@@ -56,15 +54,14 @@ class TestGenerateAlertRule:
         assert "> 50" in rule.expr
         assert rule.severity == "critical"
 
-
     def test_generate_alert_rule_deployment_scoped(self) -> None:
         """Test generating deployment-scoped alert rule."""
         threshold = AlertThreshold(
             namespace="production",
             deployment="api-server",
-            energy_threshold_kwh=Decimal("25"),
-            carbon_threshold_gco2=Decimal("10000"),
-            cost_threshold=Decimal("3"),
+            energy_threshold_kwh=Decimal(25),
+            carbon_threshold_gco2=Decimal(10000),
+            cost_threshold=Decimal(3),
             severity="warning",
         )
 
@@ -84,9 +81,9 @@ class TestGenerateCarbonAlertRule:
         threshold = AlertThreshold(
             namespace=None,
             deployment=None,
-            energy_threshold_kwh=Decimal("100"),
-            carbon_threshold_gco2=Decimal("40000"),
-            cost_threshold=Decimal("12"),
+            energy_threshold_kwh=Decimal(100),
+            carbon_threshold_gco2=Decimal(40000),
+            cost_threshold=Decimal(12),
             severity="warning",
         )
 
@@ -102,9 +99,9 @@ class TestGenerateCarbonAlertRule:
         threshold = AlertThreshold(
             namespace="staging",
             deployment=None,
-            energy_threshold_kwh=Decimal("50"),
-            carbon_threshold_gco2=Decimal("20000"),
-            cost_threshold=Decimal("6"),
+            energy_threshold_kwh=Decimal(50),
+            carbon_threshold_gco2=Decimal(20000),
+            cost_threshold=Decimal(6),
             severity="critical",
         )
 
@@ -123,9 +120,9 @@ class TestGenerateCostAlertRule:
         threshold = AlertThreshold(
             namespace=None,
             deployment=None,
-            energy_threshold_kwh=Decimal("100"),
-            carbon_threshold_gco2=Decimal("40000"),
-            cost_threshold=Decimal("12"),
+            energy_threshold_kwh=Decimal(100),
+            carbon_threshold_gco2=Decimal(40000),
+            cost_threshold=Decimal(12),
             severity="warning",
         )
 
@@ -141,9 +138,9 @@ class TestGenerateCostAlertRule:
         threshold = AlertThreshold(
             namespace="production",
             deployment=None,
-            energy_threshold_kwh=Decimal("100"),
-            carbon_threshold_gco2=Decimal("40000"),
-            cost_threshold=Decimal("20"),
+            energy_threshold_kwh=Decimal(100),
+            carbon_threshold_gco2=Decimal(40000),
+            cost_threshold=Decimal(20),
             severity="critical",
         )
 
@@ -161,9 +158,9 @@ class TestGenerateAllAlerts:
         threshold = AlertThreshold(
             namespace="production",
             deployment=None,
-            energy_threshold_kwh=Decimal("100"),
-            carbon_threshold_gco2=Decimal("40000"),
-            cost_threshold=Decimal("12"),
+            energy_threshold_kwh=Decimal(100),
+            carbon_threshold_gco2=Decimal(40000),
+            cost_threshold=Decimal(12),
             severity="warning",
         )
 
@@ -180,9 +177,9 @@ class TestGenerateAllAlerts:
         threshold = AlertThreshold(
             namespace=None,
             deployment=None,
-            energy_threshold_kwh=Decimal("50"),
-            carbon_threshold_gco2=Decimal("20000"),
-            cost_threshold=Decimal("10"),
+            energy_threshold_kwh=Decimal(50),
+            carbon_threshold_gco2=Decimal(20000),
+            cost_threshold=Decimal(10),
             severity="critical",
         )
 
@@ -196,9 +193,9 @@ class TestGenerateAllAlerts:
         threshold = AlertThreshold(
             namespace="test",
             deployment=None,
-            energy_threshold_kwh=Decimal("100"),
-            carbon_threshold_gco2=Decimal("40000"),
-            cost_threshold=Decimal("12"),
+            energy_threshold_kwh=Decimal(100),
+            carbon_threshold_gco2=Decimal(40000),
+            cost_threshold=Decimal(12),
             severity="critical",
         )
 

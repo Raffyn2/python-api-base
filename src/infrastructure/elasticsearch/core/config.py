@@ -6,17 +6,20 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Self
 
+import structlog
+
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from elasticsearch import AsyncElasticsearch
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class ElasticsearchClientConfig:
     """Configuration for Elasticsearch client.
 
@@ -105,9 +108,7 @@ class ElasticsearchConnection:
             RuntimeError: If client is not connected
         """
         if self._client is None:
-            raise RuntimeError(
-                "Client not connected. Use 'async with' or call connect()"
-            )
+            raise RuntimeError("Client not connected. Use 'async with' or call connect()")
         return self._client
 
     async def connect(self) -> Self:
@@ -117,7 +118,7 @@ class ElasticsearchConnection:
             Self for chaining
         """
         await self._get_client()
-        logger.info("Connected to Elasticsearch", extra={"hosts": self._config.hosts})
+        logger.info("Connected to Elasticsearch", hosts=self._config.hosts)
         return self
 
     async def close(self) -> None:
@@ -164,3 +165,11 @@ class ElasticsearchConnection:
         """
         client = await self._get_client()
         return await client.ping()
+
+    def get_client_getter(self) -> Callable[[], Awaitable[AsyncElasticsearch]]:
+        """Get the client getter function for composition.
+
+        Returns:
+            Async function that returns the Elasticsearch client.
+        """
+        return self._get_client

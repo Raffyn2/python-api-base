@@ -41,30 +41,16 @@ class OutboxMessage(BaseModel):
     aggregate_id: str = Field(..., description="ID of the aggregate")
     event_type: str = Field(..., description="Type of event (e.g., 'UserCreated')")
     payload: dict[str, Any] = Field(default_factory=dict, description="Event payload")
-    correlation_id: str | None = Field(
-        default=None, description="Correlation ID for distributed tracing"
-    )
-    idempotency_key: str | None = Field(
-        default=None, description="Key for deduplication"
-    )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata (tenant_id, user_id, etc.)"
-    )
-    status: OutboxMessageStatus = Field(
-        default=OutboxMessageStatus.PENDING, description="Message status"
-    )
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC), description="Creation timestamp"
-    )
-    processed_at: datetime | None = Field(
-        default=None, description="When message was published"
-    )
+    correlation_id: str | None = Field(default=None, description="Correlation ID for distributed tracing")
+    idempotency_key: str | None = Field(default=None, description="Key for deduplication")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata (tenant_id, user_id, etc.)")
+    status: OutboxMessageStatus = Field(default=OutboxMessageStatus.PENDING, description="Message status")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), description="Creation timestamp")
+    processed_at: datetime | None = Field(default=None, description="When message was published")
     retry_count: int = Field(default=0, description="Number of publish attempts")
     max_retries: int = Field(default=5, description="Maximum retry attempts")
     last_error: str | None = Field(default=None, description="Last error message")
-    next_retry_at: datetime | None = Field(
-        default=None, description="When to retry next"
-    )
+    next_retry_at: datetime | None = Field(default=None, description="When to retry next")
 
     model_config = {"frozen": False}
 

@@ -10,9 +10,10 @@ Implements:
 - Algorithm enforcement
 """
 
-import logging
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
+
+import structlog
 
 from infrastructure.auth.jwt.jwks_models import (
     JWKSResponse,
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
         JWK,
     )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class JWKSService:
@@ -103,10 +104,7 @@ class JWKSService:
         # Prune old keys beyond max
         self._cleanup_old_keys()
 
-        logger.info(
-            "Added key to JWKS",
-            extra={"kid": kid, "algorithm": algorithm, "is_current": make_current},
-        )
+        logger.info("Added key to JWKS", kid=kid, algorithm=algorithm, is_current=make_current)
 
         return kid
 
@@ -154,7 +152,7 @@ class JWKSService:
                     revoked_at=datetime.now(UTC),
                     expires_at=entry.expires_at,
                 )
-                logger.warning("Revoked key", extra={"kid": kid})
+                logger.warning("Revoked key", kid=kid)
                 return True
         return False
 
@@ -260,15 +258,16 @@ class JWKSService:
             try:
                 if entry.algorithm == "RS256":
                     jwk = create_jwk_from_rsa_public_key(
-                        entry.public_key_pem, entry.kid
+                        entry.public_key_pem,
+                        entry.kid,
                     )
                 elif entry.algorithm == "ES256":
                     jwk = create_jwk_from_ec_public_key(entry.public_key_pem, entry.kid)
                 else:
                     continue
                 jwks.append(jwk)
-            except Exception as e:
-                logger.error(f"Failed to create JWK for kid={entry.kid}: {e}")
+            except Exception:
+                logger.exception("Failed to create JWK", operation="JWKS_CREATE", kid=entry.kid)
 
         return JWKSResponse(keys=tuple(jwks))
 
@@ -277,9 +276,7 @@ class JWKSService:
         now = datetime.now(UTC)
 
         # Remove keys that are past grace period after expiration or revocation
-        self._keys = [
-            entry for entry in self._keys if not self._should_remove_key(entry, now)
-        ]
+        self._keys = [entry for entry in self._keys if not self._should_remove_key(entry, now)]
 
         # Keep only max_keys most recent
         if len(self._keys) > self._max_keys:

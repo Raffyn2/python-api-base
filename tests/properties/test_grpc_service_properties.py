@@ -48,15 +48,17 @@ header_values = st.text(min_size=1, max_size=50)
 grpc_statuses = st.sampled_from(list(GRPCStatus))
 method_types = st.sampled_from(list(MethodType))
 field_numbers = st.integers(min_value=1, max_value=1000)
-proto_types = st.sampled_from([
-    "string",
-    "int32",
-    "int64",
-    "bool",
-    "float",
-    "double",
-    "bytes",
-])
+proto_types = st.sampled_from(
+    [
+        "string",
+        "int32",
+        "int64",
+        "bool",
+        "float",
+        "double",
+        "bytes",
+    ]
+)
 
 
 class TestGRPCError:
@@ -124,9 +126,7 @@ class TestMethodDescriptor:
 
     @given(name=names, method_type=method_types, input_type=names, output_type=names)
     @settings(max_examples=100)
-    def test_to_dict(
-        self, name: str, method_type: MethodType, input_type: str, output_type: str
-    ) -> None:
+    def test_to_dict(self, name: str, method_type: MethodType, input_type: str, output_type: str) -> None:
         """to_dict contains all fields."""
         method = MethodDescriptor(
             name=name,
@@ -206,7 +206,10 @@ class TestGRPCService:
         )
         descriptor.add_method(method)
         service: GRPCService[Any] = GRPCService(descriptor)
-        handler = lambda req, ctx: "response"
+
+        def handler(req, ctx):
+            return "response"
+
         service.register_handler(method_name, handler)
         assert service.get_handler(method_name) is not None
 
@@ -263,9 +266,7 @@ class TestProtoField:
     @settings(max_examples=100)
     def test_repeated_field(self, name: str, number: int, field_type: str) -> None:
         """Repeated field has 'repeated' prefix."""
-        field = ProtoField(
-            name=name, number=number, field_type=field_type, repeated=True
-        )
+        field = ProtoField(name=name, number=number, field_type=field_type, repeated=True)
         proto = field.to_proto()
         assert "repeated" in proto
 
@@ -283,13 +284,9 @@ class TestProtoMessage:
         assert "{" in proto
         assert "}" in proto
 
-    @given(
-        msg_name=names, field_name=names, number=field_numbers, field_type=proto_types
-    )
+    @given(msg_name=names, field_name=names, number=field_numbers, field_type=proto_types)
     @settings(max_examples=100)
-    def test_add_field(
-        self, msg_name: str, field_name: str, number: int, field_type: str
-    ) -> None:
+    def test_add_field(self, msg_name: str, field_name: str, number: int, field_type: str) -> None:
         """Added field appears in proto."""
         message = ProtoMessage(name=msg_name)
         message.add_field(field_name, number, field_type)
@@ -352,9 +349,7 @@ class TestHelperFunctions:
 
     @given(name=names, input_type=names, output_type=names)
     @settings(max_examples=100)
-    def test_create_unary_method(
-        self, name: str, input_type: str, output_type: str
-    ) -> None:
+    def test_create_unary_method(self, name: str, input_type: str, output_type: str) -> None:
         """create_unary_method creates unary method."""
         method = create_unary_method(name, input_type, output_type)
         assert method.name == name

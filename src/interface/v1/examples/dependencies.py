@@ -8,6 +8,7 @@
 from functools import lru_cache
 from typing import Any
 
+import structlog
 from fastapi import Depends, Header, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +27,8 @@ from infrastructure.db.repositories.examples import (
 from infrastructure.db.session import get_async_session
 from infrastructure.kafka import EventPublisher, create_event_publisher
 from infrastructure.security.rbac import Permission, RBACUser, get_rbac_service
+
+logger = structlog.get_logger(__name__)
 
 # === TypeAdapter Cache (Singleton Pattern) ===
 
@@ -100,9 +103,7 @@ async def get_item_use_case(
 ) -> ItemExampleUseCase:
     """Get ItemExampleUseCase with real repository and event publisher."""
     cache = get_jitter_cache(request)
-    return ItemExampleUseCase(
-        repository=repo, kafka_publisher=event_publisher, cache=cache
-    )
+    return ItemExampleUseCase(repository=repo, kafka_publisher=event_publisher, cache=cache)
 
 
 async def get_pedido_use_case(
@@ -129,28 +130,44 @@ def get_current_user_optional(
 
 
 def require_write_permission(
+    request: Request,
     user: RBACUser = Depends(get_current_user_optional),
 ) -> RBACUser:
     """Require WRITE permission for modifying resources."""
+    correlation_id = getattr(request.state, "correlation_id", None)
     rbac = get_rbac_service()
     if not rbac.check_permission(user, Permission.WRITE):
-        perm = Permission.WRITE.value
+        logger.warning(
+            "permission_denied",
+            user_id=user.id,
+            required_permission="WRITE",
+            user_roles=user.roles,
+            correlation_id=correlation_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Permission '{perm}' required. User roles: {user.roles}",
+            detail="Write permission required",
         )
     return user
 
 
 def require_delete_permission(
+    request: Request,
     user: RBACUser = Depends(get_current_user_optional),
 ) -> RBACUser:
     """Require DELETE permission for deleting resources."""
+    correlation_id = getattr(request.state, "correlation_id", None)
     rbac = get_rbac_service()
     if not rbac.check_permission(user, Permission.DELETE):
-        perm = Permission.DELETE.value
+        logger.warning(
+            "permission_denied",
+            user_id=user.id,
+            required_permission="DELETE",
+            user_roles=user.roles,
+            correlation_id=correlation_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Permission '{perm}' required. User roles: {user.roles}",
+            detail="Delete permission required",
         )
     return user

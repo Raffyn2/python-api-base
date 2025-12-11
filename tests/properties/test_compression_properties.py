@@ -6,9 +6,7 @@
 
 import pytest
 
-pytest.skip(
-    "Module infrastructure.compression not implemented", allow_module_level=True
-)
+pytest.skip("Module infrastructure.compression not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -31,25 +29,29 @@ from infrastructure.compression import (
 )
 
 # Strategies
-compressible_content_types = st.sampled_from([
-    "text/html",
-    "text/plain",
-    "text/css",
-    "application/json",
-    "application/xml",
-    "application/javascript",
-    "image/svg+xml",
-])
+compressible_content_types = st.sampled_from(
+    [
+        "text/html",
+        "text/plain",
+        "text/css",
+        "application/json",
+        "application/xml",
+        "application/javascript",
+        "image/svg+xml",
+    ]
+)
 
-non_compressible_content_types = st.sampled_from([
-    "image/png",
-    "image/jpeg",
-    "image/gif",
-    "video/mp4",
-    "audio/mpeg",
-    "application/octet-stream",
-    "application/zip",
-])
+non_compressible_content_types = st.sampled_from(
+    [
+        "image/png",
+        "image/jpeg",
+        "image/gif",
+        "video/mp4",
+        "audio/mpeg",
+        "application/octet-stream",
+        "application/zip",
+    ]
+)
 
 # Generate compressible data (text-like, repetitive for good compression)
 compressible_data = st.binary(min_size=1024, max_size=10000).map(
@@ -58,18 +60,20 @@ compressible_data = st.binary(min_size=1024, max_size=10000).map(
 
 small_data = st.binary(min_size=1, max_size=500)
 
-accept_encoding_headers = st.sampled_from([
-    "gzip",
-    "deflate",
-    "gzip, deflate",
-    "deflate, gzip",
-    "gzip;q=1.0, deflate;q=0.5",
-    "deflate;q=0.8, gzip;q=0.6",
-    "identity",
-    "*",
-    "",
-    "gzip, deflate, br",
-])
+accept_encoding_headers = st.sampled_from(
+    [
+        "gzip",
+        "deflate",
+        "gzip, deflate",
+        "deflate, gzip",
+        "gzip;q=1.0, deflate;q=0.5",
+        "deflate;q=0.8, gzip;q=0.6",
+        "identity",
+        "*",
+        "",
+        "gzip, deflate, br",
+    ]
+)
 
 
 class TestCompressionRoundTrip:
@@ -115,9 +119,7 @@ class TestCompressionServiceProperties:
         content_type=compressible_content_types,
     )
     @settings(max_examples=50)
-    def test_compressed_data_is_smaller_or_equal(
-        self, data: bytes, content_type: str
-    ) -> None:
+    def test_compressed_data_is_smaller_or_equal(self, data: bytes, content_type: str) -> None:
         """Property: Compressed data is never larger than original (or we skip)."""
         service = CompressionService()
         result = service.compress(data, "gzip", content_type)
@@ -148,9 +150,7 @@ class TestCompressionServiceProperties:
         content_type=non_compressible_content_types,
     )
     @settings(max_examples=50)
-    def test_non_compressible_types_not_compressed(
-        self, data: bytes, content_type: str
-    ) -> None:
+    def test_non_compressible_types_not_compressed(self, data: bytes, content_type: str) -> None:
         """Property: Non-compressible content types are not compressed."""
         service = CompressionService()
         result = service.compress(data, "gzip", content_type)
@@ -210,10 +210,7 @@ class TestAlgorithmSelection:
         supported = (CompressionAlgorithm.GZIP,)
         result = select_best_algorithm("br", supported)
         # Should return identity since br is not supported
-        assert (
-            result == CompressionAlgorithm.IDENTITY
-            or result == CompressionAlgorithm.GZIP
-        )
+        assert result == CompressionAlgorithm.IDENTITY or result == CompressionAlgorithm.GZIP
 
 
 class TestCompressionResultProperties:
@@ -224,9 +221,7 @@ class TestCompressionResultProperties:
         compressed_size=st.integers(min_value=1, max_value=100000),
     )
     @settings(max_examples=100)
-    def test_compression_ratio_bounds(
-        self, original_size: int, compressed_size: int
-    ) -> None:
+    def test_compression_ratio_bounds(self, original_size: int, compressed_size: int) -> None:
         """Property: Compression ratio is between -inf and 1."""
         result = CompressionResult(
             original_size=original_size,
@@ -243,9 +238,7 @@ class TestCompressionResultProperties:
         compressed_size=st.integers(min_value=1, max_value=100000),
     )
     @settings(max_examples=100)
-    def test_savings_percent_consistent_with_ratio(
-        self, original_size: int, compressed_size: int
-    ) -> None:
+    def test_savings_percent_consistent_with_ratio(self, original_size: int, compressed_size: int) -> None:
         """Property: Savings percent equals ratio * 100."""
         result = CompressionResult(
             original_size=original_size,
@@ -272,9 +265,7 @@ class TestCompressionStatsProperties:
         )
     )
     @settings(max_examples=50)
-    def test_stats_track_all_requests(
-        self, results: list[tuple[int, int, bool]]
-    ) -> None:
+    def test_stats_track_all_requests(self, results: list[tuple[int, int, bool]]) -> None:
         """Property: Stats track all recorded requests."""
         stats = CompressionStats()
 
@@ -301,17 +292,13 @@ class TestCompressionStatsProperties:
         )
     )
     @settings(max_examples=50)
-    def test_bytes_saved_is_non_negative_when_compressed(
-        self, results: list[tuple[int, int]]
-    ) -> None:
+    def test_bytes_saved_is_non_negative_when_compressed(self, results: list[tuple[int, int]]) -> None:
         """Property: Bytes saved calculation is consistent."""
         stats = CompressionStats()
 
         for original, compressed in results:
             # Ensure compressed is smaller for this test
-            actual_compressed = (
-                min(compressed, original - 1) if original > 1 else original
-            )
+            actual_compressed = min(compressed, original - 1) if original > 1 else original
             result = CompressionResult(
                 original_size=original,
                 compressed_size=actual_compressed,
@@ -322,10 +309,7 @@ class TestCompressionStatsProperties:
             stats.record(result)
 
         # Bytes saved should equal difference
-        assert (
-            stats.bytes_saved
-            == stats.total_original_bytes - stats.total_compressed_bytes
-        )
+        assert stats.bytes_saved == stats.total_original_bytes - stats.total_compressed_bytes
 
 
 class TestCompressionConfigProperties:
@@ -379,13 +363,7 @@ class TestCompressionConfigBuilderProperties:
     def test_builder_fluent_interface(self) -> None:
         """Property: Builder methods return builder for chaining."""
         builder = CompressionConfigBuilder()
-        result = (
-            builder.min_size(512)
-            .level(9)
-            .with_gzip()
-            .with_deflate()
-            .exclude_path("/health")
-        )
+        result = builder.min_size(512).level(9).with_gzip().with_deflate().exclude_path("/health")
         assert result is builder
 
 
@@ -393,16 +371,16 @@ class TestCompressorFactoryProperties:
     """Property tests for CompressorFactory."""
 
     @given(
-        algorithm=st.sampled_from([
-            CompressionAlgorithm.GZIP,
-            CompressionAlgorithm.DEFLATE,
-            CompressionAlgorithm.IDENTITY,
-        ])
+        algorithm=st.sampled_from(
+            [
+                CompressionAlgorithm.GZIP,
+                CompressionAlgorithm.DEFLATE,
+                CompressionAlgorithm.IDENTITY,
+            ]
+        )
     )
     @settings(max_examples=50)
-    def test_factory_creates_correct_compressor(
-        self, algorithm: CompressionAlgorithm
-    ) -> None:
+    def test_factory_creates_correct_compressor(self, algorithm: CompressionAlgorithm) -> None:
         """Property: Factory creates compressor for requested algorithm."""
         compressor = CompressorFactory.create(algorithm)
         assert compressor.algorithm == algorithm
@@ -423,9 +401,7 @@ class TestConvenienceFunctions:
         accept_encoding=st.sampled_from(["gzip", "deflate", "identity"]),
     )
     @settings(max_examples=50)
-    def test_compress_response_returns_tuple(
-        self, data: bytes, accept_encoding: str
-    ) -> None:
+    def test_compress_response_returns_tuple(self, data: bytes, accept_encoding: str) -> None:
         """Property: compress_response returns (data, encoding) tuple."""
         result_data, encoding = compress_response(data, accept_encoding)
         assert isinstance(result_data, bytes)
@@ -437,9 +413,7 @@ class TestConvenienceFunctions:
         level=st.integers(min_value=1, max_value=9),
     )
     @settings(max_examples=50)
-    def test_create_compression_service_configurable(
-        self, min_size: int, level: int
-    ) -> None:
+    def test_create_compression_service_configurable(self, min_size: int, level: int) -> None:
         """Property: create_compression_service respects parameters."""
         service = create_compression_service(min_size=min_size, level=level)
         assert service._config.min_size == min_size

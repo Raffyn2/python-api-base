@@ -5,6 +5,7 @@
 """
 
 from collections.abc import Awaitable, Callable
+from typing import Self
 
 from infrastructure.db.saga.orchestrator import Saga, SagaResult
 from infrastructure.db.saga.steps import CompensationAction, SagaStep, StepAction
@@ -34,7 +35,7 @@ class SagaBuilder:
         name: str,
         action: StepAction,
         compensation: CompensationAction | None = None,
-    ) -> "SagaBuilder":
+    ) -> Self:
         """Add a step to the saga.
 
         Args:
@@ -45,14 +46,10 @@ class SagaBuilder:
         Returns:
             Self for chaining.
         """
-        self._steps.append(
-            SagaStep(name=name, action=action, compensation=compensation)
-        )
+        self._steps.append(SagaStep(name=name, action=action, compensation=compensation))
         return self
 
-    def on_complete(
-        self, callback: Callable[[SagaResult], Awaitable[None]]
-    ) -> "SagaBuilder":
+    def on_complete(self, callback: Callable[[SagaResult], Awaitable[None]]) -> Self:
         """Set completion callback.
 
         Args:
@@ -64,9 +61,7 @@ class SagaBuilder:
         self._on_complete = callback
         return self
 
-    def on_compensate(
-        self, callback: Callable[[SagaResult], Awaitable[None]]
-    ) -> "SagaBuilder":
+    def on_compensate(self, callback: Callable[[SagaResult], Awaitable[None]]) -> Self:
         """Set compensation callback.
 
         Args:
@@ -78,9 +73,7 @@ class SagaBuilder:
         self._on_compensate = callback
         return self
 
-    def on_failure(
-        self, callback: Callable[[SagaResult], Awaitable[None]]
-    ) -> "SagaBuilder":
+    def on_failure(self, callback: Callable[[SagaResult], Awaitable[None]]) -> Self:
         """Set failure callback.
 
         Args:

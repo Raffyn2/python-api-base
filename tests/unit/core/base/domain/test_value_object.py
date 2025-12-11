@@ -39,7 +39,7 @@ class TestBaseValueObject:
         vo = SampleValueObject(name="test", value=10)
         assert vo != "not a value object"
         assert vo != 10
-        assert vo != None
+        assert vo is not None
 
     def test_hash_same_values(self):
         vo1 = SampleValueObject(name="test", value=10)

@@ -6,11 +6,11 @@ This module provides state store operations with transactional support.
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from core.shared.logging import get_logger
 from infrastructure.dapr.client import DaprClientWrapper
-from infrastructure.dapr.errors import DaprConnectionError, StateNotFoundError
+from infrastructure.dapr.errors import DaprConnectionError
 
 logger = get_logger(__name__)
 
@@ -31,7 +31,7 @@ class Concurrency(Enum):
     LAST_WRITE = "last-write"
 
 
-@dataclass
+@dataclass(slots=True)
 class StateOptions:
     """Options for state operations."""
 
@@ -39,8 +39,8 @@ class StateOptions:
     concurrency: Concurrency = Concurrency.LAST_WRITE
 
 
-@dataclass
-class StateItem(Generic[T]):
+@dataclass(slots=True)
+class StateItem[T]:
     """State item with metadata."""
 
     key: str
@@ -102,23 +102,19 @@ class StateManager:
             response.raise_for_status()
             items = response.json()
 
-            result = []
-            for item in items:
-                if item.get("data"):
-                    result.append(
-                        StateItem(
-                            key=item["key"],
-                            value=item["data"].encode()
-                            if isinstance(item["data"], str)
-                            else item["data"],
-                            etag=item.get("etag"),
-                        )
-                    )
-            return result
+            return [
+                StateItem(
+                    key=item["key"],
+                    value=item["data"].encode() if isinstance(item["data"], str) else item["data"],
+                    etag=item.get("etag"),
+                )
+                for item in items
+                if item.get("data")
+            ]
         except Exception as e:
+            logger.exception("Failed to get bulk state", store=self._store_name)
             raise DaprConnectionError(
                 message=f"Failed to get bulk state from {self._store_name}",
-                details={"error": str(e)},
             ) from e
 
     async def save(
@@ -166,9 +162,7 @@ class StateManager:
         for item in items:
             state_item: dict[str, Any] = {
                 "key": item.key,
-                "value": item.value.decode()
-                if isinstance(item.value, bytes)
-                else item.value,
+                "value": item.value.decode() if isinstance(item.value, bytes) else item.value,
             }
             if item.etag:
                 state_item["etag"] = item.etag
@@ -184,9 +178,9 @@ class StateManager:
             )
             response.raise_for_status()
         except Exception as e:
+            logger.exception("Failed to save bulk state", store=self._store_name)
             raise DaprConnectionError(
                 message=f"Failed to save bulk state to {self._store_name}",
-                details={"error": str(e)},
             ) from e
 
     async def delete(self, key: str, etag: str | None = None) -> bool:
@@ -223,9 +217,9 @@ class StateManager:
             )
             response.raise_for_status()
         except Exception as e:
+            logger.exception("Transaction failed", store=self._store_name)
             raise DaprConnectionError(
                 message=f"Transaction failed on {self._store_name}",
-                details={"error": str(e)},
             ) from e
 
     async def query(self, query: dict[str, Any]) -> list[StateItem[bytes]]:
@@ -252,18 +246,16 @@ class StateManager:
             response.raise_for_status()
             data = response.json()
 
-            result = []
-            for item in data.get("results", []):
-                result.append(
-                    StateItem(
-                        key=item["key"],
-                        value=json.dumps(item["data"]).encode(),
-                        etag=item.get("etag"),
-                    )
+            return [
+                StateItem(
+                    key=item["key"],
+                    value=json.dumps(item["data"]).encode(),
+                    etag=item.get("etag"),
                 )
-            return result
+                for item in data.get("results", [])
+            ]
         except Exception as e:
+            logger.exception("Query failed", store=self._store_name)
             raise DaprConnectionError(
                 message=f"Query failed on {self._store_name}",
-                details={"error": str(e)},
             ) from e

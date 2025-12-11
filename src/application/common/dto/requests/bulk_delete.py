@@ -26,13 +26,8 @@ class BulkDeleteResponse(BaseModel):
     Returns the count of successfully deleted items and list of failed IDs.
 
     Example:
-        >>> response = BulkDeleteResponse(
-        ...     deleted_count=2,
-        ...     failed_ids=["id3"]
-        ... )
+        >>> response = BulkDeleteResponse(deleted_count=2, failed_ids=["id3"])
     """
 
     deleted_count: int = Field(ge=0, description="Number of successfully deleted items")
-    failed_ids: list[str] = Field(
-        default_factory=list, description="List of IDs that failed to delete"
-    )
+    failed_ids: list[str] = Field(default_factory=list, description="List of IDs that failed to delete")

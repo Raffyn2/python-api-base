@@ -5,12 +5,12 @@
 **Refactored: Split from production.py for one-class-per-file compliance**
 """
 
-import logging
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
+import structlog
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -20,10 +20,10 @@ from infrastructure.audit import (
     AuditStore,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class AuditConfig:
     """Configuration for audit middleware."""
 
@@ -106,7 +106,12 @@ class AuditMiddleware(BaseHTTPMiddleware):
             )
 
             await self._store.save(record)
-            logger.debug(f"Audit record created: {record.id}")
+            logger.debug(
+                "audit_record_created",
+                correlation_id=correlation_id,
+                record_id=record.id,
+                path=request.url.path,
+            )
 
             return response
 
@@ -121,8 +126,14 @@ class AuditMiddleware(BaseHTTPMiddleware):
                 metadata={
                     "method": request.method,
                     "path": request.url.path,
-                    "error": str(e),
+                    "error": type(e).__name__,  # Don't expose full error message
                 },
             )
             await self._store.save(record)
+            logger.warning(
+                "audit_record_error",
+                correlation_id=correlation_id,
+                path=request.url.path,
+                error_type=type(e).__name__,
+            )
             raise

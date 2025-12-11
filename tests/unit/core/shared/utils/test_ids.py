@@ -2,8 +2,6 @@
 
 from datetime import UTC, datetime
 
-import pytest
-
 from core.shared.utils.ids import (
     compare_ulids,
     generate_ulid,
@@ -135,6 +133,7 @@ class TestIsValidUuid7:
     def test_invalid_uuid4(self) -> None:
         # UUID v4 has version 4, not 7
         import uuid
+
         uuid4 = str(uuid.uuid4())
         assert is_valid_uuid7(uuid4) is False
 

@@ -5,11 +5,11 @@
 """
 
 from application.services.feature_flags.config import FlagConfig
-from application.services.feature_flags.models import EvaluationContext
 from application.services.feature_flags.core.base import (
     EvaluationStrategy,
     FlagEvaluationResult,
 )
+from application.services.feature_flags.models import EvaluationContext
 
 
 class DefaultValueStrategy(EvaluationStrategy):
@@ -32,5 +32,3 @@ class DefaultValueStrategy(EvaluationStrategy):
             value=flag.default_value,
             reason="No matching rules",
         )
-
-

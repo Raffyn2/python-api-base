@@ -7,9 +7,9 @@
 from decimal import Decimal
 from typing import Any, Protocol
 
-from application.common.dto import PaginatedResponse
 from application.common.cqrs.events.event_bus import TypedEventBus
 from application.common.cqrs.handlers import CommandHandler, QueryHandler
+from application.common.dto import PaginatedResponse
 from application.examples.pedido.commands import (
     AddItemToPedidoCommand,
     CancelPedidoCommand,
@@ -43,9 +43,7 @@ class IItemRepository(Protocol):
     async def get(self, item_id: str) -> Any | None: ...
 
 
-class CreatePedidoCommandHandler(
-    CommandHandler[CreatePedidoCommand, PedidoExampleResponse]
-):
+class CreatePedidoCommandHandler(CommandHandler[CreatePedidoCommand, PedidoExampleResponse]):
     """Handler for CreatePedidoCommand."""
 
     def __init__(
@@ -58,9 +56,7 @@ class CreatePedidoCommandHandler(
         self._item_repo = item_repository
         self._event_bus = event_bus
 
-    async def handle(
-        self, command: CreatePedidoCommand
-    ) -> Result[PedidoExampleResponse, Exception]:
+    async def handle(self, command: CreatePedidoCommand) -> Result[PedidoExampleResponse, Exception]:
         """Handle create pedido command."""
         pedido = PedidoExample.create(
             customer_id=command.customer_id,
@@ -77,7 +73,7 @@ class CreatePedidoCommandHandler(
             if not item:
                 return Err(NotFoundError("ItemExample", item_data.get("item_id", "")))
             if not item.is_available:
-                return Err(ValidationError(f"Item '{item.name}' is not available"))
+                return Err(ValidationError("Item is not available", "item_id"))
 
             pedido.add_item(
                 item_id=item.id,
@@ -97,9 +93,7 @@ class CreatePedidoCommandHandler(
         return Ok(PedidoExampleMapper.to_response(saved))
 
 
-class AddItemToPedidoCommandHandler(
-    CommandHandler[AddItemToPedidoCommand, PedidoExampleResponse]
-):
+class AddItemToPedidoCommandHandler(CommandHandler[AddItemToPedidoCommand, PedidoExampleResponse]):
     """Handler for AddItemToPedidoCommand."""
 
     def __init__(
@@ -112,27 +106,21 @@ class AddItemToPedidoCommandHandler(
         self._item_repo = item_repository
         self._event_bus = event_bus
 
-    async def handle(
-        self, command: AddItemToPedidoCommand
-    ) -> Result[PedidoExampleResponse, Exception]:
+    async def handle(self, command: AddItemToPedidoCommand) -> Result[PedidoExampleResponse, Exception]:
         """Handle add item to pedido command."""
         pedido = await self._pedido_repo.get(command.pedido_id)
         if not pedido:
             return Err(NotFoundError("PedidoExample", command.pedido_id))
 
         if not pedido.can_be_modified:
-            return Err(
-                ValidationError(
-                    f"Order in '{pedido.status.value}' status cannot be modified"
-                )
-            )
+            return Err(ValidationError("Order cannot be modified in current status"))
 
         item = await self._item_repo.get(command.item_id)
         if not item:
             return Err(NotFoundError("ItemExample", command.item_id))
 
         if not item.is_available:
-            return Err(ValidationError(f"Item '{item.name}' is not available"))
+            return Err(ValidationError("Item is not available", "item_id"))
 
         pedido.add_item(
             item_id=item.id,
@@ -152,9 +140,7 @@ class AddItemToPedidoCommandHandler(
         return Ok(PedidoExampleMapper.to_response(saved))
 
 
-class ConfirmPedidoCommandHandler(
-    CommandHandler[ConfirmPedidoCommand, PedidoExampleResponse]
-):
+class ConfirmPedidoCommandHandler(CommandHandler[ConfirmPedidoCommand, PedidoExampleResponse]):
     """Handler for ConfirmPedidoCommand."""
 
     def __init__(
@@ -165,9 +151,7 @@ class ConfirmPedidoCommandHandler(
         self._repo = repository
         self._event_bus = event_bus
 
-    async def handle(
-        self, command: ConfirmPedidoCommand
-    ) -> Result[PedidoExampleResponse, Exception]:
+    async def handle(self, command: ConfirmPedidoCommand) -> Result[PedidoExampleResponse, Exception]:
         """Handle confirm pedido command."""
         pedido = await self._repo.get(command.pedido_id)
         if not pedido:
@@ -188,9 +172,7 @@ class ConfirmPedidoCommandHandler(
         return Ok(PedidoExampleMapper.to_response(saved))
 
 
-class CancelPedidoCommandHandler(
-    CommandHandler[CancelPedidoCommand, PedidoExampleResponse]
-):
+class CancelPedidoCommandHandler(CommandHandler[CancelPedidoCommand, PedidoExampleResponse]):
     """Handler for CancelPedidoCommand."""
 
     def __init__(
@@ -201,20 +183,14 @@ class CancelPedidoCommandHandler(
         self._repo = repository
         self._event_bus = event_bus
 
-    async def handle(
-        self, command: CancelPedidoCommand
-    ) -> Result[PedidoExampleResponse, Exception]:
+    async def handle(self, command: CancelPedidoCommand) -> Result[PedidoExampleResponse, Exception]:
         """Handle cancel pedido command."""
         pedido = await self._repo.get(command.pedido_id)
         if not pedido:
             return Err(NotFoundError("PedidoExample", command.pedido_id))
 
         if not pedido.can_be_cancelled:
-            return Err(
-                ValidationError(
-                    f"Order in '{pedido.status.value}' status cannot be cancelled"
-                )
-            )
+            return Err(ValidationError("Order cannot be cancelled in current status"))
 
         try:
             pedido.cancel(command.reason, command.cancelled_by)
@@ -237,9 +213,7 @@ class GetPedidoQueryHandler(QueryHandler[GetPedidoQuery, PedidoExampleResponse])
     def __init__(self, repository: IPedidoRepository) -> None:
         self._repo = repository
 
-    async def handle(
-        self, query: GetPedidoQuery
-    ) -> Result[PedidoExampleResponse, Exception]:
+    async def handle(self, query: GetPedidoQuery) -> Result[PedidoExampleResponse, Exception]:
         """Handle get pedido query."""
         pedido = await self._repo.get(query.pedido_id)
         if not pedido:
@@ -247,17 +221,13 @@ class GetPedidoQueryHandler(QueryHandler[GetPedidoQuery, PedidoExampleResponse])
         return Ok(PedidoExampleMapper.to_response(pedido))
 
 
-class ListPedidosQueryHandler(
-    QueryHandler[ListPedidosQuery, PaginatedResponse[PedidoExampleResponse]]
-):
+class ListPedidosQueryHandler(QueryHandler[ListPedidosQuery, PaginatedResponse[PedidoExampleResponse]]):
     """Handler for ListPedidosQuery."""
 
     def __init__(self, repository: IPedidoRepository) -> None:
         self._repo = repository
 
-    async def handle(
-        self, query: ListPedidosQuery
-    ) -> Result[PaginatedResponse[PedidoExampleResponse], Exception]:
+    async def handle(self, query: ListPedidosQuery) -> Result[PaginatedResponse[PedidoExampleResponse], Exception]:
         """Handle list pedidos query."""
         filters: dict[str, Any] = {}
         if query.customer_id:

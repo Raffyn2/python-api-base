@@ -103,7 +103,7 @@ class TestStoredToken:
             revoked=True,
         )
         data = token.to_dict()
-        
+
         assert data["jti"] == "token-123"
         assert data["user_id"] == "user-456"
         assert data["revoked"] is True
@@ -122,7 +122,7 @@ class TestStoredToken:
             "revoked": True,
         }
         token = StoredToken.from_dict(data)
-        
+
         assert token.jti == "token-123"
         assert token.user_id == "user-456"
         assert token.revoked is True

@@ -3,8 +3,6 @@
 Tests for ApplicationError and its subclasses.
 """
 
-import pytest
-
 from core.errors.base.application_errors import (
     ApplicationError,
     CommandHandlerError,

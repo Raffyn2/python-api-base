@@ -36,25 +36,25 @@ from core.shared.validation.pydantic_v2 import (
 )
 
 __all__ = [
-    # Core validation types (from core.base.patterns.validation)
-    "ValidationError",
-    "FieldError",
     # Allowlist validation
     "AllowlistValidator",
-    "validate_email",
-    "validate_phone",
-    "validate_url",
-    "validate_uuid",
     # Pydantic V2 utilities
     "ComputedFieldExample",
     "EmailStr",
+    "FieldError",
     "LowercaseStr",
     "OptimizedBaseModel",
     "StrippedStr",
     "TypeAdapterCache",
     "UppercaseStr",
+    # Core validation types (from core.base.patterns.validation)
+    "ValidationError",
     "get_type_adapter",
     "validate_bulk",
     "validate_bulk_json",
+    "validate_email",
     "validate_json_fast",
+    "validate_phone",
+    "validate_url",
+    "validate_uuid",
 ]

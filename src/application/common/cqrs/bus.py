@@ -19,6 +19,7 @@ from application.common.cqrs.commands import (
     Command,
     CommandBus,
     CommandHandler,
+    CommandHandlerFunc,
     MiddlewareFunc,
 )
 from application.common.cqrs.events import (
@@ -26,8 +27,18 @@ from application.common.cqrs.events import (
     EventHandlerError,
     TypedEventBus,
 )
-from application.common.cqrs.exceptions import HandlerNotFoundError
-from application.common.cqrs.queries import Query, QueryBus, QueryHandler
+from application.common.cqrs.exceptions import (
+    CQRSError,
+    HandlerAlreadyRegisteredError,
+    HandlerNotFoundError,
+    MiddlewareError,
+)
+from application.common.cqrs.queries import (
+    Query,
+    QueryBus,
+    QueryHandler,
+    QueryHandlerFunc,
+)
 from core.errors import (
     ApplicationError,
     AuthenticationError as UnauthorizedError,
@@ -41,22 +52,27 @@ from core.errors import (
 __all__ = [
     # Exceptions
     "ApplicationError",
+    "CQRSError",
     # Command Bus
     "Command",
     "CommandBus",
     "CommandHandler",
+    "CommandHandlerFunc",
     "ConflictError",
     # Event Bus
     "EventHandler",
     "EventHandlerError",
     "ForbiddenError",
+    "HandlerAlreadyRegisteredError",
     "HandlerNotFoundError",
+    "MiddlewareError",
     "MiddlewareFunc",
     "NotFoundError",
     # Query Bus
     "Query",
     "QueryBus",
     "QueryHandler",
+    "QueryHandlerFunc",
     "TypedEventBus",
     "UnauthorizedError",
     "ValidationError",

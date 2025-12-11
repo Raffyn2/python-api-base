@@ -3,8 +3,6 @@
 Tests CacheConfig dataclass and its default values.
 """
 
-import pytest
-
 from infrastructure.cache.core.config import CacheConfig
 
 
@@ -14,7 +12,7 @@ class TestCacheConfig:
     def test_default_values(self) -> None:
         """Test default configuration values."""
         config = CacheConfig()
-        
+
         assert config.default_ttl == 3600
         assert config.max_size == 10000
         assert config.prefix == ""
@@ -42,7 +40,7 @@ class TestCacheConfig:
             pool_max_size=20,
             options={"compress": True},
         )
-        
+
         assert config.default_ttl == 7200
         assert config.max_size == 5000
         assert config.prefix == "app:"
@@ -61,7 +59,7 @@ class TestCacheConfig:
             default_ttl=1800,
             prefix="test:",
         )
-        
+
         assert config.default_ttl == 1800
         assert config.prefix == "test:"
         assert config.max_size == 10000  # default
@@ -71,7 +69,7 @@ class TestCacheConfig:
         """Test that options dict is isolated between instances."""
         config1 = CacheConfig()
         config2 = CacheConfig()
-        
+
         config1.options["key1"] = "value1"
-        
+
         assert "key1" not in config2.options

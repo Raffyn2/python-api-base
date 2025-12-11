@@ -2,8 +2,6 @@
 
 from datetime import UTC, datetime
 
-import pytest
-
 from application.services.feature_flags.config.config import FlagConfig
 from application.services.feature_flags.core.enums import FlagStatus
 

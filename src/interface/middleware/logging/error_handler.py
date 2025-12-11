@@ -1,8 +1,15 @@
-"""Global exception handlers for FastAPI."""
+"""Global exception handlers for FastAPI.
 
-import logging
+Provides RFC 7807 Problem Details responses for all exception types.
+All errors are sanitized to prevent internal detail exposure.
+
+**Feature: api-base-improvements**
+**Validates: Requirements 9.1, 9.2**
+"""
+
 from typing import Any
 
+import structlog
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError as PydanticValidationError
@@ -14,7 +21,7 @@ from core.errors.base.domain_errors import (
     RateLimitExceededError,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def create_problem_detail(
@@ -33,11 +40,21 @@ def create_problem_detail(
         detail=detail,
         instance=str(request.url),
         errors=errors,
-    ).model_dump()
+    ).model_dump(mode="json")
 
 
 async def app_exception_handler(request: Request, exc: AppError) -> JSONResponse:
     """Handle application exceptions."""
+    correlation_id = _get_correlation_id(request)
+
+    logger.warning(
+        "app_exception",
+        correlation_id=correlation_id,
+        error_code=exc.error_code,
+        status_code=exc.status_code,
+        path=str(request.url.path),
+    )
+
     content = create_problem_detail(
         request=request,
         status=exc.status_code,
@@ -60,10 +77,10 @@ async def app_exception_handler(request: Request, exc: AppError) -> JSONResponse
     )
 
 
-async def validation_exception_handler(
-    request: Request, exc: PydanticValidationError
-) -> JSONResponse:
+async def validation_exception_handler(request: Request, exc: PydanticValidationError) -> JSONResponse:
     """Handle Pydantic validation errors."""
+    correlation_id = _get_correlation_id(request)
+
     errors = [
         {
             "field": ".".join(str(loc) for loc in error["loc"]),
@@ -72,6 +89,13 @@ async def validation_exception_handler(
         }
         for error in exc.errors()
     ]
+
+    logger.info(
+        "validation_error",
+        correlation_id=correlation_id,
+        path=str(request.url.path),
+        error_count=len(errors),
+    )
 
     content = create_problem_detail(
         request=request,
@@ -85,13 +109,24 @@ async def validation_exception_handler(
     return JSONResponse(status_code=422, content=content)
 
 
+def _get_correlation_id(request: Request) -> str | None:
+    """Extract correlation ID from request state or headers."""
+    if hasattr(request.state, "request_id"):
+        return request.state.request_id
+    return request.headers.get("X-Request-ID") or request.headers.get("X-Correlation-ID")
+
+
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle unexpected errors without exposing internals."""
-    # Log the full error for debugging
+    correlation_id = _get_correlation_id(request)
+
+    # Log the full error for debugging (structlog handles exc_info automatically)
     logger.exception(
-        "Unhandled exception",
-        exc_info=exc,
-        extra={"request_url": str(request.url), "method": request.method},
+        "unhandled_exception",
+        correlation_id=correlation_id,
+        request_url=str(request.url),
+        method=request.method,
+        error_type=type(exc).__name__,
     )
 
     # Return generic error without internal details

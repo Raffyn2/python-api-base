@@ -19,8 +19,8 @@ __all__ = [
     "CancelPedidoRequest",
     "ConfirmPedidoRequest",
     "PedidoExampleCreate",
-    "PedidoExampleUpdate",
     "PedidoExampleResponse",
+    "PedidoExampleUpdate",
     "PedidoItemResponse",
     "UpdateStatusRequest",
 ]

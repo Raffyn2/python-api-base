@@ -5,10 +5,10 @@ Contains Result pattern types and related type aliases.
 **Feature: core-types-restructuring-2025**
 """
 
+from core.types.identity import EntityId
 from core.types.patterns.result_types import (
     AsyncCallback,
     CompositeSpec,
-    EntityId,
     EventCallback,
     Failure,
     Middleware,

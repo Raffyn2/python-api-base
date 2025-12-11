@@ -48,7 +48,7 @@ class TestInternalErrorConcealment:
             def __init__(self):
                 super().__init__(f"{error_message}\n{stack_trace}\n{internal_path}")
 
-        exc = SensitiveException()
+        SensitiveException()
 
         # The problem detail for internal errors should not contain sensitive info
         problem = create_problem_detail(
@@ -64,10 +64,7 @@ class TestInternalErrorConcealment:
 
         # Should not contain the original error message
         if len(error_message) > 10:  # Only check substantial messages
-            assert (
-                error_message not in problem_str
-                or "unexpected error" in problem_str.lower()
-            )
+            assert error_message not in problem_str or "unexpected error" in problem_str.lower()
 
         # Should not contain stack trace patterns
         assert "Traceback" not in problem_str
@@ -85,9 +82,7 @@ class TestInternalErrorConcealment:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    def test_problem_detail_structure_is_rfc7807_compliant(
-        self, sensitive_data: str
-    ) -> None:
+    def test_problem_detail_structure_is_rfc7807_compliant(self, sensitive_data: str) -> None:
         """
         Problem detail response SHALL follow RFC 7807 structure.
         """
@@ -144,13 +139,9 @@ class TestErrorResponseFormat:
     @settings(max_examples=20)
     @given(
         status_code=st.sampled_from([400, 401, 403, 404, 422, 429, 500]),
-        error_code=st.text(
-            min_size=3, max_size=30, alphabet=st.characters(whitelist_categories=("L",))
-        ).map(str.upper),
+        error_code=st.text(min_size=3, max_size=30, alphabet=st.characters(whitelist_categories=("L",))).map(str.upper),
     )
-    def test_error_response_has_consistent_structure(
-        self, status_code: int, error_code: str
-    ) -> None:
+    def test_error_response_has_consistent_structure(self, status_code: int, error_code: str) -> None:
         """
         All error responses SHALL have consistent RFC 7807 structure.
         """

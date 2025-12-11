@@ -54,9 +54,7 @@ class TestTypeAdapterCache:
     def test_validate_list_json(self) -> None:
         """Test validating JSON array."""
         cache = TypeAdapterCache(SampleModel)
-        result = cache.validate_list_json(
-            b'[{"name": "John", "age": 30}, {"name": "Jane", "age": 25}]'
-        )
+        result = cache.validate_list_json(b'[{"name": "John", "age": 30}, {"name": "Jane", "age": 25}]')
         assert len(result) == 2
         assert result[0].name == "John"
         assert result[1].name == "Jane"

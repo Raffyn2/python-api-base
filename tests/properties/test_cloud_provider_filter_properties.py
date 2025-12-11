@@ -33,53 +33,63 @@ from infrastructure.security.cloud_provider_filter import (
 )
 
 # Strategies
-provider_strategy = st.sampled_from([
-    p for p in CloudProvider if p != CloudProvider.UNKNOWN
-])
+provider_strategy = st.sampled_from([p for p in CloudProvider if p != CloudProvider.UNKNOWN])
 
 # Sample IPs from known cloud ranges
-aws_ip_strategy = st.sampled_from([
-    "3.5.140.2",
-    "13.52.0.1",
-    "52.94.76.1",
-    "54.239.28.85",
-])
+aws_ip_strategy = st.sampled_from(
+    [
+        "3.5.140.2",
+        "13.52.0.1",
+        "52.94.76.1",
+        "54.239.28.85",
+    ]
+)
 
-gcp_ip_strategy = st.sampled_from([
-    "34.102.136.180",
-    "104.196.0.1",
-    "130.211.0.1",
-    "142.250.0.1",
-])
+gcp_ip_strategy = st.sampled_from(
+    [
+        "34.102.136.180",
+        "104.196.0.1",
+        "130.211.0.1",
+        "142.250.0.1",
+    ]
+)
 
-azure_ip_strategy = st.sampled_from([
-    "13.64.0.1",
-    "20.42.0.1",
-    "40.64.0.1",
-    "51.140.0.1",
-])
+azure_ip_strategy = st.sampled_from(
+    [
+        "13.64.0.1",
+        "20.42.0.1",
+        "40.64.0.1",
+        "51.140.0.1",
+    ]
+)
 
-digitalocean_ip_strategy = st.sampled_from([
-    "64.225.0.1",
-    "134.209.0.1",
-    "138.68.0.1",
-    "159.65.0.1",
-])
+digitalocean_ip_strategy = st.sampled_from(
+    [
+        "64.225.0.1",
+        "134.209.0.1",
+        "138.68.0.1",
+        "159.65.0.1",
+    ]
+)
 
-cloudflare_ip_strategy = st.sampled_from([
-    "104.16.0.1",
-    "104.24.0.1",
-    "172.64.0.1",
-    "173.245.48.1",
-])
+cloudflare_ip_strategy = st.sampled_from(
+    [
+        "104.16.0.1",
+        "104.24.0.1",
+        "172.64.0.1",
+        "173.245.48.1",
+    ]
+)
 
-non_cloud_ip_strategy = st.sampled_from([
-    "192.168.1.1",
-    "10.0.0.1",
-    "8.8.8.8",
-    "1.1.1.1",
-    "208.67.222.222",
-])
+non_cloud_ip_strategy = st.sampled_from(
+    [
+        "192.168.1.1",
+        "10.0.0.1",
+        "8.8.8.8",
+        "1.1.1.1",
+        "208.67.222.222",
+    ]
+)
 
 
 class TestProviderIdentification:
@@ -333,12 +343,7 @@ class TestCloudProviderFilterBuilder:
 
     def test_builder_block_all_cloud(self) -> None:
         """Test builder block_all_cloud setting."""
-        filter = (
-            CloudProviderFilterBuilder()
-            .block_all_cloud(True)
-            .allow_cloudflare(False)
-            .build()
-        )
+        filter = CloudProviderFilterBuilder().block_all_cloud(True).allow_cloudflare(False).build()
 
         assert filter.config.block_all_cloud is True
         assert filter.config.allow_cloudflare is False
@@ -453,14 +458,16 @@ class TestIPv6Support:
         assert all(isinstance(r, IPv6Network) for r in ipv6_ranges)
 
     @given(
-        invalid_ip=st.sampled_from([
-            "not-an-ip",
-            "256.256.256.256",
-            "::gggg",
-            "",
-            "1.2.3",
-            "1.2.3.4.5",
-        ])
+        invalid_ip=st.sampled_from(
+            [
+                "not-an-ip",
+                "256.256.256.256",
+                "::gggg",
+                "",
+                "1.2.3",
+                "1.2.3.4.5",
+            ]
+        )
     )
     @settings(max_examples=20)
     def test_invalid_ip_graceful_handling(self, invalid_ip: str) -> None:
@@ -506,9 +513,7 @@ class TestExternalRangeSource:
 
         # Should now have both default and custom ranges
         updated_ranges = provider.get_ranges(CloudProvider.AWS)
-        assert len(updated_ranges) > len(aws_ranges) or "100.0.0.0/8" in [
-            str(r) for r in updated_ranges
-        ]
+        assert len(updated_ranges) > len(aws_ranges) or "100.0.0.0/8" in [str(r) for r in updated_ranges]
 
     def test_range_merge_without_duplicates(self) -> None:
         """**Feature: shared-modules-refactoring, Property 12: Range Merge Without Duplicates**

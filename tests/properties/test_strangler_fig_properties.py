@@ -39,9 +39,7 @@ class TestRouteConfig:
 
     def test_matches_wildcard_path(self):
         """matches_path should match wildcard patterns."""
-        config = RouteConfig(
-            path_pattern="/api/*", strategy=RoutingStrategy.LEGACY_ONLY
-        )
+        config = RouteConfig(path_pattern="/api/*", strategy=RoutingStrategy.LEGACY_ONLY)
         assert config.matches_path("/api/users") is True
         assert config.matches_path("/api/items") is True
         assert config.matches_path("/other/path") is False
@@ -133,9 +131,7 @@ class TestStranglerRouter:
             return "new"
 
         router = StranglerRouter(legacy_handler, new_handler)
-        router.add_route(
-            RouteConfig(path_pattern="/api/*", strategy=RoutingStrategy.NEW_ONLY)
-        )
+        router.add_route(RouteConfig(path_pattern="/api/*", strategy=RoutingStrategy.NEW_ONLY))
         result = await router.route("/api/test", {})
         assert result == "new"
 
@@ -197,9 +193,7 @@ class TestStranglerRouter:
             return "result"
 
         router = StranglerRouter(handler, handler)
-        router.add_route(
-            RouteConfig(path_pattern="/api/*", strategy=RoutingStrategy.NEW_ONLY)
-        )
+        router.add_route(RouteConfig(path_pattern="/api/*", strategy=RoutingStrategy.NEW_ONLY))
         assert router.get_route("/api/*") is not None
 
         result = router.remove_route("/api/*")
@@ -234,9 +228,7 @@ class TestStranglerRouter:
             return "result"
 
         router = StranglerRouter(handler, handler)
-        router.add_route(
-            RouteConfig(path_pattern="/api/*", strategy=RoutingStrategy.LEGACY_ONLY)
-        )
+        router.add_route(RouteConfig(path_pattern="/api/*", strategy=RoutingStrategy.LEGACY_ONLY))
         stats = router.get_stats("/api/*")
         assert "total_requests" in stats
 
@@ -247,12 +239,8 @@ class TestStranglerRouter:
             return "result"
 
         router = StranglerRouter(handler, handler)
-        router.add_route(
-            RouteConfig(path_pattern="/api/v1/*", strategy=RoutingStrategy.LEGACY_ONLY)
-        )
-        router.add_route(
-            RouteConfig(path_pattern="/api/v2/*", strategy=RoutingStrategy.NEW_ONLY)
-        )
+        router.add_route(RouteConfig(path_pattern="/api/v1/*", strategy=RoutingStrategy.LEGACY_ONLY))
+        router.add_route(RouteConfig(path_pattern="/api/v2/*", strategy=RoutingStrategy.NEW_ONLY))
         routes = router.list_routes()
         assert len(routes) == 2
 

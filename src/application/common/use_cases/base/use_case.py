@@ -5,11 +5,30 @@ Uses PEP 695 type parameter syntax.
 
 **Feature: application-layer-improvements-2025**
 **Validates: Requirements 4.1, 4.2, 4.3**
+
+Architecture Note - UseCase Implementations:
+-------------------------------------------
+The project has multiple UseCase patterns for different purposes:
+
+1. **core.base.patterns.use_case.BaseUseCase** (CRUD with Mapper)
+   - Generic CRUD operations with mapper integration
+   - Best for: Simple entity CRUD with DTO conversion
+
+2. **application.common.use_cases.base.use_case.BaseUseCase** (THIS FILE)
+   - CRUD with Unit of Work and Result pattern
+   - Best for: CRUD operations requiring transaction management
+
+3. **application.common.use_cases.base_use_case.BaseUseCase** (Single Operation)
+   - Single execute() method pattern
+   - Best for: Complex business operations (PlaceOrder, TransferMoney)
+
+Choose based on your use case complexity and transaction requirements.
 """
 
-import logging
 from abc import ABC, abstractmethod
 from typing import Any, overload
+
+import structlog
 
 from application.common.dto import PaginatedResponse
 from application.common.errors import (
@@ -19,7 +38,7 @@ from application.common.errors import (
 )
 from core.base.patterns.result import Err, Ok, Result
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Re-exports for backward compatibility
 __all__ = [
@@ -193,8 +212,9 @@ class BaseUseCase[TEntity, TId](ABC):
             return Err(e)
         except Exception as e:
             logger.exception(
-                f"Unexpected error creating {self._get_entity_name()}",
-                extra={"entity_type": self._get_entity_name(), "operation": "CREATE"},
+                "Unexpected error creating entity",
+                entity_type=self._get_entity_name(),
+                operation="CREATE",
             )
             return Err(UseCaseError(str(e), code="INTERNAL_ERROR"))
 
@@ -233,12 +253,10 @@ class BaseUseCase[TEntity, TId](ABC):
             return Err(e)
         except Exception as e:
             logger.exception(
-                f"Unexpected error updating {self._get_entity_name()} {entity_id}",
-                extra={
-                    "entity_type": self._get_entity_name(),
-                    "entity_id": str(entity_id),
-                    "operation": "UPDATE",
-                },
+                "Unexpected error updating entity",
+                entity_type=self._get_entity_name(),
+                entity_id=str(entity_id),
+                operation="UPDATE",
             )
             return Err(UseCaseError(str(e), code="INTERNAL_ERROR"))
 
@@ -266,12 +284,10 @@ class BaseUseCase[TEntity, TId](ABC):
             raise
         except Exception as e:
             logger.exception(
-                f"Unexpected error deleting {self._get_entity_name()} {entity_id}",
-                extra={
-                    "entity_type": self._get_entity_name(),
-                    "entity_id": str(entity_id),
-                    "operation": "DELETE",
-                },
+                "Unexpected error deleting entity",
+                entity_type=self._get_entity_name(),
+                entity_id=str(entity_id),
+                operation="DELETE",
             )
             return Err(UseCaseError(str(e), code="INTERNAL_ERROR"))
 

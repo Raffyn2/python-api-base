@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-@dataclass
+@dataclass(slots=True)
 class CacheConfig:
     """Configuration for cache providers.
 
@@ -24,7 +24,7 @@ class CacheConfig:
     key_prefix: str = ""
 
 
-@dataclass
+@dataclass(slots=True)
 class CacheEntry:
     """A single cache entry with expiration tracking.
 

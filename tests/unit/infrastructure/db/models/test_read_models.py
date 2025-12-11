@@ -6,8 +6,6 @@
 
 from datetime import UTC, datetime
 
-import pytest
-
 from infrastructure.db.models.read_models import UserReadModel
 
 
@@ -63,7 +61,7 @@ class TestUserReadModel:
             permission_count=5,
         )
         result = model.to_dict()
-        
+
         assert result["id"] == "user-123"
         assert result["email"] == "test@example.com"
         assert result["username"] == "testuser"
@@ -128,7 +126,7 @@ class TestUserReadModel:
             "permission_count": 5,
         }
         model = UserReadModel.from_dict(data)
-        
+
         assert model.id == "user-123"
         assert model.email == "test@example.com"
         assert model.role_names == "admin,user"
@@ -156,7 +154,7 @@ class TestUserReadModel:
             "updated_at": now,
         }
         model = UserReadModel.from_dict(data)
-        
+
         assert model.is_active is True
         assert model.is_verified is False
         assert model.permission_count == 0

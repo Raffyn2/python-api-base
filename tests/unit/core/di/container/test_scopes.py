@@ -15,13 +15,9 @@ from core.di.resolution import CircularDependencyError, ServiceNotRegisteredErro
 class SampleService:
     """Sample service for testing."""
 
-    pass
-
 
 class AnotherService:
     """Another sample service for testing."""
-
-    pass
 
 
 class DisposableService:

@@ -4,7 +4,7 @@ Tests retry logic with exponential backoff.
 """
 
 from dataclasses import dataclass
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -74,7 +74,7 @@ class TestRetryConfig:
 class TestRetryMiddleware:
     """Tests for RetryMiddleware."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def middleware(self) -> RetryMiddleware:
         """Create middleware with fast config for testing."""
         config = RetryConfig(
@@ -187,14 +187,10 @@ class TestRetryMiddleware:
         assert middleware._config.max_retries == 3
 
     @pytest.mark.asyncio
-    async def test_success_after_multiple_retries(
-        self, middleware: RetryMiddleware
-    ) -> None:
+    async def test_success_after_multiple_retries(self, middleware: RetryMiddleware) -> None:
         """Test success after multiple retries."""
         command = SampleCommand(name="test")
-        handler = AsyncMock(
-            side_effect=[ValueError("1"), ValueError("2"), "result"]
-        )
+        handler = AsyncMock(side_effect=[ValueError("1"), ValueError("2"), "result"])
 
         result = await middleware(command, handler)
 

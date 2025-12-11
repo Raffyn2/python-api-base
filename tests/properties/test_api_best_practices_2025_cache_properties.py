@@ -24,7 +24,7 @@ from infrastructure.cache.providers.redis_jitter import (
 # === Test Fixtures ===
 
 
-@pytest.fixture
+@pytest.fixture()
 def jitter_config() -> JitterConfig:
     """Default jitter configuration for testing."""
     return JitterConfig(
@@ -36,7 +36,7 @@ def jitter_config() -> JitterConfig:
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def cache_with_jitter(jitter_config: JitterConfig) -> RedisCacheWithJitter[dict]:
     """Cache instance for testing (no actual Redis connection)."""
     return RedisCacheWithJitter[dict](
@@ -77,9 +77,7 @@ class TestCacheTTLJitterRange:
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     @given(base_ttl=ttl_strategy)
-    def test_jittered_ttl_within_range(
-        self, cache_with_jitter: RedisCacheWithJitter[dict], base_ttl: int
-    ) -> None:
+    def test_jittered_ttl_within_range(self, cache_with_jitter: RedisCacheWithJitter[dict], base_ttl: int) -> None:
         """Jittered TTL SHALL be within [base_ttl, base_ttl * 1.15].
 
         **Feature: api-best-practices-review-2025, Property 9: Cache TTL Jitter Range**
@@ -92,9 +90,7 @@ class TestCacheTTLJitterRange:
 
         # Jitter should be within 15% max
         max_jittered = int(base_ttl * 1.15) + 1  # +1 for rounding
-        assert jittered <= max_jittered, (
-            f"Jittered TTL {jittered} exceeds max {max_jittered}"
-        )
+        assert jittered <= max_jittered, f"Jittered TTL {jittered} exceeds max {max_jittered}"
 
     @settings(
         max_examples=50,
@@ -102,9 +98,7 @@ class TestCacheTTLJitterRange:
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     @given(base_ttl=ttl_strategy)
-    def test_jitter_distribution(
-        self, cache_with_jitter: RedisCacheWithJitter[dict], base_ttl: int
-    ) -> None:
+    def test_jitter_distribution(self, cache_with_jitter: RedisCacheWithJitter[dict], base_ttl: int) -> None:
         """Jitter SHALL produce varied results (not constant).
 
         **Feature: api-best-practices-review-2025, Property 9**
@@ -174,9 +168,7 @@ class TestCacheStampedePrevention:
         cache._connected = True
 
         # Launch concurrent requests
-        tasks = [
-            cache.get_or_compute("test-key", slow_compute, ttl=300) for _ in range(3)
-        ]
+        tasks = [cache.get_or_compute("test-key", slow_compute, ttl=300) for _ in range(3)]
 
         results = await asyncio.gather(*tasks)
 

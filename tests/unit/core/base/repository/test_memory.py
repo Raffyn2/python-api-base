@@ -164,7 +164,7 @@ class TestInMemoryRepositoryGetAll:
         repo = InMemoryRepository(SampleEntity)
         await repo.create(CreateSampleEntity(name="one", value=10))
         await repo.create(CreateSampleEntity(name="two", value=20))
-        entities, total = await repo.get_all(filters={"value": 10})
+        entities, _total = await repo.get_all(filters={"value": 10})
         assert len(entities) == 1
         assert entities[0].value == 10
 
@@ -377,4 +377,3 @@ class TestInMemoryRepositoryClear:
         await repo.create(CreateSampleEntity(name="one", value=1))
         repo.clear()
         assert repo._counter == 0
-

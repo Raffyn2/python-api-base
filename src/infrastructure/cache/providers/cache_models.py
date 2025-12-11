@@ -9,7 +9,7 @@ Extracted from redis_jitter.py for better modularity and reusability.
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(slots=True)
 class JitterConfig:
     """Configuration for TTL jitter.
 
@@ -31,7 +31,7 @@ class JitterConfig:
     early_recompute_probability: float = 0.1
 
 
-@dataclass
+@dataclass(slots=True)
 class TTLPattern:
     """TTL configuration for a key pattern.
 
@@ -51,7 +51,7 @@ class TTLPattern:
     enable_early_recompute: bool = False
 
 
-@dataclass
+@dataclass(slots=True)
 class CacheStats:
     """Statistics for cache operations.
 

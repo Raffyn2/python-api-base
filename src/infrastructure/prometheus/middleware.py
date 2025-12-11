@@ -14,6 +14,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from infrastructure.prometheus.registry import get_registry
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from starlette.requests import Request
     from starlette.responses import Response
     from starlette.types import ASGIApp
@@ -89,7 +91,11 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
 
         return request.url.path
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         """Process request and collect metrics.
 
         Args:

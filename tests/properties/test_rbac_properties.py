@@ -37,9 +37,7 @@ role_name_strategy = st.text(
 
 # Strategy for generating permission sets
 permission_strategy = st.sampled_from(list(Permission))
-permission_set_strategy = st.frozensets(
-    permission_strategy, min_size=0, max_size=len(Permission)
-)
+permission_set_strategy = st.frozensets(permission_strategy, min_size=0, max_size=len(Permission))
 
 
 class TestInsufficientPermissions:
@@ -50,9 +48,7 @@ class TestInsufficientPermissions:
         user_id=user_id_strategy,
         required_permission=permission_strategy,
     )
-    def test_user_without_permission_raises_403(
-        self, user_id: str, required_permission: Permission
-    ) -> None:
+    def test_user_without_permission_raises_403(self, user_id: str, required_permission: Permission) -> None:
         """
         **Feature: api-base-improvements, Property 7: Insufficient permissions return 403**
         **Validates: Requirements 2.1**
@@ -112,9 +108,7 @@ class TestInsufficientPermissions:
 
     @settings(max_examples=50, deadline=None)
     @given(user_id=user_id_strategy, role_name=role_name_strategy)
-    def test_unknown_role_grants_no_permissions(
-        self, user_id: str, role_name: str
-    ) -> None:
+    def test_unknown_role_grants_no_permissions(self, user_id: str, role_name: str) -> None:
         """
         **Feature: api-base-improvements, Property 7: Insufficient permissions return 403**
         **Validates: Requirements 2.1**
@@ -258,9 +252,7 @@ class TestRoleDataclass:
         role_name=role_name_strategy,
         permissions=permission_set_strategy,
     )
-    def test_role_serialization_round_trip(
-        self, role_name: str, permissions: frozenset[Permission]
-    ) -> None:
+    def test_role_serialization_round_trip(self, role_name: str, permissions: frozenset[Permission]) -> None:
         """
         **Feature: api-base-improvements, Property 8: Multiple roles combine permissions**
         **Validates: Requirements 2.3**
@@ -282,9 +274,7 @@ class TestRoleDataclass:
 
     @settings(max_examples=50, deadline=None)
     @given(permissions=permission_set_strategy, permission=permission_strategy)
-    def test_has_permission_method(
-        self, permissions: frozenset[Permission], permission: Permission
-    ) -> None:
+    def test_has_permission_method(self, permissions: frozenset[Permission], permission: Permission) -> None:
         """
         **Feature: api-base-improvements, Property 8: Multiple roles combine permissions**
         **Validates: Requirements 2.3**

@@ -7,14 +7,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from infrastructure.elasticsearch.document import ElasticsearchDocument
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 T = TypeVar("T", bound=ElasticsearchDocument)
 
 
-@dataclass
+@dataclass(slots=True)
 class SearchQuery:
     """Search query specification.
 
@@ -76,8 +79,8 @@ class SearchQuery:
         return body
 
 
-@dataclass
-class SearchResult(Generic[T]):
+@dataclass(slots=True)
+class SearchResult[T: ElasticsearchDocument]:
     """Search result container.
 
     Attributes:
@@ -99,7 +102,7 @@ class SearchResult(Generic[T]):
         """Check if result is empty."""
         return len(self.hits) == 0
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[T]:
         """Iterate over hits."""
         return iter(self.hits)
 
@@ -108,7 +111,7 @@ class SearchResult(Generic[T]):
         return len(self.hits)
 
 
-@dataclass
+@dataclass(slots=True)
 class AggregationResult:
     """Aggregation result wrapper.
 

@@ -1,25 +1,24 @@
 """Knative manifest validator."""
 
-from typing import Any
+from typing import Any, ClassVar
 
-from src.infrastructure.eventing.knative.models import (
-    KnativeManifestError,
-    InvalidAutoscalingConfigError,
-    InvalidTrafficConfigError,
-)
+from infrastructure.eventing.knative.models import KnativeManifestError
 
 
 class KnativeManifestValidator:
     """Validator for Knative Service manifests."""
 
-    REQUIRED_FIELDS = ["apiVersion", "kind", "metadata", "spec"]
-    REQUIRED_METADATA_FIELDS = ["name"]
-    VALID_API_VERSIONS = ["serving.knative.dev/v1", "serving.knative.dev/v1beta1"]
-    VALID_AUTOSCALING_CLASSES = [
+    REQUIRED_FIELDS: ClassVar[list[str]] = ["apiVersion", "kind", "metadata", "spec"]
+    REQUIRED_METADATA_FIELDS: ClassVar[list[str]] = ["name"]
+    VALID_API_VERSIONS: ClassVar[list[str]] = [
+        "serving.knative.dev/v1",
+        "serving.knative.dev/v1beta1",
+    ]
+    VALID_AUTOSCALING_CLASSES: ClassVar[list[str]] = [
         "kpa.autoscaling.knative.dev",
         "hpa.autoscaling.knative.dev",
     ]
-    VALID_AUTOSCALING_METRICS = ["concurrency", "rps", "cpu", "memory"]
+    VALID_AUTOSCALING_METRICS: ClassVar[list[str]] = ["concurrency", "rps", "cpu", "memory"]
 
     @classmethod
     def validate(cls, manifest: dict[str, Any]) -> list[str]:
@@ -34,9 +33,7 @@ class KnativeManifestValidator:
         errors: list[str] = []
 
         # Check required fields
-        for field in cls.REQUIRED_FIELDS:
-            if field not in manifest:
-                errors.append(f"Missing required field: {field}")
+        errors.extend(f"Missing required field: {field}" for field in cls.REQUIRED_FIELDS if field not in manifest)
 
         if errors:
             return errors
@@ -52,9 +49,11 @@ class KnativeManifestValidator:
 
         # Validate metadata
         metadata = manifest.get("metadata", {})
-        for field in cls.REQUIRED_METADATA_FIELDS:
-            if field not in metadata:
-                errors.append(f"Missing required metadata field: {field}")
+        errors.extend(
+            f"Missing required metadata field: {field}"
+            for field in cls.REQUIRED_METADATA_FIELDS
+            if field not in metadata
+        )
 
         # Validate spec
         spec = manifest.get("spec", {})
@@ -139,45 +138,50 @@ class KnativeManifestValidator:
             List of validation errors
         """
         errors: list[str] = []
+        cls._validate_autoscaling_class(annotations, errors)
+        cls._validate_autoscaling_metric(annotations, errors)
+        cls._validate_scale_values(annotations, errors)
+        return errors
 
-        # Validate autoscaling class
+    @classmethod
+    def _validate_autoscaling_class(cls, annotations: dict[str, str], errors: list[str]) -> None:
+        """Validate autoscaling class annotation."""
         autoscaling_class = annotations.get("autoscaling.knative.dev/class")
         if autoscaling_class and autoscaling_class not in cls.VALID_AUTOSCALING_CLASSES:
             errors.append(f"Invalid autoscaling class: {autoscaling_class}")
 
-        # Validate autoscaling metric
+    @classmethod
+    def _validate_autoscaling_metric(cls, annotations: dict[str, str], errors: list[str]) -> None:
+        """Validate autoscaling metric annotation."""
         autoscaling_metric = annotations.get("autoscaling.knative.dev/metric")
         if autoscaling_metric and autoscaling_metric not in cls.VALID_AUTOSCALING_METRICS:
             errors.append(f"Invalid autoscaling metric: {autoscaling_metric}")
 
-        # Validate min/max scale
+    @classmethod
+    def _validate_scale_values(cls, annotations: dict[str, str], errors: list[str]) -> None:
+        """Validate min/max scale annotations."""
         min_scale = annotations.get("autoscaling.knative.dev/min-scale")
         max_scale = annotations.get("autoscaling.knative.dev/max-scale")
 
-        if min_scale:
-            try:
-                min_val = int(min_scale)
-                if min_val < 0:
-                    errors.append("min-scale must be >= 0")
-            except ValueError:
-                errors.append(f"Invalid min-scale value: {min_scale}")
+        min_val = cls._parse_scale_value(min_scale, "min-scale", errors)
+        max_val = cls._parse_scale_value(max_scale, "max-scale", errors)
 
-        if max_scale:
-            try:
-                max_val = int(max_scale)
-                if max_val < 0:
-                    errors.append("max-scale must be >= 0")
-            except ValueError:
-                errors.append(f"Invalid max-scale value: {max_scale}")
+        if min_val is not None and max_val is not None and min_val > max_val:
+            errors.append("min-scale must be <= max-scale")
 
-        if min_scale and max_scale:
-            try:
-                if int(min_scale) > int(max_scale):
-                    errors.append("min-scale must be <= max-scale")
-            except ValueError:
-                pass
-
-        return errors
+    @classmethod
+    def _parse_scale_value(cls, value: str | None, name: str, errors: list[str]) -> int | None:
+        """Parse and validate a scale value."""
+        if not value:
+            return None
+        try:
+            parsed = int(value)
+            if parsed < 0:
+                errors.append(f"{name} must be >= 0")
+            return parsed
+        except ValueError:
+            errors.append(f"Invalid {name} value: {value}")
+            return None
 
     @classmethod
     def _validate_traffic(cls, traffic: list[dict[str, Any]]) -> list[str]:

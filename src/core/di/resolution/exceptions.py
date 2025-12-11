@@ -83,7 +83,11 @@ class InvalidFactoryError(Exception):
 
 
 class ServiceNotRegisteredError(Exception):
-    """Raised when service is not registered in container."""
+    """Raised when service is not registered in container.
+
+    **Feature: generics-100-percent-fixes**
+    **Validates: Requirements 4.1**
+    """
 
     def __init__(self, service_type: type) -> None:
         """Initialize service not registered error.

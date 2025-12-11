@@ -11,8 +11,8 @@ from infrastructure.elasticsearch.operations.repository import ElasticsearchRepo
 from infrastructure.elasticsearch.operations.search_operations import SearchOperations
 
 __all__ = [
+    "ElasticsearchRepository",
     "IndexOperations",
     "QueryBuilder",
-    "ElasticsearchRepository",
     "SearchOperations",
 ]

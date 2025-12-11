@@ -25,7 +25,7 @@ requires_docker = pytest.mark.skipif(
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 async def async_client():
     """Create async HTTP client for testing."""
     # Import here to avoid startup issues when services not available
@@ -48,9 +48,7 @@ class TestJWKSEndpointIntegration:
     """
 
     @pytest.mark.asyncio
-    async def test_jwks_endpoint_returns_valid_json(
-        self, async_client: AsyncClient
-    ) -> None:
+    async def test_jwks_endpoint_returns_valid_json(self, async_client: AsyncClient) -> None:
         """JWKS endpoint SHALL return valid JWK Set.
 
         **Feature: api-best-practices-review-2025**
@@ -76,14 +74,10 @@ class TestJWKSEndpointIntegration:
 
         assert response.status_code == 200
         # Should have cache-related headers
-        assert (
-            "cache-control" in response.headers or "Cache-Control" in response.headers
-        )
+        assert "cache-control" in response.headers or "Cache-Control" in response.headers
 
     @pytest.mark.asyncio
-    async def test_openid_configuration_endpoint(
-        self, async_client: AsyncClient
-    ) -> None:
+    async def test_openid_configuration_endpoint(self, async_client: AsyncClient) -> None:
         """OpenID Configuration endpoint SHALL be available.
 
         **Feature: api-best-practices-review-2025**
@@ -214,7 +208,7 @@ class TestJWKSServiceUnit:
         ).decode()
 
         service = JWKSService()
-        kid = service.add_key(public_key_pem, algorithm="RS256", kid="test-kid")
+        service.add_key(public_key_pem, algorithm="RS256", kid="test-kid")
 
         jwks = service.get_jwks()
         assert len(jwks.keys) == 1

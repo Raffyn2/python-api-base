@@ -1,6 +1,6 @@
 """Tests for infrastructure/db/event_sourcing/events.py - Event sourcing events."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 
 import pytest

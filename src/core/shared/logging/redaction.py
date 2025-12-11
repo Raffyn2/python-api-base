@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
 
-@dataclass
+@dataclass(slots=True)
 class PIIPattern:
     """Pattern for detecting and redacting PII."""
 
@@ -153,7 +153,7 @@ PII_PATTERNS: dict[str, PIIPattern] = {
 }
 
 
-@dataclass
+@dataclass(slots=True)
 class RedactionProcessor:
     """Structlog processor that redacts PII from log events.
 

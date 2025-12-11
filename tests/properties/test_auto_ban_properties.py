@@ -8,9 +8,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-pytest.skip(
-    "Module infrastructure.security.auto_ban not implemented", allow_module_level=True
-)
+pytest.skip("Module infrastructure.security.auto_ban not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -47,9 +45,7 @@ class TestViolationProperties:
         severity=severity_strategy,
     )
     @settings(max_examples=100)
-    def test_violation_immutability(
-        self, identifier: str, violation_type: ViolationType, severity: int
-    ) -> None:
+    def test_violation_immutability(self, identifier: str, violation_type: ViolationType, severity: int) -> None:
         """Property: Violations are immutable after creation."""
         violation = Violation(
             identifier=identifier,
@@ -137,9 +133,7 @@ class TestInMemoryBanStoreProperties:
     )
     @settings(max_examples=100)
     @pytest.mark.anyio
-    async def test_violation_round_trip(
-        self, identifier: str, violation_type: ViolationType
-    ) -> None:
+    async def test_violation_round_trip(self, identifier: str, violation_type: ViolationType) -> None:
         """Property: Added violations can be retrieved."""
         store = InMemoryBanStore()
         violation = Violation(
@@ -224,9 +218,7 @@ class TestAutoBanServiceProperties:
 
         # Record many violations
         for _ in range(20):
-            result = await service.record_violation(
-                identifier, ViolationType.BRUTE_FORCE, severity=10
-            )
+            result = await service.record_violation(identifier, ViolationType.BRUTE_FORCE, severity=10)
             assert result.is_banned is False
 
         # Check ban status
@@ -252,9 +244,7 @@ class TestAutoBanServiceProperties:
 
         # Record violations up to threshold
         for i in range(3):
-            result = await service.record_violation(
-                identifier, ViolationType.AUTH_FAILURE
-            )
+            result = await service.record_violation(identifier, ViolationType.AUTH_FAILURE)
             if i < 2:
                 assert result.is_banned is False
             else:
@@ -359,9 +349,7 @@ class TestConfigBuilderProperties:
         ban_hours=st.integers(min_value=1, max_value=720),
     )
     @settings(max_examples=100)
-    def test_builder_creates_valid_config(
-        self, max_violations: int, ban_hours: int
-    ) -> None:
+    def test_builder_creates_valid_config(self, max_violations: int, ban_hours: int) -> None:
         """Property: Builder creates valid configuration."""
         config = (
             AutoBanConfigBuilder()
@@ -397,10 +385,7 @@ class TestConfigBuilderProperties:
 
         for vtype in strict_map:
             if vtype in default_map:
-                assert (
-                    strict_map[vtype].max_violations
-                    <= default_map[vtype].max_violations
-                )
+                assert strict_map[vtype].max_violations <= default_map[vtype].max_violations
 
     def test_lenient_config_has_higher_thresholds(self) -> None:
         """Property: Lenient config has higher thresholds than default."""
@@ -412,10 +397,7 @@ class TestConfigBuilderProperties:
 
         for vtype in lenient_map:
             if vtype in default_map:
-                assert (
-                    lenient_map[vtype].max_violations
-                    >= default_map[vtype].max_violations
-                )
+                assert lenient_map[vtype].max_violations >= default_map[vtype].max_violations
 
 
 class TestBanCheckResultProperties:
@@ -588,9 +570,7 @@ class TestLockManagerProperties:
         results = []
 
         async def record_and_check() -> None:
-            result = await service.record_violation(
-                identifier, ViolationType.RATE_LIMIT
-            )
+            result = await service.record_violation(identifier, ViolationType.RATE_LIMIT)
             results.append(result)
 
         # Run concurrent violations
@@ -604,6 +584,4 @@ class TestLockManagerProperties:
         # With atomic operations, exactly one transition to banned should occur
         # after threshold (5) is reached
         assert banned_count >= 1  # At least one should see banned
-        assert (
-            not_banned_count >= 4
-        )  # At least 4 should see not banned (before threshold)
+        assert not_banned_count >= 4  # At least 4 should see not banned (before threshold)

@@ -102,9 +102,7 @@ def test_property_2_file_size_compliance():
     status_code=st.integers(min_value=400, max_value=599),
 )
 @settings(max_examples=100)
-def test_property_3_exception_serialization_consistency(
-    message, error_code, status_code
-):
+def test_property_3_exception_serialization_consistency(message, error_code, status_code):
     """Property 3: AppException.to_dict() produces consistent structure."""
     from core.exceptions import AppException
 
@@ -125,9 +123,7 @@ def test_property_3_exception_serialization_consistency(
         "correlation_id",
         "timestamp",
     }
-    assert required_keys.issubset(result.keys()), (
-        f"Missing keys: {required_keys - result.keys()}"
-    )
+    assert required_keys.issubset(result.keys()), f"Missing keys: {required_keys - result.keys()}"
 
     # Values must match
     assert result["message"] == message
@@ -151,7 +147,7 @@ def test_property_4_jwt_required_claims(user_id):
     secret = "a" * 32  # Minimum 32 chars
     service = JWTService(secret_key=secret)
 
-    token, payload = service.create_access_token(user_id=user_id)
+    _token, payload = service.create_access_token(user_id=user_id)
 
     # Required claims
     assert payload.sub == user_id
@@ -199,9 +195,7 @@ def test_property_6_password_hash_format(password):
     from core.shared.utils.password import hash_password
 
     hashed = hash_password(password)
-    assert hashed.startswith("$argon2id$"), (
-        f"Hash should start with $argon2id$: {hashed[:20]}"
-    )
+    assert hashed.startswith("$argon2id$"), f"Hash should start with $argon2id$: {hashed[:20]}"
 
 
 # =============================================================================
@@ -217,17 +211,17 @@ def test_property_7_cors_wildcard_warning():
 
     from core.config import SecuritySettings
 
-    with patch.dict(os.environ, {"ENVIRONMENT": "production"}):
-        with patch.object(
-            logging.getLogger("my_app.core.config"), "warning"
-        ) as mock_warn:
-            # This should trigger warning validation
-            settings = SecuritySettings(
-                secret_key=SecretStr("a" * 32),
-                cors_origins=["*"],
-            )
-            # Warning is logged during validation
-            assert "*" in settings.cors_origins
+    with (
+        patch.dict(os.environ, {"ENVIRONMENT": "production"}),
+        patch.object(logging.getLogger("my_app.core.config"), "warning"),
+    ):
+        # This should trigger warning validation
+        settings = SecuritySettings(
+            secret_key=SecretStr("a" * 32),
+            cors_origins=["*"],
+        )
+        # Warning is logged during validation
+        assert "*" in settings.cors_origins
 
 
 # =============================================================================
@@ -297,9 +291,7 @@ def test_property_10_soft_delete_behavior():
     if repo_path.exists():
         content = repo_path.read_text()
         assert "is_deleted" in content, "Repository should check is_deleted"
-        assert "false()" in content or "is_(false())" in content, (
-            "Should filter soft-deleted"
-        )
+        assert "false()" in content or "is_(false())" in content, "Should filter soft-deleted"
 
 
 # =============================================================================
@@ -343,15 +335,11 @@ def test_property_11_12_lifecycle_hook_order(num_hooks):
 
     # Verify startup order
     expected_startup = list(range(num_hooks))
-    assert startup_order == expected_startup, (
-        f"Startup: {startup_order} != {expected_startup}"
-    )
+    assert startup_order == expected_startup, f"Startup: {startup_order} != {expected_startup}"
 
     # Verify shutdown reverse order
     expected_shutdown = list(range(100 + num_hooks - 1, 99, -1))
-    assert shutdown_order == expected_shutdown, (
-        f"Shutdown: {shutdown_order} != {expected_shutdown}"
-    )
+    assert shutdown_order == expected_shutdown, f"Shutdown: {shutdown_order} != {expected_shutdown}"
 
 
 # =============================================================================
@@ -418,9 +406,7 @@ def test_property_15_url_credential_redaction():
 
     for url, password in test_cases:
         redacted = redact_url_credentials(url)
-        assert password not in redacted, (
-            f"Password '{password}' found in redacted URL: {redacted}"
-        )
+        assert password not in redacted, f"Password '{password}' found in redacted URL: {redacted}"
         assert "[REDACTED]" in redacted, f"Redaction marker not found in: {redacted}"
 
 
@@ -433,9 +419,7 @@ def test_property_15_url_credential_redaction():
 
 @given(
     invalid_format=st.text(min_size=1, max_size=20).filter(
-        lambda x: not any(
-            x.endswith(f"/{unit}") for unit in ["second", "minute", "hour", "day"]
-        )
+        lambda x: not any(x.endswith(f"/{unit}") for unit in ["second", "minute", "hour", "day"])
     )
 )
 @settings(max_examples=100)
@@ -444,9 +428,7 @@ def test_property_16_rate_limit_format_validation(invalid_format):
     from core.config import RATE_LIMIT_PATTERN
 
     # Invalid formats should not match
-    assert not RATE_LIMIT_PATTERN.match(invalid_format), (
-        f"Should reject: {invalid_format}"
-    )
+    assert not RATE_LIMIT_PATTERN.match(invalid_format), f"Should reject: {invalid_format}"
 
 
 # =============================================================================
@@ -458,9 +440,7 @@ def test_property_16_rate_limit_format_validation(invalid_format):
 
 @given(
     field_errors=st.dictionaries(
-        keys=st.text(
-            min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))
-        ),
+        keys=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))),
         values=st.text(min_size=1, max_size=50),
         min_size=1,
         max_size=5,

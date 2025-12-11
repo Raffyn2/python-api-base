@@ -5,11 +5,10 @@
 """
 
 from datetime import UTC, datetime
-from unittest.mock import MagicMock
 
 import pytest
 
-from application.users.dtos import UserDTO, UserListDTO
+from application.users.dtos import UserDTO
 from application.users.mappers.commands import UserMapper
 from domain.users.aggregates import UserAggregate
 
@@ -17,12 +16,12 @@ from domain.users.aggregates import UserAggregate
 class TestUserMapperToDto:
     """Tests for to_dto method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mapper(self) -> UserMapper:
         """Create mapper instance."""
         return UserMapper()
 
-    @pytest.fixture
+    @pytest.fixture()
     def sample_aggregate(self) -> UserAggregate:
         """Create sample user aggregate."""
         return UserAggregate(
@@ -63,12 +62,12 @@ class TestUserMapperToDto:
 class TestUserMapperToEntity:
     """Tests for to_entity method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mapper(self) -> UserMapper:
         """Create mapper instance."""
         return UserMapper()
 
-    @pytest.fixture
+    @pytest.fixture()
     def sample_dto(self) -> UserDTO:
         """Create sample user DTO."""
         return UserDTO(
@@ -112,12 +111,12 @@ class TestUserMapperToEntity:
 class TestUserMapperToListDto:
     """Tests for to_list_dto method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mapper(self) -> UserMapper:
         """Create mapper instance."""
         return UserMapper()
 
-    @pytest.fixture
+    @pytest.fixture()
     def sample_aggregate(self) -> UserAggregate:
         """Create sample user aggregate."""
         return UserAggregate(

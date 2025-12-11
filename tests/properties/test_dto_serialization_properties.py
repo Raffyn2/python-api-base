@@ -4,7 +4,6 @@
 **Validates: Requirements 4.2, 5.3, 7.1**
 """
 
-import pytest
 from hypothesis import given, settings, strategies as st
 
 from application.common.dto import (
@@ -25,9 +24,7 @@ class TestDTOSerializationProperties:
         status_code=st.integers(min_value=100, max_value=599),
     )
     @settings(max_examples=100)
-    def test_api_response_roundtrip(
-        self, data: str, message: str, status_code: int
-    ) -> None:
+    def test_api_response_roundtrip(self, data: str, message: str, status_code: int) -> None:
         """
         **Feature: test-coverage-80-percent, Property 1: Serialization Round-Trip**
         **Validates: Requirements 4.2, 5.3, 7.1**
@@ -54,9 +51,7 @@ class TestDTOSerializationProperties:
         size=st.integers(min_value=1, max_value=100),
     )
     @settings(max_examples=100)
-    def test_paginated_response_roundtrip(
-        self, items: list, total: int, page: int, size: int
-    ) -> None:
+    def test_paginated_response_roundtrip(self, items: list, total: int, page: int, size: int) -> None:
         """
         **Feature: test-coverage-80-percent, Property 1: Serialization Round-Trip**
         **Validates: Requirements 4.2, 5.3, 7.1**
@@ -80,10 +75,11 @@ class TestDTOSerializationProperties:
 
     @given(
         ids=st.lists(
-            st.text(min_size=1, max_size=36, alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"),
-                whitelist_characters="-_"
-            )),
+            st.text(
+                min_size=1,
+                max_size=36,
+                alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="-_"),
+            ),
             min_size=1,
             max_size=20,
         )
@@ -108,9 +104,7 @@ class TestDTOSerializationProperties:
         failed_ids=st.lists(st.text(min_size=1, max_size=36), min_size=0, max_size=10),
     )
     @settings(max_examples=100)
-    def test_bulk_delete_response_roundtrip(
-        self, deleted_count: int, failed_ids: list
-    ) -> None:
+    def test_bulk_delete_response_roundtrip(self, deleted_count: int, failed_ids: list) -> None:
         """
         **Feature: test-coverage-80-percent, Property 1: Serialization Round-Trip**
         **Validates: Requirements 4.2, 5.3, 7.1**
@@ -134,9 +128,7 @@ class TestDTOSerializationProperties:
         detail=st.text(min_size=0, max_size=200) | st.none(),
     )
     @settings(max_examples=100)
-    def test_problem_detail_roundtrip(
-        self, title: str, status: int, detail: str | None
-    ) -> None:
+    def test_problem_detail_roundtrip(self, title: str, status: int, detail: str | None) -> None:
         """
         **Feature: test-coverage-80-percent, Property 1: Serialization Round-Trip**
         **Validates: Requirements 4.2, 5.3, 7.1**

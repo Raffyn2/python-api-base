@@ -12,7 +12,7 @@ from core.config.security.security import (
 )
 
 __all__ = [
-    "SecuritySettings",
-    "RedisSettings",
     "RATE_LIMIT_PATTERN",
+    "RedisSettings",
+    "SecuritySettings",
 ]

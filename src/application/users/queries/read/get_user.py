@@ -39,9 +39,7 @@ class GetUserByIdHandler(QueryHandler[GetUserByIdQuery, dict[str, Any] | None]):
     def __init__(self, repository: IUserRepository) -> None:
         self._repository = repository
 
-    async def handle(
-        self, query: GetUserByIdQuery
-    ) -> Result[dict[str, Any] | None, Exception]:
+    async def handle(self, query: GetUserByIdQuery) -> Result[dict[str, Any] | None, Exception]:
         """Handle get user by ID query."""
         try:
             user = await self._repository.get_by_id(query.user_id)
@@ -58,9 +56,7 @@ class GetUserByEmailHandler(QueryHandler[GetUserByEmailQuery, dict[str, Any] | N
     def __init__(self, repository: IUserRepository) -> None:
         self._repository = repository
 
-    async def handle(
-        self, query: GetUserByEmailQuery
-    ) -> Result[dict[str, Any] | None, Exception]:
+    async def handle(self, query: GetUserByEmailQuery) -> Result[dict[str, Any] | None, Exception]:
         """Handle get user by email query."""
         try:
             user = await self._repository.get_by_email(query.email)
@@ -89,9 +85,7 @@ class ListUsersHandler(QueryHandler[ListUsersQuery, list[dict[str, Any]]]):
     def __init__(self, read_repository: IUserReadRepository) -> None:
         self._read_repository = read_repository
 
-    async def handle(
-        self, query: ListUsersQuery
-    ) -> Result[list[dict[str, Any]], Exception]:
+    async def handle(self, query: ListUsersQuery) -> Result[list[dict[str, Any]], Exception]:
         """Handle list users query."""
         try:
             offset = (query.page - 1) * query.page_size

@@ -25,23 +25,18 @@ class TestRateLimitPatternProperties:
         unit=st.sampled_from(["second", "minute", "hour", "day"]),
     )
     @settings(max_examples=100)
-    def test_valid_rate_limit_format_always_matches(
-        self, number: int, unit: str
-    ) -> None:
+    def test_valid_rate_limit_format_always_matches(self, number: int, unit: str) -> None:
         """Property: Valid rate limit format always matches pattern."""
         rate_limit = f"{number}/{unit}"
         assert RATE_LIMIT_PATTERN.match(rate_limit) is not None
 
     @given(
         number=st.integers(min_value=1, max_value=999999),
-        unit=st.text(min_size=1, max_size=10).filter(
-            lambda x: x not in ["second", "minute", "hour", "day"]
-        ),
+        unit=st.text(min_size=1, max_size=10).filter(lambda x: x not in ["second", "minute", "hour", "day"]),
     )
     @settings(max_examples=50)
     def test_invalid_unit_never_matches(self, number: int, unit: str) -> None:
         """Property: Invalid unit never matches pattern."""
-        rate_limit = f"{number}/{unit}"
         # May or may not match depending on unit content
         # This tests that random units don't accidentally match
 

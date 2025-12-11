@@ -53,13 +53,15 @@ from application.common.dto import ProblemDetail
 # **Feature: adapters-code-review, Property 2: Security Headers Completeness**
 # **Validates: Requirements 2.1**
 # =============================================================================
-REQUIRED_SECURITY_HEADERS = frozenset([
-    "X-Frame-Options",
-    "X-Content-Type-Options",
-    "X-XSS-Protection",
-    "Strict-Transport-Security",
-    "Referrer-Policy",
-])
+REQUIRED_SECURITY_HEADERS = frozenset(
+    [
+        "X-Frame-Options",
+        "X-Content-Type-Options",
+        "X-XSS-Protection",
+        "Strict-Transport-Security",
+        "Referrer-Policy",
+    ]
+)
 
 
 @given(st.just(None))
@@ -113,8 +115,7 @@ def test_valid_ipv6_addresses_accepted(ip: Any) -> None:
 
 @given(
     st.text(min_size=0, max_size=100).filter(
-        lambda x: not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", x)
-        and ":" not in x
+        lambda x: not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", x) and ":" not in x
     )
 )
 @settings(max_examples=100)
@@ -188,9 +189,7 @@ def test_sensitive_headers_masked(headers: dict[str, str]) -> None:
     detail=st.text(min_size=0, max_size=100) | st.none(),
 )
 @settings(max_examples=100)
-def test_problem_detail_rfc7807_compliance(
-    status: int, title: str, detail: str | None
-) -> None:
+def test_problem_detail_rfc7807_compliance(status: int, title: str, detail: str | None) -> None:
     """
     **Feature: adapters-code-review, Property 5: Error Response RFC 7807 Compliance**
     **Validates: Requirements 2.4**

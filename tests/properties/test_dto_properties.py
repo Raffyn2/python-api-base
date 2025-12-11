@@ -30,12 +30,8 @@ class SampleItem(BaseModel):
 sample_item_strategy = st.builds(
     SampleItem,
     id=st.integers(min_value=1, max_value=10000),
-    name=st.text(
-        min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))
-    ),
-    value=st.floats(
-        min_value=0, max_value=10000, allow_nan=False, allow_infinity=False
-    ),
+    name=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))),
+    value=st.floats(min_value=0, max_value=10000, allow_nan=False, allow_infinity=False),
 )
 
 
@@ -67,9 +63,7 @@ class TestApiResponseSerialization:
         assert isinstance(serialized["message"], str)
         assert isinstance(serialized["status_code"], int)
         assert isinstance(serialized["timestamp"], datetime)
-        assert serialized["request_id"] is None or isinstance(
-            serialized["request_id"], str
-        )
+        assert serialized["request_id"] is None or isinstance(serialized["request_id"], str)
 
     @settings(max_examples=30)
     @given(
@@ -124,9 +118,7 @@ class TestPaginatedResponseComputedFields:
         page=st.integers(min_value=1, max_value=100),
         size=st.integers(min_value=1, max_value=100),
     )
-    def test_pagination_computed_fields_consistency(
-        self, total: int, page: int, size: int
-    ) -> None:
+    def test_pagination_computed_fields_consistency(self, total: int, page: int, size: int) -> None:
         """
         **Feature: generic-fastapi-crud, Property 3: Pagination Computed Fields Consistency**
 
@@ -160,9 +152,7 @@ class TestPaginatedResponseComputedFields:
         page=st.integers(min_value=1, max_value=50),
         size=st.integers(min_value=1, max_value=100),
     )
-    def test_paginated_response_serialization(
-        self, items: list[SampleItem], total: int, page: int, size: int
-    ) -> None:
+    def test_paginated_response_serialization(self, items: list[SampleItem], total: int, page: int, size: int) -> None:
         """
         PaginatedResponse SHALL serialize all fields including computed fields.
         """
@@ -205,9 +195,7 @@ class TestProblemDetail:
         )
         | st.none(),
     )
-    def test_problem_detail_format(
-        self, title: str, status: int, detail: str | None
-    ) -> None:
+    def test_problem_detail_format(self, title: str, status: int, detail: str | None) -> None:
         """
         **Feature: generic-fastapi-crud, Property 2: Validation Error Format Compliance**
 

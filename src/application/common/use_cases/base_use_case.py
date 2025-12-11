@@ -18,21 +18,37 @@ A UseCase represents a single, specific business operation that:
   - Example: PlaceOrderUseCase, TransferMoneyUseCase, RegisterUserUseCase
 
 **Feature: architecture-consolidation-2025**
+
+Architecture Note - UseCase Implementations:
+-------------------------------------------
+The project has multiple UseCase patterns for different purposes:
+
+1. **core.base.patterns.use_case.BaseUseCase** (CRUD with Mapper)
+   - Generic CRUD operations with mapper integration
+   - Best for: Simple entity CRUD with DTO conversion
+
+2. **application.common.use_cases.base.use_case.BaseUseCase** (CRUD with UoW)
+   - CRUD with Unit of Work and Result pattern
+   - Best for: CRUD operations requiring transaction management
+
+3. **application.common.use_cases.base_use_case.BaseUseCase** (THIS FILE)
+   - Single execute() method pattern
+   - Best for: Complex business operations (PlaceOrder, TransferMoney)
+
+Choose based on your use case complexity and transaction requirements.
 """
 
 from __future__ import annotations
 
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Generic, TypeVar
-from uuid import uuid4
+from typing import Any, TypeVar
+
+import structlog
 
 from core.base.patterns.result import Err, Ok, Result
-from core.shared.utils.datetime import utc_now
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
@@ -131,13 +147,11 @@ class BaseUseCase[TInput, TOutput](ABC):
         ...     customer_id: str
         ...     items: list[OrderItem]
         ...     shipping_address: Address
-        ...
         >>> @dataclass
         ... class PlaceOrderOutput:
         ...     order_id: str
         ...     total: Decimal
-        ...     estimated_delivery: datetime
-        ...
+        ...     estimated_delivery: str  # ISO format datetime
         >>> class PlaceOrderUseCase(BaseUseCase[PlaceOrderInput, PlaceOrderOutput]):
         ...     def __init__(self, order_service, inventory_service, payment_service):
         ...         super().__init__()
@@ -158,7 +172,7 @@ class BaseUseCase[TInput, TOutput](ABC):
 
     def __init__(self) -> None:
         """Initialize use case with logger."""
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._logger = structlog.get_logger(f"{__name__}.{self.__class__.__name__}")
         self._use_case_name = self.__class__.__name__
 
     @abstractmethod
@@ -191,15 +205,11 @@ class BaseUseCase[TInput, TOutput](ABC):
         """Create an error result."""
         return Err(error)
 
-    def _validation_error(
-        self, message: str, field: str | None = None
-    ) -> UseCaseResult[TOutput]:
+    def _validation_error(self, message: str, field: str | None = None) -> UseCaseResult[TOutput]:
         """Create a validation error result."""
         return Err(validation_error(message, field))
 
-    def _not_found(
-        self, entity_type: str, entity_id: Any
-    ) -> UseCaseResult[TOutput]:
+    def _not_found(self, entity_type: str, entity_id: Any) -> UseCaseResult[TOutput]:
         """Create a not found error result."""
         return Err(not_found_error(entity_type, entity_id))
 
@@ -211,25 +221,32 @@ class BaseUseCase[TInput, TOutput](ABC):
         """Create an authorization error result."""
         return Err(authorization_error(message))
 
-    def _business_error(
-        self, message: str, rule: str | None = None
-    ) -> UseCaseResult[TOutput]:
+    def _business_error(self, message: str, rule: str | None = None) -> UseCaseResult[TOutput]:
         """Create a business rule error result."""
         return Err(business_rule_error(message, rule))
 
     def _log_start(self, input: TInput) -> None:
         """Log use case start."""
-        self._logger.info("Starting %s", self._use_case_name)
+        self._logger.info(
+            "Starting use case",
+            use_case=self._use_case_name,
+            operation="USE_CASE_START",
+        )
 
     def _log_success(self, output: TOutput) -> None:
         """Log use case success."""
-        self._logger.info("Completed %s successfully", self._use_case_name)
+        self._logger.info(
+            "Completed use case successfully",
+            use_case=self._use_case_name,
+            operation="USE_CASE_SUCCESS",
+        )
 
     def _log_error(self, error: UseCaseError) -> None:
         """Log use case error."""
         self._logger.warning(
-            "Failed %s: [%s] %s",
-            self._use_case_name,
-            error.code,
-            error.message,
+            "Use case failed",
+            use_case=self._use_case_name,
+            error_code=error.code,
+            error_message=error.message,
+            operation="USE_CASE_FAIL",
         )

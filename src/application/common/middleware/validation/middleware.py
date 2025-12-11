@@ -4,15 +4,16 @@
 **Refactored: Split from validation.py for one-class-per-file compliance**
 """
 
-import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
+
+import structlog
 
 from application.common.errors import ValidationError
 from application.common.middleware.validation.base import Validator
 from core.base.patterns.result import Err, Result
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class ValidationMiddleware[TCommand, TResult]:
@@ -77,12 +78,10 @@ class ValidationMiddleware[TCommand, TResult]:
 
         if all_errors:
             logger.debug(
-                f"Validation failed for {command_type.__name__}: {len(all_errors)} errors",
-                extra={
-                    "command_type": command_type.__name__,
-                    "error_count": len(all_errors),
-                    "operation": "VALIDATION",
-                },
+                "Validation failed",
+                command_type=command_type.__name__,
+                error_count=len(all_errors),
+                operation="VALIDATION",
             )
             return Err(
                 ValidationError(
@@ -91,5 +90,5 @@ class ValidationMiddleware[TCommand, TResult]:
                 )
             )
 
-        logger.debug(f"Validation passed for {command_type.__name__}")
+        logger.debug("Validation passed for %s", command_type.__name__)
         return await next_handler(command)

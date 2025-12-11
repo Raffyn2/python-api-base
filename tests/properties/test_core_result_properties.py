@@ -71,7 +71,9 @@ class TestResultFunctorLaws:
         **Validates: Result is a valid Functor**
         """
         result = Ok(x)
-        identity = lambda y: y
+
+        def identity(y):
+            return y
 
         # map(id) should be the same as not mapping
         assert result.map(identity) == result
@@ -81,7 +83,9 @@ class TestResultFunctorLaws:
     def test_functor_identity_err(self, error: str) -> None:
         """Functor identity law for Err: map preserves Err."""
         result: Result[int, str] = Err(error)
-        identity = lambda y: y
+
+        def identity(y):
+            return y
 
         assert result.map(identity) == result
 
@@ -94,8 +98,12 @@ class TestResultFunctorLaws:
         **Validates: Result composition is associative**
         """
         result = Ok(x)
-        f = lambda y: y + 1
-        g = lambda y: y * 2
+
+        def f(y):
+            return y + 1
+
+        def g(y):
+            return y * 2
 
         # map(g . f) should equal map(g) after map(f)
         left = result.map(lambda y: g(f(y)))
@@ -108,8 +116,12 @@ class TestResultFunctorLaws:
     def test_functor_composition_err(self, error: str) -> None:
         """Functor composition preserves Err."""
         result: Result[int, str] = Err(error)
-        f = lambda y: y + 1
-        g = lambda y: y * 2
+
+        def f(y):
+            return y + 1
+
+        def g(y):
+            return y * 2
 
         left = result.map(lambda y: g(f(y)))
         right = result.map(f).map(g)
@@ -139,7 +151,9 @@ class TestResultMonadLaws:
         **Feature: core-improvements-2025, Property 3: Monad Left Identity**
         **Validates: Result bind behaves correctly**
         """
-        f = lambda y: Ok(y * 2)
+
+        def f(y):
+            return Ok(y * 2)
 
         # Ok(x).bind(f) should equal f(x)
         left = Ok(x).bind(f)
@@ -169,8 +183,12 @@ class TestResultMonadLaws:
         **Validates: Result bind is associative**
         """
         result = Ok(x)
-        f = lambda y: Ok(y + 1)
-        g = lambda y: Ok(y * 2)
+
+        def f(y):
+            return Ok(y + 1)
+
+        def g(y):
+            return Ok(y * 2)
 
         # (result.bind(f)).bind(g)
         left = result.bind(f).bind(g)
@@ -185,7 +203,9 @@ class TestResultMonadLaws:
     def test_monad_err_short_circuits(self, error: str) -> None:
         """Err short-circuits bind operations."""
         result: Result[int, str] = Err(error)
-        f = lambda y: Ok(y * 2)
+
+        def f(y):
+            return Ok(y * 2)
 
         # Err should propagate without calling f
         assert result.bind(f) == result
@@ -357,9 +377,7 @@ class TestCollectResultsProperties:
 
     @given(st.lists(st.integers(), min_size=1, max_size=10), st.text())
     @settings(max_examples=100)
-    def test_collect_with_err_returns_first_err(
-        self, values: list[int], error: str
-    ) -> None:
+    def test_collect_with_err_returns_first_err(self, values: list[int], error: str) -> None:
         """collect_results returns first Err encountered."""
         results = [Ok(v) for v in values]
         # Insert Err at random position

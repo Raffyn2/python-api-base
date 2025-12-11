@@ -16,15 +16,15 @@ from application.common.middleware.validation.validators import (
 )
 
 __all__ = [
-    # Base
-    "Validator",
     "CompositeValidator",
-    # Middleware
-    "ValidationMiddleware",
+    "RangeValidator",
     # Validators
     "RequiredFieldValidator",
     "StringLengthValidator",
-    "RangeValidator",
     # Error (re-exported from exceptions)
     "ValidationError",
+    # Middleware
+    "ValidationMiddleware",
+    # Base
+    "Validator",
 ]

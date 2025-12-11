@@ -6,7 +6,7 @@ Validates: Requirements 3.1, 5.1, 5.2, 5.3
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Self
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,7 +38,7 @@ class StoredToken:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "StoredToken":
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create from dictionary."""
         return cls(
             jti=data["jti"],

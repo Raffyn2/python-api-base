@@ -7,10 +7,11 @@
 
 from __future__ import annotations
 
-import logging
 import re
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
+
+import structlog
 
 from infrastructure.scylladb.entity import ScyllaDBEntity
 
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
 
     from infrastructure.scylladb.client import ScyllaDBClient
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 T = TypeVar("T", bound=ScyllaDBEntity)
 
@@ -45,7 +46,7 @@ def _validate_identifier(name: str, context: str = "identifier") -> str:
     return name
 
 
-class ScyllaDBRepository(Generic[T]):
+class ScyllaDBRepository[T: ScyllaDBEntity]:
     """Generic repository for ScyllaDB entities.
 
     Provides type-safe CRUD operations using PEP 695 generics pattern.
@@ -124,9 +125,7 @@ class ScyllaDBRepository(Generic[T]):
         prepared = await self._get_prepared(stmt_key, query)
         await self._client.execute(prepared, tuple(data.values()))
 
-        logger.debug(
-            "Created entity in %s", self.table_name, extra={"id": str(entity.id)}
-        )
+        logger.debug("Created entity", table=self.table_name, id=str(entity.id))
         return entity
 
     async def get(self, id: UUID) -> T | None:
@@ -190,9 +189,7 @@ class ScyllaDBRepository(Generic[T]):
         data = entity.to_dict()
 
         # Separate PK from other columns
-        pk_cols_raw = (
-            self._entity_class.primary_key() + self._entity_class.clustering_key()
-        )
+        pk_cols_raw = self._entity_class.primary_key() + self._entity_class.clustering_key()
         pk_cols = set(self._validate_columns(pk_cols_raw))
         update_cols = {k: v for k, v in data.items() if k not in pk_cols}
         pk_values = {k: v for k, v in data.items() if k in pk_cols}
@@ -216,9 +213,7 @@ class ScyllaDBRepository(Generic[T]):
 
         await self._client.execute(prepared, tuple(values))
 
-        logger.debug(
-            "Updated entity in %s", self.table_name, extra={"id": str(entity.id)}
-        )
+        logger.debug("Updated entity", table=self.table_name, id=str(entity.id))
         return entity
 
     async def delete(self, id: UUID) -> bool:
@@ -239,7 +234,7 @@ class ScyllaDBRepository(Generic[T]):
         prepared = await self._get_prepared(stmt_key, query)
         await self._client.execute(prepared, (id,))
 
-        logger.debug("Deleted entity from %s", self.table_name, extra={"id": str(id)})
+        logger.debug("Deleted entity", table=self.table_name, id=str(id))
         return True
 
     async def delete_by_keys(self, **key_values: Any) -> bool:
@@ -350,9 +345,7 @@ class ScyllaDBRepository(Generic[T]):
         upper_clause = where_clause.upper()
         for pattern in dangerous_patterns:
             if pattern in upper_clause:
-                raise ValueError(
-                    f"Potentially dangerous pattern in where_clause: {pattern}"
-                )
+                raise ValueError(f"Potentially dangerous pattern in where_clause: {pattern}")
 
         # S608: Caller must ensure where_clause uses parameterized placeholders
         query = f"SELECT * FROM {self.table_name} WHERE {where_clause} LIMIT %s"  # noqa: S608
@@ -401,9 +394,7 @@ class ScyllaDBRepository(Generic[T]):
             cols_str = ", ".join(columns)
 
             # S608: False positive - identifiers validated via _validate_columns
-            query = (
-                f"INSERT INTO {self.table_name} ({cols_str}) VALUES ({placeholders})"  # noqa: S608
-            )
+            query = f"INSERT INTO {self.table_name} ({cols_str}) VALUES ({placeholders})"  # noqa: S608
             statements.append((query, tuple(data.values())))
 
         await self._client.execute_batch(statements, batch_type="UNLOGGED")

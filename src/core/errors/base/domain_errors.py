@@ -143,9 +143,7 @@ class EntityNotFoundError(AppError):
             entity_id: ID of the entity that was not found.
         """
         super().__init__(
-            message=ErrorMessages.ENTITY_NOT_FOUND.format(
-                entity_type=entity_type, entity_id=entity_id
-            ),
+            message=ErrorMessages.ENTITY_NOT_FOUND.format(entity_type=entity_type, entity_id=entity_id),
             error_code=ErrorCodes.ENTITY_NOT_FOUND,
             status_code=HttpStatus.NOT_FOUND,
             details={"entity_type": entity_type, "entity_id": str(entity_id)},
@@ -174,9 +172,7 @@ class ValidationError(AppError):
         """
         # Normalize errors to list format for consistency
         if isinstance(errors, dict):
-            normalized_errors = [
-                {"field": field, "message": msg} for field, msg in errors.items()
-            ]
+            normalized_errors = [{"field": field, "message": msg} for field, msg in errors.items()]
         else:
             normalized_errors = errors
 
@@ -200,9 +196,7 @@ class BusinessRuleViolationError(AppError):
             message: Description of the violation.
         """
         super().__init__(
-            message=ErrorMessages.BUSINESS_RULE_VIOLATED.format(
-                rule=rule, message=message
-            ),
+            message=ErrorMessages.BUSINESS_RULE_VIOLATED.format(rule=rule, message=message),
             error_code=f"{ErrorCodes.BUSINESS_RULE_VIOLATION}_{rule.upper()}",
             status_code=HttpStatus.BAD_REQUEST,
             details={"rule": rule},
@@ -248,9 +242,7 @@ class AuthorizationError(AppError):
         details = {}
         if required_permission:
             details["required_permission"] = required_permission
-            msg = ErrorMessages.PERMISSION_REQUIRED.format(
-                permission=required_permission
-            )
+            msg = ErrorMessages.PERMISSION_REQUIRED.format(permission=required_permission)
         else:
             msg = message or ErrorMessages.PERMISSION_DENIED
 
@@ -277,8 +269,7 @@ class RateLimitExceededError(AppError):
             message: Error message. Defaults to ErrorMessages.RATE_LIMIT_EXCEEDED.
         """
         super().__init__(
-            message=message
-            or ErrorMessages.RATE_LIMIT_EXCEEDED.format(retry_after=retry_after),
+            message=message or ErrorMessages.RATE_LIMIT_EXCEEDED.format(retry_after=retry_after),
             error_code=ErrorCodes.RATE_LIMIT_EXCEEDED,
             status_code=HttpStatus.TOO_MANY_REQUESTS,
             details={"retry_after": retry_after},
@@ -308,9 +299,7 @@ class ConflictError(AppError):
             details["resource_id"] = resource_id
 
         if message is None and resource_type and resource_id:
-            message = ErrorMessages.CONFLICT_RESOURCE.format(
-                resource_type=resource_type, resource_id=resource_id
-            )
+            message = ErrorMessages.CONFLICT_RESOURCE.format(resource_type=resource_type, resource_id=resource_id)
         elif message is None:
             message = "Resource conflict"
 

@@ -9,14 +9,18 @@ from application.examples.pedido.handlers.handlers import (
     ConfirmPedidoCommandHandler,
     CreatePedidoCommandHandler,
     GetPedidoQueryHandler,
+    IItemRepository,
+    IPedidoRepository,
     ListPedidosQueryHandler,
 )
 
 __all__ = [
-    "CreatePedidoCommandHandler",
     "AddItemToPedidoCommandHandler",
-    "ConfirmPedidoCommandHandler",
     "CancelPedidoCommandHandler",
+    "ConfirmPedidoCommandHandler",
+    "CreatePedidoCommandHandler",
     "GetPedidoQueryHandler",
+    "IItemRepository",
+    "IPedidoRepository",
     "ListPedidosQueryHandler",
 ]

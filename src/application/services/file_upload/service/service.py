@@ -4,11 +4,12 @@
 **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.7**
 """
 
-import logging
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import Any
+
+import structlog
 
 from application.services.file_upload.models import (
     FileMetadata,
@@ -23,11 +24,17 @@ from application.services.file_upload.validators import (
 )
 from core.base.patterns.result import Err, Ok, Result
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class InMemoryStorageProvider:
-    """In-memory storage provider for testing."""
+    """In-memory storage provider for testing.
+
+    Note:
+        For new code, prefer using `infrastructure.storage.InMemoryStorageProvider`
+        which implements the full FileStorage protocol with Result pattern.
+        This class is kept for backward compatibility with existing tests.
+    """
 
     def __init__(self) -> None:
         self._storage: dict[str, tuple[bytes, str, dict[str, Any]]] = {}
@@ -196,8 +203,13 @@ class FileUploadService[TMetadata]:
                 )
             )
 
-        except Exception as e:
-            logger.error(f"Storage upload failed: {e}")
+        except Exception:
+            logger.exception(
+                "Storage upload failed",
+                storage_key=storage_key,
+                tenant_id=tenant_id,
+                operation="FILE_UPLOAD_ERROR",
+            )
             return Err(UploadError.STORAGE_ERROR)
 
     async def download(self, storage_key: str) -> AsyncIterator[bytes]:

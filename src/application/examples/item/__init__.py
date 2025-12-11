@@ -48,39 +48,42 @@ from application.examples.item.queries import (
     GetItemQuery,
     ListItemsQuery,
 )
+from application.examples.item.services import ItemExampleService
 from application.examples.item.use_cases import ItemExampleUseCase
 
 __all__ = [
-    # Commands
-    "CreateItemCommand",
-    "UpdateItemCommand",
-    "DeleteItemCommand",
-    # Queries
-    "GetItemQuery",
-    "ListItemsQuery",
-    # Handlers
-    "CreateItemCommandHandler",
-    "UpdateItemCommandHandler",
-    "DeleteItemCommandHandler",
-    "GetItemQueryHandler",
-    "ListItemsQueryHandler",
-    # DTOs
-    "ItemExampleCreate",
-    "ItemExampleUpdate",
-    "ItemExampleResponse",
-    # Mapper
-    "ItemExampleMapper",
     # Batch
     "BatchCreateRequest",
     "BatchUpdateRequest",
-    "ItemExampleBatchService",
+    # Commands
+    "CreateItemCommand",
+    # Handlers
+    "CreateItemCommandHandler",
+    "DeleteItemCommand",
+    "DeleteItemCommandHandler",
     # Export
     "ExportFormat",
     "ExportMetadata",
     "ExportResult",
+    # Queries
+    "GetItemQuery",
+    "GetItemQueryHandler",
     "ImportResult",
+    "ItemExampleBatchService",
+    # DTOs
+    "ItemExampleCreate",
     "ItemExampleExportService",
     "ItemExampleImportService",
+    # Mapper
+    "ItemExampleMapper",
+    "ItemExampleResponse",
+    # Service
+    "ItemExampleService",
+    "ItemExampleUpdate",
     # Use Case
     "ItemExampleUseCase",
+    "ListItemsQuery",
+    "ListItemsQueryHandler",
+    "UpdateItemCommand",
+    "UpdateItemCommandHandler",
 ]

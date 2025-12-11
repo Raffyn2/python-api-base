@@ -6,10 +6,10 @@
 Provides automatic idempotency handling for POST/PATCH requests.
 """
 
-import logging
 from collections.abc import Callable
 from typing import Any
 
+import structlog
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
@@ -21,7 +21,7 @@ from infrastructure.idempotency.handler import (
     compute_request_hash,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class IdempotencyMiddleware(BaseHTTPMiddleware):
@@ -125,13 +125,15 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         if record.request_hash != request_hash:
             logger.warning(
                 "Idempotency key conflict",
-                extra={"key": idempotency_key, "path": path},
+                key=idempotency_key,
+                path=path,
             )
             return self._create_conflict_response()
 
         logger.info(
             "Replaying idempotent response",
-            extra={"key": idempotency_key, "status": record.status_code},
+            key=idempotency_key,
+            status=record.status_code,
         )
         return Response(
             content=record.response_body,
@@ -178,19 +180,19 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
             record = await handler.get_record(idempotency_key)
 
             if record is not None:
-                return await self._handle_cached_record(
-                    record, request_hash, idempotency_key, request.url.path
-                )
+                return await self._handle_cached_record(record, request_hash, idempotency_key, request.url.path)
 
             response = await call_next(request)
-            return await self._store_and_return_response(
-                handler, idempotency_key, request_hash, response
-            )
+            return await self._store_and_return_response(handler, idempotency_key, request_hash, response)
 
         except IdempotencyKeyConflictError:
             return self._create_conflict_response()
-        except Exception as e:
-            logger.error(f"Idempotency handling failed: {e}")
+        except Exception:
+            logger.exception(
+                "Idempotency handling failed",
+                path=request.url.path,
+                operation="IDEMPOTENCY_HANDLE",
+            )
             return await call_next(request)
 
     async def _store_and_return_response(
@@ -229,15 +231,8 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
             return False
 
         # Check excluded paths
-        for path in self._exclude_paths:
-            if request.url.path.startswith(path):
-                return False
-
-        return True
+        return all(not request.url.path.startswith(path) for path in self._exclude_paths)
 
     def _is_required(self, path: str) -> bool:
         """Check if idempotency key is required for path."""
-        for required_path in self._required_endpoints:
-            if path.startswith(required_path):
-                return True
-        return False
+        return any(path.startswith(required_path) for required_path in self._required_endpoints)

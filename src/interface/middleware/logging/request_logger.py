@@ -10,49 +10,54 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+import structlog
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # Fields that should be masked in logs
-SENSITIVE_FIELDS = frozenset([
-    "password",
-    "passwd",
-    "secret",
-    "token",
-    "access_token",
-    "refresh_token",
-    "api_key",
-    "apikey",
-    "authorization",
-    "auth",
-    "credential",
-    "credentials",
-    "credit_card",
-    "creditcard",
-    "card_number",
-    "cvv",
-    "ssn",
-    "social_security",
-    "pin",
-])
+SENSITIVE_FIELDS = frozenset(
+    [
+        "password",
+        "passwd",
+        "secret",
+        "token",
+        "access_token",
+        "refresh_token",
+        "api_key",
+        "apikey",
+        "authorization",
+        "auth",
+        "credential",
+        "credentials",
+        "credit_card",
+        "creditcard",
+        "card_number",
+        "cvv",
+        "ssn",
+        "social_security",
+        "pin",
+    ]
+)
 
 # Headers that should be masked
-SENSITIVE_HEADERS = frozenset([
-    "authorization",
-    "x-api-key",
-    "x-auth-token",
-    "cookie",
-    "set-cookie",
-])
+SENSITIVE_HEADERS = frozenset(
+    [
+        "authorization",
+        "x-api-key",
+        "x-auth-token",
+        "cookie",
+        "set-cookie",
+    ]
+)
 
 MASK_VALUE = "***MASKED***"
 
 
-@dataclass
+@dataclass(slots=True)
 class RequestLogEntry:
     """Log entry for an incoming request.
 
@@ -90,7 +95,7 @@ class RequestLogEntry:
         }
 
 
-@dataclass
+@dataclass(slots=True)
 class ResponseLogEntry:
     """Log entry for an outgoing response.
 
@@ -147,10 +152,7 @@ def mask_dict(data: dict[str, Any]) -> dict[str, Any]:
             result[key] = mask_dict(value)
         elif isinstance(value, list):
             result[key] = [
-                mask_dict(item)
-                if isinstance(item, dict)
-                else mask_sensitive_value(key, item)
-                for item in value
+                mask_dict(item) if isinstance(item, dict) else mask_sensitive_value(key, item) for item in value
             ]
         else:
             result[key] = mask_sensitive_value(key, value)
@@ -282,10 +284,10 @@ class RequestLoggerMiddleware(BaseHTTPMiddleware):
             user_agent=request.headers.get("User-Agent"),
         )
 
-        logger.log(
-            self._log_level,
+        logger.info(
             "request_received",
-            extra={"request": request_entry.to_dict()},
+            correlation_id=request_id,
+            **request_entry.to_dict(),
         )
 
         # Process request
@@ -309,10 +311,10 @@ class RequestLoggerMiddleware(BaseHTTPMiddleware):
             response_size=response_size,
         )
 
-        logger.log(
-            self._log_level,
+        logger.info(
             "response_sent",
-            extra={"response": response_entry.to_dict()},
+            correlation_id=request_id,
+            **response_entry.to_dict(),
         )
 
         return response

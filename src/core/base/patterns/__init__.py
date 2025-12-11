@@ -25,6 +25,7 @@ from core.base.patterns.specification import (
     PredicateSpecification,
     Specification,
     TrueSpecification,
+    spec,
 )
 from core.base.patterns.uow import UnitOfWork
 from core.base.patterns.use_case import BaseUseCase, IMapper, IRepository
@@ -79,6 +80,7 @@ __all__ = [
     "err",
     "ok",
     "result_from_dict",
+    "spec",
     "try_catch",
     "try_catch_async",
     "validate_all",

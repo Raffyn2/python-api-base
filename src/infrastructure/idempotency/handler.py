@@ -13,14 +13,15 @@ Implements:
 import contextlib
 import hashlib
 import json
-import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Self
+
+import structlog
 
 from infrastructure.idempotency.errors import IdempotencyKeyConflictError
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,7 +54,7 @@ class IdempotencyRecord:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "IdempotencyRecord":
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create from dictionary."""
         return cls(
             idempotency_key=data["idempotency_key"],
@@ -64,7 +65,7 @@ class IdempotencyRecord:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class IdempotencyConfig:
     """Configuration for idempotency handling.
 
@@ -195,8 +196,11 @@ class IdempotencyHandler:
             logger.warning("redis package not installed")
             self._connected = False
             return None
-        except Exception as e:
-            logger.warning(f"Redis connection failed: {e}")
+        except Exception:
+            logger.warning(
+                "Redis connection failed",
+                operation="IDEMPOTENCY_CONNECT",
+            )
             self._connected = False
             return None
 
@@ -228,8 +232,12 @@ class IdempotencyHandler:
                 return None
 
             return IdempotencyRecord.from_dict(json.loads(data))
-        except Exception as e:
-            logger.warning(f"Failed to get idempotency record: {e}")
+        except Exception:
+            logger.warning(
+                "Failed to get idempotency record",
+                key=idempotency_key,
+                operation="IDEMPOTENCY_GET",
+            )
             return None
 
     async def store_record(
@@ -274,11 +282,16 @@ class IdempotencyHandler:
 
             logger.debug(
                 "Stored idempotency record",
-                extra={"key": idempotency_key, "status": status_code},
+                key=idempotency_key,
+                status=status_code,
             )
             return True
-        except Exception as e:
-            logger.warning(f"Failed to store idempotency record: {e}")
+        except Exception:
+            logger.warning(
+                "Failed to store idempotency record",
+                key=idempotency_key,
+                operation="IDEMPOTENCY_STORE",
+            )
             return False
 
     async def execute_idempotent(
@@ -311,14 +324,15 @@ class IdempotencyHandler:
             if record.request_hash != request_hash:
                 logger.warning(
                     "Idempotency key conflict",
-                    extra={"key": idempotency_key},
+                    key=idempotency_key,
                 )
                 raise IdempotencyKeyConflictError(idempotency_key)
 
             # Return cached response
             logger.info(
                 "Replaying idempotent response",
-                extra={"key": idempotency_key, "status": record.status_code},
+                key=idempotency_key,
+                status=record.status_code,
             )
             return record.response_body, record.status_code, True
 
@@ -354,8 +368,12 @@ class IdempotencyHandler:
             full_key = self._make_key(idempotency_key)
             result = await client.delete(full_key)
             return result > 0
-        except Exception as e:
-            logger.warning(f"Failed to delete idempotency record: {e}")
+        except Exception:
+            logger.warning(
+                "Failed to delete idempotency record",
+                key=idempotency_key,
+                operation="IDEMPOTENCY_DELETE",
+            )
             return False
 
     async def close(self) -> None:

@@ -4,21 +4,18 @@
 **Validates: Requirements 7.1, 7.2, 7.3**
 """
 
-from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from application.services.feature_flags import (
-    FlagConfig,
-    FlagStatus,
+    DisabledStrategy,
+    EnabledStrategy,
     EvaluationContext,
     FeatureFlagService,
-    EnabledStrategy,
-    DisabledStrategy,
-    FlagEvaluationResult,
+    FlagConfig,
+    FlagStatus,
 )
 from application.services.file_upload import (
     FileValidationConfig,
@@ -29,15 +26,15 @@ from application.services.multitenancy import (
     TenantContext,
     TenantMiddleware,
     get_current_tenant,
-    set_current_tenant,
     require_tenant,
+    set_current_tenant,
 )
 
 
 class TestFeatureFlagService:
     """Tests for FeatureFlagService class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def service(self) -> FeatureFlagService:
         """Create feature flag service."""
         return FeatureFlagService()
@@ -54,9 +51,7 @@ class TestFeatureFlagService:
 
         assert "test_flag" in service._flags
 
-    def test_is_enabled_returns_true_for_enabled_flag(
-        self, service: FeatureFlagService
-    ) -> None:
+    def test_is_enabled_returns_true_for_enabled_flag(self, service: FeatureFlagService) -> None:
         """Test is_enabled returns True for enabled flag."""
         config = FlagConfig(
             key="enabled_flag",
@@ -67,9 +62,7 @@ class TestFeatureFlagService:
 
         assert service.is_enabled("enabled_flag") is True
 
-    def test_is_enabled_returns_false_for_disabled_flag(
-        self, service: FeatureFlagService
-    ) -> None:
+    def test_is_enabled_returns_false_for_disabled_flag(self, service: FeatureFlagService) -> None:
         """Test is_enabled returns False for disabled flag."""
         config = FlagConfig(
             key="disabled_flag",
@@ -80,9 +73,7 @@ class TestFeatureFlagService:
 
         assert service.is_enabled("disabled_flag") is False
 
-    def test_is_enabled_returns_false_for_unknown_flag(
-        self, service: FeatureFlagService
-    ) -> None:
+    def test_is_enabled_returns_false_for_unknown_flag(self, service: FeatureFlagService) -> None:
         """Test is_enabled returns False for unknown flag."""
         assert service.is_enabled("unknown_flag") is False
 
@@ -123,7 +114,7 @@ class TestFeatureFlagStrategies:
 class TestFileValidation:
     """Tests for file validation functions."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def config(self) -> FileValidationConfig:
         """Create file validation config."""
         return FileValidationConfig(
@@ -141,9 +132,7 @@ class TestFileValidation:
 
         assert result.is_ok()
 
-    def test_validate_file_size_exceeds_limit(
-        self, config: FileValidationConfig
-    ) -> None:
+    def test_validate_file_size_exceeds_limit(self, config: FileValidationConfig) -> None:
         """Test file exceeding size limit fails validation."""
         content = b"x" * (2 * 1024 * 1024)  # 2MB
 
@@ -152,9 +141,7 @@ class TestFileValidation:
         assert result.is_err()
         assert result.error == UploadError.FILE_TOO_LARGE
 
-    def test_validate_file_invalid_extension(
-        self, config: FileValidationConfig
-    ) -> None:
+    def test_validate_file_invalid_extension(self, config: FileValidationConfig) -> None:
         """Test invalid extension fails validation."""
         content = b"test content"
 
@@ -162,9 +149,7 @@ class TestFileValidation:
 
         assert result.is_err()
 
-    def test_validate_file_invalid_content_type(
-        self, config: FileValidationConfig
-    ) -> None:
+    def test_validate_file_invalid_content_type(self, config: FileValidationConfig) -> None:
         """Test invalid content type fails validation."""
         content = b"test content"
 
@@ -226,7 +211,7 @@ class TestTenantMiddleware:
     **Validates: Requirements 7.3**
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_app(self) -> AsyncMock:
         """Create mock ASGI app."""
         return AsyncMock()
@@ -325,9 +310,7 @@ class TestTenantIsolationProperties:
     """
 
     @given(
-        tenant_id=st.text(
-            min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-"
-        ),
+        tenant_id=st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-"),
     )
     @settings(max_examples=100, deadline=5000)
     def test_tenant_context_isolation(self, tenant_id: str) -> None:
@@ -347,12 +330,8 @@ class TestTenantIsolationProperties:
         assert get_current_tenant() is None
 
     @given(
-        tenant1=st.text(
-            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz"
-        ),
-        tenant2=st.text(
-            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz"
-        ),
+        tenant1=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz"),
+        tenant2=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz"),
     )
     @settings(max_examples=50, deadline=5000)
     def test_nested_tenant_contexts(self, tenant1: str, tenant2: str) -> None:

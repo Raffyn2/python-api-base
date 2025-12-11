@@ -7,8 +7,6 @@
 import json
 import logging
 
-import pytest
-
 from infrastructure.observability.logging_config import JSONFormatter, configure_logging
 
 
@@ -200,7 +198,7 @@ class TestConfigureLogging:
         root = logging.getLogger()
         # Add extra handler
         root.addHandler(logging.StreamHandler())
-        initial_count = len(root.handlers)
+        len(root.handlers)
 
         configure_logging()
 

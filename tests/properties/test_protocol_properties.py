@@ -95,9 +95,7 @@ class ValidAsyncRepository:
             updated_at=datetime.now(),
         )
 
-    async def update(
-        self, entity_id: Any, data: SampleUpdateDTO
-    ) -> SampleEntity | None:
+    async def update(self, entity_id: Any, data: SampleUpdateDTO) -> SampleEntity | None:
         return None
 
     async def delete(self, entity_id: Any) -> bool:
@@ -158,9 +156,7 @@ class TestProtocolRuntimeCheckable:
 
     @settings(max_examples=100)
     @given(id_value=st.one_of(st.integers(), st.text(min_size=1), st.uuids()))
-    def test_identifiable_protocol_accepts_valid_implementations(
-        self, id_value: Any
-    ) -> None:
+    def test_identifiable_protocol_accepts_valid_implementations(self, id_value: Any) -> None:
         """
         **Feature: advanced-reusability, Property 1: Protocol Runtime Checkable**
 
@@ -201,9 +197,7 @@ class TestProtocolRuntimeCheckable:
 
     @settings(max_examples=50)
     @given(is_deleted=st.booleans())
-    def test_soft_deletable_protocol_accepts_valid_implementations(
-        self, is_deleted: bool
-    ) -> None:
+    def test_soft_deletable_protocol_accepts_valid_implementations(self, is_deleted: bool) -> None:
         """
         **Feature: advanced-reusability, Property 1: Protocol Runtime Checkable**
 

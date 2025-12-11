@@ -102,9 +102,7 @@ class TestNoPlaintextSecrets:
                     # Check if it looks like a real credential
                     for pattern in self.CREDENTIAL_PATTERNS:
                         if re.search(pattern, value, re.IGNORECASE):
-                            violations.append(
-                                f"{name}: stringData.{key} contains plaintext"
-                            )
+                            violations.append(f"{name}: stringData.{key} contains plaintext")
                             break
 
             # Check data (base64 encoded)
@@ -132,12 +130,7 @@ class TestNoLatestImageTags:
 
         for deployment in deployments:
             name = deployment.get("metadata", {}).get("name", "unknown")
-            containers = (
-                deployment.get("spec", {})
-                .get("template", {})
-                .get("spec", {})
-                .get("containers", [])
-            )
+            containers = deployment.get("spec", {}).get("template", {}).get("spec", {}).get("containers", [])
 
             for container in containers:
                 image = container.get("image", "")
@@ -163,12 +156,7 @@ class TestPodSecurityContext:
 
         for deployment in deployments:
             name = deployment.get("metadata", {}).get("name", "unknown")
-            containers = (
-                deployment.get("spec", {})
-                .get("template", {})
-                .get("spec", {})
-                .get("containers", [])
-            )
+            containers = deployment.get("spec", {}).get("template", {}).get("spec", {}).get("containers", [])
 
             for container in containers:
                 ctx = container.get("securityContext", {})
@@ -177,13 +165,9 @@ class TestPodSecurityContext:
                 if not ctx.get("runAsNonRoot"):
                     violations.append(f"{name}/{container_name}: missing runAsNonRoot")
                 if not ctx.get("readOnlyRootFilesystem"):
-                    violations.append(
-                        f"{name}/{container_name}: missing readOnlyRootFilesystem"
-                    )
+                    violations.append(f"{name}/{container_name}: missing readOnlyRootFilesystem")
                 if ctx.get("allowPrivilegeEscalation") is not False:
-                    violations.append(
-                        f"{name}/{container_name}: allowPrivilegeEscalation not false"
-                    )
+                    violations.append(f"{name}/{container_name}: allowPrivilegeEscalation not false")
 
         assert not violations, f"Security context violations: {violations}"
 
@@ -203,12 +187,7 @@ class TestCapabilitiesDropped:
 
         for deployment in deployments:
             name = deployment.get("metadata", {}).get("name", "unknown")
-            containers = (
-                deployment.get("spec", {})
-                .get("template", {})
-                .get("spec", {})
-                .get("containers", [])
-            )
+            containers = deployment.get("spec", {}).get("template", {}).get("spec", {}).get("containers", [])
 
             for container in containers:
                 ctx = container.get("securityContext", {})
@@ -216,9 +195,7 @@ class TestCapabilitiesDropped:
                 drop = capabilities.get("drop", [])
 
                 if "ALL" not in drop:
-                    violations.append(
-                        f"{name}/{container.get('name')}: capabilities.drop missing ALL"
-                    )
+                    violations.append(f"{name}/{container.get('name')}: capabilities.drop missing ALL")
 
         assert not violations, f"Capabilities not dropped: {violations}"
 
@@ -247,17 +224,10 @@ class TestPDBExists:
         violations = []
         for deployment in deployments:
             name = deployment.get("metadata", {}).get("name", "unknown")
-            labels = (
-                deployment.get("spec", {})
-                .get("template", {})
-                .get("metadata", {})
-                .get("labels", {})
-            )
+            labels = deployment.get("spec", {}).get("template", {}).get("metadata", {}).get("labels", {})
 
             has_pdb = any(
-                all(labels.get(k) == v for k, v in selector.items())
-                for selector in pdb_selectors
-                if selector
+                all(labels.get(k) == v for k, v in selector.items()) for selector in pdb_selectors if selector
             )
 
             if not has_pdb:
@@ -316,9 +286,7 @@ class TestIngressSecurityHeaders:
             annotations = ingress.get("metadata", {}).get("annotations", {})
 
             # Check for security headers in annotations
-            headers_annotation = annotations.get(
-                "nginx.ingress.kubernetes.io/configuration-snippet", ""
-            )
+            headers_annotation = annotations.get("nginx.ingress.kubernetes.io/configuration-snippet", "")
 
             for header in self.REQUIRED_HEADERS:
                 if header.lower() not in headers_annotation.lower():
@@ -380,19 +348,12 @@ class TestPrometheusAnnotations:
         violations = []
         for deployment in deployments:
             name = deployment.get("metadata", {}).get("name", "unknown")
-            annotations = (
-                deployment.get("spec", {})
-                .get("template", {})
-                .get("metadata", {})
-                .get("annotations", {})
-            )
+            annotations = deployment.get("spec", {}).get("template", {}).get("metadata", {}).get("annotations", {})
 
             if "prometheus.io/scrape" not in annotations:
                 violations.append(name)
 
-        assert not violations, (
-            f"Deployments without Prometheus annotations: {violations}"
-        )
+        assert not violations, f"Deployments without Prometheus annotations: {violations}"
 
 
 class TestKubernetesRecommendedLabels:
@@ -472,12 +433,7 @@ class TestStartupProbe:
         violations = []
         for deployment in deployments:
             name = deployment.get("metadata", {}).get("name", "unknown")
-            containers = (
-                deployment.get("spec", {})
-                .get("template", {})
-                .get("spec", {})
-                .get("containers", [])
-            )
+            containers = deployment.get("spec", {}).get("template", {}).get("spec", {}).get("containers", [])
 
             for container in containers:
                 if "startupProbe" not in container:

@@ -81,9 +81,7 @@ def validate_entity_name(name: str) -> str:
         raise ValidationError("Entity name cannot be empty")
 
     if not re.match(r"^[a-z][a-z0-9_]*$", name):
-        raise ValidationError(
-            f"Invalid entity name '{name}'. Must be snake_case starting with a letter."
-        )
+        raise ValidationError(f"Invalid entity name '{name}'. Must be snake_case starting with a letter.")
 
     if name in RESERVED_KEYWORDS:
         raise ValidationError(f"'{name}' is a reserved Python keyword")
@@ -104,9 +102,7 @@ def validate_field_definition(field: str) -> tuple[str, str]:
         InvalidFieldError: If field definition is invalid.
     """
     if ":" not in field:
-        raise InvalidFieldError(
-            f"Invalid field format '{field}'. Expected 'name:type'."
-        )
+        raise InvalidFieldError(f"Invalid field format '{field}'. Expected 'name:type'.")
 
     parts = field.split(":", 1)
     name = parts[0].strip()
@@ -124,9 +120,7 @@ def validate_field_definition(field: str) -> tuple[str, str]:
     # Extract base type for validation
     base_type = ftype.split("[")[0].strip()
     if base_type not in VALID_TYPES:
-        raise InvalidFieldError(
-            f"Unknown type '{ftype}'. Valid types: {', '.join(sorted(VALID_TYPES))}"
-        )
+        raise InvalidFieldError(f"Unknown type '{ftype}'. Valid types: {', '.join(sorted(VALID_TYPES))}")
 
     return name, ftype
 
@@ -148,10 +142,7 @@ def validate_revision(revision: str) -> str:
 
     # Allow 'head', 'base', or alphanumeric revision IDs
     if revision not in ("head", "base") and not re.match(r"^[a-f0-9]+$", revision):
-        raise ValidationError(
-            f"Invalid revision '{revision}'. "
-            "Must be 'head', 'base', or a hex revision ID."
-        )
+        raise ValidationError(f"Invalid revision '{revision}'. Must be 'head', 'base', or a hex revision ID.")
 
     return revision
 
@@ -202,8 +193,7 @@ def validate_alembic_command(command: str) -> str:
 
     if command not in valid_commands:
         raise ValidationError(
-            f"Invalid alembic command '{command}'. "
-            f"Valid commands: {', '.join(sorted(valid_commands))}"
+            f"Invalid alembic command '{command}'. Valid commands: {', '.join(sorted(valid_commands))}"
         )
 
     return command
@@ -247,12 +237,9 @@ def validate_markers(markers: str) -> str:
         return ""
 
     # Basic validation - allow alphanumeric, spaces, and logical operators
-    if not re.match(
-        r"^[a-zA-Z0-9_\s\(\)]+(?:\s+(?:and|or|not)\s+[a-zA-Z0-9_\s\(\)]+)*$", markers
-    ):
+    if not re.match(r"^[a-zA-Z0-9_\s\(\)]+(?:\s+(?:and|or|not)\s+[a-zA-Z0-9_\s\(\)]+)*$", markers):
         raise ValidationError(
-            f"Invalid marker expression '{markers}'. "
-            "Use alphanumeric markers with 'and', 'or', 'not' operators."
+            f"Invalid marker expression '{markers}'. Use alphanumeric markers with 'and', 'or', 'not' operators."
         )
 
     return markers

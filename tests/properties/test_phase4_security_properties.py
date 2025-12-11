@@ -64,9 +64,7 @@ password_st = st.text(
 tenant_id_st = st.text(
     min_size=1,
     max_size=50,
-    alphabet=st.characters(
-        whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="-_"
-    ),
+    alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="-_"),
 )
 
 
@@ -83,9 +81,7 @@ class TestValidationErrorAggregation:
         code=error_code_st,
     )
     @settings(max_examples=100)
-    def test_field_error_immutability(
-        self, field: str, message: str, code: str
-    ) -> None:
+    def test_field_error_immutability(self, field: str, message: str, code: str) -> None:
         """FieldError is immutable after creation."""
         error = FieldError(field=field, message=message, code=code)
 
@@ -107,9 +103,7 @@ class TestValidationErrorAggregation:
         ),
     )
     @settings(max_examples=100)
-    def test_validation_error_aggregates_all_errors(
-        self, message: str, errors: list[tuple[str, str, str]]
-    ) -> None:
+    def test_validation_error_aggregates_all_errors(self, message: str, errors: list[tuple[str, str, str]]) -> None:
         """ValidationError aggregates all field errors correctly."""
         validation_error: ValidationError[str] = ValidationError(message=message)
 
@@ -131,9 +125,7 @@ class TestValidationErrorAggregation:
         error_msg=error_message_st,
     )
     @settings(max_examples=100)
-    def test_validation_error_to_dict_round_trip(
-        self, message: str, field: str, error_msg: str
-    ) -> None:
+    def test_validation_error_to_dict_round_trip(self, message: str, field: str, error_msg: str) -> None:
         """ValidationError serialization preserves all data."""
         error = ValidationError[str](message=message)
         error = error.add_error(field, error_msg, "VALIDATION_ERROR")
@@ -162,9 +154,7 @@ class TestJWTTokenRoundTrip:
         ),
     )
     @settings(max_examples=50, deadline=None)
-    def test_jwt_encode_decode_preserves_claims(
-        self, subject: str, scopes: list[str]
-    ) -> None:
+    def test_jwt_encode_decode_preserves_claims(self, subject: str, scopes: list[str]) -> None:
         """JWT encoding then decoding preserves all claims."""
         from jose import jwt as jose_jwt
 
@@ -278,9 +268,7 @@ class TestPasswordHashingSecurity:
         wrong_password=password_st,
     )
     @settings(max_examples=20, deadline=None)
-    def test_wrong_password_does_not_verify(
-        self, password: str, wrong_password: str
-    ) -> None:
+    def test_wrong_password_does_not_verify(self, password: str, wrong_password: str) -> None:
         """Wrong password does not verify against hash."""
         assume(password != wrong_password)
         from core.shared.utils.password import hash_password, verify_password
@@ -341,15 +329,11 @@ class TestRBACPermissionChecking:
             assert not role.has_permission(perm)
 
     @given(
-        role_name=st.text(
-            min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz_"
-        ),
+        role_name=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz_"),
         description=st.text(min_size=0, max_size=100),
     )
     @settings(max_examples=50)
-    def test_role_serialization_round_trip(
-        self, role_name: str, description: str
-    ) -> None:
+    def test_role_serialization_round_trip(self, role_name: str, description: str) -> None:
         """Role serialization/deserialization preserves data."""
         from infrastructure.security.rbac import Permission, Role
 
@@ -380,9 +364,7 @@ class TestRateLimitingEnforcement:
         window_seconds=st.integers(min_value=1, max_value=60),
     )
     @settings(max_examples=50)
-    def test_rate_limit_allows_up_to_limit(
-        self, max_requests: int, window_seconds: int
-    ) -> None:
+    def test_rate_limit_allows_up_to_limit(self, max_requests: int, window_seconds: int) -> None:
         """Rate limiter allows requests up to the limit."""
         from infrastructure.security.rate_limit.sliding_window import (
             SlidingWindowConfig,
@@ -516,9 +498,7 @@ class TestTenantContextIsolation:
         tenant_name=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=50)
-    def test_tenant_info_stores_data_correctly(
-        self, tenant_id: str, tenant_name: str
-    ) -> None:
+    def test_tenant_info_stores_data_correctly(self, tenant_id: str, tenant_name: str) -> None:
         """TenantInfo correctly stores tenant data."""
         from infrastructure.multitenancy.tenant import TenantInfo
 
@@ -539,20 +519,14 @@ class TestTenantContextIsolation:
         tenant2_id=tenant_id_st,
     )
     @settings(max_examples=50)
-    def test_different_tenants_are_isolated(
-        self, tenant1_id: str, tenant2_id: str
-    ) -> None:
+    def test_different_tenants_are_isolated(self, tenant1_id: str, tenant2_id: str) -> None:
         """Different tenant infos are isolated from each other."""
         assume(tenant1_id != tenant2_id)
 
         from infrastructure.multitenancy.tenant import TenantInfo
 
-        info1: TenantInfo[str] = TenantInfo(
-            id=tenant1_id, name="Tenant 1", is_active=True
-        )
-        info2: TenantInfo[str] = TenantInfo(
-            id=tenant2_id, name="Tenant 2", is_active=True
-        )
+        info1: TenantInfo[str] = TenantInfo(id=tenant1_id, name="Tenant 1", is_active=True)
+        info2: TenantInfo[str] = TenantInfo(id=tenant2_id, name="Tenant 2", is_active=True)
 
         # Should be different
         assert info1.id != info2.id
@@ -625,13 +599,11 @@ class TestTenantHeaderPropagation:
         header_name=st.sampled_from(["X-Tenant-ID", "X-Tenant-Id", "x-tenant-id"]),
     )
     @settings(max_examples=30)
-    def test_tenant_id_extracted_from_headers(
-        self, tenant_id: str, header_name: str
-    ) -> None:
+    def test_tenant_id_extracted_from_headers(self, tenant_id: str, header_name: str) -> None:
         """Tenant ID is correctly extracted from request headers."""
         from infrastructure.multitenancy.tenant import TenantContext
 
-        context: TenantContext[str] = TenantContext(header_name="X-Tenant-ID")
+        TenantContext(header_name="X-Tenant-ID")
 
         # Simulate header extraction with different case variations
         headers = {header_name: tenant_id}

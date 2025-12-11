@@ -30,9 +30,7 @@ valid_entity_names = st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(
 # Strategy for valid field definitions
 valid_fields = st.lists(
     st.tuples(
-        st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(
-            lambda x: 0 < len(x) <= 30
-        ),
+        st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(lambda x: 0 < len(x) <= 30),
         st.sampled_from(["str", "int", "float", "bool"]),
     ),
     min_size=0,
@@ -49,9 +47,7 @@ class TestGeneratedCodeUTCDatetime:
 
     @given(name=valid_entity_names, fields=valid_fields)
     @settings(max_examples=100)
-    def test_entity_uses_utc_datetime(
-        self, name: str, fields: list[tuple[str, str]]
-    ) -> None:
+    def test_entity_uses_utc_datetime(self, name: str, fields: list[tuple[str, str]]) -> None:
         """Generated entity code uses UTC for datetime."""
         content = _generate_entity_content(name, fields)
 
@@ -87,9 +83,7 @@ class TestGeneratedCodeImportOrdering:
 
     @given(name=valid_entity_names, fields=valid_fields)
     @settings(max_examples=100)
-    def test_entity_import_ordering(
-        self, name: str, fields: list[tuple[str, str]]
-    ) -> None:
+    def test_entity_import_ordering(self, name: str, fields: list[tuple[str, str]]) -> None:
         """Entity imports follow PEP8 ordering."""
         content = _generate_entity_content(name, fields)
         self._verify_import_ordering(content)
@@ -174,21 +168,13 @@ class TestGeneratedCodeImportOrdering:
         # Verify ordering: all stdlib before third-party, all third-party before local
         if stdlib_imports and third_party_imports:
             last_stdlib_idx = max(import_lines.index(imp) for imp in stdlib_imports)
-            first_third_party_idx = min(
-                import_lines.index(imp) for imp in third_party_imports
-            )
-            assert last_stdlib_idx < first_third_party_idx, (
-                "stdlib imports should come before third-party imports"
-            )
+            first_third_party_idx = min(import_lines.index(imp) for imp in third_party_imports)
+            assert last_stdlib_idx < first_third_party_idx, "stdlib imports should come before third-party imports"
 
         if third_party_imports and local_imports:
-            last_third_party_idx = max(
-                import_lines.index(imp) for imp in third_party_imports
-            )
+            last_third_party_idx = max(import_lines.index(imp) for imp in third_party_imports)
             first_local_idx = min(import_lines.index(imp) for imp in local_imports)
-            assert last_third_party_idx < first_local_idx, (
-                "third-party imports should come before local imports"
-            )
+            assert last_third_party_idx < first_local_idx, "third-party imports should come before local imports"
 
 
 class TestCaseConversion:

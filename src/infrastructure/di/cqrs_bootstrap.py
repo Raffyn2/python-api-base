@@ -8,11 +8,16 @@ per-handler-call from the global database session.
 **Validates: Requirements 5.3, 5.5**
 """
 
-import logging
 import os
 
+import structlog
+
 from application.common.cqrs import CommandBus, QueryBus
-from application.common.middleware.circuit_breaker import CircuitBreakerConfig
+from application.common.middleware.cache.query_cache import (
+    InMemoryQueryCache,
+    QueryCacheConfig,
+    QueryCacheMiddleware,
+)
 from application.common.middleware.observability import (
     InMemoryMetricsCollector,
     LoggingConfig,
@@ -20,13 +25,9 @@ from application.common.middleware.observability import (
     MetricsConfig,
     MetricsMiddleware,
 )
-from application.common.middleware.query_cache import (
-    InMemoryQueryCache,
-    QueryCacheConfig,
-    QueryCacheMiddleware,
-)
 from application.common.middleware.resilience import ResilienceMiddleware
-from application.common.middleware.retry import RetryConfig
+from application.common.middleware.resilience.circuit_breaker import CircuitBreakerConfig
+from application.common.middleware.resilience.retry import RetryConfig
 from application.users.commands import (
     CreateUserCommand,
     CreateUserHandler,
@@ -45,14 +46,15 @@ from application.users.queries import (
     ListUsersHandler,
     ListUsersQuery,
 )
+from core.base.patterns.result import Result
 from domain.users.services import UserDomainService
+from infrastructure.db.core.session import get_database_session
 from infrastructure.db.repositories.user_read_repository import (
     SQLAlchemyUserReadRepository,
 )
 from infrastructure.db.repositories.user_repository import SQLAlchemyUserRepository
-from infrastructure.db.session import get_database_session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 async def register_user_handlers(
@@ -72,7 +74,7 @@ async def register_user_handlers(
     user_service = UserDomainService()
 
     # Register command handlers with factory pattern
-    async def create_user_handler(cmd: CreateUserCommand):
+    async def create_user_handler(cmd: CreateUserCommand) -> Result:
         """Factory for CreateUserHandler with fresh repository."""
         db = get_database_session()
         async with db.session() as session:
@@ -86,7 +88,7 @@ async def register_user_handlers(
     command_bus.register(CreateUserCommand, create_user_handler)
     logger.info("Registered CreateUserHandler")
 
-    async def update_user_handler(cmd: UpdateUserCommand):
+    async def update_user_handler(cmd: UpdateUserCommand) -> Result:
         """Factory for UpdateUserHandler with fresh repository."""
         db = get_database_session()
         async with db.session() as session:
@@ -97,7 +99,7 @@ async def register_user_handlers(
     command_bus.register(UpdateUserCommand, update_user_handler)
     logger.info("Registered UpdateUserHandler")
 
-    async def delete_user_handler(cmd: DeleteUserCommand):
+    async def delete_user_handler(cmd: DeleteUserCommand) -> Result:
         """Factory for DeleteUserHandler with fresh repository."""
         db = get_database_session()
         async with db.session() as session:
@@ -109,7 +111,7 @@ async def register_user_handlers(
     logger.info("Registered DeleteUserHandler")
 
     # Register query handlers with factory pattern
-    async def get_user_by_id_handler(query: GetUserByIdQuery):
+    async def get_user_by_id_handler(query: GetUserByIdQuery) -> Result:
         """Factory for GetUserByIdHandler with fresh repository."""
         db = get_database_session()
         async with db.session() as session:
@@ -120,7 +122,7 @@ async def register_user_handlers(
     query_bus.register(GetUserByIdQuery, get_user_by_id_handler)
     logger.info("Registered GetUserByIdHandler")
 
-    async def get_user_by_email_handler(query: GetUserByEmailQuery):
+    async def get_user_by_email_handler(query: GetUserByEmailQuery) -> Result:
         """Factory for GetUserByEmailHandler with fresh repository."""
         db = get_database_session()
         async with db.session() as session:
@@ -131,7 +133,7 @@ async def register_user_handlers(
     query_bus.register(GetUserByEmailQuery, get_user_by_email_handler)
     logger.info("Registered GetUserByEmailHandler")
 
-    async def list_users_handler(query: ListUsersQuery):
+    async def list_users_handler(query: ListUsersQuery) -> Result:
         """Factory for ListUsersHandler with fresh repository."""
         db = get_database_session()
         async with db.session() as session:
@@ -142,7 +144,7 @@ async def register_user_handlers(
     query_bus.register(ListUsersQuery, list_users_handler)
     logger.info("Registered ListUsersHandler")
 
-    async def count_users_handler(query: CountUsersQuery):
+    async def count_users_handler(query: CountUsersQuery) -> Result:
         """Factory for CountUsersHandler with fresh repository."""
         db = get_database_session()
         async with db.session() as session:
@@ -209,15 +211,11 @@ def configure_cqrs_middleware(
         command_bus.add_middleware(resilience_middleware)
         logger.info(
             "CQRS resilience middleware enabled",
-            extra={
-                "max_retries": retry_config.max_retries,
-                "circuit_threshold": circuit_config.failure_threshold,
-            },
+            max_retries=retry_config.max_retries,
+            circuit_threshold=circuit_config.failure_threshold,
         )
     else:
-        logger.info(
-            "CQRS resilience middleware disabled (HTTP layer provides resilience)"
-        )
+        logger.info("CQRS resilience middleware disabled (HTTP layer provides resilience)")
 
     # Layer 1: Observability (outer layer)
     if enable_observability:
@@ -226,8 +224,7 @@ def configure_cqrs_middleware(
             log_request=True,
             log_response=True,
             log_duration=True,
-            include_command_data=os.getenv("CQRS_LOG_COMMAND_DATA", "false").lower()
-            == "true",
+            include_command_data=os.getenv("CQRS_LOG_COMMAND_DATA", "false").lower() == "true",
         )
 
         logging_middleware = LoggingMiddleware(logging_config)
@@ -267,10 +264,8 @@ def configure_cqrs_middleware(
 
         logger.info(
             "Query cache middleware enabled",
-            extra={
-                "ttl_seconds": cache_config.ttl_seconds,
-                "cache_all_queries": cache_config.cache_all_queries,
-            },
+            ttl_seconds=cache_config.ttl_seconds,
+            cache_all_queries=cache_config.cache_all_queries,
         )
 
 

@@ -104,11 +104,7 @@ class TestIDGeneration:
         assert [len(p) for p in parts] == [8, 4, 4, 4, 12]
 
     @settings(max_examples=20)
-    @given(
-        invalid_str=st.text(min_size=0, max_size=50).filter(
-            lambda x: len(x) != 26 or not x.isalnum()
-        )
-    )
+    @given(invalid_str=st.text(min_size=0, max_size=50).filter(lambda x: len(x) != 26 or not x.isalnum()))
     def test_invalid_ulid_detection(self, invalid_str: str) -> None:
         """
         For any string that is not a valid ULID format, is_valid_ulid SHALL return False.

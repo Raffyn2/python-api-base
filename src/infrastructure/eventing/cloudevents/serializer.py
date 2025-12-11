@@ -4,7 +4,7 @@ import base64
 import json
 from typing import Any
 
-from src.infrastructure.eventing.cloudevents.models import (
+from infrastructure.eventing.cloudevents.models import (
     CloudEvent,
     CloudEventSerializationError,
 )
@@ -91,10 +91,9 @@ class CloudEventSerializer:
         """
         if mode == "structured":
             return CloudEventSerializer.to_structured(event)
-        elif mode == "binary":
+        if mode == "binary":
             return CloudEventSerializer.to_binary(event)
-        else:
-            raise CloudEventSerializationError(f"Invalid content mode: {mode}")
+        raise CloudEventSerializationError(f"Invalid content mode: {mode}")
 
     @staticmethod
     def to_json(event: CloudEvent) -> str:

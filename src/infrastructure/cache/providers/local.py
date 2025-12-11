@@ -59,7 +59,11 @@ class LRUCache[K: Hashable, V]:
             return value
 
     def set(
-        self, key: K, value: V, ttl: int | None = None, tags: list[str] | None = None
+        self,
+        key: K,
+        value: V,
+        ttl: int | None = None,
+        tags: list[str] | None = None,
     ) -> None:
         """Set value with optional TTL and tags.
 

@@ -9,9 +9,8 @@ Provides type-safe CRUD and search operations for Elasticsearch documents.
 
 from __future__ import annotations
 
-import logging
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from infrastructure.elasticsearch.document import (
     DocumentMetadata,
@@ -26,12 +25,10 @@ from infrastructure.elasticsearch.query import (
 if TYPE_CHECKING:
     from infrastructure.elasticsearch.client import ElasticsearchClient
 
-logger = logging.getLogger(__name__)
-
 T = TypeVar("T", bound=ElasticsearchDocument)
 
 
-class ElasticsearchRepository(Generic[T]):
+class ElasticsearchRepository[T: ElasticsearchDocument]:
     """Generic repository for Elasticsearch documents.
 
     Provides type-safe CRUD and search operations using PEP 695 generics pattern.
@@ -184,16 +181,12 @@ class ElasticsearchRepository(Generic[T]):
         refresh: bool = False,
     ) -> int:
         """Bulk delete documents."""
-        operations: list[dict[str, Any]] = [
-            {"delete": {"_index": self._index, "_id": doc_id}} for doc_id in doc_ids
-        ]
+        operations: list[dict[str, Any]] = [{"delete": {"_index": self._index, "_id": doc_id}} for doc_id in doc_ids]
 
         result = await self._client.bulk(operations=operations, refresh=refresh)
 
         return sum(
-            1
-            for item in result.get("items", [])
-            if "delete" in item and item["delete"].get("result") == "deleted"
+            1 for item in result.get("items", []) if "delete" in item and item["delete"].get("result") == "deleted"
         )
 
     # Search Operations
@@ -255,11 +248,7 @@ class ElasticsearchRepository(Generic[T]):
         size: int = 10,
     ) -> SearchResult[T]:
         """Full-text search across fields."""
-        if fields:
-            es_query = {"multi_match": {"query": text, "fields": fields}}
-        else:
-            es_query = {"query_string": {"query": text}}
-
+        es_query = {"multi_match": {"query": text, "fields": fields}} if fields else {"query_string": {"query": text}}
         query = SearchQuery(query=es_query, size=size)
         return await self.search(query)
 
@@ -282,10 +271,7 @@ class ElasticsearchRepository(Generic[T]):
 
         aggregations = result.get("aggregations", {})
 
-        return {
-            name: AggregationResult.from_response(name, agg_data)
-            for name, agg_data in aggregations.items()
-        }
+        return {name: AggregationResult.from_response(name, agg_data) for name, agg_data in aggregations.items()}
 
     # Iteration
 

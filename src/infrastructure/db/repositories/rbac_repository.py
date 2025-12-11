@@ -4,16 +4,16 @@
 **Part of: Core API (permanent)**
 """
 
-import logging
 from datetime import UTC, datetime
 from uuid import uuid4
 
+import structlog
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infrastructure.db.models.rbac_models import RoleModel, UserRoleModel
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class RBACRepository:
@@ -74,7 +74,11 @@ class RBACRepository:
         self._session.add(role)
         await self._session.commit()
         await self._session.refresh(role)
-        logger.info(f"Created role: {name}")
+        logger.info(
+            "Created role",
+            operation="RBAC_CREATE_ROLE",
+            role_name=name,
+        )
         return role
 
     async def update_role(
@@ -89,7 +93,11 @@ class RBACRepository:
             return None
 
         if role.is_system:
-            logger.warning(f"Attempted to modify system role: {role.name}")
+            logger.warning(
+                "Attempted to modify system role",
+                operation="RBAC_UPDATE_ROLE",
+                role_name=role.name,
+            )
             raise ValueError("Cannot modify system roles")
 
         if description is not None:
@@ -136,7 +144,11 @@ class RBACRepository:
         """Assign a role to a user."""
         role = await self.get_role_by_name(role_name)
         if not role:
-            logger.warning(f"Role not found: {role_name}")
+            logger.warning(
+                "Role not found",
+                operation="RBAC_ASSIGN_ROLE",
+                role_name=role_name,
+            )
             return None
 
         # Check if already assigned
@@ -149,7 +161,12 @@ class RBACRepository:
         result = await self._session.execute(stmt)
         existing = result.scalar_one_or_none()
         if existing:
-            logger.info(f"Role {role_name} already assigned to user {user_id}")
+            logger.info(
+                "Role already assigned to user",
+                operation="RBAC_ASSIGN_ROLE",
+                role_name=role_name,
+                user_id=user_id,
+            )
             return existing
 
         user_role = UserRoleModel(
@@ -162,7 +179,12 @@ class RBACRepository:
         self._session.add(user_role)
         await self._session.commit()
         await self._session.refresh(user_role)
-        logger.info(f"Assigned role {role_name} to user {user_id}")
+        logger.info(
+            "Assigned role to user",
+            operation="RBAC_ASSIGN_ROLE",
+            role_name=role_name,
+            user_id=user_id,
+        )
         return user_role
 
     async def revoke_role(self, user_id: str, role_name: str) -> bool:
@@ -183,7 +205,12 @@ class RBACRepository:
         if user_role:
             await self._session.delete(user_role)
             await self._session.commit()
-            logger.info(f"Revoked role {role_name} from user {user_id}")
+            logger.info(
+                "Revoked role from user",
+                operation="RBAC_REVOKE_ROLE",
+                role_name=role_name,
+                user_id=user_id,
+            )
             return True
         return False
 

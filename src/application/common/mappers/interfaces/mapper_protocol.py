@@ -2,32 +2,12 @@
 
 **Feature: application-layer-code-review-2025**
 **Refactored: Split from mapper.py for one-class-per-file compliance**
+
+Re-exports Mapper protocol from core.protocols.application for consistency.
+The canonical implementation is in core.protocols.application.Mapper.
 """
 
-from collections.abc import Sequence
-from typing import Protocol
+# Re-export from canonical location (Single Source of Truth)
+from core.protocols.application import Mapper
 
-
-class Mapper[TSource, TTarget](Protocol):
-    """Protocol for mappers.
-
-    Type Parameters:
-        TSource: Source type.
-        TTarget: Target type.
-    """
-
-    def to_dto(self, entity: TSource) -> TTarget:
-        """Convert entity to DTO."""
-        ...
-
-    def to_entity(self, dto: TTarget) -> TSource:
-        """Convert DTO to entity."""
-        ...
-
-    def to_dto_list(self, entities: Sequence[TSource]) -> list[TTarget]:
-        """Convert list of entities to DTOs."""
-        ...
-
-    def to_entity_list(self, dtos: Sequence[TTarget]) -> list[TSource]:
-        """Convert list of DTOs to entities."""
-        ...
+__all__ = ["Mapper"]

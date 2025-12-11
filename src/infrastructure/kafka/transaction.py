@@ -7,22 +7,23 @@
 
 from __future__ import annotations
 
-import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Self, TypeVar
+
+import structlog
 
 from infrastructure.kafka.message import KafkaMessage, MessageMetadata
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncIterator, Callable
 
     from aiokafka import AIOKafkaProducer
 
     from infrastructure.kafka.config import KafkaConfig
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 T = TypeVar("T")
 
@@ -39,7 +40,7 @@ class TransactionState(Enum):
     ERROR = "error"
 
 
-@dataclass
+@dataclass(slots=True)
 class TransactionResult:
     """Result of a transactional operation.
 
@@ -61,7 +62,7 @@ class TransactionError(Exception):
         self.state = state
 
 
-class TransactionalKafkaProducer(Generic[T]):
+class TransactionalKafkaProducer[T]:
     """Transactional Kafka producer with exactly-once semantics.
 
     **Requirement: R3.1 - Transactional Producer with Exactly-Once Semantics**
@@ -125,12 +126,14 @@ class TransactionalKafkaProducer(Generic[T]):
         from aiokafka import AIOKafkaProducer
 
         producer_config = self._config.to_producer_config()
-        producer_config.update({
-            "transactional_id": self._transactional_id,
-            "enable_idempotence": True,
-            "acks": "all",
-            "max_in_flight_requests_per_connection": 5,
-        })
+        producer_config.update(
+            {
+                "transactional_id": self._transactional_id,
+                "enable_idempotence": True,
+                "acks": "all",
+                "max_in_flight_requests_per_connection": 5,
+            }
+        )
 
         self._producer = AIOKafkaProducer(**producer_config)
         await self._producer.start()
@@ -139,7 +142,8 @@ class TransactionalKafkaProducer(Generic[T]):
         self._started = True
         logger.info(
             "Transactional Kafka producer started",
-            extra={"topic": self._topic, "transactional_id": self._transactional_id},
+            topic=self._topic,
+            transactional_id=self._transactional_id,
         )
         return self
 
@@ -186,9 +190,7 @@ class TransactionalKafkaProducer(Generic[T]):
             await self._commit_transaction()
         except Exception as e:
             await self._abort_transaction()
-            raise TransactionError(
-                f"Transaction failed: {e}", TransactionState.ABORTED
-            ) from e
+            raise TransactionError(f"Transaction failed: {e}", TransactionState.ABORTED) from e
 
     async def _begin_transaction(self) -> None:
         """Begin a new transaction."""
@@ -199,14 +201,12 @@ class TransactionalKafkaProducer(Generic[T]):
         self._in_transaction = True
         self._transaction_state = TransactionState.STARTED
         self._messages_in_transaction = 0
-        logger.debug("Transaction started", extra={"txn_id": self._transactional_id})
+        logger.debug("Transaction started", txn_id=self._transactional_id)
 
     async def _commit_transaction(self) -> None:
         """Commit the current transaction."""
         if not self._producer or not self._in_transaction:
-            raise TransactionError(
-                "No active transaction to commit", self._transaction_state
-            )
+            raise TransactionError("No active transaction to commit", self._transaction_state)
 
         self._transaction_state = TransactionState.COMMITTING
         try:
@@ -214,10 +214,8 @@ class TransactionalKafkaProducer(Generic[T]):
             self._transaction_state = TransactionState.COMMITTED
             logger.info(
                 "Transaction committed",
-                extra={
-                    "txn_id": self._transactional_id,
-                    "messages": self._messages_in_transaction,
-                },
+                txn_id=self._transactional_id,
+                messages=self._messages_in_transaction,
             )
         finally:
             self._in_transaction = False
@@ -234,10 +232,8 @@ class TransactionalKafkaProducer(Generic[T]):
             self._transaction_state = TransactionState.ABORTED
             logger.warning(
                 "Transaction aborted",
-                extra={
-                    "txn_id": self._transactional_id,
-                    "messages_lost": self._messages_in_transaction,
-                },
+                txn_id=self._transactional_id,
+                messages_lost=self._messages_in_transaction,
             )
         finally:
             self._in_transaction = False
@@ -285,16 +281,14 @@ class TransactionalKafkaProducer(Generic[T]):
 
         logger.debug(
             "Message sent in transaction",
-            extra={
-                "txn_id": self._transactional_id,
-                "topic": metadata.topic,
-                "offset": metadata.offset,
-            },
+            txn_id=self._transactional_id,
+            topic=metadata.topic,
+            offset=metadata.offset,
         )
         return metadata
 
 
-class TransactionContext(Generic[T]):
+class TransactionContext[T]:
     """Context for sending messages within a transaction."""
 
     def __init__(self, producer: TransactionalKafkaProducer[T]) -> None:
@@ -330,7 +324,7 @@ class TransactionContext(Generic[T]):
     async def send_batch(
         self,
         payloads: list[T],
-        key_func: callable | None = None,
+        key_func: Callable[[T], str | None] | None = None,
         topic: str | None = None,
     ) -> list[MessageMetadata]:
         """Send multiple messages in the transaction."""

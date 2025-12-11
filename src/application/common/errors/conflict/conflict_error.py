@@ -3,6 +3,10 @@
 Raised when a resource conflict occurs (e.g., duplicate key).
 
 **Feature: python-api-base-2025-state-of-art**
+
+Note: This is a simplified version for application layer use.
+For HTTP/API handlers, use core.errors.ConflictError which includes
+correlation_id, timestamp, and RFC 7807 support.
 """
 
 from application.common.errors.base.application_error import ApplicationError
@@ -15,10 +19,7 @@ class ConflictError(ApplicationError):
     such as attempting to create a duplicate entity.
 
     Example:
-        >>> raise ConflictError(
-        ...     message="User with email already exists",
-        ...     resource="User"
-        ... )
+        >>> raise ConflictError(message="User with email already exists", resource="User")
     """
 
     def __init__(self, message: str, resource: str | None = None) -> None:

@@ -4,8 +4,6 @@
 **Validates: Requirements 3.2**
 """
 
-import pytest
-
 from infrastructure.db.saga.context import SagaContext
 
 
@@ -30,7 +28,7 @@ class TestSagaContext:
         """Test setting and getting values."""
         ctx = SagaContext(saga_id="saga-123")
         ctx.set("result", {"status": "ok"})
-        
+
         result = ctx.get("result")
         assert result == {"status": "ok"}
 
@@ -62,9 +60,9 @@ class TestSagaContext:
         ctx = SagaContext(saga_id="saga-123")
         ctx.set("key1", "value1")
         ctx.set("key2", "value2")
-        
+
         ctx.clear_results()
-        
+
         assert ctx.has("key1") is False
         assert ctx.has("key2") is False
 
@@ -75,7 +73,7 @@ class TestSagaContext:
             data={"initial": "data"},
         )
         ctx.set("result", "value")
-        
+
         # Data should be unchanged
         assert ctx.data == {"initial": "data"}
         # Result should be accessible
@@ -86,5 +84,5 @@ class TestSagaContext:
         ctx = SagaContext(saga_id="saga-123")
         ctx.set("key", "value1")
         ctx.set("key", "value2")
-        
+
         assert ctx.get("key") == "value2"

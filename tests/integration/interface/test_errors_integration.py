@@ -77,9 +77,7 @@ class TestNotFoundErrorResourceInfo:
 
     @given(resource=resource_strategy, id=id_strategy)
     @settings(max_examples=100)
-    def test_not_found_error_message_contains_info(
-        self, resource: str, id: str
-    ) -> None:
+    def test_not_found_error_message_contains_info(self, resource: str, id: str) -> None:
         """NotFoundError message SHALL contain resource and ID."""
         assume(len(resource.strip()) > 0 and len(id.strip()) > 0)
 
@@ -114,9 +112,7 @@ class TestValidationErrorFieldErrors:
 
     @given(field=field_strategy, message=message_strategy, code=code_strategy)
     @settings(max_examples=100)
-    def test_field_error_contains_field_name(
-        self, field: str, message: str, code: str
-    ) -> None:
+    def test_field_error_contains_field_name(self, field: str, message: str, code: str) -> None:
         """FieldError SHALL contain field name."""
         assume(len(field.strip()) > 0 and len(code.strip()) > 0)
 
@@ -129,9 +125,7 @@ class TestValidationErrorFieldErrors:
 
     @given(field=field_strategy, message=message_strategy, code=code_strategy)
     @settings(max_examples=100)
-    def test_field_error_contains_message(
-        self, field: str, message: str, code: str
-    ) -> None:
+    def test_field_error_contains_message(self, field: str, message: str, code: str) -> None:
         """FieldError SHALL contain error message."""
         assume(len(field.strip()) > 0 and len(code.strip()) > 0)
 
@@ -144,9 +138,7 @@ class TestValidationErrorFieldErrors:
 
     @given(field=field_strategy, message=message_strategy, code=code_strategy)
     @settings(max_examples=100)
-    def test_field_error_contains_code(
-        self, field: str, message: str, code: str
-    ) -> None:
+    def test_field_error_contains_code(self, field: str, message: str, code: str) -> None:
         """FieldError SHALL contain error code."""
         assume(len(field.strip()) > 0 and len(code.strip()) > 0)
 
@@ -165,9 +157,7 @@ class TestValidationErrorFieldErrors:
         )
     )
     @settings(max_examples=100)
-    def test_validation_error_contains_field_errors(
-        self, errors: list[tuple[str, str, str]]
-    ) -> None:
+    def test_validation_error_contains_field_errors(self, errors: list[tuple[str, str, str]]) -> None:
         """ValidationError SHALL contain list of FieldError objects."""
         from interface.errors import FieldError, ValidationError
 
@@ -249,9 +239,7 @@ class TestErrorMessageRFC7807:
         from interface.errors import ErrorCode, ErrorMessage
 
         details = {"resource": "Item", "id": "123"}
-        error = ErrorMessage(
-            code=ErrorCode.NOT_FOUND, message="Test error", details=details
-        )
+        error = ErrorMessage(code=ErrorCode.NOT_FOUND, message="Test error", details=details)
         problem = error.to_problem_details()
 
         assert "extensions" in problem

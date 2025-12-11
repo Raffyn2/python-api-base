@@ -75,9 +75,7 @@ class TestUserEmailChangedEvent:
 
     def test_event_type(self) -> None:
         """Test event type property."""
-        event = UserEmailChangedEvent(
-            user_id="user-123", old_email="", new_email=""
-        )
+        event = UserEmailChangedEvent(user_id="user-123", old_email="", new_email="")
         assert event.event_type == "user.email_changed"
 
 
@@ -151,9 +149,7 @@ class TestUserProfileUpdatedEvent:
 
     def test_creation(self) -> None:
         """Test event creation."""
-        event = UserProfileUpdatedEvent(
-            user_id="user-123", changed_fields=("username", "display_name")
-        )
+        event = UserProfileUpdatedEvent(user_id="user-123", changed_fields=("username", "display_name"))
 
         assert event.user_id == "user-123"
         assert "username" in event.changed_fields

@@ -33,18 +33,14 @@ class TestPasswordHashing:
         password SHALL return True.
         """
         hashed = hash_password(password)
-        assert verify_password(password, hashed), (
-            f"Verification should succeed for password: {password!r}"
-        )
+        assert verify_password(password, hashed), f"Verification should succeed for password: {password!r}"
 
     @settings(max_examples=10, deadline=None)
     @given(
         password1=password_strategy,
         password2=password_strategy,
     )
-    def test_different_passwords_fail_verification(
-        self, password1: str, password2: str
-    ) -> None:
+    def test_different_passwords_fail_verification(self, password1: str, password2: str) -> None:
         """
         **Feature: generic-fastapi-crud, Property 21: Password Hash Verification**
 
@@ -56,9 +52,7 @@ class TestPasswordHashing:
             return
 
         hashed = hash_password(password1)
-        assert not verify_password(password2, hashed), (
-            "Verification should fail for different password"
-        )
+        assert not verify_password(password2, hashed), "Verification should fail for different password"
 
     @settings(max_examples=5, deadline=None)
     @given(password=password_strategy)

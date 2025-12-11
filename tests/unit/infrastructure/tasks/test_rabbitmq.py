@@ -69,12 +69,12 @@ class TestRabbitMQConfig:
 class TestRabbitMQTaskQueue:
     """Tests for RabbitMQTaskQueue (with fallback)."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def config(self) -> RabbitMQConfig:
         """Create test config."""
         return RabbitMQConfig()
 
-    @pytest.fixture
+    @pytest.fixture()
     def queue(self, config: RabbitMQConfig) -> RabbitMQTaskQueue[EmailTask, bool]:
         """Create test queue (fallback mode)."""
         return RabbitMQTaskQueue[EmailTask, bool](
@@ -235,7 +235,7 @@ class TestRabbitMQWorker:
 
         # Enqueue task
         task = EmailTask(to="a@b.com", subject="Test", body="Body")
-        handle = await queue.enqueue(task)
+        await queue.enqueue(task)
 
         # Start worker in background
         worker_task = asyncio.create_task(worker.start())

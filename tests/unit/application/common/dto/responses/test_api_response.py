@@ -45,7 +45,7 @@ class TestApiResponse:
         before = datetime.now(tz=UTC)
         response = ApiResponse[str](data="test")
         after = datetime.now(tz=UTC)
-        
+
         assert response.timestamp >= before
         assert response.timestamp <= after
 
@@ -88,7 +88,7 @@ class TestApiResponse:
             request_id="req-456",
         )
         data = response.model_dump()
-        
+
         assert data["data"] == {"id": "123"}
         assert data["message"] == "OK"
         assert data["status_code"] == 200

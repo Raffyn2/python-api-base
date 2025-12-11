@@ -14,9 +14,7 @@ except ImportError:
     pytest.skip("my_app modules not available", allow_module_level=True)
 
 
-key_strategy = st.text(
-    min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_"
-)
+key_strategy = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_")
 string_value_strategy = st.text(max_size=200)
 int_value_strategy = st.integers(min_value=-1000000, max_value=1000000)
 float_value_strategy = st.floats(allow_nan=False, allow_infinity=False)

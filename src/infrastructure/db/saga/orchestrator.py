@@ -17,7 +17,7 @@ from infrastructure.db.saga.enums import SagaStatus, StepStatus
 from infrastructure.db.saga.steps import SagaStep, StepResult
 
 
-@dataclass
+@dataclass(slots=True)
 class SagaResult:
     """Result of executing a saga."""
 
@@ -143,9 +143,7 @@ class Saga[StepT, CompensationT]:
         try:
             # Execute with timeout if configured
             if step.timeout_seconds is not None:
-                await asyncio.wait_for(
-                    step.action(context), timeout=step.timeout_seconds
-                )
+                await asyncio.wait_for(step.action(context), timeout=step.timeout_seconds)
             else:
                 await step.action(context)
 
@@ -162,9 +160,7 @@ class Saga[StepT, CompensationT]:
 
         except TimeoutError:
             step.status = StepStatus.FAILED
-            timeout_error = TimeoutError(
-                f"Step '{step.name}' timed out after {step.timeout_seconds}s"
-            )
+            timeout_error = TimeoutError(f"Step '{step.name}' timed out after {step.timeout_seconds}s")
             step.error = timeout_error
             step.completed_at = datetime.now(tz=UTC)
 

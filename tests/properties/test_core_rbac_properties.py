@@ -197,9 +197,7 @@ class TestRoleOperations:
 
     @given(
         name=st.text(min_size=1, max_size=30, alphabet=string.ascii_lowercase),
-        permissions=st.lists(
-            st.sampled_from(list(Permission)), min_size=0, max_size=5, unique=True
-        ),
+        permissions=st.lists(st.sampled_from(list(Permission)), min_size=0, max_size=5, unique=True),
     )
     @settings(max_examples=50)
     def test_role_to_dict_round_trip(self, name: str, permissions: list[Permission]):

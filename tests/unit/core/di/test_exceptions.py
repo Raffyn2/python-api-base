@@ -203,4 +203,3 @@ class TestExceptionHierarchy:
 
         with pytest.raises(ServiceNotRegisteredError):
             raise ServiceNotRegisteredError(Service)
-

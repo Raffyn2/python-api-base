@@ -108,9 +108,7 @@ class TestRedactionProcessor:
     def test_redact_bearer_token(self) -> None:
         """Test Bearer token redaction."""
         processor = RedactionProcessor()
-        event = {
-            "event": "Auth: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature"
-        }
+        event = {"event": "Auth: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature"}
 
         result = processor(None, "info", event)
 

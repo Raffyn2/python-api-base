@@ -38,11 +38,13 @@ class RequiredFieldValidator[TCommand](Validator[TCommand]):
         for field in self._fields:
             value = getattr(command, field, None)
             if value is None or (isinstance(value, str) and not value.strip()):
-                errors.append({
-                    "field": field,
-                    "message": f"{field} is required",
-                    "code": "required",
-                })
+                errors.append(
+                    {
+                        "field": field,
+                        "message": f"{field} is required",
+                        "code": "required",
+                    }
+                )
         return errors
 
 
@@ -89,18 +91,22 @@ class StringLengthValidator[TCommand](Validator[TCommand]):
             return errors
 
         if len(value) < self._min_length:
-            errors.append({
-                "field": self._field,
-                "message": f"{self._field} must be at least {self._min_length} characters",
-                "code": "min_length",
-            })
+            errors.append(
+                {
+                    "field": self._field,
+                    "message": f"{self._field} must be at least {self._min_length} characters",
+                    "code": "min_length",
+                }
+            )
 
         if self._max_length is not None and len(value) > self._max_length:
-            errors.append({
-                "field": self._field,
-                "message": f"{self._field} must not exceed {self._max_length} characters",
-                "code": "max_length",
-            })
+            errors.append(
+                {
+                    "field": self._field,
+                    "message": f"{self._field} must not exceed {self._max_length} characters",
+                    "code": "max_length",
+                }
+            )
 
         return errors
 
@@ -148,17 +154,21 @@ class RangeValidator[TCommand](Validator[TCommand]):
             return errors
 
         if self._min_value is not None and value < self._min_value:
-            errors.append({
-                "field": self._field,
-                "message": f"{self._field} must be at least {self._min_value}",
-                "code": "min_value",
-            })
+            errors.append(
+                {
+                    "field": self._field,
+                    "message": f"{self._field} must be at least {self._min_value}",
+                    "code": "min_value",
+                }
+            )
 
         if self._max_value is not None and value > self._max_value:
-            errors.append({
-                "field": self._field,
-                "message": f"{self._field} must not exceed {self._max_value}",
-                "code": "max_value",
-            })
+            errors.append(
+                {
+                    "field": self._field,
+                    "message": f"{self._field} must not exceed {self._max_value}",
+                    "code": "max_value",
+                }
+            )
 
         return errors

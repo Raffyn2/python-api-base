@@ -3,10 +3,8 @@
 Tests idempotency cache and middleware functionality.
 """
 
-import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -48,7 +46,7 @@ class CommandWithMethod:
 class TestInMemoryIdempotencyCache:
     """Tests for InMemoryIdempotencyCache."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def cache(self) -> InMemoryIdempotencyCache:
         """Create cache instance."""
         return InMemoryIdempotencyCache()
@@ -157,20 +155,18 @@ class TestIdempotencyConfig:
 class TestIdempotencyMiddleware:
     """Tests for IdempotencyMiddleware."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def cache(self) -> InMemoryIdempotencyCache:
         """Create cache instance."""
         return InMemoryIdempotencyCache()
 
-    @pytest.fixture
+    @pytest.fixture()
     def middleware(self, cache: InMemoryIdempotencyCache) -> IdempotencyMiddleware:
         """Create middleware instance."""
         return IdempotencyMiddleware(cache)
 
     @pytest.mark.asyncio
-    async def test_executes_handler_without_idempotency_key(
-        self, middleware: IdempotencyMiddleware
-    ) -> None:
+    async def test_executes_handler_without_idempotency_key(self, middleware: IdempotencyMiddleware) -> None:
         """Test middleware executes handler when no idempotency key."""
         command = SampleCommand(name="test")
         handler = AsyncMock(return_value="result")
@@ -181,9 +177,7 @@ class TestIdempotencyMiddleware:
         assert result == "result"
 
     @pytest.mark.asyncio
-    async def test_executes_handler_with_idempotency_key(
-        self, middleware: IdempotencyMiddleware
-    ) -> None:
+    async def test_executes_handler_with_idempotency_key(self, middleware: IdempotencyMiddleware) -> None:
         """Test middleware executes handler with idempotency key."""
         command = IdempotentCommand(name="test", idempotency_key="key-123")
         handler = AsyncMock(return_value="result")
@@ -194,9 +188,7 @@ class TestIdempotencyMiddleware:
         assert result == "result"
 
     @pytest.mark.asyncio
-    async def test_caches_result(
-        self, middleware: IdempotencyMiddleware, cache: InMemoryIdempotencyCache
-    ) -> None:
+    async def test_caches_result(self, middleware: IdempotencyMiddleware, cache: InMemoryIdempotencyCache) -> None:
         """Test middleware caches result."""
         command = IdempotentCommand(name="test", idempotency_key="key-123")
         handler = AsyncMock(return_value="result")
@@ -226,9 +218,7 @@ class TestIdempotencyMiddleware:
         assert result == "result"  # Returns cached, not new
 
     @pytest.mark.asyncio
-    async def test_uses_get_idempotency_key_method(
-        self, middleware: IdempotencyMiddleware
-    ) -> None:
+    async def test_uses_get_idempotency_key_method(self, middleware: IdempotencyMiddleware) -> None:
         """Test middleware uses get_idempotency_key method."""
         command = CommandWithMethod(name="test", key="method-key")
         handler = AsyncMock(return_value="result")
@@ -243,7 +233,7 @@ class TestIdempotencyMiddleware:
         self,
         middleware: IdempotencyMiddleware,
         cache: InMemoryIdempotencyCache,
-        caplog: pytest.LogCaptureFixture,
+        capsys: pytest.CaptureFixture[str],
     ) -> None:
         """Test middleware logs cache hit."""
         command = IdempotentCommand(name="test", idempotency_key="key-123")
@@ -251,12 +241,13 @@ class TestIdempotencyMiddleware:
 
         # First call to cache
         await middleware(command, handler)
+        capsys.readouterr()  # Clear first call output
 
         # Second call should hit cache
-        with caplog.at_level(logging.INFO):
-            await middleware(command, handler)
+        await middleware(command, handler)
 
-        assert "cached result" in caplog.text.lower()
+        captured = capsys.readouterr()
+        assert "cached result" in captured.out.lower()
 
     @pytest.mark.asyncio
     async def test_custom_config(self, cache: InMemoryIdempotencyCache) -> None:

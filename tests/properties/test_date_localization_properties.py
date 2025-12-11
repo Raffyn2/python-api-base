@@ -6,9 +6,7 @@
 
 import pytest
 
-pytest.skip(
-    "Module core.shared.date_localization not implemented", allow_module_level=True
-)
+pytest.skip("Module core.shared.date_localization not implemented", allow_module_level=True)
 
 from datetime import date, datetime, timedelta
 
@@ -26,9 +24,7 @@ from core.shared.date_localization import (
 class TestDateTimeFormatterProperties:
     """Property tests for date/time formatter."""
 
-    @given(
-        st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31))
-    )
+    @given(st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31)))
     @settings(max_examples=100)
     def test_iso_format_parseable(self, dt: datetime) -> None:
         """ISO format output is parseable."""
@@ -39,9 +35,7 @@ class TestDateTimeFormatterProperties:
         parsed = date.fromisoformat(formatted)
         assert parsed == dt.date()
 
-    @given(
-        st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31))
-    )
+    @given(st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31)))
     @settings(max_examples=100)
     def test_us_format_contains_components(self, dt: datetime) -> None:
         """US format contains all date components."""
@@ -53,9 +47,7 @@ class TestDateTimeFormatterProperties:
         assert str(dt.day).zfill(2) in formatted
         assert str(dt.year) in formatted
 
-    @given(
-        st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31))
-    )
+    @given(st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31)))
     @settings(max_examples=100)
     def test_time_format_24h(self, dt: datetime) -> None:
         """24h time format is correct."""
@@ -70,9 +62,7 @@ class TestDateTimeFormatterProperties:
 class TestISO8601ParserProperties:
     """Property tests for ISO 8601 parser."""
 
-    @given(
-        st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31))
-    )
+    @given(st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31)))
     @settings(max_examples=100)
     def test_datetime_round_trip(self, dt: datetime) -> None:
         """Datetime round trip through ISO 8601."""
@@ -102,9 +92,7 @@ class TestISO8601ParserProperties:
         st.integers(min_value=0, max_value=59),
     )
     @settings(max_examples=100)
-    def test_duration_parsing(
-        self, days: int, hours: int, minutes: int, seconds: int
-    ) -> None:
+    def test_duration_parsing(self, days: int, hours: int, minutes: int, seconds: int) -> None:
         """Duration parsing is correct."""
         duration_str = f"P{days}DT{hours}H{minutes}M{seconds}S"
         parsed = ISO8601Parser.parse_duration(duration_str)
@@ -116,9 +104,7 @@ class TestISO8601ParserProperties:
 class TestDateTimeNormalizerProperties:
     """Property tests for datetime normalizer."""
 
-    @given(
-        st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31))
-    )
+    @given(st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31)))
     @settings(max_examples=100)
     def test_to_utc_idempotent(self, dt: datetime) -> None:
         """Converting to UTC twice is same as once."""
@@ -127,18 +113,14 @@ class TestDateTimeNormalizerProperties:
 
         assert utc1 == utc2
 
-    @given(
-        st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31))
-    )
+    @given(st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31)))
     @settings(max_examples=100)
     def test_to_iso8601_ends_with_z(self, dt: datetime) -> None:
         """ISO 8601 UTC format ends with Z."""
         iso_str = DateTimeNormalizer.to_iso8601(dt)
         assert iso_str.endswith("Z")
 
-    @given(
-        st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31))
-    )
+    @given(st.datetimes(min_value=datetime(1970, 1, 1), max_value=datetime(2100, 12, 31)))
     @settings(max_examples=100)
     def test_to_iso8601_parseable(self, dt: datetime) -> None:
         """ISO 8601 output is parseable."""

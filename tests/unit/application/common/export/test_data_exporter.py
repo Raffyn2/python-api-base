@@ -31,9 +31,7 @@ class SampleSerializer:
         return {"id": obj.id, "name": obj.name, "email": obj.email, "age": obj.age}
 
     def from_dict(self, data: dict[str, Any]) -> SampleRecord:
-        return SampleRecord(
-            id=data["id"], name=data["name"], email=data["email"], age=int(data["age"])
-        )
+        return SampleRecord(id=data["id"], name=data["name"], email=data["email"], age=int(data["age"]))
 
 
 class TestDataExporterJSON:
@@ -69,7 +67,7 @@ class TestDataExporterJSON:
         records = [SampleRecord(id="1", name="Alice", email="alice@test.com", age=30)]
         config = ExportConfig(format=ExportFormat.JSON, include_metadata=False)
 
-        content, result = exporter.export_json(records, config)
+        content, _result = exporter.export_json(records, config)
 
         data = json.loads(content.decode())
         assert isinstance(data, list)
@@ -100,7 +98,7 @@ class TestDataExporterJSON:
             include_metadata=False,
         )
 
-        content, result = exporter.export_json(records, config)
+        content, _result = exporter.export_json(records, config)
 
         data = json.loads(content.decode())
         assert "id" in data[0]
@@ -119,7 +117,7 @@ class TestDataExporterJSON:
             include_metadata=False,
         )
 
-        content, result = exporter.export_json(records, config)
+        content, _result = exporter.export_json(records, config)
 
         data = json.loads(content.decode())
         assert "id" in data[0]
@@ -169,11 +167,9 @@ class TestDataExporterCSV:
         serializer = SampleSerializer()
         exporter = DataExporter(serializer)
         records = [SampleRecord(id="1", name="Alice", email="alice@test.com", age=30)]
-        config = ExportConfig(
-            format=ExportFormat.CSV, include_fields=["id", "name"]
-        )
+        config = ExportConfig(format=ExportFormat.CSV, include_fields=["id", "name"])
 
-        content, result = exporter.export_csv(records, config)
+        content, _result = exporter.export_csv(records, config)
 
         lines = content.decode().strip().split("\n")
         header = lines[0]
@@ -223,11 +219,9 @@ class TestDataExporterJSONL:
         serializer = SampleSerializer()
         exporter = DataExporter(serializer)
         records = [SampleRecord(id="1", name="Alice", email="alice@test.com", age=30)]
-        config = ExportConfig(
-            format=ExportFormat.JSONL, exclude_fields=["email", "age"]
-        )
+        config = ExportConfig(format=ExportFormat.JSONL, exclude_fields=["email", "age"])
 
-        content, result = exporter.export_jsonl(records, config)
+        content, _result = exporter.export_jsonl(records, config)
 
         data = json.loads(content.decode())
         assert "id" in data
@@ -245,7 +239,7 @@ class TestDataExporterGeneric:
         records = [SampleRecord(id="1", name="Alice", email="alice@test.com", age=30)]
         config = ExportConfig(format=ExportFormat.JSON, include_metadata=False)
 
-        content, result = exporter.export(records, config)
+        _content, result = exporter.export(records, config)
 
         assert result.format == ExportFormat.JSON
 
@@ -256,7 +250,7 @@ class TestDataExporterGeneric:
         records = [SampleRecord(id="1", name="Alice", email="alice@test.com", age=30)]
         config = ExportConfig(format=ExportFormat.CSV)
 
-        content, result = exporter.export(records, config)
+        _content, result = exporter.export(records, config)
 
         assert result.format == ExportFormat.CSV
 
@@ -267,7 +261,7 @@ class TestDataExporterGeneric:
         records = [SampleRecord(id="1", name="Alice", email="alice@test.com", age=30)]
         config = ExportConfig(format=ExportFormat.JSONL)
 
-        content, result = exporter.export(records, config)
+        _content, result = exporter.export(records, config)
 
         assert result.format == ExportFormat.JSONL
 

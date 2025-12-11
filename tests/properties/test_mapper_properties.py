@@ -63,12 +63,8 @@ class RequiredFieldDTO(BaseModel):
 entity_strategy = st.builds(
     EntityModel,
     id=st.integers(min_value=1, max_value=10000),
-    name=st.text(
-        min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))
-    ),
-    value=st.floats(
-        min_value=0, max_value=10000, allow_nan=False, allow_infinity=False
-    ),
+    name=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))),
+    value=st.floats(min_value=0, max_value=10000, allow_nan=False, allow_infinity=False),
     description=st.text(
         min_size=0,
         max_size=100,
@@ -151,9 +147,7 @@ class TestMapperRoundTrip:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    def test_nested_object_mapping(
-        self, id_val: int, name: str, child_id: int, child_name: str
-    ) -> None:
+    def test_nested_object_mapping(self, id_val: int, name: str, child_id: int, child_name: str) -> None:
         """
         For nested objects, mapping SHALL recursively preserve structure.
         """

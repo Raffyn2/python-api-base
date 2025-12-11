@@ -146,9 +146,7 @@ def test_connection_total_count_matches(items: list[str]) -> None:
 
 @given(items=item_lists(), args=connection_args())
 @settings(max_examples=100)
-def test_connection_edges_not_exceed_first(
-    items: list[str], args: ConnectionArgs
-) -> None:
+def test_connection_edges_not_exceed_first(items: list[str], args: ConnectionArgs) -> None:
     """Property: edges count does not exceed 'first' argument.
 
     **Feature: api-architecture-analysis, Property 4: Pagination Limit**
@@ -165,9 +163,7 @@ def test_connection_edges_not_exceed_first(
 
 @given(items=item_lists(), args=connection_args())
 @settings(max_examples=100)
-def test_connection_edges_not_exceed_last(
-    items: list[str], args: ConnectionArgs
-) -> None:
+def test_connection_edges_not_exceed_last(items: list[str], args: ConnectionArgs) -> None:
     """Property: edges count does not exceed 'last' argument.
 
     **Feature: api-architecture-analysis, Property 5: Pagination Limit (Last)**

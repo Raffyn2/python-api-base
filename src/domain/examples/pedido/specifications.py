@@ -10,7 +10,7 @@ Demonstrates:
 
 from decimal import Decimal
 
-from core.base.patterns.specification import Specification
+from domain.common.specification import Specification, spec
 from domain.examples.pedido.entity import PedidoExample, PedidoStatus
 
 
@@ -92,9 +92,7 @@ def orders_ready_for_processing() -> Specification[PedidoExample]:
     return PedidoConfirmedSpec() & PedidoHasItemsSpec()
 
 
-def vip_customer_orders(
-    customer_id: str, min_value: Decimal = Decimal("1000.00")
-) -> Specification[PedidoExample]:
+def vip_customer_orders(customer_id: str, min_value: Decimal = Decimal("1000.00")) -> Specification[PedidoExample]:
     """Create composite spec for VIP customer high-value orders.
 
     Useful for:
@@ -108,11 +106,7 @@ def vip_customer_orders(
         ...     assign_priority_shipping(order)
         ...     send_vip_notification(order.customer_id)
     """
-    return (
-        PedidoCustomerSpec(customer_id)
-        & PedidoMinValueSpec(min_value)
-        & PedidoConfirmedSpec()
-    )
+    return PedidoCustomerSpec(customer_id) & PedidoMinValueSpec(min_value) & PedidoConfirmedSpec()
 
 
 def bulk_orders(min_items: int = 10) -> Specification[PedidoExample]:
@@ -147,9 +141,7 @@ def processable_high_value_orders(
     return orders_ready_for_processing() & PedidoMinValueSpec(min_value)
 
 
-def multi_tenant_query(
-    tenant_id: str, status: PedidoStatus
-) -> Specification[PedidoExample]:
+def multi_tenant_query(tenant_id: str, status: PedidoStatus) -> Specification[PedidoExample]:
     """Create composite spec for tenant-isolated orders with specific status.
 
     Essential for multi-tenant SaaS applications.
@@ -160,16 +152,14 @@ def multi_tenant_query(
         >>> # Only returns orders for tenant-abc with PENDING status
     """
     if status == PedidoStatus.PENDING:
-        status_spec = PedidoPendingSpec()
+        status_spec: Specification[PedidoExample] = PedidoPendingSpec()
     elif status == PedidoStatus.CONFIRMED:
         status_spec = PedidoConfirmedSpec()
     else:
-        # For other statuses, create inline spec
-        from core.base.patterns.specification import spec as create_spec
-
-        status_spec = create_spec(
-            lambda p: p.status == status, f"status_{status.value}"
-        )
+        # For other statuses, create inline spec using factory function
+        # Capture status in closure to avoid late binding issues
+        captured_status = status
+        status_spec = spec(lambda p: p.status == captured_status, f"status_{status.value}")
 
     return PedidoTenantSpec(tenant_id) & status_spec
 
@@ -202,9 +192,7 @@ def customer_high_value_orders(
     - Loyalty program qualification
 
     Example:
-        >>> customer_premium = customer_high_value_orders(
-        ...     "customer-456", Decimal("1000.00")
-        ... )
+        >>> customer_premium = customer_high_value_orders("customer-456", Decimal("1000.00"))
         >>> premium_orders = repository.find_all(customer_premium)
         >>> total_value = sum(order.total.amount for order in premium_orders)
         >>> if total_value > Decimal("10000.00"):

@@ -9,9 +9,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-pytest.skip(
-    "Module infrastructure.distributed not implemented", allow_module_level=True
-)
+pytest.skip("Module infrastructure.distributed not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -175,7 +173,7 @@ class TestInMemoryDistributedLock:
     async def test_expired_lock_cleanup(self):
         """Expired locks should be cleaned up."""
         lock = InMemoryDistributedLock()
-        info = await lock.acquire("test", ttl_seconds=0.1)
+        await lock.acquire("test", ttl_seconds=0.1)
         await asyncio.sleep(0.2)
         assert await lock.is_locked("test") is False
 

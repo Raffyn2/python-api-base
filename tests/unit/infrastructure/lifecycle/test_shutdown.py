@@ -3,14 +3,12 @@
 Tests ShutdownHandler, ShutdownConfig, ShutdownState.
 """
 
-import asyncio
-from unittest.mock import AsyncMock
-
-import pytest
-
 # Import directly to avoid middleware_config import chain
 import sys
 from pathlib import Path
+from unittest.mock import AsyncMock
+
+import pytest
 
 # Add src to path for direct import
 src_path = Path(__file__).parent.parent.parent.parent.parent / "src"

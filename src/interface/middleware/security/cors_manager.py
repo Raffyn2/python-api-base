@@ -14,7 +14,17 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Self
+
+import structlog
+
+logger = structlog.get_logger(__name__)
+
+# Security limits to prevent resource exhaustion
+MAX_WHITELIST_SIZE = 1000
+MAX_BLACKLIST_SIZE = 1000
+MAX_PATTERN_WHITELIST_SIZE = 100
+MAX_REGEX_LENGTH = 500
 
 
 class CORSCredentials(str, Enum):
@@ -25,7 +35,7 @@ class CORSCredentials(str, Enum):
     SAME_ORIGIN = "same-origin"
 
 
-@dataclass
+@dataclass(slots=True)
 class CORSPolicy:
     """CORS policy configuration.
 
@@ -34,9 +44,7 @@ class CORSPolicy:
     """
 
     allow_origins: list[str] = field(default_factory=list)
-    allow_methods: list[str] = field(
-        default_factory=lambda: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
-    )
+    allow_methods: list[str] = field(default_factory=lambda: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
     allow_headers: list[str] = field(default_factory=lambda: ["*"])
     expose_headers: list[str] = field(default_factory=list)
     allow_credentials: bool = False
@@ -93,7 +101,30 @@ class CORSPolicy:
         return headers
 
 
-@dataclass
+def _safe_compile_regex(pattern: str) -> re.Pattern | None:
+    """Safely compile regex with length validation to prevent ReDoS.
+
+    Args:
+        pattern: Regex pattern to compile.
+
+    Returns:
+        Compiled pattern or None if invalid/too long.
+    """
+    if len(pattern) > MAX_REGEX_LENGTH:
+        logger.warning(
+            "cors_regex_too_long",
+            pattern_length=len(pattern),
+            max_length=MAX_REGEX_LENGTH,
+        )
+        return None
+    try:
+        return re.compile(pattern)
+    except re.error:
+        logger.warning("cors_invalid_regex", pattern=pattern[:50], exc_info=True)
+        return None
+
+
+@dataclass(slots=True)
 class RoutePolicy:
     """CORS policy for a specific route pattern."""
 
@@ -103,11 +134,8 @@ class RoutePolicy:
     _compiled: re.Pattern | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
-        """Compile pattern."""
-        try:
-            self._compiled = re.compile(self.pattern)
-        except re.error:
-            self._compiled = None
+        """Compile pattern with safety checks."""
+        self._compiled = _safe_compile_regex(self.pattern)
 
     def matches(self, path: str) -> bool:
         """Check if path matches this route."""
@@ -116,7 +144,7 @@ class RoutePolicy:
         return bool(self._compiled.match(path))
 
 
-@dataclass
+@dataclass(slots=True)
 class CORSRequest:
     """Normalized CORS request."""
 
@@ -144,7 +172,7 @@ class CORSRequest:
         return [h.strip() for h in header.split(",")]
 
 
-@dataclass
+@dataclass(slots=True)
 class CORSResponse:
     """CORS response with headers."""
 
@@ -166,7 +194,7 @@ class CORSManager:
         self._blacklist: set[str] = set()
         self._pattern_whitelist: list[re.Pattern] = []
 
-    def set_default_policy(self, policy: CORSPolicy) -> "CORSManager":
+    def set_default_policy(self, policy: CORSPolicy) -> Self:
         """Set default CORS policy."""
         self._default_policy = policy
         return self
@@ -176,7 +204,7 @@ class CORSManager:
         pattern: str,
         policy: CORSPolicy,
         priority: int = 0,
-    ) -> "CORSManager":
+    ) -> Self:
         """Add route-specific CORS policy."""
         route_policy = RoutePolicy(pattern=pattern, policy=policy, priority=priority)
         self._route_policies.append(route_policy)
@@ -187,36 +215,50 @@ class CORSManager:
     def remove_route_policy(self, pattern: str) -> bool:
         """Remove route policy by pattern."""
         initial_len = len(self._route_policies)
-        self._route_policies = [
-            rp for rp in self._route_policies if rp.pattern != pattern
-        ]
+        self._route_policies = [rp for rp in self._route_policies if rp.pattern != pattern]
         return len(self._route_policies) < initial_len
 
     def add_origin_validator(
         self,
         validator: Callable[[str], bool],
-    ) -> "CORSManager":
+    ) -> Self:
         """Add custom origin validator."""
         self._origin_validators.append(validator)
         return self
 
-    def whitelist_origin(self, origin: str) -> "CORSManager":
+    def whitelist_origin(self, origin: str) -> Self:
         """Add origin to whitelist."""
+        if len(self._whitelist) >= MAX_WHITELIST_SIZE:
+            logger.warning(
+                "cors_whitelist_limit_reached",
+                max_size=MAX_WHITELIST_SIZE,
+            )
+            return self
         self._whitelist.add(origin)
         return self
 
-    def blacklist_origin(self, origin: str) -> "CORSManager":
+    def blacklist_origin(self, origin: str) -> Self:
         """Add origin to blacklist."""
+        if len(self._blacklist) >= MAX_BLACKLIST_SIZE:
+            logger.warning(
+                "cors_blacklist_limit_reached",
+                max_size=MAX_BLACKLIST_SIZE,
+            )
+            return self
         self._blacklist.add(origin)
         return self
 
-    def whitelist_pattern(self, pattern: str) -> "CORSManager":
+    def whitelist_pattern(self, pattern: str) -> Self:
         """Add origin pattern to whitelist."""
-        try:
-            compiled = re.compile(pattern)
+        if len(self._pattern_whitelist) >= MAX_PATTERN_WHITELIST_SIZE:
+            logger.warning(
+                "cors_pattern_whitelist_limit_reached",
+                max_size=MAX_PATTERN_WHITELIST_SIZE,
+            )
+            return self
+        compiled = _safe_compile_regex(pattern)
+        if compiled:
             self._pattern_whitelist.append(compiled)
-        except re.error:
-            pass
         return self
 
     def is_origin_allowed(self, origin: str) -> bool:
@@ -249,7 +291,7 @@ class CORSManager:
                 return route_policy.policy
         return self._default_policy
 
-    def handle_request(self, request: CORSRequest) -> CORSResponse:
+    def handle_request(self, request: CORSRequest, correlation_id: str | None = None) -> CORSResponse:
         """Handle CORS request and return response."""
         # No origin = not a CORS request
         if not request.origin:
@@ -257,6 +299,12 @@ class CORSManager:
 
         # Check if origin is allowed
         if not self.is_origin_allowed(request.origin):
+            logger.warning(
+                "cors_origin_rejected",
+                correlation_id=correlation_id,
+                origin=request.origin,
+                path=request.path,
+            )
             return CORSResponse(allowed=False)
 
         # Get policy for this path

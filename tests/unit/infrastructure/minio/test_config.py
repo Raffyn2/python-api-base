@@ -6,8 +6,6 @@
 
 from datetime import timedelta
 
-import pytest
-
 from infrastructure.minio.config import MinIOConfig
 
 
@@ -79,9 +77,7 @@ class TestMinIOConfig:
 
     def test_allowed_content_types(self) -> None:
         """Test allowed content types configuration."""
-        config = MinIOConfig(
-            allowed_content_types=["image/jpeg", "image/png", "application/pdf"]
-        )
+        config = MinIOConfig(allowed_content_types=["image/jpeg", "image/png", "application/pdf"])
         assert config.allowed_content_types == [
             "image/jpeg",
             "image/png",

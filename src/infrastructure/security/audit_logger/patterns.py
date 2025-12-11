@@ -32,9 +32,7 @@ PII_PATTERNS = [
         "api_key=[REDACTED]",
     ),
     (
-        re.compile(
-            r"Bearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+", re.IGNORECASE
-        ),
+        re.compile(r"Bearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+", re.IGNORECASE),
         "Bearer [REDACTED]",
     ),
 ]

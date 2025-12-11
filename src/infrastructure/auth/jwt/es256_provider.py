@@ -69,7 +69,7 @@ class ES256Provider(BaseJWTProvider):
         """
         if not private_key and not public_key:
             raise InvalidKeyError(
-                "ES256 requires at least one of private_key or public_key"
+                "ES256 requires at least one of private_key or public_key",
             )
 
         self._private_key = private_key
@@ -104,13 +104,11 @@ class ES256Provider(BaseJWTProvider):
         """
         if self._private_key and "-----BEGIN" not in self._private_key:
             raise InvalidKeyError(
-                "Invalid ECDSA private key format. Expected PEM format "
-                "(must start with -----BEGIN)."
+                "Invalid ECDSA private key format. Expected PEM format (must start with -----BEGIN).",
             )
         if self._public_key and "-----BEGIN" not in self._public_key:
             raise InvalidKeyError(
-                "Invalid ECDSA public key format. Expected PEM format "
-                "(must start with -----BEGIN)."
+                "Invalid ECDSA public key format. Expected PEM format (must start with -----BEGIN).",
             )
 
     @property

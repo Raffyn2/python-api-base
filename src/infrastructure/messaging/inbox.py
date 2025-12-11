@@ -35,7 +35,7 @@ class InboxEntry:
     message_type: str
     payload: dict[str, Any]
     status: InboxStatus = InboxStatus.PENDING
-    received_at: datetime = field(default_factory=datetime.utcnow)
+    received_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     processed_at: datetime | None = None
     error_message: str | None = None
     idempotency_key: str | None = None
@@ -53,8 +53,7 @@ class InboxEntry:
             message_id=message_id,
             message_type=message_type,
             payload=payload,
-            idempotency_key=idempotency_key
-            or cls._generate_idempotency_key(message_id, message_type, payload),
+            idempotency_key=idempotency_key or cls._generate_idempotency_key(message_id, message_type, payload),
         )
 
     @staticmethod
@@ -89,9 +88,7 @@ class InboxEntry:
             "payload": self.payload,
             "status": self.status.value,
             "received_at": self.received_at.isoformat(),
-            "processed_at": self.processed_at.isoformat()
-            if self.processed_at
-            else None,
+            "processed_at": self.processed_at.isoformat() if self.processed_at else None,
             "error_message": self.error_message,
             "idempotency_key": self.idempotency_key,
         }
@@ -134,7 +131,7 @@ class InboxRepository(Protocol):
 class InMemoryInboxRepository:
     """In-memory implementation of inbox repository."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._entries: dict[str, InboxEntry] = {}
         self._by_idempotency_key: dict[str, str] = {}
 
@@ -164,9 +161,7 @@ class InMemoryInboxRepository:
         to_delete = [
             e.message_id
             for e in self._entries.values()
-            if e.status == InboxStatus.PROCESSED
-            and e.processed_at
-            and e.processed_at < older_than
+            if e.status == InboxStatus.PROCESSED and e.processed_at and e.processed_at < older_than
         ]
         for message_id in to_delete:
             entry = self._entries.pop(message_id, None)
@@ -182,7 +177,7 @@ class InMemoryInboxRepository:
 class InboxService:
     """Service for managing the inbox pattern."""
 
-    def __init__(self, repository: InboxRepository, handler: MessageHandler):
+    def __init__(self, repository: InboxRepository, handler: MessageHandler) -> None:
         self._repository = repository
         self._handler = handler
 
@@ -201,9 +196,7 @@ class InboxService:
             idempotency_key=idempotency_key,
         )
 
-        existing = await self._repository.get_by_idempotency_key(
-            entry.idempotency_key or ""
-        )
+        existing = await self._repository.get_by_idempotency_key(entry.idempotency_key or "")
         if existing:
             return False, existing
 
@@ -236,9 +229,7 @@ class InboxService:
         idempotency_key: str | None = None,
     ) -> tuple[bool, bool]:
         """Receive and process a message. Returns (is_new, success)."""
-        is_new, entry = await self.receive(
-            message_id, message_type, payload, idempotency_key
-        )
+        is_new, entry = await self.receive(message_id, message_type, payload, idempotency_key)
         if not is_new:
             return False, entry.status == InboxStatus.PROCESSED
 
@@ -258,7 +249,7 @@ class InboxService:
 class MockMessageHandler:
     """Mock message handler for testing."""
 
-    def __init__(self, should_fail: bool = False):
+    def __init__(self, should_fail: bool = False) -> None:
         self._should_fail = should_fail
         self._handled: list[tuple[str, dict[str, Any]]] = []
 

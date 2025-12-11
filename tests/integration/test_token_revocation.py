@@ -12,13 +12,13 @@ from fastapi.testclient import TestClient
 from main import app
 
 
-@pytest.fixture
+@pytest.fixture()
 def client():
     """Create test client."""
     return TestClient(app)
 
 
-@pytest.fixture
+@pytest.fixture()
 def auth_tokens(client: TestClient):
     """Get authentication tokens for test user."""
     response = client.post(
@@ -46,9 +46,7 @@ class TestTokenRevocationFlow:
         assert data["token_type"] == "bearer"
         assert data["expires_in"] > 0
 
-    def test_access_token_works_before_revocation(
-        self, client: TestClient, auth_tokens: dict
-    ):
+    def test_access_token_works_before_revocation(self, client: TestClient, auth_tokens: dict):
         """Access token should work before revocation."""
         response = client.get(
             "/api/v1/auth/me",
@@ -158,9 +156,7 @@ class TestTokenRevocationFlow:
         )
         assert response.status_code == 400
 
-    def test_revoke_nonexistent_token_returns_success(
-        self, client: TestClient, auth_tokens: dict
-    ):
+    def test_revoke_nonexistent_token_returns_success(self, client: TestClient, auth_tokens: dict):
         """Revoking a non-existent (but valid format) token should succeed."""
         # First revoke the token
         client.post(
@@ -174,7 +170,4 @@ class TestTokenRevocationFlow:
             json={"token": auth_tokens["refresh_token"]},
         )
         assert response.status_code == 200
-        assert (
-            "not found" in response.json()["message"].lower()
-            or "revoked" in response.json()["message"].lower()
-        )
+        assert "not found" in response.json()["message"].lower() or "revoked" in response.json()["message"].lower()

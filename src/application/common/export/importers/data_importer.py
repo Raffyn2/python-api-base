@@ -24,9 +24,7 @@ class DataImporter[T]:
         """Import records from JSON."""
         start = time.perf_counter()
 
-        result = ImportResult(
-            records_processed=0, records_imported=0, records_skipped=0, records_failed=0
-        )
+        result = ImportResult(records_processed=0, records_imported=0, records_skipped=0, records_failed=0)
 
         records: list[T] = []
         try:
@@ -54,9 +52,7 @@ class DataImporter[T]:
         """Import records from CSV."""
         start = time.perf_counter()
 
-        result = ImportResult(
-            records_processed=0, records_imported=0, records_skipped=0, records_failed=0
-        )
+        result = ImportResult(records_processed=0, records_imported=0, records_skipped=0, records_failed=0)
 
         records: list[T] = []
         try:
@@ -81,9 +77,7 @@ class DataImporter[T]:
         """Import records from JSON Lines."""
         start = time.perf_counter()
 
-        result = ImportResult(
-            records_processed=0, records_imported=0, records_skipped=0, records_failed=0
-        )
+        result = ImportResult(records_processed=0, records_imported=0, records_skipped=0, records_failed=0)
 
         records: list[T] = []
         for line in content.decode().strip().split("\n"):
@@ -102,9 +96,7 @@ class DataImporter[T]:
         result.duration_ms = (time.perf_counter() - start) * 1000
         return records, result
 
-    def import_data(
-        self, content: bytes, format: ExportFormat
-    ) -> tuple[list[T], ImportResult]:
+    def import_data(self, content: bytes, format: ExportFormat) -> tuple[list[T], ImportResult]:
         """Import records from specified format."""
         if format == ExportFormat.JSON:
             return self.import_json(content)

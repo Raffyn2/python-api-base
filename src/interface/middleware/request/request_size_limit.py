@@ -13,7 +13,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 
-@dataclass
+@dataclass(slots=True)
 class RouteSizeLimit:
     """Size limit configuration for a route pattern."""
 
@@ -78,9 +78,7 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
 
         if route_limits:
             for pattern, limit in route_limits.items():
-                self.route_limits.append(
-                    RouteSizeLimit(pattern=pattern, max_size=limit)
-                )
+                self.route_limits.append(RouteSizeLimit(pattern=pattern, max_size=limit))
 
     def get_limit_for_path(self, path: str) -> int:
         """Get the size limit for a specific path.
@@ -184,16 +182,16 @@ class StreamingRequestSizeLimitMiddleware(BaseHTTPMiddleware):
         # For requests with Content-Length, check upfront
         content_length = request.headers.get("content-length")
         if content_length is not None and int(content_length) > self.max_size:
-                return JSONResponse(
-                    status_code=413,
-                    content={
-                        "type": "https://httpstatuses.com/413",
-                        "title": "Request Entity Too Large",
-                        "status": 413,
-                        "detail": f"Request body too large. Maximum size is {self.max_size} bytes.",
-                    },
-                    media_type="application/problem+json",
-                )
+            return JSONResponse(
+                status_code=413,
+                content={
+                    "type": "https://httpstatuses.com/413",
+                    "title": "Request Entity Too Large",
+                    "status": 413,
+                    "detail": f"Request body too large. Maximum size is {self.max_size} bytes.",
+                },
+                media_type="application/problem+json",
+            )
 
         return await call_next(request)
 

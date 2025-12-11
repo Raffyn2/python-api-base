@@ -6,8 +6,6 @@
 
 from decimal import Decimal
 
-import pytest
-
 from infrastructure.sustainability.config import (
     SustainabilitySettings,
     get_sustainability_settings,
@@ -22,7 +20,7 @@ class TestSustainabilitySettings:
         settings = SustainabilitySettings()
         assert settings.electricity_price_per_kwh == Decimal("0.12")
         assert settings.currency == "USD"
-        assert settings.default_carbon_intensity_gco2_per_kwh == Decimal("400")
+        assert settings.default_carbon_intensity_gco2_per_kwh == Decimal(400)
         assert settings.default_region == "global"
         assert settings.carbon_intensity_api_url == "https://api.electricitymap.org/v3"
         assert settings.carbon_intensity_api_key is None
@@ -46,10 +44,10 @@ class TestSustainabilitySettings:
     def test_custom_carbon_intensity(self) -> None:
         """Test custom carbon intensity configuration."""
         settings = SustainabilitySettings(
-            default_carbon_intensity_gco2_per_kwh=Decimal("200"),
+            default_carbon_intensity_gco2_per_kwh=Decimal(200),
             default_region="us-west",
         )
-        assert settings.default_carbon_intensity_gco2_per_kwh == Decimal("200")
+        assert settings.default_carbon_intensity_gco2_per_kwh == Decimal(200)
         assert settings.default_region == "us-west"
 
     def test_custom_api_configuration(self) -> None:

@@ -1,12 +1,17 @@
 """Specification pattern for composable business rules.
 
+Re-exports core specification classes and domain-specific extensions.
+
 **Feature: domain-consolidation-2025**
 """
 
 from domain.common.specification.specification import (
+    # Core re-exports
     AndSpecification,
+    # Domain extensions
     AttributeSpecification,
     ComparisonOperator,
+    CompositeSpecification,
     NotSpecification,
     OrSpecification,
     PredicateSpecification,
@@ -22,9 +27,12 @@ from domain.common.specification.specification import (
 )
 
 __all__ = [
+    # Core
     "AndSpecification",
+    # Domain extensions
     "AttributeSpecification",
     "ComparisonOperator",
+    "CompositeSpecification",
     "NotSpecification",
     "OrSpecification",
     "PredicateSpecification",

@@ -6,8 +6,9 @@
 
 from __future__ import annotations
 
-import logging
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
+
+import structlog
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -16,12 +17,12 @@ if TYPE_CHECKING:
 
     from infrastructure.redis.connection import RedisConnection
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 T = TypeVar("T")
 
 
-class RedisOperations(Generic[T]):
+class RedisOperations[T]:
     """Handles Redis core and bulk operations with circuit breaker.
 
     **Feature: enterprise-infrastructure-2025**
@@ -66,7 +67,12 @@ class RedisOperations(Generic[T]):
             return self._conn.deserialize(data, model)
 
         except Exception as e:
-            logger.warning(f"Redis get failed: {e}", extra={"key": key})
+            logger.warning(
+                "Redis get failed",
+                key=key,
+                operation="REDIS_GET",
+                exc_info=True,
+            )
             await self._conn.circuit_breaker.record_failure(e)
 
             if self._conn.fallback:
@@ -117,7 +123,12 @@ class RedisOperations(Generic[T]):
             return True
 
         except Exception as e:
-            logger.warning(f"Redis set failed: {e}", extra={"key": key})
+            logger.warning(
+                "Redis set failed",
+                key=key,
+                operation="REDIS_SET",
+                exc_info=True,
+            )
             await self._conn.circuit_breaker.record_failure(e)
 
             if self._conn.fallback:
@@ -137,9 +148,7 @@ class RedisOperations(Generic[T]):
             True if key was deleted
         """
         if await self._conn.use_fallback():
-            return (
-                await self._conn.fallback.delete(key) if self._conn.fallback else False
-            )
+            return await self._conn.fallback.delete(key) if self._conn.fallback else False
 
         try:
             full_key = self._conn.make_key(key)
@@ -152,7 +161,12 @@ class RedisOperations(Generic[T]):
             return result > 0
 
         except Exception as e:
-            logger.warning(f"Redis delete failed: {e}", extra={"key": key})
+            logger.warning(
+                "Redis delete failed",
+                key=key,
+                operation="REDIS_DELETE",
+                exc_info=True,
+            )
             await self._conn.circuit_breaker.record_failure(e)
 
             if self._conn.fallback:
@@ -171,9 +185,7 @@ class RedisOperations(Generic[T]):
             True if key exists
         """
         if await self._conn.use_fallback():
-            return (
-                await self._conn.fallback.exists(key) if self._conn.fallback else False
-            )
+            return await self._conn.fallback.exists(key) if self._conn.fallback else False
 
         try:
             full_key = self._conn.make_key(key)
@@ -182,7 +194,12 @@ class RedisOperations(Generic[T]):
             return result > 0
 
         except Exception as e:
-            logger.warning(f"Redis exists failed: {e}", extra={"key": key})
+            logger.warning(
+                "Redis exists failed",
+                key=key,
+                operation="REDIS_EXISTS",
+                exc_info=True,
+            )
             await self._conn.circuit_breaker.record_failure(e)
 
             if self._conn.fallback:
@@ -231,7 +248,12 @@ class RedisOperations(Generic[T]):
             return result
 
         except Exception as e:
-            logger.warning(f"Redis mget failed: {e}")
+            logger.warning(
+                "Redis mget failed",
+                key_count=len(keys),
+                operation="REDIS_MGET",
+                exc_info=True,
+            )
             await self._conn.circuit_breaker.record_failure(e)
             return {}
 
@@ -273,7 +295,12 @@ class RedisOperations(Generic[T]):
             return True
 
         except Exception as e:
-            logger.warning(f"Redis mset failed: {e}")
+            logger.warning(
+                "Redis mset failed",
+                item_count=len(items),
+                operation="REDIS_MSET",
+                exc_info=True,
+            )
             await self._conn.circuit_breaker.record_failure(e)
             return False
 
@@ -289,11 +316,7 @@ class RedisOperations(Generic[T]):
             Number of keys deleted
         """
         if await self._conn.use_fallback():
-            return (
-                await self._conn.fallback.clear_pattern(pattern)
-                if self._conn.fallback
-                else 0
-            )
+            return await self._conn.fallback.clear_pattern(pattern) if self._conn.fallback else 0
 
         try:
             full_pattern = self._conn.make_key(pattern)
@@ -314,11 +337,17 @@ class RedisOperations(Generic[T]):
             await self._conn.circuit_breaker.record_success()
             logger.info(
                 "Pattern delete completed",
-                extra={"pattern": pattern, "deleted": deleted},
+                pattern=pattern,
+                deleted=deleted,
             )
             return deleted
 
         except Exception as e:
-            logger.warning(f"Redis pattern delete failed: {e}")
+            logger.warning(
+                "Redis pattern delete failed",
+                pattern=pattern,
+                operation="REDIS_DELETE_PATTERN",
+                exc_info=True,
+            )
             await self._conn.circuit_breaker.record_failure(e)
             return 0

@@ -5,16 +5,20 @@ Demonstrates the UseCase pattern for complex business operations.
 **Feature: architecture-consolidation-2025**
 """
 
-from application.examples.order.use_cases import PlaceOrderUseCase
 from application.examples.order.dtos import (
+    OrderItemInput,
+    OrderItemOutput,
     PlaceOrderInput,
     PlaceOrderOutput,
-    OrderItemInput,
 )
+from application.examples.order.use_cases import PlaceOrderUseCase
 
 __all__ = [
-    "PlaceOrderUseCase",
+    # DTOs
+    "OrderItemInput",
+    "OrderItemOutput",
     "PlaceOrderInput",
     "PlaceOrderOutput",
-    "OrderItemInput",
+    # Use Case
+    "PlaceOrderUseCase",
 ]

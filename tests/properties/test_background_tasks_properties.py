@@ -636,8 +636,7 @@ class TestDeprecationWarningProperties:
             asyncio_warnings = [
                 w
                 for w in caught_warnings
-                if issubclass(w.category, DeprecationWarning)
-                and "asyncio" in str(w.message).lower()
+                if issubclass(w.category, DeprecationWarning) and "asyncio" in str(w.message).lower()
             ]
 
             assert len(asyncio_warnings) == 0, (
@@ -674,8 +673,7 @@ class TestDeprecationWarningProperties:
             event_loop_warnings = [
                 w
                 for w in caught_warnings
-                if issubclass(w.category, DeprecationWarning)
-                and "get_event_loop" in str(w.message)
+                if issubclass(w.category, DeprecationWarning) and "get_event_loop" in str(w.message)
             ]
 
             assert len(event_loop_warnings) == 0, (

@@ -30,7 +30,7 @@ from infrastructure.security.field_encryption import (
 class TestEncryptionRoundTrip:
     """Property tests for encryption round-trip with authentication."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def encryptor(self) -> FieldEncryptor:
         """Create encryptor with in-memory key provider."""
         return FieldEncryptor(InMemoryKeyProvider())
@@ -72,10 +72,7 @@ class TestEncryptionRoundTrip:
 
             # Tamper with ciphertext
             tampered_ciphertext = (
-                bytes([
-                    b ^ 0xFF
-                    for b in encrypted.ciphertext[: min(10, len(encrypted.ciphertext))]
-                ])
+                bytes([b ^ 0xFF for b in encrypted.ciphertext[: min(10, len(encrypted.ciphertext))]])
                 + encrypted.ciphertext[10:]
             )
 
@@ -264,9 +261,7 @@ class TestTimestampTimezoneAwareness:
         result = utc_now()
         assert result.tzinfo is not None
 
-    @given(
-        dt=st.datetimes(min_value=datetime(2000, 1, 1), max_value=datetime(2100, 1, 1))
-    )
+    @given(dt=st.datetimes(min_value=datetime(2000, 1, 1), max_value=datetime(2100, 1, 1)))
     @settings(max_examples=100)
     def test_ensure_utc_makes_naive_datetime_aware(self, dt: datetime) -> None:
         """ensure_utc() makes naive datetimes timezone-aware."""
@@ -329,9 +324,7 @@ class TestGlobToRegexSafeConversion:
         filename=st.text(
             min_size=1,
             max_size=50,
-            alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="._-"
-            ),
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="._-"),
         )
     )
     @settings(max_examples=100)
@@ -347,29 +340,21 @@ class TestGlobToRegexSafeConversion:
         prefix=st.text(
             min_size=0,
             max_size=20,
-            alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-            ),
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"),
         ),
         suffix=st.text(
             min_size=1,
             max_size=10,
-            alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-            ),
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"),
         ),
         middle=st.text(
             min_size=0,
             max_size=20,
-            alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-            ),
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"),
         ),
     )
     @settings(max_examples=100)
-    def test_glob_star_matches_any_middle(
-        self, prefix: str, suffix: str, middle: str
-    ) -> None:
+    def test_glob_star_matches_any_middle(self, prefix: str, suffix: str, middle: str) -> None:
         """Glob * wildcard matches any characters in the middle."""
         from core.shared.utils.safe_pattern import match_glob
 
@@ -398,13 +383,9 @@ class TestGlobToRegexSafeConversion:
         base=st.text(
             min_size=1,
             max_size=20,
-            alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-            ),
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"),
         ),
-        ext=st.text(
-            min_size=1, max_size=5, alphabet=st.characters(whitelist_categories=("Ll",))
-        ),
+        ext=st.text(min_size=1, max_size=5, alphabet=st.characters(whitelist_categories=("Ll",))),
     )
     @settings(max_examples=100)
     def test_glob_extension_pattern(self, base: str, ext: str) -> None:
@@ -452,9 +433,7 @@ class TestCircuitBreakerRegistryThreadSafety:
         name=st.text(
             min_size=1,
             max_size=50,
-            alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-            ),
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"),
         )
     )
     @settings(max_examples=50)
@@ -477,9 +456,7 @@ class TestCircuitBreakerRegistryThreadSafety:
             st.text(
                 min_size=1,
                 max_size=20,
-                alphabet=st.characters(
-                    whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-                ),
+                alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"),
             ),
             min_size=1,
             max_size=10,
@@ -575,22 +552,16 @@ class TestContextTokenSafeReset:
         correlation_id=st.text(
             min_size=10,
             max_size=50,
-            alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-            ),
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"),
         ),
         request_id=st.text(
             min_size=10,
             max_size=50,
-            alphabet=st.characters(
-                whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"
-            ),
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_-"),
         ),
     )
     @settings(max_examples=50)
-    def test_context_manager_sets_and_restores_context(
-        self, correlation_id: str, request_id: str
-    ) -> None:
+    def test_context_manager_sets_and_restores_context(self, correlation_id: str, request_id: str) -> None:
         """Context manager properly sets and restores context."""
         from core.shared.correlation import (
             CorrelationContext,

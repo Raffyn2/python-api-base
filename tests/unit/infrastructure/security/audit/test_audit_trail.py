@@ -225,15 +225,13 @@ class TestDiffCalculator:
 class TestInMemoryAuditBackend:
     """Tests for InMemoryAuditBackend."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def backend(self) -> InMemoryAuditBackend:
         """Create backend instance."""
         return InMemoryAuditBackend()
 
     @pytest.mark.asyncio
-    async def test_save_and_find_by_entity(
-        self, backend: InMemoryAuditBackend
-    ) -> None:
+    async def test_save_and_find_by_entity(self, backend: InMemoryAuditBackend) -> None:
         """Test save and find_by_entity."""
         entry = AuditEntry(
             id="entry-1",
@@ -281,9 +279,7 @@ class TestInMemoryAuditBackend:
         )
 
         await backend.save(entry)
-        results = await backend.find_by_time_range(
-            now - timedelta(hours=1), now + timedelta(hours=1)
-        )
+        results = await backend.find_by_time_range(now - timedelta(hours=1), now + timedelta(hours=1))
 
         assert len(results) == 1
 
@@ -291,7 +287,7 @@ class TestInMemoryAuditBackend:
 class TestAuditService:
     """Tests for AuditService."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def service(self) -> AuditService[SampleEntity]:
         """Create service instance."""
         backend = InMemoryAuditBackend()
@@ -351,9 +347,7 @@ class TestAuditService:
     async def test_get_history(self, service: AuditService[SampleEntity]) -> None:
         """Test get_history."""
         entity = SampleEntity(id="1", name="test", value=42)
-        await service.log_create(
-            entity_type="sample", entity_id="1", entity=entity
-        )
+        await service.log_create(entity_type="sample", entity_id="1", entity=entity)
 
         history = await service.get_history("sample", "1")
 
@@ -365,16 +359,10 @@ class TestAuditService:
         entity1 = SampleEntity(id="1", name="v1", value=1)
         entity2 = SampleEntity(id="1", name="v2", value=2)
 
-        await service.log_create(
-            entity_type="sample", entity_id="1", entity=entity1
-        )
-        await service.log_update(
-            entity_type="sample", entity_id="1", before=entity1, after=entity2
-        )
+        await service.log_create(entity_type="sample", entity_id="1", entity=entity1)
+        await service.log_update(entity_type="sample", entity_id="1", before=entity1, after=entity2)
 
-        state = await service.reconstruct_at(
-            "sample", "1", datetime.now(UTC) + timedelta(hours=1)
-        )
+        state = await service.reconstruct_at("sample", "1", datetime.now(UTC) + timedelta(hours=1))
 
         assert state is not None
         assert state["name"] == "v2"

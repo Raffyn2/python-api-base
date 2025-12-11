@@ -56,17 +56,17 @@ class MockItemRepository:
 class TestItemExampleUseCaseCreate:
     """Tests for ItemExampleUseCase.create method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_event_bus(self) -> AsyncMock:
         """Create mock event bus."""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_cache(self) -> MagicMock:
         """Create mock cache."""
         cache = MagicMock()
@@ -75,7 +75,7 @@ class TestItemExampleUseCaseCreate:
         cache.delete = AsyncMock()
         return cache
 
-    @pytest.fixture
+    @pytest.fixture()
     def use_case(
         self,
         repository: MockItemRepository,
@@ -90,9 +90,7 @@ class TestItemExampleUseCaseCreate:
         )
 
     @pytest.mark.asyncio
-    async def test_create_item_success(
-        self, use_case: ItemExampleUseCase
-    ) -> None:
+    async def test_create_item_success(self, use_case: ItemExampleUseCase) -> None:
         """Test successful item creation."""
         data = ItemExampleCreate(
             name="Test Item",
@@ -138,12 +136,12 @@ class TestItemExampleUseCaseCreate:
 class TestItemExampleUseCaseGet:
     """Tests for ItemExampleUseCase.get method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_cache(self) -> MagicMock:
         """Create mock cache."""
         cache = MagicMock()
@@ -152,14 +150,12 @@ class TestItemExampleUseCaseGet:
         cache.delete = AsyncMock()
         return cache
 
-    @pytest.fixture
-    def use_case(
-        self, repository: MockItemRepository, mock_cache: MagicMock
-    ) -> ItemExampleUseCase:
+    @pytest.fixture()
+    def use_case(self, repository: MockItemRepository, mock_cache: MagicMock) -> ItemExampleUseCase:
         """Create use case with mocks."""
         return ItemExampleUseCase(repository=repository, cache=mock_cache)
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_item(self, repository: MockItemRepository) -> ItemExample:
         """Create existing item in repository."""
         item = ItemExample.create(
@@ -172,9 +168,7 @@ class TestItemExampleUseCaseGet:
         return item
 
     @pytest.mark.asyncio
-    async def test_get_item_success(
-        self, use_case: ItemExampleUseCase, existing_item: ItemExample
-    ) -> None:
+    async def test_get_item_success(self, use_case: ItemExampleUseCase, existing_item: ItemExample) -> None:
         """Test successful item retrieval."""
         result = await use_case.get(existing_item.id)
 
@@ -184,9 +178,7 @@ class TestItemExampleUseCaseGet:
         assert response.sku == "GET-001"
 
     @pytest.mark.asyncio
-    async def test_get_nonexistent_item_fails(
-        self, use_case: ItemExampleUseCase
-    ) -> None:
+    async def test_get_nonexistent_item_fails(self, use_case: ItemExampleUseCase) -> None:
         """Test getting non-existent item fails."""
         result = await use_case.get("nonexistent-id")
 
@@ -196,12 +188,12 @@ class TestItemExampleUseCaseGet:
 class TestItemExampleUseCaseUpdate:
     """Tests for ItemExampleUseCase.update method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_cache(self) -> MagicMock:
         """Create mock cache."""
         cache = MagicMock()
@@ -210,14 +202,12 @@ class TestItemExampleUseCaseUpdate:
         cache.delete = AsyncMock()
         return cache
 
-    @pytest.fixture
-    def use_case(
-        self, repository: MockItemRepository, mock_cache: MagicMock
-    ) -> ItemExampleUseCase:
+    @pytest.fixture()
+    def use_case(self, repository: MockItemRepository, mock_cache: MagicMock) -> ItemExampleUseCase:
         """Create use case with mocks."""
         return ItemExampleUseCase(repository=repository, cache=mock_cache)
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_item(self, repository: MockItemRepository) -> ItemExample:
         """Create existing item in repository."""
         item = ItemExample.create(
@@ -231,9 +221,7 @@ class TestItemExampleUseCaseUpdate:
         return item
 
     @pytest.mark.asyncio
-    async def test_update_item_success(
-        self, use_case: ItemExampleUseCase, existing_item: ItemExample
-    ) -> None:
+    async def test_update_item_success(self, use_case: ItemExampleUseCase, existing_item: ItemExample) -> None:
         """Test successful item update."""
         data = ItemExampleUpdate(
             name="Updated Name",
@@ -247,9 +235,7 @@ class TestItemExampleUseCaseUpdate:
         assert response.name == "Updated Name"
 
     @pytest.mark.asyncio
-    async def test_update_nonexistent_item_fails(
-        self, use_case: ItemExampleUseCase
-    ) -> None:
+    async def test_update_nonexistent_item_fails(self, use_case: ItemExampleUseCase) -> None:
         """Test updating non-existent item fails."""
         data = ItemExampleUpdate(name="Updated Name")
 
@@ -258,9 +244,7 @@ class TestItemExampleUseCaseUpdate:
         assert result.is_err()
 
     @pytest.mark.asyncio
-    async def test_update_quantity(
-        self, use_case: ItemExampleUseCase, existing_item: ItemExample
-    ) -> None:
+    async def test_update_quantity(self, use_case: ItemExampleUseCase, existing_item: ItemExample) -> None:
         """Test updating item quantity."""
         data = ItemExampleUpdate(quantity=20)
 
@@ -274,12 +258,12 @@ class TestItemExampleUseCaseUpdate:
 class TestItemExampleUseCaseDelete:
     """Tests for ItemExampleUseCase.delete method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_cache(self) -> MagicMock:
         """Create mock cache."""
         cache = MagicMock()
@@ -288,14 +272,12 @@ class TestItemExampleUseCaseDelete:
         cache.delete = AsyncMock()
         return cache
 
-    @pytest.fixture
-    def use_case(
-        self, repository: MockItemRepository, mock_cache: MagicMock
-    ) -> ItemExampleUseCase:
+    @pytest.fixture()
+    def use_case(self, repository: MockItemRepository, mock_cache: MagicMock) -> ItemExampleUseCase:
         """Create use case with mocks."""
         return ItemExampleUseCase(repository=repository, cache=mock_cache)
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_item(self, repository: MockItemRepository) -> ItemExample:
         """Create existing item in repository."""
         item = ItemExample.create(
@@ -308,9 +290,7 @@ class TestItemExampleUseCaseDelete:
         return item
 
     @pytest.mark.asyncio
-    async def test_delete_item_success(
-        self, use_case: ItemExampleUseCase, existing_item: ItemExample
-    ) -> None:
+    async def test_delete_item_success(self, use_case: ItemExampleUseCase, existing_item: ItemExample) -> None:
         """Test successful item deletion."""
         result = await use_case.delete(existing_item.id, deleted_by="test_user")
 
@@ -318,9 +298,7 @@ class TestItemExampleUseCaseDelete:
         assert result.unwrap() is True
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_item_fails(
-        self, use_case: ItemExampleUseCase
-    ) -> None:
+    async def test_delete_nonexistent_item_fails(self, use_case: ItemExampleUseCase) -> None:
         """Test deleting non-existent item fails."""
         result = await use_case.delete("nonexistent-id")
 
@@ -330,12 +308,12 @@ class TestItemExampleUseCaseDelete:
 class TestItemExampleUseCaseList:
     """Tests for ItemExampleUseCase.list method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def use_case(self, repository: MockItemRepository) -> ItemExampleUseCase:
         """Create use case with mocks."""
         return ItemExampleUseCase(repository=repository)
@@ -350,9 +328,7 @@ class TestItemExampleUseCaseList:
         assert len(items) == 0
 
     @pytest.mark.asyncio
-    async def test_list_items_with_data(
-        self, use_case: ItemExampleUseCase, repository: MockItemRepository
-    ) -> None:
+    async def test_list_items_with_data(self, use_case: ItemExampleUseCase, repository: MockItemRepository) -> None:
         """Test listing items with data."""
         for i in range(3):
             item = ItemExample.create(

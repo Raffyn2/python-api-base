@@ -7,10 +7,11 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from dataclasses import dataclass
 from io import BytesIO
 from typing import TYPE_CHECKING, Any
+
+import structlog
 
 from core.base.patterns.result import Err, Ok
 
@@ -19,10 +20,10 @@ if TYPE_CHECKING:
 
     from core.base.patterns.result import Result
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class UploadProgress:
     """Progress information for multipart upload."""
 
@@ -77,14 +78,9 @@ class UploadOperations:
             data.seek(0)
 
             if size > self._max_file_size:
-                return Err(
-                    ValueError(f"File too large: {size} > {self._max_file_size}")
-                )
+                return Err(ValueError(f"File too large: {size} > {self._max_file_size}"))
 
-            if (
-                self._allowed_content_types
-                and content_type not in self._allowed_content_types
-            ):
+            if self._allowed_content_types and content_type not in self._allowed_content_types:
                 return Err(ValueError(f"Content type not allowed: {content_type}"))
 
             await asyncio.to_thread(
@@ -100,12 +96,18 @@ class UploadOperations:
             url = f"s3://{target_bucket}/{key}"
             logger.info(
                 "Object uploaded",
-                extra={"bucket": target_bucket, "key": key, "size": size},
+                bucket=target_bucket,
+                key=key,
+                size=size,
             )
             return Ok(url)
 
         except Exception as e:
-            logger.error(f"Upload failed: {e}", extra={"key": key})
+            logger.exception(
+                "Upload failed",
+                key=key,
+                operation="MINIO_UPLOAD",
+            )
             return Err(e)
 
     async def upload_stream(
@@ -157,5 +159,9 @@ class UploadOperations:
             return Ok(url)
 
         except Exception as e:
-            logger.error(f"Stream upload failed: {e}")
+            logger.exception(
+                "Stream upload failed",
+                key=key,
+                operation="MINIO_STREAM_UPLOAD",
+            )
             return Err(e)

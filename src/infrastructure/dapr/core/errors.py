@@ -4,7 +4,7 @@ This module defines custom exceptions for Dapr operations.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -16,9 +16,7 @@ class DaprError(Exception):
     error_code: str = "DAPR_ERROR"
     details: dict[str, Any] | None = None
     trace_id: str | None = None
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def __str__(self) -> str:
         return f"[{self.error_code}] {self.message}"

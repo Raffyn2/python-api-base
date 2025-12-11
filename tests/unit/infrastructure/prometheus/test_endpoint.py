@@ -6,8 +6,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from infrastructure.prometheus.endpoint import create_metrics_endpoint, setup_prometheus
 
 

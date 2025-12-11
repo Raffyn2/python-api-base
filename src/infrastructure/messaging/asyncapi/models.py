@@ -82,9 +82,7 @@ class OperationObject:
             "channel": {"$ref": f"#/channels/{self.channel}"},
         }
         if self.messages:
-            result["messages"] = [
-                {"$ref": f"#/components/messages/{msg.name}"} for msg in self.messages
-            ]
+            result["messages"] = [{"$ref": f"#/components/messages/{msg.name}"} for msg in self.messages]
         if self.summary:
             result["summary"] = self.summary
         if self.description:
@@ -109,10 +107,7 @@ class ChannelObject:
         if self.description:
             result["description"] = self.description
         if self.messages:
-            result["messages"] = {
-                name: {"$ref": f"#/components/messages/{name}"}
-                for name in self.messages
-            }
+            result["messages"] = {name: {"$ref": f"#/components/messages/{name}"} for name in self.messages}
         if self.parameters:
             result["parameters"] = self.parameters
         return result

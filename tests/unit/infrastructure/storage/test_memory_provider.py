@@ -39,7 +39,7 @@ class TestInMemoryStorageProviderUpload:
     async def test_upload_stores_content_type(self):
         provider = InMemoryStorageProvider()
         await provider.upload("test.txt", b"hello", "text/plain")
-        data, content_type = provider._storage["test.txt"]
+        _data, content_type = provider._storage["test.txt"]
         assert content_type == "text/plain"
 
     @pytest.mark.asyncio
@@ -201,26 +201,20 @@ class TestInMemoryStorageProviderSignedUrl:
     @pytest.mark.asyncio
     async def test_signed_url_get_nonexistent_file(self):
         provider = InMemoryStorageProvider()
-        result = await provider.generate_signed_url(
-            "nonexistent.txt", timedelta(hours=1), operation="GET"
-        )
+        result = await provider.generate_signed_url("nonexistent.txt", timedelta(hours=1), operation="GET")
         assert result.is_err()
         assert isinstance(result.error, FileNotFoundError)
 
     @pytest.mark.asyncio
     async def test_signed_url_put_nonexistent_file(self):
         provider = InMemoryStorageProvider()
-        result = await provider.generate_signed_url(
-            "new_file.txt", timedelta(hours=1), operation="PUT"
-        )
+        result = await provider.generate_signed_url("new_file.txt", timedelta(hours=1), operation="PUT")
         assert result.is_ok()
 
     @pytest.mark.asyncio
     async def test_signed_url_default_operation_is_get(self):
         provider = InMemoryStorageProvider()
-        result = await provider.generate_signed_url(
-            "nonexistent.txt", timedelta(hours=1)
-        )
+        result = await provider.generate_signed_url("nonexistent.txt", timedelta(hours=1))
         assert result.is_err()
 
 
@@ -303,20 +297,20 @@ class TestInMemoryStorageProviderIntegration:
     @pytest.mark.asyncio
     async def test_multiple_operations_sequence(self):
         provider = InMemoryStorageProvider()
-        
+
         # Upload
         await provider.upload("file.txt", b"v1", "text/plain")
         assert await provider.exists("file.txt")
-        
+
         # Download
         result = await provider.download("file.txt")
         assert result.unwrap() == b"v1"
-        
+
         # Update (overwrite)
         await provider.upload("file.txt", b"v2", "text/plain")
         result = await provider.download("file.txt")
         assert result.unwrap() == b"v2"
-        
+
         # Delete
         await provider.delete("file.txt")
         assert not await provider.exists("file.txt")

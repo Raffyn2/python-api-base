@@ -4,8 +4,9 @@
 **Refactored: Split from mapper.py for one-class-per-file compliance**
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
+from application.common.mappers.errors.mapper_error import MapperError
 from application.common.mappers.interfaces.mapper_interface import IMapper
 
 
@@ -38,11 +39,21 @@ class AutoMapper[Source: BaseModel, Target: BaseModel](IMapper[Source, Target]):
 
         Returns:
             Target: Converted DTO.
+
+        Raises:
+            MapperError: If mapping fails.
         """
-        data = entity.model_dump()
-        target_fields = set(self._target_type.model_fields.keys())
-        filtered_data = {k: v for k, v in data.items() if k in target_fields}
-        return self._target_type.model_validate(filtered_data)
+        try:
+            data = entity.model_dump()
+            target_fields = set(self._target_type.model_fields.keys())
+            filtered_data = {k: v for k, v in data.items() if k in target_fields}
+            return self._target_type.model_validate(filtered_data)
+        except ValidationError as e:
+            raise MapperError(
+                message=f"Failed to map to {self._target_type.__name__}: {e}",
+                source_type=type(entity).__name__,
+                target_type=self._target_type.__name__,
+            ) from e
 
     def to_entity(self, dto: Target) -> Source:
         """Convert DTO to entity.
@@ -52,8 +63,18 @@ class AutoMapper[Source: BaseModel, Target: BaseModel](IMapper[Source, Target]):
 
         Returns:
             Source: Converted entity.
+
+        Raises:
+            MapperError: If mapping fails.
         """
-        data = dto.model_dump()
-        source_fields = set(self._source_type.model_fields.keys())
-        filtered_data = {k: v for k, v in data.items() if k in source_fields}
-        return self._source_type.model_validate(filtered_data)
+        try:
+            data = dto.model_dump()
+            source_fields = set(self._source_type.model_fields.keys())
+            filtered_data = {k: v for k, v in data.items() if k in source_fields}
+            return self._source_type.model_validate(filtered_data)
+        except ValidationError as e:
+            raise MapperError(
+                message=f"Failed to map to {self._source_type.__name__}: {e}",
+                source_type=type(dto).__name__,
+                target_type=self._source_type.__name__,
+            ) from e

@@ -64,7 +64,7 @@ class TestBatchResult:
             total_succeeded=3,
             total_failed=0,
         )
-        
+
         assert len(result.succeeded) == 3
         assert len(result.failed) == 0
         assert result.total_processed == 3
@@ -78,7 +78,7 @@ class TestBatchResult:
             total_succeeded=2,
             total_failed=0,
         )
-        
+
         assert result.success_rate == 100.0
 
     def test_success_rate_partial(self) -> None:
@@ -90,7 +90,7 @@ class TestBatchResult:
             total_succeeded=1,
             total_failed=1,
         )
-        
+
         assert result.success_rate == 50.0
 
     def test_success_rate_empty(self) -> None:
@@ -102,7 +102,7 @@ class TestBatchResult:
             total_succeeded=0,
             total_failed=0,
         )
-        
+
         assert result.success_rate == 100.0
 
     def test_is_complete_success(self) -> None:
@@ -114,7 +114,7 @@ class TestBatchResult:
             total_succeeded=2,
             total_failed=0,
         )
-        
+
         assert result.is_complete_success is True
 
     def test_is_complete_success_with_failures(self) -> None:
@@ -126,7 +126,7 @@ class TestBatchResult:
             total_succeeded=1,
             total_failed=1,
         )
-        
+
         assert result.is_complete_success is False
 
     def test_has_failures(self) -> None:
@@ -138,7 +138,7 @@ class TestBatchResult:
             total_succeeded=1,
             total_failed=1,
         )
-        
+
         assert result.has_failures is True
 
     def test_has_failures_rolled_back(self) -> None:
@@ -151,7 +151,7 @@ class TestBatchResult:
             total_failed=0,
             rolled_back=True,
         )
-        
+
         assert result.has_failures is True
 
 
@@ -161,7 +161,7 @@ class TestBatchConfig:
     def test_default_values(self) -> None:
         """Test default configuration values."""
         config = BatchConfig()
-        
+
         assert config.chunk_size == 100
         assert config.max_concurrent == 5
         assert config.error_strategy == BatchErrorStrategy.CONTINUE
@@ -179,7 +179,7 @@ class TestBatchConfig:
             max_retries=5,
             timeout_per_chunk=30.0,
         )
-        
+
         assert config.chunk_size == 50
         assert config.max_concurrent == 10
         assert config.error_strategy == BatchErrorStrategy.FAIL_FAST
@@ -214,7 +214,7 @@ class TestBatchProgress:
     def test_creation(self) -> None:
         """Test BatchProgress creation."""
         progress = BatchProgress(total_items=100)
-        
+
         assert progress.total_items == 100
         assert progress.processed_items == 0
         assert progress.succeeded_items == 0
@@ -228,13 +228,13 @@ class TestBatchProgress:
             total_items=100,
             processed_items=50,
         )
-        
+
         assert progress.progress_percentage == 50.0
 
     def test_progress_percentage_empty(self) -> None:
         """Test progress percentage with no items."""
         progress = BatchProgress(total_items=0)
-        
+
         assert progress.progress_percentage == 100.0
 
     def test_is_complete(self) -> None:
@@ -243,7 +243,7 @@ class TestBatchProgress:
             total_items=100,
             processed_items=100,
         )
-        
+
         assert progress.is_complete is True
 
     def test_is_complete_false(self) -> None:
@@ -252,7 +252,7 @@ class TestBatchProgress:
             total_items=100,
             processed_items=50,
         )
-        
+
         assert progress.is_complete is False
 
 
@@ -267,7 +267,7 @@ class TestBatchOperationStats:
             succeeded=95,
             failed=5,
         )
-        
+
         assert stats.operation_type == BatchOperationType.CREATE
         assert stats.total_items == 100
         assert stats.succeeded == 95
@@ -281,7 +281,7 @@ class TestBatchOperationStats:
             succeeded=80,
             failed=20,
         )
-        
+
         assert stats.success_rate == 80.0
 
     def test_success_rate_empty(self) -> None:
@@ -290,5 +290,5 @@ class TestBatchOperationStats:
             operation_type=BatchOperationType.DELETE,
             total_items=0,
         )
-        
+
         assert stats.success_rate == 100.0

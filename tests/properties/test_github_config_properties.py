@@ -9,9 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-pytest.skip(
-    "Module scripts.validate_github_config not implemented", allow_module_level=True
-)
+pytest.skip("Module scripts.validate_github_config not implemented", allow_module_level=True)
 
 from pathlib import Path
 from typing import Any
@@ -70,9 +68,7 @@ class TestActionPinningProperty:
         safe_version=safe_version_strategy,
     )
     @settings(max_examples=50)
-    def test_pinned_action_format_is_valid(
-        self, action: str, safe_version: str
-    ) -> None:
+    def test_pinned_action_format_is_valid(self, action: str, safe_version: str) -> None:
         """Pinned action references should pass validation."""
         # Format: owner/repo@version
         reference = f"{action}@{safe_version}"

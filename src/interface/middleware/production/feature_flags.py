@@ -8,6 +8,7 @@
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+import structlog
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -15,6 +16,8 @@ from infrastructure.feature_flags import (
     EvaluationContext,
     FeatureFlagEvaluator,
 )
+
+logger = structlog.get_logger(__name__)
 
 
 class FeatureFlagMiddleware(BaseHTTPMiddleware):

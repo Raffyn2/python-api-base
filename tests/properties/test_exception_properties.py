@@ -22,9 +22,7 @@ class TestEntityNotFoundError:
 
     @settings(max_examples=50)
     @given(
-        entity_type=st.text(
-            min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L",))
-        ),
+        entity_type=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L",))),
         entity_id=st.text(
             min_size=1,
             max_size=36,
@@ -56,14 +54,10 @@ class TestEntityNotFoundError:
 
     @settings(max_examples=30)
     @given(
-        entity_type=st.text(
-            min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L",))
-        ),
+        entity_type=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L",))),
         entity_id=st.integers(min_value=1, max_value=1000000),
     )
-    def test_not_found_error_with_int_id(
-        self, entity_type: str, entity_id: int
-    ) -> None:
+    def test_not_found_error_with_int_id(self, entity_type: str, entity_id: int) -> None:
         """
         EntityNotFoundError SHALL accept integer IDs and convert to string in details.
         """
@@ -74,9 +68,7 @@ class TestEntityNotFoundError:
 
     @settings(max_examples=30)
     @given(
-        entity_type=st.text(
-            min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L",))
-        ),
+        entity_type=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L",))),
         entity_id=st.text(
             min_size=1,
             max_size=36,

@@ -97,7 +97,6 @@ class LambdaAdapter:
         Returns:
             API Gateway response
         """
-
         # Detect event version
         version = event.get("version", "1.0")
 

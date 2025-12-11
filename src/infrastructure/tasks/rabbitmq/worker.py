@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 from typing import TYPE_CHECKING
 
+import structlog
 from pydantic import BaseModel
 
 from infrastructure.tasks.retry import ExponentialBackoff
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from infrastructure.tasks.rabbitmq.queue import RabbitMQTaskQueue
     from infrastructure.tasks.retry import RetryPolicy
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class RabbitMQWorker[TTask: BaseModel, TResult]:
@@ -72,7 +72,6 @@ class RabbitMQWorker[TTask: BaseModel, TResult]:
 
     async def _consume_rabbitmq(self) -> None:
         """Consume from RabbitMQ."""
-
         queue = await self._queue._channel.declare_queue(
             self._queue._config.queue_name,
             durable=True,
@@ -115,7 +114,13 @@ class RabbitMQWorker[TTask: BaseModel, TResult]:
                 self._queue.set_result(task_id, result)
                 return
             except Exception as e:
-                logger.warning(f"Task {task_id} failed (attempt {attempt + 1}): {e}")
+                logger.warning(
+                    "Task failed",
+                    task_id=task_id,
+                    attempt=attempt + 1,
+                    operation="RABBITMQ_TASK_FAIL",
+                    exc_info=True,
+                )
                 if self._retry_policy.should_retry(attempt + 1, self._max_retries):
                     delay = self._retry_policy.get_delay(attempt + 1)
                     await asyncio.sleep(delay)

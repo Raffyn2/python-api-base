@@ -3,10 +3,7 @@
 Tests for Projection and InMemoryProjection classes.
 """
 
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
-from typing import Any
-from uuid import uuid4
+from dataclasses import dataclass
 
 import pytest
 
@@ -139,9 +136,7 @@ class TestInMemoryProjection:
         projection = UserProjection()
         projection._state["old"] = {"data": "value"}
         projection._position = 10
-        events = [
-            UserCreatedEvent(user_id="user-1", username="john", email="john@example.com")
-        ]
+        events = [UserCreatedEvent(user_id="user-1", username="john", email="john@example.com")]
         await projection.rebuild(events)
         assert "old" not in projection._state
         assert "user-1" in projection._state

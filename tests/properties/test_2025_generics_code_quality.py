@@ -92,9 +92,7 @@ class TestEnumStatusCodes:
             TaskStatus,
         ]:
             values = [e.value for e in enum_class]
-            assert len(values) == len(set(values)), (
-                f"Duplicate values in {enum_class.__name__}"
-            )
+            assert len(values) == len(set(values)), f"Duplicate values in {enum_class.__name__}"
 
 
 # =============================================================================
@@ -120,9 +118,7 @@ class TestCodeMetrics:
             return []
         return list(base.glob(f"{directory}/**/*.py"))
 
-    def _count_function_lines(
-        self, node: ast.FunctionDef | ast.AsyncFunctionDef
-    ) -> int:
+    def _count_function_lines(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> int:
         """Count lines in a function."""
         if not node.body:
             return 0
@@ -173,15 +169,11 @@ class TestCodeMetrics:
                     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                         lines = self._count_function_lines(node)
                         if lines > self.MAX_FUNCTION_LINES:
-                            violations.append(
-                                f"{file_path}:{node.name} has {lines} lines"
-                            )
+                            violations.append(f"{file_path}:{node.name} has {lines} lines")
             except SyntaxError:
                 pass
 
-        assert not violations, (
-            f"Functions exceeding {self.MAX_FUNCTION_LINES} lines: {violations}"
-        )
+        assert not violations, f"Functions exceeding {self.MAX_FUNCTION_LINES} lines: {violations}"
 
     def test_core_errors_function_length(self) -> None:
         """Functions in core/errors are <= 50 lines."""
@@ -195,15 +187,11 @@ class TestCodeMetrics:
                     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                         lines = self._count_function_lines(node)
                         if lines > self.MAX_FUNCTION_LINES:
-                            violations.append(
-                                f"{file_path}:{node.name} has {lines} lines"
-                            )
+                            violations.append(f"{file_path}:{node.name} has {lines} lines")
             except SyntaxError:
                 pass
 
-        assert not violations, (
-            f"Functions exceeding {self.MAX_FUNCTION_LINES} lines: {violations}"
-        )
+        assert not violations, f"Functions exceeding {self.MAX_FUNCTION_LINES} lines: {violations}"
 
 
 # =============================================================================

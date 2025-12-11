@@ -37,9 +37,7 @@ def circuit_breaker_names(draw: st.DrawFn) -> str:
     """Generate valid circuit breaker names."""
     return draw(
         st.text(
-            alphabet=st.characters(
-                whitelist_categories=("L", "N"), whitelist_characters="_-"
-            ),
+            alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_-"),
             min_size=1,
             max_size=50,
         ).filter(lambda x: x.strip() != "")
@@ -235,9 +233,7 @@ class TestCircuitBreakerTimeoutReset:
         assert cb._state == CircuitState.OPEN
 
         # Simulate time passing by setting last_failure_time in the past
-        cb._last_failure_time = datetime.now(UTC) - timedelta(
-            seconds=timeout_seconds + 1
-        )
+        cb._last_failure_time = datetime.now(UTC) - timedelta(seconds=timeout_seconds + 1)
 
         # Accessing state property should trigger transition
         current_state = cb.state

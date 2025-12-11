@@ -75,7 +75,10 @@ async def seed_items(session) -> list[str]:
     for data in items_data:
         existing = await repo.get_by_sku(data["sku"])
         if existing:
-            logger.info(f"Item {data['sku']} already exists, skipping")
+            logger.info(
+                "Item already exists, skipping",
+                extra={"sku": data["sku"], "operation": "SEED_SKIP"},
+            )
             item_ids.append(existing.id)
             continue
 
@@ -91,7 +94,10 @@ async def seed_items(session) -> list[str]:
         )
         saved = await repo.create(item)
         item_ids.append(saved.id)
-        logger.info(f"Created item: {saved.name} ({saved.sku})")
+        logger.info(
+            "Created item",
+            extra={"name": saved.name, "sku": saved.sku, "operation": "SEED_CREATE"},
+        )
 
     return item_ids
 
@@ -160,7 +166,7 @@ async def seed_pedidos(session, item_ids: list[str]) -> None:
                         item_name=item2.name,
                         quantity=1,
                         unit_price=item2.price,
-                        discount=Decimal("10"),
+                        discount=Decimal(10),
                     )
 
         # Confirm some orders
@@ -169,8 +175,14 @@ async def seed_pedidos(session, item_ids: list[str]) -> None:
 
         saved = await pedido_repo.create(pedido)
         logger.info(
-            f"Created order: {saved.id} for {customer['customer_name']} "
-            f"(status: {saved.status.value}, total: {saved.total.amount})"
+            "Created order",
+            extra={
+                "order_id": saved.id,
+                "customer": customer["customer_name"],
+                "status": saved.status.value,
+                "total": str(saved.total.amount),
+                "operation": "SEED_CREATE_ORDER",
+            },
         )
 
 
@@ -189,10 +201,7 @@ async def main() -> None:
         logger.info("Seed completed successfully!")
 
     except ImportError:
-        logger.warning(
-            "Could not import database session. "
-            "Running with mock data for demonstration."
-        )
+        logger.warning("Could not import database session. Running with mock data for demonstration.")
         logger.info("In production, configure DATABASE_URL environment variable.")
 
 

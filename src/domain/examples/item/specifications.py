@@ -10,7 +10,7 @@ Demonstrates:
 
 from decimal import Decimal
 
-from core.base.patterns.specification import Specification
+from domain.common.specification import Specification
 from domain.examples.item.entity import ItemExample, ItemExampleStatus
 
 
@@ -96,9 +96,7 @@ def premium_items(min_price: Decimal = Decimal("100.00")) -> Specification[ItemE
         >>> items = repository.find_all(premium_electronics)
     """
     return (
-        ItemExampleActiveSpec()
-        & ItemExampleInStockSpec()
-        & ItemExamplePriceRangeSpec(min_price, Decimal("999999.99"))
+        ItemExampleActiveSpec() & ItemExampleInStockSpec() & ItemExamplePriceRangeSpec(min_price, Decimal("999999.99"))
     )
 
 
@@ -116,11 +114,7 @@ def clearance_items(
         >>> clearance = clearance_items(Decimal("15.00"))
         >>> sale_items = [item for item in inventory if clearance.is_satisfied_by(item)]
     """
-    return (
-        ItemExampleActiveSpec()
-        & ItemExampleInStockSpec()
-        & ItemExamplePriceRangeSpec(Decimal("0"), max_price)
-    )
+    return ItemExampleActiveSpec() & ItemExampleInStockSpec() & ItemExamplePriceRangeSpec(Decimal(0), max_price)
 
 
 def popular_items_in_stock(tag: str = "popular") -> Specification[ItemExample]:
@@ -133,9 +127,7 @@ def popular_items_in_stock(tag: str = "popular") -> Specification[ItemExample]:
     return ItemExampleTagSpec(tag) & ItemExampleInStockSpec() & ItemExampleActiveSpec()
 
 
-def premium_category_items(
-    category: str, min_price: Decimal = Decimal("100.00")
-) -> Specification[ItemExample]:
+def premium_category_items(category: str, min_price: Decimal = Decimal("100.00")) -> Specification[ItemExample]:
     """Create composite spec for premium items in a specific category.
 
     Combines category filtering with premium item criteria.
@@ -178,11 +170,7 @@ def featured_items(category: str, tag: str = "featured") -> Specification[ItemEx
         >>> featured_electronics = featured_items("Electronics", "featured")
         >>> homepage_items = repository.find_all(featured_electronics).take(10)
     """
-    return (
-        ItemExampleAvailableSpec()
-        & ItemExampleCategorySpec(category)
-        & ItemExampleTagSpec(tag)
-    )
+    return ItemExampleAvailableSpec() & ItemExampleCategorySpec(category) & ItemExampleTagSpec(tag)
 
 
 def out_of_stock_active_items() -> Specification[ItemExample]:

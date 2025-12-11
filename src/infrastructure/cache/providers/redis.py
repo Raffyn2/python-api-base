@@ -7,8 +7,9 @@
 from __future__ import annotations
 
 import json
-import logging
 from typing import TYPE_CHECKING, Any
+
+import structlog
 
 from infrastructure.cache.config import CacheConfig
 from infrastructure.cache.models import CacheStats
@@ -16,7 +17,7 @@ from infrastructure.cache.models import CacheStats
 if TYPE_CHECKING:
     from infrastructure.cache.providers.memory import InMemoryCacheProvider
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class RedisCacheProvider[T]:
@@ -65,8 +66,12 @@ class RedisCacheProvider[T]:
             logger.warning("redis package not installed, using fallback")
             self._connected = False
             return None
-        except Exception as e:
-            logger.warning(f"Redis connection failed: {e}, using fallback")
+        except Exception:
+            logger.warning(
+                "Redis connection failed, using fallback",
+                operation="REDIS_CONNECT",
+                exc_info=True,
+            )
             self._connected = False
             return None
 
@@ -106,8 +111,8 @@ class RedisCacheProvider[T]:
             else:
                 self._misses += 1
             return result
-        except Exception as e:
-            logger.warning(f"Redis get failed: {e}")
+        except Exception:
+            logger.warning("Redis get failed", operation="REDIS_GET", exc_info=True)
             if self._fallback:
                 return await self._fallback.get(key)
             return None
@@ -130,8 +135,8 @@ class RedisCacheProvider[T]:
                 await client.setex(full_key, effective_ttl, data)
             else:
                 await client.set(full_key, data)
-        except Exception as e:
-            logger.warning(f"Redis set failed: {e}")
+        except Exception:
+            logger.warning("Redis set failed", operation="REDIS_SET", exc_info=True)
             if self._fallback:
                 await self._fallback.set(key, value, ttl)
 
@@ -147,8 +152,8 @@ class RedisCacheProvider[T]:
             full_key = self._make_key(key)
             result = await client.delete(full_key)
             return result > 0
-        except Exception as e:
-            logger.warning(f"Redis delete failed: {e}")
+        except Exception:
+            logger.warning("Redis delete failed", operation="REDIS_DELETE", exc_info=True)
             if self._fallback:
                 return await self._fallback.delete(key)
             return False
@@ -164,8 +169,8 @@ class RedisCacheProvider[T]:
         try:
             full_key = self._make_key(key)
             return await client.exists(full_key) > 0
-        except Exception as e:
-            logger.warning(f"Redis exists failed: {e}")
+        except Exception:
+            logger.warning("Redis exists check failed", operation="REDIS_EXISTS", exc_info=True)
             if self._fallback:
                 return await self._fallback.exists(key)
             return False
@@ -189,8 +194,12 @@ class RedisCacheProvider[T]:
                 if cursor == 0:
                     break
             return deleted
-        except Exception as e:
-            logger.warning(f"Redis clear_pattern failed: {e}")
+        except Exception:
+            logger.warning(
+                "Redis clear_pattern failed",
+                operation="REDIS_CLEAR_PATTERN",
+                exc_info=True,
+            )
             if self._fallback:
                 return await self._fallback.clear_pattern(pattern)
             return 0

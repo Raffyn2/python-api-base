@@ -1,15 +1,16 @@
 """GraphQL resolvers.
 
-Contains resolver functions and data loaders.
+Contains data loaders for N+1 prevention.
+
+Note: Base resolver classes were removed as they were not used.
+The project uses Strawberry decorators directly (@strawberry.field, @strawberry.mutation).
 
 **Feature: interface-restructuring-2025**
 """
 
-from interface.graphql.resolvers.dataloader import DataLoaderService
-from interface.graphql.resolvers.resolvers import resolve_user, resolve_users
+from interface.graphql.resolvers.dataloader import DataLoader, DataLoaderConfig
 
 __all__ = [
-    "DataLoaderService",
-    "resolve_user",
-    "resolve_users",
+    "DataLoader",
+    "DataLoaderConfig",
 ]

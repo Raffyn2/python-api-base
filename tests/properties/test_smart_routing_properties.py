@@ -95,9 +95,7 @@ class TestEndpointProperties:
         weight=st.integers(min_value=1, max_value=100),
     )
     @settings(max_examples=100)
-    def test_endpoint_preserves_values(
-        self, endpoint_id: str, url: str, weight: int
-    ) -> None:
+    def test_endpoint_preserves_values(self, endpoint_id: str, url: str, weight: int) -> None:
         """Property: Endpoint preserves all values."""
         endpoint = Endpoint(id=endpoint_id, url=url, weight=weight)
         assert endpoint.id == endpoint_id
@@ -125,8 +123,7 @@ class TestRoundRobinBalancerProperties:
         """Property: Round robin cycles through all endpoints."""
         balancer = RoundRobinBalancer()
         endpoints = [
-            Endpoint(id=f"ep_{i}", url=f"http://ep{i}", status=EndpointStatus.HEALTHY)
-            for i in range(endpoint_count)
+            Endpoint(id=f"ep_{i}", url=f"http://ep{i}", status=EndpointStatus.HEALTHY) for i in range(endpoint_count)
         ]
 
         selected_ids = []
@@ -154,8 +151,7 @@ class TestRandomBalancerProperties:
         """Property: Random selects from available endpoints."""
         balancer = RandomBalancer()
         endpoints = [
-            Endpoint(id=f"ep_{i}", url=f"http://ep{i}", status=EndpointStatus.HEALTHY)
-            for i in range(endpoint_count)
+            Endpoint(id=f"ep_{i}", url=f"http://ep{i}", status=EndpointStatus.HEALTHY) for i in range(endpoint_count)
         ]
 
         selected = balancer.select(endpoints, {})
@@ -196,12 +192,8 @@ class TestWeightedBalancerProperties:
         """Property: Weighted balancer respects weights over many selections."""
         balancer = WeightedBalancer()
 
-        ep1 = Endpoint(
-            id="ep1", url="http://ep1", weight=10, status=EndpointStatus.HEALTHY
-        )
-        ep2 = Endpoint(
-            id="ep2", url="http://ep2", weight=1, status=EndpointStatus.HEALTHY
-        )
+        ep1 = Endpoint(id="ep1", url="http://ep1", weight=10, status=EndpointStatus.HEALTHY)
+        ep2 = Endpoint(id="ep2", url="http://ep2", weight=1, status=EndpointStatus.HEALTHY)
 
         selections = {"ep1": 0, "ep2": 0}
         for _ in range(1000):
@@ -241,10 +233,7 @@ class TestIPHashBalancerProperties:
     def test_same_ip_selects_same_endpoint(self) -> None:
         """Property: Same IP always selects same endpoint."""
         balancer = IPHashBalancer()
-        endpoints = [
-            Endpoint(id=f"ep_{i}", url=f"http://ep{i}", status=EndpointStatus.HEALTHY)
-            for i in range(5)
-        ]
+        endpoints = [Endpoint(id=f"ep_{i}", url=f"http://ep{i}", status=EndpointStatus.HEALTHY) for i in range(5)]
 
         context = {"client_ip": "192.168.1.100"}
         first_selection = balancer.select(endpoints, context)
@@ -259,10 +248,7 @@ class TestIPHashBalancerProperties:
     def test_different_ips_distribute(self, ip: str) -> None:
         """Property: Different IPs distribute across endpoints."""
         balancer = IPHashBalancer()
-        endpoints = [
-            Endpoint(id=f"ep_{i}", url=f"http://ep{i}", status=EndpointStatus.HEALTHY)
-            for i in range(3)
-        ]
+        endpoints = [Endpoint(id=f"ep_{i}", url=f"http://ep{i}", status=EndpointStatus.HEALTHY) for i in range(3)]
 
         selected = balancer.select(endpoints, {"client_ip": ip})
         assert selected is not None
@@ -274,9 +260,7 @@ class TestSmartRouterProperties:
 
     @given(strategy=strategy_type)
     @settings(max_examples=50)
-    def test_router_uses_correct_strategy(
-        self, strategy: LoadBalancingStrategy
-    ) -> None:
+    def test_router_uses_correct_strategy(self, strategy: LoadBalancingStrategy) -> None:
         """Property: Router uses the specified strategy."""
         router = SmartRouter[str](strategy=strategy)
         assert router._strategy == strategy
@@ -342,23 +326,14 @@ class TestSmartRouterBuilderProperties:
     def test_builder_fluent_interface(self) -> None:
         """Property: Builder methods return builder for chaining."""
         builder = SmartRouterBuilder()
-        result = (
-            builder.round_robin().error_threshold(0.3).add_endpoint("ep1", "http://ep1")
-        )
+        result = builder.round_robin().error_threshold(0.3).add_endpoint("ep1", "http://ep1")
         assert result is builder
 
     @given(strategy=strategy_type)
     @settings(max_examples=50)
-    def test_builder_creates_router_with_strategy(
-        self, strategy: LoadBalancingStrategy
-    ) -> None:
+    def test_builder_creates_router_with_strategy(self, strategy: LoadBalancingStrategy) -> None:
         """Property: Builder creates router with specified strategy."""
-        router = (
-            SmartRouterBuilder()
-            .strategy(strategy)
-            .add_endpoint("ep1", "http://ep1")
-            .build()
-        )
+        router = SmartRouterBuilder().strategy(strategy).add_endpoint("ep1", "http://ep1").build()
         assert router._strategy == strategy
         assert router.endpoint_count == 1
 

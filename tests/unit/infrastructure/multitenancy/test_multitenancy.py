@@ -50,7 +50,7 @@ class TestTenantInfo:
             id="tenant-123",
             name="Acme Corp",
         )
-        
+
         assert tenant.id == "tenant-123"
         assert tenant.name == "Acme Corp"
         assert tenant.schema_name is None
@@ -66,7 +66,7 @@ class TestTenantInfo:
             settings={"feature_x": True},
             is_active=False,
         )
-        
+
         assert tenant.schema_name == "tenant_456"
         assert tenant.settings == {"feature_x": True}
         assert tenant.is_active is False
@@ -74,14 +74,14 @@ class TestTenantInfo:
     def test_immutability(self) -> None:
         """Test TenantInfo is immutable."""
         tenant = TenantInfo[str](id="tenant-123", name="Test")
-        
+
         with pytest.raises(AttributeError):
             tenant.name = "Other"  # type: ignore
 
     def test_with_int_id(self) -> None:
         """Test TenantInfo with integer ID."""
         tenant = TenantInfo[int](id=123, name="Test")
-        
+
         assert tenant.id == 123
 
 
@@ -91,7 +91,7 @@ class TestTenantContext:
     def test_default_values(self) -> None:
         """Test default context values."""
         context = TenantContext[str]()
-        
+
         assert context._strategy == TenantResolutionStrategy.HEADER
         assert context._header_name == "X-Tenant-ID"
         assert context._jwt_claim == "tenant_id"
@@ -105,7 +105,7 @@ class TestTenantContext:
             jwt_claim="org_id",
             query_param="org",
         )
-        
+
         assert context._strategy == TenantResolutionStrategy.JWT_CLAIM
         assert context._header_name == "X-Custom-Tenant"
         assert context._jwt_claim == "org_id"
@@ -115,57 +115,57 @@ class TestTenantContext:
         """Test resolving tenant from headers."""
         context = TenantContext[str]()
         headers = {"X-Tenant-ID": "tenant-123"}
-        
+
         result = context.resolve_from_headers(headers)
-        
+
         assert result == "tenant-123"
 
     def test_resolve_from_headers_not_found(self) -> None:
         """Test resolving tenant from headers when not present."""
         context = TenantContext[str]()
         headers = {"Other-Header": "value"}
-        
+
         result = context.resolve_from_headers(headers)
-        
+
         assert result is None
 
     def test_resolve_from_jwt(self) -> None:
         """Test resolving tenant from JWT claims."""
         context = TenantContext[str]()
         claims = {"tenant_id": "tenant-456", "sub": "user-123"}
-        
+
         result = context.resolve_from_jwt(claims)
-        
+
         assert result == "tenant-456"
 
     def test_resolve_from_query(self) -> None:
         """Test resolving tenant from query params."""
         context = TenantContext[str]()
         params = {"tenant_id": "tenant-789"}
-        
+
         result = context.resolve_from_query(params)
-        
+
         assert result == "tenant-789"
 
     def test_get_set_current(self) -> None:
         """Test getting and setting current tenant."""
         tenant = TenantInfo[str](id="tenant-123", name="Test")
-        
+
         TenantContext.set_current(tenant)
         result = TenantContext.get_current()
-        
+
         assert result is not None
         assert result.id == "tenant-123"
-        
+
         # Clean up
         TenantContext.set_current(None)
 
     def test_get_current_none(self) -> None:
         """Test getting current tenant when not set."""
         TenantContext.set_current(None)
-        
+
         result = TenantContext.get_current()
-        
+
         assert result is None
 
 
@@ -175,7 +175,7 @@ class TestSchemaConfig:
     def test_default_values(self) -> None:
         """Test default configuration values."""
         config = SchemaConfig()
-        
+
         assert config.default_schema == "public"
         assert config.schema_prefix == "tenant_"
         assert config.create_on_provision is True
@@ -187,7 +187,7 @@ class TestSchemaConfig:
             schema_prefix="org_",
             create_on_provision=False,
         )
-        
+
         assert config.default_schema == "main"
         assert config.schema_prefix == "org_"
         assert config.create_on_provision is False
@@ -200,18 +200,18 @@ class TestTenantSchemaManager:
         """Test getting schema name for tenant."""
         config = SchemaConfig(schema_prefix="tenant_")
         manager = TenantSchemaManager[str](config)
-        
+
         result = manager.get_schema_name("acme")
-        
+
         assert result == "tenant_acme"
 
     def test_get_schema_name_custom_prefix(self) -> None:
         """Test getting schema name with custom prefix."""
         config = SchemaConfig(schema_prefix="org_")
         manager = TenantSchemaManager[str](config)
-        
+
         result = manager.get_schema_name("corp")
-        
+
         assert result == "org_corp"
 
     def test_get_connection_schema_with_schema_name(self) -> None:
@@ -223,9 +223,9 @@ class TestTenantSchemaManager:
             name="Test",
             schema_name="custom_schema",
         )
-        
+
         result = manager.get_connection_schema(tenant)
-        
+
         assert result == "custom_schema"
 
     def test_get_connection_schema_without_schema_name(self) -> None:
@@ -233,9 +233,9 @@ class TestTenantSchemaManager:
         config = SchemaConfig(schema_prefix="tenant_")
         manager = TenantSchemaManager[str](config)
         tenant = TenantInfo[str](id="acme", name="Acme")
-        
+
         result = manager.get_connection_schema(tenant)
-        
+
         assert result == "tenant_acme"
 
 
@@ -245,25 +245,25 @@ class TestTenantScopedCache:
     def test_get_key(self) -> None:
         """Test getting tenant-scoped cache key."""
         cache = TenantScopedCache[str]()
-        
+
         result = cache.get_key("tenant-123", "user:456")
-        
+
         assert result == "tenant:tenant-123:user:456"
 
     def test_get_key_custom_prefix(self) -> None:
         """Test getting key with custom prefix."""
         cache = TenantScopedCache[str](prefix="org")
-        
+
         result = cache.get_key("acme", "data:key")
-        
+
         assert result == "org:acme:data:key"
 
     def test_get_pattern(self) -> None:
         """Test getting pattern for all tenant keys."""
         cache = TenantScopedCache[str]()
-        
+
         result = cache.get_pattern("tenant-123")
-        
+
         assert result == "tenant:tenant-123:*"
 
 
@@ -280,7 +280,7 @@ class TestTenantAuditEntry:
             resource_id="order-789",
             timestamp="2025-01-01T00:00:00Z",
         )
-        
+
         assert entry.tenant_id == "tenant-123"
         assert entry.user_id == "user-456"
         assert entry.action == "CREATE"
@@ -299,7 +299,7 @@ class TestTenantAuditEntry:
             timestamp="2025-01-01T00:00:00Z",
             details={"changed_fields": ["name", "email"]},
         )
-        
+
         assert entry.details == {"changed_fields": ["name", "email"]}
 
     def test_immutability(self) -> None:
@@ -312,6 +312,6 @@ class TestTenantAuditEntry:
             resource_id="order-789",
             timestamp="2025-01-01T00:00:00Z",
         )
-        
+
         with pytest.raises(AttributeError):
             entry.action = "DELETE"  # type: ignore

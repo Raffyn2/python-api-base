@@ -10,7 +10,7 @@ from typing import Any
 from application.common.export.formats.export_format import ExportFormat
 
 
-@dataclass
+@dataclass(slots=True)
 class ExportResult:
     """Export operation result."""
 

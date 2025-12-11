@@ -5,11 +5,9 @@
 """
 
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.auth.jwt.errors import (
     TokenExpiredError,
@@ -37,17 +35,17 @@ class MockTimeSource(TimeSource):
 class TestJWTService:
     """Tests for JWTService class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def secret_key(self) -> str:
         """Create test secret key (32+ chars)."""
         return "test-secret-key-that-is-at-least-32-characters-long"
 
-    @pytest.fixture
+    @pytest.fixture()
     def time_source(self) -> MockTimeSource:
         """Create mock time source."""
         return MockTimeSource()
 
-    @pytest.fixture
+    @pytest.fixture()
     def service(self, secret_key: str, time_source: MockTimeSource) -> JWTService:
         """Create JWT service with mock time source."""
         return JWTService(
@@ -56,7 +54,6 @@ class TestJWTService:
             access_token_expire_minutes=30,
             refresh_token_expire_days=7,
         )
-
 
     def test_init_rejects_short_secret(self) -> None:
         """Test service rejects secret key shorter than 32 chars."""
@@ -74,9 +71,7 @@ class TestJWTService:
 
     def test_create_access_token_with_scopes(self, service: JWTService) -> None:
         """Test creating access token with scopes."""
-        token, payload = service.create_access_token(
-            "user123", scopes=["read", "write"]
-        )
+        _token, payload = service.create_access_token("user123", scopes=["read", "write"])
 
         assert payload.scopes == ("read", "write")
 
@@ -113,7 +108,6 @@ class TestJWTService:
 
         assert payload.token_type == "access"
 
-
     def test_verify_token_wrong_type_fails(self, service: JWTService) -> None:
         """Test verifying token with wrong type fails."""
         token, _ = service.create_access_token("user123")
@@ -121,9 +115,7 @@ class TestJWTService:
         with pytest.raises(TokenInvalidError, match="Expected refresh"):
             service.verify_token(token, expected_type="refresh")
 
-    def test_verify_expired_token_fails(
-        self, service: JWTService, time_source: MockTimeSource
-    ) -> None:
+    def test_verify_expired_token_fails(self, service: JWTService, time_source: MockTimeSource) -> None:
         """Test verifying expired token fails."""
         token, _ = service.create_access_token("user123")
 
@@ -166,7 +158,6 @@ class TestJWTService:
 
         assert payload.sub == original.sub
         assert payload.jti == original.jti
-
 
     def test_clear_used_refresh_tokens(self, service: JWTService) -> None:
         """Test clearing used refresh tokens."""
@@ -217,9 +208,7 @@ class TestJWTRoundTripProperties:
         scopes=st.lists(st.sampled_from(["read", "write", "admin", "delete"]), max_size=4),
     )
     @settings(max_examples=50, deadline=5000)
-    def test_token_with_scopes_round_trip(
-        self, user_id: str, scopes: list[str]
-    ) -> None:
+    def test_token_with_scopes_round_trip(self, user_id: str, scopes: list[str]) -> None:
         """Property: Token with scopes encodes and decodes correctly.
 
         **Feature: test-coverage-80-percent-v3, Property 9: JWT Round-trip**

@@ -27,21 +27,17 @@ Example:
     >>> # Cache entries matching "query_cache:*user:123*" are cleared
 """
 
-import logging
 from abc import ABC
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any
 
-logger = logging.getLogger(__name__)
+import structlog
 
+# Re-use QueryCache protocol from query_cache module (Single Source of Truth)
+from application.common.middleware.cache.query_cache import QueryCache
 
-class QueryCache(Protocol):
-    """Protocol for query cache (matches QueryCache from query_cache.py)."""
-
-    async def clear_pattern(self, pattern: str) -> int:
-        """Clear cached results matching pattern."""
-        ...
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
@@ -125,23 +121,19 @@ class CacheInvalidationStrategy(ABC):
             if rule.log_invalidation and cleared > 0:
                 logger.info(
                     "cache_invalidated",
-                    extra={
-                        "event_type": event_type.__name__,
-                        "pattern": pattern,
-                        "keys_cleared": cleared,
-                        "operation": "CACHE_INVALIDATION",
-                    },
+                    event_type=event_type.__name__,
+                    pattern=pattern,
+                    keys_cleared=cleared,
+                    operation="CACHE_INVALIDATION",
                 )
 
         if rule.log_invalidation and total_cleared > 0:
             logger.info(
                 "cache_invalidation_completed",
-                extra={
-                    "event_type": event_type.__name__,
-                    "total_keys_cleared": total_cleared,
-                    "patterns_matched": len(rule.patterns),
-                    "operation": "CACHE_INVALIDATION_COMPLETED",
-                },
+                event_type=event_type.__name__,
+                total_keys_cleared=total_cleared,
+                patterns_matched=len(rule.patterns),
+                operation="CACHE_INVALIDATION_COMPLETED",
             )
 
 
@@ -289,9 +281,7 @@ class ItemCacheInvalidationStrategy(CacheInvalidationStrategy):
 # =============================================================================
 
 
-def create_entity_specific_pattern(
-    query_type: str, entity_id: str, prefix: str = "query_cache"
-) -> str:
+def create_entity_specific_pattern(query_type: str, entity_id: str, prefix: str = "query_cache") -> str:
     """Create cache pattern for specific entity.
 
     Args:
@@ -446,12 +436,10 @@ class CacheInvalidationMiddleware:
                 if cleared > 0:
                     logger.debug(
                         "cache_invalidated_by_command",
-                        extra={
-                            "command_type": command_type.__name__,
-                            "pattern": pattern,
-                            "keys_cleared": cleared,
-                            "operation": "COMMAND_CACHE_INVALIDATION",
-                        },
+                        command_type=command_type.__name__,
+                        pattern=pattern,
+                        keys_cleared=cleared,
+                        operation="COMMAND_CACHE_INVALIDATION",
                     )
 
         return result

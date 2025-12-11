@@ -5,9 +5,18 @@ Contains database session management and connection handling.
 **Feature: infrastructure-restructuring-2025**
 """
 
-from infrastructure.db.core.session import SessionLocal, get_session
+from infrastructure.db.core.session import (
+    DatabaseSession,
+    close_database,
+    get_async_session,
+    get_database_session,
+    init_database,
+)
 
 __all__ = [
-    "SessionLocal",
-    "get_session",
+    "DatabaseSession",
+    "close_database",
+    "get_async_session",
+    "get_database_session",
+    "init_database",
 ]

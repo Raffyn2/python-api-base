@@ -4,12 +4,17 @@
 **Validates: Requirements 1.2**
 
 Implements FileStorage protocol using in-memory storage.
+Suitable for unit tests and development without external dependencies.
 """
 
 from collections.abc import AsyncIterator
 from datetime import timedelta
 
+import structlog
+
 from core.base.patterns.result import Err, Ok, Result
+
+logger = structlog.get_logger(__name__)
 
 
 class InMemoryStorageProvider:
@@ -42,14 +47,24 @@ class InMemoryStorageProvider:
             Ok with storage URL or Err with exception.
         """
         try:
-            if isinstance(data, bytes):
-                file_data = data
-            else:
-                file_data = b"".join([chunk async for chunk in data])
-
+            file_data = data if isinstance(data, bytes) else b"".join([chunk async for chunk in data])
             self._storage[key] = (file_data, content_type)
+
+            logger.debug(
+                "File uploaded to memory storage",
+                operation="MEMORY_UPLOAD",
+                key=key,
+                content_type=content_type,
+                size_bytes=len(file_data),
+            )
             return Ok(f"memory://{key}")
         except Exception as e:
+            logger.error(
+                "Memory upload failed",
+                operation="MEMORY_UPLOAD_ERROR",
+                key=key,
+                error_type=type(e).__name__,
+            )
             return Err(e)
 
     async def download(self, key: str) -> Result[bytes, Exception]:
@@ -62,9 +77,20 @@ class InMemoryStorageProvider:
             Ok with file bytes or Err with exception.
         """
         if key not in self._storage:
+            logger.warning(
+                "File not found in memory storage",
+                operation="MEMORY_DOWNLOAD_NOT_FOUND",
+                key=key,
+            )
             return Err(FileNotFoundError(f"Key not found: {key}"))
 
         data, _ = self._storage[key]
+        logger.debug(
+            "File downloaded from memory storage",
+            operation="MEMORY_DOWNLOAD",
+            key=key,
+            size_bytes=len(data),
+        )
         return Ok(data)
 
     async def delete(self, key: str) -> Result[bool, Exception]:
@@ -78,7 +104,18 @@ class InMemoryStorageProvider:
         """
         if key in self._storage:
             del self._storage[key]
+            logger.debug(
+                "File deleted from memory storage",
+                operation="MEMORY_DELETE",
+                key=key,
+            )
             return Ok(True)
+
+        logger.debug(
+            "File not found for deletion",
+            operation="MEMORY_DELETE_NOT_FOUND",
+            key=key,
+        )
         return Ok(False)
 
     async def exists(self, key: str) -> bool:
@@ -104,9 +141,7 @@ class InMemoryStorageProvider:
         if key not in self._storage and operation == "GET":
             return Err(FileNotFoundError(f"Key not found: {key}"))
 
-        return Ok(
-            f"memory://{key}?signed=true&expires={int(expiration.total_seconds())}"
-        )
+        return Ok(f"memory://{key}?signed=true&expires={int(expiration.total_seconds())}")
 
     def clear(self) -> None:
         """Clear all stored files."""

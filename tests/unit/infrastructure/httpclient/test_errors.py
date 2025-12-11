@@ -6,8 +6,6 @@
 
 from datetime import timedelta
 
-import pytest
-
 from infrastructure.httpclient.errors import (
     CircuitBreakerError,
     HttpError,

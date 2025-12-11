@@ -57,9 +57,7 @@ class TestItemEndpoints:
         assert "has_next" in data
         assert "has_previous" in data
 
-    async def test_get_nonexistent_item_returns_404(
-        self, test_client: AsyncClient
-    ) -> None:
+    async def test_get_nonexistent_item_returns_404(self, test_client: AsyncClient) -> None:
         """
         **Feature: generic-fastapi-crud, Property 13: Endpoint GET Detail Returns Entity or 404**
 
@@ -68,9 +66,7 @@ class TestItemEndpoints:
         response = await test_client.get("/api/v1/items/nonexistent-id")
         assert response.status_code == 404
 
-    async def test_update_nonexistent_returns_404(
-        self, test_client: AsyncClient
-    ) -> None:
+    async def test_update_nonexistent_returns_404(self, test_client: AsyncClient) -> None:
         """Update non-existent item SHALL return 404."""
         response = await test_client.put(
             "/api/v1/items/nonexistent-id",
@@ -78,9 +74,7 @@ class TestItemEndpoints:
         )
         assert response.status_code == 404
 
-    async def test_delete_nonexistent_returns_404(
-        self, test_client: AsyncClient
-    ) -> None:
+    async def test_delete_nonexistent_returns_404(self, test_client: AsyncClient) -> None:
         """
         **Feature: generic-fastapi-crud, Property 14: Endpoint DELETE Returns 204 or 404**
 
@@ -119,9 +113,7 @@ class TestItemEndpoints:
         response = await test_client.get("/api/v1/items?sort_by=name&sort_order=asc")
         assert response.status_code == 200
 
-    async def test_create_returns_computed_field(
-        self, test_client: AsyncClient
-    ) -> None:
+    async def test_create_returns_computed_field(self, test_client: AsyncClient) -> None:
         """Create response SHALL include computed price_with_tax field."""
         response = await test_client.post(
             "/api/v1/items",

@@ -40,11 +40,7 @@ class TestJWTAlgorithmValidation:
             )
             assert validator._algorithm == algorithm
 
-    @given(
-        st.text(min_size=1, max_size=20).filter(
-            lambda x: x.upper() not in ["RS256", "ES256", "HS256", "NONE"]
-        )
-    )
+    @given(st.text(min_size=1, max_size=20).filter(lambda x: x.upper() not in ["RS256", "ES256", "HS256", "NONE"]))
     @settings(max_examples=50)
     def test_invalid_algorithms_rejected(self, algorithm: str):
         """For any algorithm not in allowlist, initialization SHALL raise error."""
@@ -80,14 +76,8 @@ class TestJWTAlgorithmValidation:
         import base64
         import json
 
-        header = (
-            base64.urlsafe_b64encode(json.dumps({"alg": "none", "typ": "JWT"}).encode())
-            .rstrip(b"=")
-            .decode()
-        )
-        payload_b64 = (
-            base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
-        )
+        header = base64.urlsafe_b64encode(json.dumps({"alg": "none", "typ": "JWT"}).encode()).rstrip(b"=").decode()
+        payload_b64 = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
 
         none_token = f"{header}.{payload_b64}."
 
@@ -130,7 +120,7 @@ class TestAlgorithmMismatchDetection:
 
     def test_algorithm_mismatch_rejected(self):
         """Token with mismatched algorithm SHALL be rejected."""
-        validator = JWTValidator(secret_or_key="a" * 32, algorithm="HS256")
+        JWTValidator(secret_or_key="a" * 32, algorithm="HS256")
 
         # Create token with different algorithm claim
         payload = {
@@ -184,10 +174,7 @@ class TestRevocationFailClosed:
         with pytest.raises(InvalidTokenError) as exc_info:
             await validator.validate_with_revocation(token)
 
-        assert (
-            "verify" in str(exc_info.value).lower()
-            or "status" in str(exc_info.value).lower()
-        )
+        assert "verify" in str(exc_info.value).lower() or "status" in str(exc_info.value).lower()
 
 
 class TestTokenRevocationRoundTrip:
@@ -205,9 +192,7 @@ class TestTokenRevocationRoundTrip:
 
         mock_store = MagicMock()
         mock_store.is_revoked = AsyncMock(side_effect=lambda jti: jti in revoked_jtis)
-        mock_store.revoke = AsyncMock(
-            side_effect=lambda jti, exp: revoked_jtis.add(jti)
-        )
+        mock_store.revoke = AsyncMock(side_effect=lambda jti, exp: revoked_jtis.add(jti))
 
         validator = JWTValidator(
             secret_or_key="a" * 32,

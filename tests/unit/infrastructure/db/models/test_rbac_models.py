@@ -6,8 +6,6 @@
 
 from datetime import UTC, datetime
 
-import pytest
-
 from infrastructure.db.models.rbac_models import RoleModel, UserRoleModel
 
 
@@ -60,7 +58,7 @@ class TestRoleModel:
             updated_at=now,
         )
         result = role.to_dict()
-        
+
         assert result["id"] == "role-123"
         assert result["name"] == "admin"
         assert result["description"] == "Administrator role"
@@ -80,7 +78,7 @@ class TestRoleModel:
         role.created_at = None
         role.updated_at = None
         result = role.to_dict()
-        
+
         assert result["created_at"] is None
         assert result["updated_at"] is None
 
@@ -130,7 +128,7 @@ class TestUserRoleModel:
             assigned_by="admin-001",
         )
         result = user_role.to_dict()
-        
+
         assert result["id"] == "ur-123"
         assert result["user_id"] == "user-456"
         assert result["role_id"] == "role-789"

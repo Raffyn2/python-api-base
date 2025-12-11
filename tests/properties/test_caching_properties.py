@@ -476,7 +476,7 @@ class TestSyncAsyncSafetyProperties:
         import threading
 
         cache = InMemoryCacheProvider(CacheConfig(ttl=3600))
-        main_thread_id = threading.current_thread().ident
+        threading.current_thread().ident
         execution_thread_ids: list[int] = []
 
         @cached(ttl=3600, cache_provider=cache)

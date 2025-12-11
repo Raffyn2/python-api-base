@@ -6,26 +6,56 @@ Uses @overload for type narrowing on methods with conditional return types.
 **Feature: core-improvements-2025**
 """
 
-from collections.abc import AsyncGenerator, Sequence
+from __future__ import annotations
+
 from contextlib import asynccontextmanager
-from typing import Any, Literal, Protocol, overload, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, overload, runtime_checkable
 
 from pydantic import BaseModel
 
 from application.common.dto import PaginatedResponse
 from core.errors.base.domain_errors import EntityNotFoundError
-from core.protocols import UnitOfWork
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Sequence
+
+    from core.protocols import UnitOfWork
 
 
+# Simplified protocols for use_case compatibility
+# Note: These are minimal protocols for BaseUseCase. For full implementations:
+# - Full mapper: core.protocols.application.Mapper
+# - Full repository: core.base.repository.IRepository
 @runtime_checkable
 class IMapper[T, DTO](Protocol):
+    """Simplified mapper protocol for use case operations.
+
+    This is a minimal protocol with only the methods needed by BaseUseCase.
+    For full bidirectional mapping with to_entity support,
+    use core.protocols.application.Mapper instead.
+
+    Type Parameters:
+        T: Entity type.
+        DTO: Data transfer object type.
+    """
+
     def to_dto(self, entity: T) -> DTO: ...
     def to_dto_list(self, entities: list[T]) -> list[DTO]: ...
 
 
 @runtime_checkable
 class IRepository[T, CreateDTO, UpdateDTO](Protocol):
-    """Repository protocol for use case operations."""
+    """Simplified repository protocol for use case operations.
+
+    This is a minimal protocol with only the methods needed by BaseUseCase.
+    For full repository with cursor pagination, bulk operations, and soft delete,
+    use core.base.repository.IRepository instead.
+
+    Type Parameters:
+        T: Entity type.
+        CreateDTO: DTO type for creating entities.
+        UpdateDTO: DTO type for updating entities.
+    """
 
     async def get_by_id(self, id: str) -> T | None: ...
 
@@ -87,7 +117,7 @@ class BaseUseCase[
         self._uow = unit_of_work
 
     @asynccontextmanager
-    async def transaction(self) -> AsyncGenerator[None, None]:
+    async def transaction(self) -> AsyncGenerator[None]:
         """Execute operations within a transaction.
 
         If a Unit of Work is configured, wraps operations in a transaction.
@@ -115,18 +145,12 @@ class BaseUseCase[
                 raise
 
     @overload
-    async def get(
-        self, id: str, *, raise_on_missing: Literal[True] = True
-    ) -> ResponseDTO: ...
+    async def get(self, id: str, *, raise_on_missing: Literal[True] = True) -> ResponseDTO: ...
 
     @overload
-    async def get(
-        self, id: str, *, raise_on_missing: Literal[False]
-    ) -> ResponseDTO | None: ...
+    async def get(self, id: str, *, raise_on_missing: Literal[False]) -> ResponseDTO | None: ...
 
-    async def get(
-        self, id: str, *, raise_on_missing: bool = True
-    ) -> ResponseDTO | None:
+    async def get(self, id: str, *, raise_on_missing: bool = True) -> ResponseDTO | None:
         """Get entity by ID with type-narrowed return type.
 
         Uses @overload for precise type inference:
@@ -186,15 +210,23 @@ class BaseUseCase[
         """Get paginated list of entities.
 
         Args:
-            page: Page number (1-indexed).
-            size: Items per page.
+            page: Page number (1-indexed, must be >= 1).
+            size: Items per page (must be >= 1, max 100).
             filters: Optional filter criteria.
             sort_by: Field to sort by.
             sort_order: Sort order ("asc" or "desc").
 
         Returns:
             PaginatedResponse: Paginated list of entities.
+
+        Raises:
+            ValueError: If page < 1 or size < 1 or size > 100.
         """
+        page = max(page, 1)
+        if size < 1:
+            size = 1
+        elif size > 100:
+            size = 100
         skip = (page - 1) * size
         entities, total = await self._repository.get_all(
             skip=skip,
@@ -275,7 +307,7 @@ class BaseUseCase[
         """
         return await self._repository.exists(id)
 
-    async def create_many(self, data: Sequence[CreateDTO]) -> "list[ResponseDTO]":
+    async def create_many(self, data: Sequence[CreateDTO]) -> list[ResponseDTO]:
         """Bulk create entities.
 
         Args:

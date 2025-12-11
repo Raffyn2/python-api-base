@@ -35,17 +35,18 @@ from interface.openapi import setup_openapi
 
 # Core API Routes
 from interface.v1.auth import auth_router
-from interface.v1.enterprise_examples_router import router as enterprise_router
+from interface.v1.core.health_router import mark_startup_complete, router as health_router
+from interface.v1.core.infrastructure_router import router as infrastructure_router
+from interface.v1.core.jwks_router import router as jwks_router
+from interface.v1.enterprise import router as enterprise_router
 from interface.v1.examples import examples_router
-from interface.v1.health_router import mark_startup_complete, router as health_router
-from interface.v1.infrastructure_router import router as infrastructure_router
-from interface.v1.jwks_router import router as jwks_router
-from interface.v1.users_router import router as users_router
+from interface.v1.users import users_router
 from interface.v2 import examples_v2_router
 
 # Dapr Support (optional)
 try:
     from interface.dapr.routes import dapr_router
+
     HAS_DAPR = True
 except ImportError:
     dapr_router = None
@@ -60,7 +61,7 @@ except ImportError:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Application lifespan manager."""
     settings = get_settings()
     app.state.settings = settings
@@ -144,9 +145,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
     logger = get_logger("main")
 
-    logger.info(
-        "creating_application", app_name=settings.app_name, version=settings.version
-    )
+    logger.info("creating_application", app_name=settings.app_name, version=settings.version)
 
     app = FastAPI(
         title=settings.app_name,

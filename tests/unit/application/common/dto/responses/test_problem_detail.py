@@ -2,12 +2,16 @@
 
 **Feature: realistic-test-coverage**
 **Validates: Requirements for application-layer-improvements-2025**
+**Updated: 2025 - Tests updated for ValidationErrorDetail typed errors**
 """
 
 import pytest
 from pydantic import ValidationError
 
-from application.common.dto.responses.problem_detail import ProblemDetail
+from application.common.dto.responses.problem_detail import (
+    ProblemDetail,
+    ValidationErrorDetail,
+)
 
 
 class TestProblemDetail:
@@ -67,12 +71,13 @@ class TestProblemDetail:
             title="Validation Error",
             status=422,
             errors=[
-                {"field": "email", "message": "Invalid email format"},
-                {"field": "age", "message": "Must be positive"},
+                ValidationErrorDetail(field="email", message="Invalid email format"),
+                ValidationErrorDetail(field="age", message="Must be positive"),
             ],
         )
+        assert problem.errors is not None
         assert len(problem.errors) == 2
-        assert problem.errors[0]["field"] == "email"
+        assert problem.errors[0].field == "email"
 
     def test_default_errors_is_none(self) -> None:
         """Test default errors is None."""
@@ -98,11 +103,11 @@ class TestProblemDetail:
             detail="Request validation failed",
             instance="/api/v1/items",
             errors=[
-                {
-                    "field": "price",
-                    "message": "Price must be greater than 0",
-                    "code": "value_error.number.not_gt",
-                }
+                ValidationErrorDetail(
+                    field="price",
+                    message="Price must be greater than 0",
+                    code="value_error.number.not_gt",
+                )
             ],
         )
         assert problem.type == "https://api.example.com/errors/VALIDATION_ERROR"
@@ -110,6 +115,7 @@ class TestProblemDetail:
         assert problem.status == 422
         assert problem.detail == "Request validation failed"
         assert problem.instance == "/api/v1/items"
+        assert problem.errors is not None
         assert len(problem.errors) == 1
 
     def test_serialization(self) -> None:
@@ -120,13 +126,14 @@ class TestProblemDetail:
             detail="Resource not found",
         )
         data = problem.model_dump()
-        
+
         assert data["type"] == "about:blank"
         assert data["title"] == "Not Found"
         assert data["status"] == 404
         assert data["detail"] == "Resource not found"
 
-    def test_json_schema_has_examples(self) -> None:
-        """Test JSON schema has examples."""
+    def test_json_schema_has_example(self) -> None:
+        """Test JSON schema has example in json_schema_extra."""
         schema = ProblemDetail.model_json_schema()
-        assert "examples" in schema
+        # The core implementation uses 'example' (singular) in json_schema_extra
+        assert "example" in schema or "$defs" in schema

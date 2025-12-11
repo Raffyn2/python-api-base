@@ -37,12 +37,13 @@ class TestFieldError:
         assert "Required" in repr_str
         assert "required" in repr_str
 
-    def test_to_dict(self) -> None:
+    def test_attributes(self) -> None:
+        """Test FieldError is a frozen dataclass with expected attributes."""
         error = FieldError(field="age", message="Must be positive", code="min_value")
-        data = error.to_dict()
-        assert data["field"] == "age"
-        assert data["message"] == "Must be positive"
-        assert data["code"] == "min_value"
+        # FieldError is a frozen dataclass, no to_dict method
+        assert error.field == "age"
+        assert error.message == "Must be positive"
+        assert error.code == "min_value"
 
 
 class TestInterfaceError:
@@ -238,4 +239,3 @@ class TestExceptionHierarchy:
     def test_can_catch_with_base_class(self) -> None:
         with pytest.raises(InterfaceError):
             raise NotFoundError("User", "123")
-

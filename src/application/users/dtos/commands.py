@@ -35,9 +35,7 @@ class CreateUserDTO(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    email: str = Field(
-        ..., description="User email address", min_length=5, max_length=255
-    )
+    email: str = Field(..., description="User email address", min_length=5, max_length=255)
     password: str = Field(..., min_length=8, description="User password")
     username: str | None = Field(default=None, min_length=3, max_length=50)
     display_name: str | None = Field(default=None, max_length=100)
@@ -73,9 +71,7 @@ class ChangeEmailDTO(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    new_email: str = Field(
-        ..., description="New email address", min_length=5, max_length=255
-    )
+    new_email: str = Field(..., description="New email address", min_length=5, max_length=255)
     password: str = Field(..., description="Current password for verification")
 
     @field_validator("new_email")

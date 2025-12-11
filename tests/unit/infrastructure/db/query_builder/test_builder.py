@@ -4,13 +4,11 @@ import pytest
 from pydantic import BaseModel
 
 from infrastructure.db.query_builder.builder import (
-    QueryBuilder,
     QueryOptions,
     QueryResult,
 )
 from infrastructure.db.query_builder.conditions import (
     ComparisonOperator,
-    ConditionGroup,
     LogicalOperator,
     QueryCondition,
     SortClause,
@@ -107,7 +105,7 @@ class TestQueryResult:
 class TestQueryBuilderMethods:
     """Tests for QueryBuilder fluent methods using InMemoryQueryBuilder."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def builder(self) -> InMemoryQueryBuilder[SampleModel]:
         data = [
             SampleModel(id=1, name="Alice", status="active"),

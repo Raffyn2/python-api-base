@@ -14,7 +14,12 @@
       "Bash(python -m py_compile:*)",
       "Bash(dir /s \"C:\\Users\\marci\\source\\repos\\python-api-base\\src\" *.py)",
       "Bash(test:*)",
-      "Bash(move /Y:*)"
+      "Bash(move /Y:*)",
+      "Bash(cloc:*)",
+      "Bash(git rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(cat:*)",
+      "Bash(python -m pip:*)"
     ],
     "deny": [],
     "ask": []

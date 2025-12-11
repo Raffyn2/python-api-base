@@ -179,7 +179,10 @@ class TestInvalidFactoryError:
 
     def test_with_lambda(self) -> None:
         """Test with lambda factory."""
-        factory = lambda: "test"
+
+        def factory():
+            return "test"
+
         error = InvalidFactoryError(factory, "Lambda not supported")
         assert error.factory == factory
         assert "Lambda not supported" in str(error)

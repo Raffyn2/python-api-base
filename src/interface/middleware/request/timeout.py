@@ -13,7 +13,11 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import Enum
-from typing import Any
+from typing import Any, Self
+
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class TimeoutAction(Enum):
@@ -38,7 +42,7 @@ class TimeoutError(Exception):
         self.endpoint = endpoint
 
 
-@dataclass
+@dataclass(slots=True)
 class TimeoutConfig:
     """Configuration for timeout handling."""
 
@@ -49,7 +53,7 @@ class TimeoutConfig:
     log_timeouts: bool = True
 
 
-@dataclass
+@dataclass(slots=True)
 class TimeoutResult[ResponseT]:
     """Result of a timeout-protected operation."""
 
@@ -60,17 +64,17 @@ class TimeoutResult[ResponseT]:
     error: Exception | None = None
 
     @classmethod
-    def ok(cls, response: ResponseT, elapsed: float) -> "TimeoutResult[ResponseT]":
+    def ok(cls, response: ResponseT, elapsed: float) -> Self:
         """Create successful result."""
         return cls(success=True, response=response, elapsed=elapsed)
 
     @classmethod
-    def timeout(cls, elapsed: float) -> "TimeoutResult[ResponseT]":
+    def timeout(cls, elapsed: float) -> Self:
         """Create timeout result."""
         return cls(success=False, timed_out=True, elapsed=elapsed)
 
     @classmethod
-    def failed(cls, error: Exception, elapsed: float) -> "TimeoutResult[ResponseT]":
+    def failed(cls, error: Exception, elapsed: float) -> Self:
         """Create failed result."""
         return cls(success=False, error=error, elapsed=elapsed)
 
@@ -102,6 +106,13 @@ class TimeoutMiddleware[RequestT, ResponseT]:
             return TimeoutResult.ok(response, elapsed)
         except builtins.TimeoutError as te:
             elapsed = asyncio.get_event_loop().time() - start_time
+            if self._config.log_timeouts:
+                logger.warning(
+                    "request_timeout",
+                    endpoint=endpoint,
+                    timeout_seconds=timeout,
+                    elapsed_seconds=round(elapsed, 3),
+                )
             if self._config.action == TimeoutAction.RAISE:
                 raise TimeoutError(
                     f"Request to {endpoint} timed out after {timeout}s",
@@ -148,39 +159,37 @@ class TimeoutConfigBuilder:
         self._default_response: Any = None
         self._log_timeouts = True
 
-    def with_default_timeout(self, timeout: timedelta) -> "TimeoutConfigBuilder":
+    def with_default_timeout(self, timeout: timedelta) -> Self:
         """Set default timeout."""
         self._default_timeout = timeout
         return self
 
-    def with_default_timeout_seconds(self, seconds: float) -> "TimeoutConfigBuilder":
+    def with_default_timeout_seconds(self, seconds: float) -> Self:
         """Set default timeout in seconds."""
         self._default_timeout = timedelta(seconds=seconds)
         return self
 
-    def for_endpoint(self, endpoint: str, timeout: timedelta) -> "TimeoutConfigBuilder":
+    def for_endpoint(self, endpoint: str, timeout: timedelta) -> Self:
         """Set timeout for specific endpoint."""
         self._endpoint_timeouts[endpoint] = timeout
         return self
 
-    def for_endpoint_seconds(
-        self, endpoint: str, seconds: float
-    ) -> "TimeoutConfigBuilder":
+    def for_endpoint_seconds(self, endpoint: str, seconds: float) -> Self:
         """Set timeout for specific endpoint in seconds."""
         self._endpoint_timeouts[endpoint] = timedelta(seconds=seconds)
         return self
 
-    def with_action(self, action: TimeoutAction) -> "TimeoutConfigBuilder":
+    def with_action(self, action: TimeoutAction) -> Self:
         """Set timeout action."""
         self._action = action
         return self
 
-    def with_default_response(self, response: Any) -> "TimeoutConfigBuilder":
+    def with_default_response(self, response: Any) -> Self:
         """Set default response for RETURN_DEFAULT action."""
         self._default_response = response
         return self
 
-    def with_logging(self, enabled: bool = True) -> "TimeoutConfigBuilder":
+    def with_logging(self, enabled: bool = True) -> Self:
         """Enable/disable timeout logging."""
         self._log_timeouts = enabled
         return self
@@ -199,9 +208,7 @@ class TimeoutConfigBuilder:
 def timeout_decorator[ResponseT](
     timeout_seconds: float,
     action: TimeoutAction = TimeoutAction.RAISE,
-) -> Callable[
-    [Callable[..., Awaitable[ResponseT]]], Callable[..., Awaitable[ResponseT]]
-]:
+) -> Callable[[Callable[..., Awaitable[ResponseT]]], Callable[..., Awaitable[ResponseT]]]:
     """Decorator to add timeout to async functions."""
 
     def decorator(

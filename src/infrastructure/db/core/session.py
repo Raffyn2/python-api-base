@@ -4,10 +4,10 @@
 **Validates: Requirements 1.1, 1.2, 1.4**
 """
 
-import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import structlog
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -18,7 +18,7 @@ from sqlmodel import SQLModel
 
 from infrastructure.errors import DatabaseError
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class DatabaseSession:
@@ -91,7 +91,7 @@ class DatabaseSession:
         await self._engine.dispose()
 
     @asynccontextmanager
-    async def session(self) -> AsyncGenerator[AsyncSession, None]:
+    async def session(self) -> AsyncGenerator[AsyncSession]:
         """Get a database session with automatic transaction management.
 
         Yields:
@@ -104,17 +104,14 @@ class DatabaseSession:
         try:
             yield session
             await session.commit()
-        except Exception as e:
-            logger.error(
-                "Database session error, rolling back",
-                extra={"error_type": type(e).__name__, "error_message": str(e)},
-            )
+        except Exception:
+            logger.exception("Database session error, rolling back")
             await session.rollback()
             raise
         finally:
             await session.close()
 
-    async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
+    async def get_session(self) -> AsyncGenerator[AsyncSession]:
         """Get a database session for FastAPI dependency injection.
 
         Yields:
@@ -177,7 +174,7 @@ async def close_database() -> None:
         _db_session = None
 
 
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_async_session() -> AsyncGenerator[AsyncSession]:
     """Get async session for FastAPI dependency injection.
 
     This function provides a database session that can be used with FastAPI's

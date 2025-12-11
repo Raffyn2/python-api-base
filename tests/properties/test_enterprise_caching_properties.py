@@ -9,9 +9,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-pytest.skip(
-    "Module core.shared.caching.providers not implemented", allow_module_level=True
-)
+pytest.skip("Module core.shared.caching.providers not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -41,9 +39,7 @@ ttl_values = st.integers(min_value=1, max_value=3600)
 class TestCacheEntryProperties:
     """Property tests for CacheEntry dataclass."""
 
-    @given(
-        key=cache_keys, value=st.integers(), ttl=st.integers(min_value=1, max_value=100)
-    )
+    @given(key=cache_keys, value=st.integers(), ttl=st.integers(min_value=1, max_value=100))
     @settings(max_examples=50)
     def test_cache_entry_is_frozen(self, key: str, value: int, ttl: int) -> None:
         """**Property: CacheEntry is immutable (frozen=True)**"""
@@ -83,9 +79,7 @@ class TestCacheTTLExpiration:
         """For any cache entry with expired TTL, retrieval returns None."""
 
         async def run_test() -> None:
-            provider: InMemoryCacheProvider[object] = InMemoryCacheProvider(
-                CacheConfig(ttl=1, max_size=100)
-            )
+            provider: InMemoryCacheProvider[object] = InMemoryCacheProvider(CacheConfig(ttl=1, max_size=100))
             # Create entry that's already expired
             past = datetime.now() - timedelta(seconds=10)
             entry = CacheEntry(
@@ -116,9 +110,7 @@ class TestCacheRoundTrip:
         """For any value stored in cache, retrieval returns equivalent value."""
 
         async def run_test() -> None:
-            provider: InMemoryCacheProvider[int] = InMemoryCacheProvider(
-                CacheConfig(ttl=3600, max_size=100)
-            )
+            provider: InMemoryCacheProvider[int] = InMemoryCacheProvider(CacheConfig(ttl=3600, max_size=100))
             await provider.set(key, value)
             result = await provider.get(key)
             assert result == value
@@ -193,9 +185,7 @@ class TestCacheInvalidation:
         value=st.integers(),
     )
     @settings(max_examples=50)
-    def test_clear_pattern_removes_matching_keys(
-        self, keys: list[str], value: int
-    ) -> None:
+    def test_clear_pattern_removes_matching_keys(self, keys: list[str], value: int) -> None:
         """Clear pattern removes all matching keys."""
 
         async def run_test() -> None:

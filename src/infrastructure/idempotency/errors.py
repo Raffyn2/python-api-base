@@ -14,9 +14,7 @@ class IdempotencyKeyConflictError(Exception):
 
     def __init__(self, idempotency_key: str) -> None:
         self.idempotency_key = idempotency_key
-        super().__init__(
-            f"Idempotency key '{idempotency_key}' was already used with a different request body"
-        )
+        super().__init__(f"Idempotency key '{idempotency_key}' was already used with a different request body")
 
 
 class IdempotencyKeyMissingError(Exception):

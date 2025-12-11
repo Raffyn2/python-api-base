@@ -8,6 +8,7 @@ from collections import OrderedDict
 from datetime import timedelta
 from typing import TYPE_CHECKING, Final
 
+import structlog
 from jose import JWTError, jwt
 
 from core.shared.utils.ids import generate_ulid
@@ -21,6 +22,8 @@ from infrastructure.auth.jwt.time_source import SystemTimeSource, TimeSource
 
 if TYPE_CHECKING:
     from datetime import datetime
+
+logger = structlog.get_logger(__name__)
 
 
 class JWTService:
@@ -58,14 +61,14 @@ class JWTService:
     def _cleanup_expired_tokens(self) -> None:
         """Remove expired tokens from tracking."""
         now = self._time_source.now()
-        expired_jtis = [
-            jti for jti, exp in self._used_refresh_tokens.items() if exp < now
-        ]
+        expired_jtis = [jti for jti, exp in self._used_refresh_tokens.items() if exp < now]
         for jti in expired_jtis:
             del self._used_refresh_tokens[jti]
 
     def create_access_token(
-        self, user_id: str, scopes: list[str] | None = None
+        self,
+        user_id: str,
+        scopes: list[str] | None = None,
     ) -> tuple[str, TokenPayload]:
         """Create a new access token.
 
@@ -79,10 +82,12 @@ class JWTService:
             iat=now,
             jti=generate_ulid(),
             scopes=tuple(scopes or []),
-            token_type="access",  # noqa: S106 - Token type, not password
+            token_type="access",
         )
         token = jwt.encode(
-            payload.to_dict(), self._secret_key, algorithm=self._algorithm
+            payload.to_dict(),
+            self._secret_key,
+            algorithm=self._algorithm,
         )
         return token, payload
 
@@ -95,15 +100,19 @@ class JWTService:
             iat=now,
             jti=generate_ulid(),
             scopes=(),
-            token_type="refresh",  # noqa: S106 - Token type, not password
+            token_type="refresh",
         )
         token = jwt.encode(
-            payload.to_dict(), self._secret_key, algorithm=self._algorithm
+            payload.to_dict(),
+            self._secret_key,
+            algorithm=self._algorithm,
         )
         return token, payload
 
     def create_token_pair(
-        self, user_id: str, scopes: list[str] | None = None
+        self,
+        user_id: str,
+        scopes: list[str] | None = None,
     ) -> tuple[TokenPair, TokenPayload, TokenPayload]:
         """Create both access and refresh tokens."""
         access_token, access_payload = self.create_access_token(user_id, scopes)
@@ -116,7 +125,9 @@ class JWTService:
         return pair, access_payload, refresh_payload
 
     def verify_token(
-        self, token: str, expected_type: str | None = None
+        self,
+        token: str,
+        expected_type: str | None = None,
     ) -> TokenPayload:
         """Verify and decode a JWT token.
 
@@ -133,16 +144,24 @@ class JWTService:
         except JWTError as e:
             error_msg = str(e).lower()
             if "expired" in error_msg:
+                logger.warning("token_expired", algorithm=self._algorithm)
                 raise TokenExpiredError from e
-            raise TokenInvalidError(f"Token verification failed: {e}") from e
+            logger.warning("token_verification_failed", algorithm=self._algorithm)
+            raise TokenInvalidError("Token verification failed") from e
 
         payload = TokenPayload.from_dict(data)
         now = self._time_source.now()
         if payload.exp < (now - self._clock_skew):
+            logger.warning("token_expired", user_id=payload.sub)
             raise TokenExpiredError
         if expected_type and payload.token_type != expected_type:
+            logger.warning(
+                "token_type_mismatch",
+                expected=expected_type,
+                received=payload.token_type,
+            )
             raise TokenInvalidError(
-                f"Expected {expected_type} token, got {payload.token_type}"
+                f"Expected {expected_type} token, got {payload.token_type}",
             )
         return payload
 
@@ -155,6 +174,11 @@ class JWTService:
         self._cleanup_expired_tokens()
         payload = self.verify_token(token, expected_type="refresh")
         if payload.jti in self._used_refresh_tokens:
+            logger.warning(
+                "refresh_token_replay_detected",
+                user_id=payload.sub,
+                jti=payload.jti,
+            )
             raise TokenRevokedError("Refresh token has already been used")
         self._used_refresh_tokens[payload.jti] = payload.exp
         while len(self._used_refresh_tokens) > self._max_tracked_tokens:
@@ -176,4 +200,4 @@ class JWTService:
             )
             return TokenPayload.from_dict(data)
         except JWTError as e:
-            raise TokenInvalidError(f"Cannot decode token: {e}") from e
+            raise TokenInvalidError("Cannot decode token") from e

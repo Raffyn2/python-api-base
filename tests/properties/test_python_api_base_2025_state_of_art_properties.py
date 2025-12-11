@@ -50,15 +50,9 @@ class SampleUpdateDTO(BaseModel):
 # Strategies
 # =============================================================================
 
-name_strategy = st.text(
-    min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))
-)
-value_strategy = st.floats(
-    min_value=0, max_value=10000, allow_nan=False, allow_infinity=False
-)
-create_dto_strategy = st.builds(
-    SampleCreateDTO, name=name_strategy, value=value_strategy
-)
+name_strategy = st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N")))
+value_strategy = st.floats(min_value=0, max_value=10000, allow_nan=False, allow_infinity=False)
+create_dto_strategy = st.builds(SampleCreateDTO, name=name_strategy, value=value_strategy)
 
 
 # =============================================================================
@@ -84,9 +78,7 @@ class TestRepositoryCRUDRoundTrip:
         retrieving it by ID should return an equivalent entity.
         **Validates: Requirements 1.1, 1.2**
         """
-        repo = InMemoryRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
-            SampleEntity
-        )
+        repo = InMemoryRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
 
         created = await repo.create(create_data)
         assert created.id is not None
@@ -111,15 +103,11 @@ class TestRepositoryPaginationConsistency:
 
     @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow])
     @given(
-        items=st.lists(
-            create_dto_strategy, min_size=1, max_size=20, unique_by=lambda x: x.name
-        ),
+        items=st.lists(create_dto_strategy, min_size=1, max_size=20, unique_by=lambda x: x.name),
         page_size=st.integers(min_value=1, max_value=10),
     )
     @pytest.mark.asyncio
-    async def test_pagination_returns_all_entities(
-        self, items: list[SampleCreateDTO], page_size: int
-    ) -> None:
+    async def test_pagination_returns_all_entities(self, items: list[SampleCreateDTO], page_size: int) -> None:
         """
         **Feature: python-api-base-2025-state-of-art, Property 2: Repository Pagination Consistency**
 
@@ -127,9 +115,7 @@ class TestRepositoryPaginationConsistency:
         return exactly N unique entities with correct total count.
         **Validates: Requirements 1.3**
         """
-        repo = InMemoryRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
-            SampleEntity
-        )
+        repo = InMemoryRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
 
         for item in items:
             await repo.create(item)
@@ -170,9 +156,7 @@ class TestSoftDeleteFiltering:
     @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
     @given(create_data=create_dto_strategy)
     @pytest.mark.asyncio
-    async def test_soft_deleted_excluded_from_queries(
-        self, create_data: SampleCreateDTO
-    ) -> None:
+    async def test_soft_deleted_excluded_from_queries(self, create_data: SampleCreateDTO) -> None:
         """
         **Feature: python-api-base-2025-state-of-art, Property 3: Soft Delete Filtering**
 
@@ -180,9 +164,7 @@ class TestSoftDeleteFiltering:
         should exclude it from results.
         **Validates: Requirements 1.4**
         """
-        repo = InMemoryRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](
-            SampleEntity
-        )
+        repo = InMemoryRepository[SampleEntity, SampleCreateDTO, SampleUpdateDTO](SampleEntity)
 
         created = await repo.create(create_data)
         assert created.id is not None
@@ -196,7 +178,7 @@ class TestSoftDeleteFiltering:
         assert retrieved is None
 
         # Should not appear in get_all
-        entities, total = await repo.get_all()
+        entities, _total = await repo.get_all()
         ids = [e.id for e in entities]
         assert created.id not in ids
 
@@ -311,9 +293,7 @@ class TestCacheRoundTrip:
 
     @settings(max_examples=100)
     @given(
-        key=st.text(
-            min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_"
-        ),
+        key=st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_"),
         value=st.one_of(st.integers(), st.text(max_size=100), st.booleans()),
     )
     @pytest.mark.asyncio
@@ -472,9 +452,7 @@ class TestSpecificationComposition:
         threshold_a=st.integers(min_value=0, max_value=50),
         threshold_b=st.integers(min_value=50, max_value=100),
     )
-    def test_and_composition(
-        self, value: int, threshold_a: int, threshold_b: int
-    ) -> None:
+    def test_and_composition(self, value: int, threshold_a: int, threshold_b: int) -> None:
         """
         **Feature: python-api-base-2025-state-of-art, Property 16: Specification Composition**
 
@@ -514,9 +492,7 @@ class TestSpecificationComposition:
         threshold_a=st.integers(min_value=0, max_value=50),
         threshold_b=st.integers(min_value=50, max_value=100),
     )
-    def test_or_composition(
-        self, value: int, threshold_a: int, threshold_b: int
-    ) -> None:
+    def test_or_composition(self, value: int, threshold_a: int, threshold_b: int) -> None:
         """
         *For any* specifications A and B, (A OR B).is_satisfied_by(x) should
         equal A.is_satisfied_by(x) OR B.is_satisfied_by(x).
@@ -556,9 +532,7 @@ class TestIdempotencyKeyUniqueness:
 
     @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
     @given(
-        key=st.text(
-            min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        key=st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
         status_code=st.integers(min_value=200, max_value=599),
         body=st.dictionaries(
             keys=st.text(min_size=1, max_size=20),
@@ -567,9 +541,7 @@ class TestIdempotencyKeyUniqueness:
         ),
     )
     @pytest.mark.asyncio
-    async def test_store_retrieve_roundtrip(
-        self, key: str, status_code: int, body: dict
-    ) -> None:
+    async def test_store_retrieve_roundtrip(self, key: str, status_code: int, body: dict) -> None:
         """
         **Feature: python-api-base-2025-state-of-art, Property 11: Idempotency Key Uniqueness**
 
@@ -618,16 +590,12 @@ class TestIdempotencyConflictDetection:
 
     @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
     @given(
-        key=st.text(
-            min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        key=st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
         path1=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz/"),
         path2=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz/"),
     )
     @pytest.mark.asyncio
-    async def test_conflict_on_different_request(
-        self, key: str, path1: str, path2: str
-    ) -> None:
+    async def test_conflict_on_different_request(self, key: str, path1: str, path2: str) -> None:
         """
         **Feature: python-api-base-2025-state-of-art, Property 12: Idempotency Conflict Detection**
 
@@ -682,9 +650,7 @@ class TestCircuitBreakerStateTransitions:
         failure_threshold=st.integers(min_value=1, max_value=10),
         extra_failures=st.integers(min_value=0, max_value=5),
     )
-    def test_circuit_opens_after_threshold(
-        self, failure_threshold: int, extra_failures: int
-    ) -> None:
+    def test_circuit_opens_after_threshold(self, failure_threshold: int, extra_failures: int) -> None:
         """
         **Feature: python-api-base-2025-state-of-art, Property 9: Circuit Breaker State Transitions**
 
@@ -730,9 +696,7 @@ class TestCircuitBreakerRecovery:
     @given(
         success_threshold=st.integers(min_value=1, max_value=5),
     )
-    def test_circuit_closes_after_success_threshold(
-        self, success_threshold: int
-    ) -> None:
+    def test_circuit_closes_after_success_threshold(self, success_threshold: int) -> None:
         """
         **Feature: python-api-base-2025-state-of-art, Property 10: Circuit Breaker Recovery**
 
@@ -776,19 +740,13 @@ class TestEventSourcingRoundTrip:
     **Validates: Requirements 29.1, 29.2**
     """
 
-    @settings(
-        max_examples=50, suppress_health_check=[HealthCheck.too_slow], deadline=None
-    )
+    @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
-        aggregate_id=st.text(
-            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        aggregate_id=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
         event_count=st.integers(min_value=1, max_value=10),
     )
     @pytest.mark.asyncio
-    async def test_store_and_replay_events(
-        self, aggregate_id: str, event_count: int
-    ) -> None:
+    async def test_store_and_replay_events(self, aggregate_id: str, event_count: int) -> None:
         """
         **Feature: python-api-base-2025-state-of-art, Property 14: Event Sourcing Round-Trip**
 
@@ -858,9 +816,7 @@ class TestSagaCompensationOrder:
         fail_at_step=st.integers(min_value=1, max_value=4),
     )
     @pytest.mark.asyncio
-    async def test_compensation_executes_in_reverse_order(
-        self, step_count: int, fail_at_step: int
-    ) -> None:
+    async def test_compensation_executes_in_reverse_order(self, step_count: int, fail_at_step: int) -> None:
         """
         **Feature: python-api-base-2025-state-of-art, Property 15: Saga Compensation Order**
 
@@ -938,19 +894,13 @@ class TestDistributedLockExclusivity:
     **Validates: Requirements 37.1**
     """
 
-    @settings(
-        max_examples=50, suppress_health_check=[HealthCheck.too_slow], deadline=None
-    )
+    @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
-        lock_key=st.text(
-            min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"
-        ),
+        lock_key=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
         concurrent_attempts=st.integers(min_value=2, max_value=5),
     )
     @pytest.mark.asyncio
-    async def test_only_one_holder_at_a_time(
-        self, lock_key: str, concurrent_attempts: int
-    ) -> None:
+    async def test_only_one_holder_at_a_time(self, lock_key: str, concurrent_attempts: int) -> None:
         """
         **Feature: python-api-base-2025-state-of-art, Property 17: Distributed Lock Exclusivity**
 
@@ -1012,17 +962,13 @@ class TestConnectionPoolBounds:
     **Validates: Requirements 40.1**
     """
 
-    @settings(
-        max_examples=50, suppress_health_check=[HealthCheck.too_slow], deadline=None
-    )
+    @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         max_size=st.integers(min_value=1, max_value=10),
         acquire_count=st.integers(min_value=1, max_value=15),
     )
     @pytest.mark.asyncio
-    async def test_active_connections_never_exceed_max(
-        self, max_size: int, acquire_count: int
-    ) -> None:
+    async def test_active_connections_never_exceed_max(self, max_size: int, acquire_count: int) -> None:
         """
         **Feature: python-api-base-2025-state-of-art, Property 18: Connection Pool Bounds**
 

@@ -75,12 +75,12 @@ EC_PRIVATE_KEY, EC_PUBLIC_KEY = generate_ec_key_pair()
 
 
 # Strategy for valid JWT payload claims
-jwt_payload_strategy = st.fixed_dictionaries({
-    "sub": st.text(
-        min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))
-    ),
-    "jti": st.uuids().map(str),
-}).filter(lambda x: len(x["sub"]) > 0)
+jwt_payload_strategy = st.fixed_dictionaries(
+    {
+        "sub": st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N"))),
+        "jti": st.uuids().map(str),
+    }
+).filter(lambda x: len(x["sub"]) > 0)
 
 
 class TestRS256RoundTrip:

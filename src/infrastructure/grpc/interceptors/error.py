@@ -6,20 +6,22 @@ and converts them to appropriate gRPC status codes.
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from grpc import StatusCode, aio
+from grpc import aio
 from structlog import get_logger
 
-from src.infrastructure.grpc.utils.status import exception_to_status
+from infrastructure.grpc.utils.status import exception_to_status
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = get_logger(__name__)
 
 
 class ErrorInterceptor(aio.ServerInterceptor):
     """Error handling interceptor.
-    
+
     Catches exceptions and converts them to gRPC status codes
     with proper error details.
     """
@@ -30,7 +32,7 @@ class ErrorInterceptor(aio.ServerInterceptor):
         log_errors: bool = True,
     ) -> None:
         """Initialize error interceptor.
-        
+
         Args:
             include_stack_trace: Include stack trace in error details
             log_errors: Log errors when they occur
@@ -44,16 +46,16 @@ class ErrorInterceptor(aio.ServerInterceptor):
         handler_call_details: aio.HandlerCallDetails,
     ) -> aio.RpcMethodHandler:
         """Intercept and handle errors in gRPC requests.
-        
+
         Args:
             continuation: The next handler in chain
             handler_call_details: Details about the RPC call
-            
+
         Returns:
             The RPC method handler
         """
         method = handler_call_details.method
-        
+
         try:
             handler = await continuation(handler_call_details)
             return self._wrap_handler(handler, method)
@@ -98,6 +100,7 @@ class ErrorInterceptor(aio.ServerInterceptor):
         method: str,
     ) -> aio.RpcMethodHandler:
         """Create a handler that returns the error."""
+
         async def error_handler(
             request: Any,
             context: aio.ServicerContext,
@@ -113,27 +116,28 @@ class ErrorInterceptor(aio.ServerInterceptor):
         method: str,
     ) -> None:
         """Handle an exception by setting gRPC status.
-        
+
         Args:
             exc: The exception that occurred
             context: The servicer context
             method: The RPC method name
         """
         status_code, message = exception_to_status(exc)
-        
+
         if self._log_errors:
             logger.error(
                 "grpc_error",
                 method=method,
-                error=str(exc),
                 error_type=type(exc).__name__,
                 status_code=status_code.name,
+                exc_info=exc,
             )
 
         # Build error details
         details = message
         if self._include_stack_trace:
             import traceback
+
             details = f"{message}\n{traceback.format_exc()}"
 
         await context.abort(status_code, details)

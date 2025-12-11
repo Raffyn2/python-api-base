@@ -1,7 +1,5 @@
 """Tests for feature flags models."""
 
-import pytest
-
 from application.services.feature_flags.models.models import EvaluationContext
 
 

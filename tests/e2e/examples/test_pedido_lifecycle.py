@@ -44,9 +44,7 @@ class TestPedidoLifecycle:
                 headers=admin_headers,
             )
 
-            assert create_response.status_code == 201, (
-                f"Create failed: {create_response.text}"
-            )
+            assert create_response.status_code == 201, f"Create failed: {create_response.text}"
             created_pedido = create_response.json()["data"]
             pedido_id = created_pedido["id"]
 
@@ -59,9 +57,7 @@ class TestPedidoLifecycle:
                 headers=admin_headers,
             )
 
-            assert read_response.status_code == 200, (
-                f"Read failed: {read_response.text}"
-            )
+            assert read_response.status_code == 200, f"Read failed: {read_response.text}"
             read_pedido = read_response.json()["data"]
 
             assert read_pedido["id"] == pedido_id
@@ -72,9 +68,7 @@ class TestPedidoLifecycle:
                 headers=admin_headers,
             )
 
-            assert confirm_response.status_code == 200, (
-                f"Confirm failed: {confirm_response.text}"
-            )
+            assert confirm_response.status_code == 200, f"Confirm failed: {confirm_response.text}"
             confirmed_pedido = confirm_response.json()["data"]
 
             assert confirmed_pedido["status"] == "confirmed"
@@ -103,9 +97,7 @@ class TestPedidoLifecycle:
                 headers=admin_headers,
             )
 
-            assert create_response.status_code == 201, (
-                f"Create failed: {create_response.text}"
-            )
+            assert create_response.status_code == 201, f"Create failed: {create_response.text}"
             created_pedido = create_response.json()["data"]
             pedido_id = created_pedido["id"]
 
@@ -118,9 +110,7 @@ class TestPedidoLifecycle:
                 headers=admin_headers,
             )
 
-            assert cancel_response.status_code == 200, (
-                f"Cancel failed: {cancel_response.text}"
-            )
+            assert cancel_response.status_code == 200, f"Cancel failed: {cancel_response.text}"
             cancelled_pedido = cancel_response.json()["data"]
 
             assert cancelled_pedido["status"] == "cancelled"

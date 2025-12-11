@@ -6,11 +6,11 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import httpx
+import structlog
 from pydantic import BaseModel
 
 from infrastructure.auth.oauth.provider import (
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
         Credentials,
     )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
@@ -79,7 +79,7 @@ class KeycloakConfig(OAuthConfig):
 
 
 class KeycloakProvider[TUser: BaseModel, TClaims: BaseModel](
-    OAuthProvider[TUser, TClaims]
+    OAuthProvider[TUser, TClaims],
 ):
     """Keycloak OAuth provider.
 
@@ -162,9 +162,12 @@ class KeycloakProvider[TUser: BaseModel, TClaims: BaseModel](
                 "unsupported_grant_type",
                 "Credentials type not supported",
             )
-        except httpx.HTTPError as e:
-            logger.error(f"Keycloak auth error: {e}")
-            return AuthResult.fail("server_error", str(e))
+        except httpx.HTTPError:
+            logger.exception(
+                "Keycloak authentication failed",
+                operation="KEYCLOAK_AUTHENTICATE",
+            )
+            return AuthResult.fail("server_error", "Authentication service unavailable")
 
     async def _password_flow(
         self,
@@ -249,10 +252,19 @@ class KeycloakProvider[TUser: BaseModel, TClaims: BaseModel](
         )
 
         if response.status_code != 200:
+            logger.warning(
+                "Token introspection failed",
+                operation="KEYCLOAK_VALIDATE",
+                status_code=response.status_code,
+            )
             raise InvalidTokenError
 
         data = response.json()
         if not data.get("active", False):
+            logger.warning(
+                "Token is inactive",
+                operation="KEYCLOAK_VALIDATE",
+            )
             raise InvalidTokenError
 
         return await self._get_user_info(token)
@@ -272,8 +284,14 @@ class KeycloakProvider[TUser: BaseModel, TClaims: BaseModel](
         )
 
         if response.status_code != 200:
+            logger.warning(
+                "Token refresh failed",
+                operation="KEYCLOAK_REFRESH",
+                status_code=response.status_code,
+            )
             raise InvalidTokenError("Invalid refresh token")
 
+        logger.debug("Token refreshed successfully", operation="KEYCLOAK_REFRESH")
         token_data = response.json()
         return self._parse_tokens(token_data)
 
@@ -287,7 +305,7 @@ class KeycloakProvider[TUser: BaseModel, TClaims: BaseModel](
             decoded = jwt.decode(token, options={"verify_signature": False})
             return self._parse_claims(decoded)
         except jwt.PyJWTError as e:
-            raise InvalidTokenError(f"Failed to decode token: {e}") from e
+            raise InvalidTokenError("Failed to decode token") from e
 
     async def revoke(self, token: str) -> bool:
         """Revoke token."""
@@ -302,7 +320,16 @@ class KeycloakProvider[TUser: BaseModel, TClaims: BaseModel](
             },
         )
 
-        return response.status_code == 200
+        success = response.status_code == 200
+        if success:
+            logger.info("Token revoked successfully", operation="KEYCLOAK_REVOKE")
+        else:
+            logger.warning(
+                "Token revocation failed",
+                operation="KEYCLOAK_REVOKE",
+                status_code=response.status_code,
+            )
+        return success
 
     async def _get_user_info(self, token: str) -> TUser:
         """Get user info from userinfo endpoint."""

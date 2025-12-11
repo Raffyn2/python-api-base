@@ -24,19 +24,13 @@ except ImportError:
 
 # Strategy for permissions
 permission_strategy = st.sampled_from(list(Permission))
-permissions_set_strategy = st.frozensets(
-    permission_strategy, min_size=0, max_size=len(Permission)
-)
+permissions_set_strategy = st.frozensets(permission_strategy, min_size=0, max_size=len(Permission))
 
 # Strategy for role names
-role_name_strategy = st.text(
-    min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"
-)
+role_name_strategy = st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_")
 
 # Strategy for user IDs
-user_id_strategy = st.text(
-    min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_"
-)
+user_id_strategy = st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_")
 
 
 class TestRBACPermissionComposition:

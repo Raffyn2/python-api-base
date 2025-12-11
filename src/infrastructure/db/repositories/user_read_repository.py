@@ -52,7 +52,9 @@ class SQLAlchemyUserReadRepository:
         Returns:
             List of user dictionaries.
         """
-        search_pattern = f"%{query.lower()}%"
+        # Escape SQL LIKE special characters to prevent pattern injection
+        sanitized = query.lower().replace("%", r"\%").replace("_", r"\_")
+        search_pattern = f"%{sanitized}%"
         stmt = (
             select(UserModel)
             .where(
@@ -135,7 +137,5 @@ class SQLAlchemyUserReadRepository:
             "is_verified": model.is_verified,
             "created_at": model.created_at.isoformat() if model.created_at else None,
             "updated_at": model.updated_at.isoformat() if model.updated_at else None,
-            "last_login_at": (
-                model.last_login_at.isoformat() if model.last_login_at else None
-            ),
+            "last_login_at": (model.last_login_at.isoformat() if model.last_login_at else None),
         }

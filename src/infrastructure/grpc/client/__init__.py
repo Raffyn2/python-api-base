@@ -7,4 +7,4 @@ resilient gRPC clients with retry and circuit breaker support.
 from src.infrastructure.grpc.client.factory import GRPCClientFactory
 from src.infrastructure.grpc.client.resilience import CircuitBreakerWrapper
 
-__all__ = ["GRPCClientFactory", "CircuitBreakerWrapper"]
+__all__ = ["CircuitBreakerWrapper", "GRPCClientFactory"]

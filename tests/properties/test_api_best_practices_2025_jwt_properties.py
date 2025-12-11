@@ -49,13 +49,13 @@ def generate_rsa_key_pair() -> tuple[str, str]:
     return private_pem, public_pem
 
 
-@pytest.fixture
+@pytest.fixture()
 def rsa_keys() -> tuple[str, str]:
     """Fixture providing an RSA key pair."""
     return generate_rsa_key_pair()
 
 
-@pytest.fixture
+@pytest.fixture()
 def rs256_provider(rsa_keys: tuple[str, str]) -> RS256Provider:
     """Fixture providing an RS256 provider."""
     private_pem, public_pem = rsa_keys
@@ -103,9 +103,7 @@ class TestJWTRS256AlgorithmEnforcement:
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     @given(user_id=user_id_strategy, roles=roles_strategy)
-    def test_token_uses_rs256_algorithm(
-        self, rs256_provider: RS256Provider, user_id: str, roles: list[str]
-    ) -> None:
+    def test_token_uses_rs256_algorithm(self, rs256_provider: RS256Provider, user_id: str, roles: list[str]) -> None:
         """Token header SHALL contain algorithm RS256.
 
         **Feature: api-best-practices-review-2025, Property 1: JWT RS256 Algorithm Enforcement**
@@ -126,9 +124,7 @@ class TestJWTRS256AlgorithmEnforcement:
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     @given(user_id=user_id_strategy)
-    def test_token_contains_kid_header(
-        self, rs256_provider: RS256Provider, user_id: str
-    ) -> None:
+    def test_token_contains_kid_header(self, rs256_provider: RS256Provider, user_id: str) -> None:
         """Token header SHALL contain a valid kid field.
 
         **Feature: api-best-practices-review-2025, Property 1: JWT RS256 Algorithm Enforcement**
@@ -161,9 +157,7 @@ class TestJWTRoundTripConsistency:
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     @given(user_id=user_id_strategy, roles=roles_strategy)
-    def test_sign_verify_round_trip(
-        self, rs256_provider: RS256Provider, user_id: str, roles: list[str]
-    ) -> None:
+    def test_sign_verify_round_trip(self, rs256_provider: RS256Provider, user_id: str, roles: list[str]) -> None:
         """Encoding and decoding SHALL return equivalent payload.
 
         **Feature: api-best-practices-review-2025, Property 2: JWT Round-Trip Consistency**
@@ -191,9 +185,7 @@ class TestJWTRoundTripConsistency:
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     @given(user_id=user_id_strategy)
-    def test_custom_claims_preserved(
-        self, rs256_provider: RS256Provider, user_id: str
-    ) -> None:
+    def test_custom_claims_preserved(self, rs256_provider: RS256Provider, user_id: str) -> None:
         """Custom claims SHALL be preserved through round-trip.
 
         **Feature: api-best-practices-review-2025, Property 2**
@@ -231,7 +223,7 @@ class TestJWTKeyRotation:
         """
         # Generate two key pairs
         old_private, old_public = generate_rsa_key_pair()
-        new_private, new_public = generate_rsa_key_pair()
+        _new_private, new_public = generate_rsa_key_pair()
 
         # Create JWKS service with grace period
         jwks = JWKSService(grace_period=timedelta(hours=24))
@@ -245,7 +237,7 @@ class TestJWTKeyRotation:
             public_key=old_public,
             kid=old_kid,
         )
-        token = old_provider.sign({"sub": user_id})
+        old_provider.sign({"sub": user_id})
 
         # Rotate to new key
         new_kid = jwks.rotate_current_key(new_public, "RS256")
@@ -278,7 +270,7 @@ class TestJWTKidValidation:
         **Feature: api-best-practices-review-2025, Property 4: JWT Kid Validation**
         **Validates: Requirements 20.4**
         """
-        private_pem, public_pem = generate_rsa_key_pair()
+        _private_pem, public_pem = generate_rsa_key_pair()
 
         # Create JWKS service
         jwks = JWKSService()
@@ -295,7 +287,7 @@ class TestJWTKidValidation:
         **Feature: api-best-practices-review-2025, Property 4: JWT Kid Validation**
         **Validates: Requirements 20.4, 20.6**
         """
-        private_pem, public_pem = generate_rsa_key_pair()
+        _private_pem, public_pem = generate_rsa_key_pair()
 
         # Create JWKS and add key
         jwks = JWKSService()
@@ -324,7 +316,7 @@ class TestJWKSStructure:
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 20.2**
         """
-        private_pem, public_pem = generate_rsa_key_pair()
+        _private_pem, public_pem = generate_rsa_key_pair()
 
         jwks = JWKSService()
         kid = jwks.add_key(public_pem, "RS256")
@@ -352,7 +344,7 @@ class TestJWKSStructure:
         **Feature: api-best-practices-review-2025**
         **Validates: Requirements 20.2**
         """
-        private_pem, public_pem = generate_rsa_key_pair()
+        _private_pem, public_pem = generate_rsa_key_pair()
 
         jwks = JWKSService()
         jwks.add_key(public_pem, "RS256")

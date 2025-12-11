@@ -7,7 +7,6 @@ Command execution metrics and performance tracking.
 **Refactored: Improved type safety, lazy logging, defaultdict usage**
 """
 
-import logging
 import time
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
@@ -15,16 +14,16 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Protocol, runtime_checkable
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 @runtime_checkable
 class MetricsCollector(Protocol):
     """Protocol for metrics collection implementations."""
 
-    def record_command_duration(
-        self, command_type: str, duration_ms: float, success: bool
-    ) -> None:
+    def record_command_duration(self, command_type: str, duration_ms: float, success: bool) -> None:
         """Record command execution duration."""
         ...
 
@@ -37,13 +36,11 @@ class MetricsCollector(Protocol):
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class InMemoryMetricsCollector:
     """In-memory metrics collector for development/testing."""
 
-    _durations: dict[str, list[float]] = field(
-        default_factory=lambda: defaultdict(list)
-    )
+    _durations: dict[str, list[float]] = field(default_factory=lambda: defaultdict(list))
     _counts: dict[str, dict[str, int]] = field(
         default_factory=lambda: defaultdict(lambda: {"success": 0, "failure": 0})
     )
@@ -53,7 +50,7 @@ class InMemoryMetricsCollector:
         self,
         command_type: str,
         duration_ms: float,
-        success: bool,  # noqa: ARG002 - protocol compliance
+        success: bool,
     ) -> None:
         """Record command execution duration."""
         self._durations[command_type].append(duration_ms)
@@ -145,27 +142,18 @@ class MetricsMiddleware:
             duration_ms = (time.perf_counter() - start_time) * 1000
 
             if self._config.track_duration:
-                self._collector.record_command_duration(
-                    command_type, duration_ms, success
-                )
+                self._collector.record_command_duration(command_type, duration_ms, success)
 
             if self._config.track_success_rate:
                 self._collector.increment_command_count(command_type, success)
 
-            if (
-                self._config.detect_slow_commands
-                and duration_ms > self._config.slow_threshold_ms
-            ):
+            if self._config.detect_slow_commands and duration_ms > self._config.slow_threshold_ms:
                 self._collector.record_slow_command(command_type, duration_ms)
                 logger.warning(
-                    "Slow command detected: %s took %.2fms",
-                    command_type,
-                    duration_ms,
-                    extra={
-                        "command_type": command_type,
-                        "duration_ms": duration_ms,
-                        "threshold_ms": self._config.slow_threshold_ms,
-                        "operation": "SLOW_COMMAND_DETECTED",
-                        "success": success,
-                    },
+                    "Slow command detected",
+                    command_type=command_type,
+                    duration_ms=duration_ms,
+                    threshold_ms=self._config.slow_threshold_ms,
+                    operation="SLOW_COMMAND_DETECTED",
+                    success=success,
                 )

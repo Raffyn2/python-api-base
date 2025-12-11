@@ -29,9 +29,7 @@ def _handle_cli_error(error: CLIError) -> None:
 
 @app.command()
 def migrate(
-    revision: Annotated[
-        str, typer.Option("--revision", "-r", help="Target revision")
-    ] = "head",
+    revision: Annotated[str, typer.Option("--revision", "-r", help="Target revision")] = "head",
 ) -> None:
     """Run database migrations to specified revision."""
     logger.debug(f"migrate command called with revision={revision}")
@@ -57,9 +55,7 @@ def migrate(
 
 @app.command()
 def rollback(
-    steps: Annotated[
-        int, typer.Option("--steps", "-n", help="Number of revisions to rollback")
-    ] = 1,
+    steps: Annotated[int, typer.Option("--steps", "-n", help="Number of revisions to rollback")] = 1,
 ) -> None:
     """Rollback database migrations."""
     logger.debug(f"rollback command called with steps={steps}")
@@ -86,12 +82,8 @@ def rollback(
 
 @app.command()
 def revision(
-    message: Annotated[
-        str, typer.Option("--message", "-m", help="Revision message")
-    ] = "auto",
-    autogenerate: Annotated[
-        bool, typer.Option("--autogenerate", "-a", help="Auto-generate from models")
-    ] = True,
+    message: Annotated[str, typer.Option("--message", "-m", help="Revision message")] = "auto",
+    autogenerate: Annotated[bool, typer.Option("--autogenerate", "-a", help="Auto-generate from models")] = True,
 ) -> None:
     """Create a new migration revision."""
     logger.debug(f"revision command called with message={message}")
@@ -132,9 +124,7 @@ def current() -> None:
 
 @app.command()
 def history(
-    verbose: Annotated[
-        bool, typer.Option("--verbose", "-v", help="Show verbose output")
-    ] = False,
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Show verbose output")] = False,
 ) -> None:
     """Show migration history."""
     logger.debug(f"history command called with verbose={verbose}")
@@ -168,9 +158,7 @@ def heads() -> None:
 
 @app.command()
 def reset(
-    confirm: Annotated[
-        bool, typer.Option("--yes", "-y", help="Skip confirmation")
-    ] = False,
+    confirm: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation")] = False,
 ) -> None:
     """Reset database to initial state (DESTRUCTIVE)."""
     logger.warning("reset command called - DESTRUCTIVE OPERATION")

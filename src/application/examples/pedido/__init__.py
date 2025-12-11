@@ -18,6 +18,8 @@ from application.examples.pedido.commands import (
     CreatePedidoCommand,
 )
 from application.examples.pedido.dtos import (
+    AddItemRequest,
+    CancelPedidoRequest,
     PedidoExampleCreate,
     PedidoExampleResponse,
     PedidoExampleUpdate,
@@ -38,27 +40,29 @@ from application.examples.pedido.queries import (
 from application.examples.pedido.use_cases import PedidoExampleUseCase
 
 __all__ = [
+    # DTOs
+    "AddItemRequest",
+    "AddItemToPedidoCommand",
+    "AddItemToPedidoCommandHandler",
+    "CancelPedidoCommand",
+    "CancelPedidoCommandHandler",
+    "CancelPedidoRequest",
+    "ConfirmPedidoCommand",
+    "ConfirmPedidoCommandHandler",
     # Commands
     "CreatePedidoCommand",
-    "AddItemToPedidoCommand",
-    "ConfirmPedidoCommand",
-    "CancelPedidoCommand",
-    # Queries
-    "GetPedidoQuery",
-    "ListPedidosQuery",
     # Handlers
     "CreatePedidoCommandHandler",
-    "AddItemToPedidoCommandHandler",
-    "ConfirmPedidoCommandHandler",
-    "CancelPedidoCommandHandler",
+    # Queries
+    "GetPedidoQuery",
     "GetPedidoQueryHandler",
+    "ListPedidosQuery",
     "ListPedidosQueryHandler",
-    # DTOs
     "PedidoExampleCreate",
-    "PedidoExampleUpdate",
-    "PedidoExampleResponse",
     # Mapper
     "PedidoExampleMapper",
+    "PedidoExampleResponse",
+    "PedidoExampleUpdate",
     # Use Case
     "PedidoExampleUseCase",
 ]

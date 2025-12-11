@@ -1,5 +1,4 @@
-"""
-Data models for sustainability metrics.
+"""Data models for sustainability metrics.
 
 Provides frozen dataclasses for energy consumption, carbon emissions,
 cost calculations, and alert configurations.
@@ -9,6 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
+from typing import Self
 
 
 class EnergyUnit(Enum):
@@ -27,9 +27,9 @@ class CarbonUnit(Enum):
     TONS_CO2 = "tCO2"
 
 
-JOULES_PER_KWH = Decimal("3600000")
-GRAMS_PER_KG = Decimal("1000")
-KG_PER_TON = Decimal("1000")
+JOULES_PER_KWH = Decimal(3600000)
+GRAMS_PER_KG = Decimal(1000)
+KG_PER_TON = Decimal(1000)
 
 
 @dataclass(frozen=True)
@@ -55,7 +55,7 @@ class EnergyMetric:
     @property
     def energy_wh(self) -> Decimal:
         """Convert energy from joules to watt-hours."""
-        return self.energy_joules / Decimal("3600")
+        return self.energy_joules / Decimal(3600)
 
 
 @dataclass(frozen=True)
@@ -101,7 +101,7 @@ class CarbonMetric:
         energy: EnergyMetric,
         intensity: CarbonIntensity,
         confidence_margin: Decimal = Decimal("0.1"),
-    ) -> "CarbonMetric":
+    ) -> Self:
         """Calculate carbon emissions from energy and intensity."""
         emissions = energy.energy_kwh * intensity.intensity_gco2_per_kwh
         return cls(
@@ -152,7 +152,7 @@ class EnergyCost:
         currency: str,
         period_start: datetime,
         period_end: datetime,
-    ) -> "EnergyCost":
+    ) -> Self:
         """Calculate energy cost from consumption and price."""
         return cls(
             energy_kwh=energy_kwh,
@@ -185,7 +185,7 @@ class SustainabilityReport:
             reduction = self.baseline_emissions_gco2 - self.total_emissions_gco2
             target_reduction = self.baseline_emissions_gco2 - self.target_emissions_gco2
             if target_reduction > 0:
-                return (reduction / target_reduction) * Decimal("100")
+                return (reduction / target_reduction) * Decimal(100)
         return None
 
     @property
@@ -193,7 +193,7 @@ class SustainabilityReport:
         """Calculate percentage reduction from baseline."""
         if self.baseline_emissions_gco2 and self.baseline_emissions_gco2 > 0:
             reduction = self.baseline_emissions_gco2 - self.total_emissions_gco2
-            return (reduction / self.baseline_emissions_gco2) * Decimal("100")
+            return (reduction / self.baseline_emissions_gco2) * Decimal(100)
         return None
 
 

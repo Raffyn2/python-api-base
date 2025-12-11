@@ -1,7 +1,6 @@
 """Tests for core/base/patterns/uow.py - Unit of Work pattern."""
 
 from typing import Any, Self
-from unittest.mock import AsyncMock
 
 import pytest
 

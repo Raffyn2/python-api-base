@@ -172,7 +172,7 @@ class TestRateLimitResult:
 class TestSlidingWindowRateLimiter:
     """Tests for SlidingWindowRateLimiter."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def limiter(self) -> SlidingWindowRateLimiter:
         """Create limiter with small limit for testing."""
         config = SlidingWindowConfig(
@@ -182,9 +182,7 @@ class TestSlidingWindowRateLimiter:
         return SlidingWindowRateLimiter(config)
 
     @pytest.mark.asyncio
-    async def test_allows_under_limit(
-        self, limiter: SlidingWindowRateLimiter
-    ) -> None:
+    async def test_allows_under_limit(self, limiter: SlidingWindowRateLimiter) -> None:
         """Test requests under limit are allowed."""
         result = await limiter.is_allowed("client1")
 
@@ -192,18 +190,14 @@ class TestSlidingWindowRateLimiter:
         assert result.remaining >= 0
 
     @pytest.mark.asyncio
-    async def test_allows_up_to_limit(
-        self, limiter: SlidingWindowRateLimiter
-    ) -> None:
+    async def test_allows_up_to_limit(self, limiter: SlidingWindowRateLimiter) -> None:
         """Test requests up to limit are allowed."""
         for i in range(5):
             result = await limiter.is_allowed("client1")
-            assert result.allowed is True, f"Request {i+1} should be allowed"
+            assert result.allowed is True, f"Request {i + 1} should be allowed"
 
     @pytest.mark.asyncio
-    async def test_blocks_over_limit(
-        self, limiter: SlidingWindowRateLimiter
-    ) -> None:
+    async def test_blocks_over_limit(self, limiter: SlidingWindowRateLimiter) -> None:
         """Test requests over limit are blocked."""
         for _ in range(5):
             await limiter.is_allowed("client1")
@@ -214,9 +208,7 @@ class TestSlidingWindowRateLimiter:
         assert result.retry_after > 0
 
     @pytest.mark.asyncio
-    async def test_separate_clients(
-        self, limiter: SlidingWindowRateLimiter
-    ) -> None:
+    async def test_separate_clients(self, limiter: SlidingWindowRateLimiter) -> None:
         """Test clients are tracked separately."""
         for _ in range(5):
             await limiter.is_allowed("client1")
@@ -236,9 +228,7 @@ class TestSlidingWindowRateLimiter:
         assert state.current_count == 1
 
     @pytest.mark.asyncio
-    async def test_get_state_not_found(
-        self, limiter: SlidingWindowRateLimiter
-    ) -> None:
+    async def test_get_state_not_found(self, limiter: SlidingWindowRateLimiter) -> None:
         """Test get_state returns None for unknown client."""
         state = await limiter.get_state("unknown")
 
@@ -256,9 +246,7 @@ class TestSlidingWindowRateLimiter:
         assert state is None
 
     @pytest.mark.asyncio
-    async def test_reset_not_found(
-        self, limiter: SlidingWindowRateLimiter
-    ) -> None:
+    async def test_reset_not_found(self, limiter: SlidingWindowRateLimiter) -> None:
         """Test reset returns False for unknown client."""
         result = await limiter.reset("unknown")
 

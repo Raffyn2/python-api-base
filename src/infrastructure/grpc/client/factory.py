@@ -6,6 +6,7 @@ built-in retry, circuit breaker, and deadline support.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
@@ -18,9 +19,10 @@ logger = get_logger(__name__)
 T = TypeVar("T")
 
 
-@dataclass
+@dataclass(slots=True)
 class RetryConfig:
     """Configuration for retry behavior."""
+
     max_retries: int = 3
     backoff_base: float = 1.0
     backoff_max: float = 30.0
@@ -34,9 +36,10 @@ class RetryConfig:
     )
 
 
-@dataclass
+@dataclass(slots=True)
 class CircuitBreakerConfig:
     """Configuration for circuit breaker."""
+
     failure_threshold: int = 5
     recovery_timeout: float = 30.0
     half_open_max_calls: int = 3
@@ -44,7 +47,7 @@ class CircuitBreakerConfig:
 
 class GRPCClientFactory:
     """Factory for creating gRPC clients with resilience.
-    
+
     Creates channels and stubs with built-in retry, circuit breaker,
     and deadline support.
     """
@@ -57,7 +60,7 @@ class GRPCClientFactory:
         max_message_size: int = 4 * 1024 * 1024,
     ) -> None:
         """Initialize client factory.
-        
+
         Args:
             default_timeout: Default timeout for RPC calls
             retry_config: Retry configuration
@@ -77,12 +80,12 @@ class GRPCClientFactory:
         credentials: grpc.ChannelCredentials | None = None,
     ) -> aio.Channel:
         """Create a gRPC channel with connection pooling.
-        
+
         Args:
             target: Target address (host:port)
             secure: Whether to use TLS
             credentials: Optional channel credentials
-            
+
         Returns:
             The gRPC channel
         """
@@ -109,13 +112,13 @@ class GRPCClientFactory:
             channel = aio.insecure_channel(target, options=options)
 
         self._channels[cache_key] = channel
-        
+
         logger.info(
             "grpc_channel_created",
             target=target,
             secure=secure,
         )
-        
+
         return channel
 
     def create_stub(
@@ -124,11 +127,11 @@ class GRPCClientFactory:
         channel: aio.Channel,
     ) -> T:
         """Create a stub with interceptors.
-        
+
         Args:
             stub_class: The stub class to instantiate
             channel: The gRPC channel
-            
+
         Returns:
             The stub instance
         """
@@ -143,24 +146,22 @@ class GRPCClientFactory:
 
     def _get_service_config(self) -> str:
         """Get gRPC service config JSON for retries."""
-        import json
-        
         config = {
-            "methodConfig": [{
-                "name": [{}],
-                "timeout": f"{self._default_timeout}s",
-                "retryPolicy": {
-                    "maxAttempts": self._retry_config.max_retries + 1,
-                    "initialBackoff": f"{self._retry_config.backoff_base}s",
-                    "maxBackoff": f"{self._retry_config.backoff_max}s",
-                    "backoffMultiplier": self._retry_config.backoff_multiplier,
-                    "retryableStatusCodes": [
-                        code.name for code in self._retry_config.retryable_status_codes
-                    ],
-                },
-            }],
+            "methodConfig": [
+                {
+                    "name": [{}],
+                    "timeout": f"{self._default_timeout}s",
+                    "retryPolicy": {
+                        "maxAttempts": self._retry_config.max_retries + 1,
+                        "initialBackoff": f"{self._retry_config.backoff_base}s",
+                        "maxBackoff": f"{self._retry_config.backoff_max}s",
+                        "backoffMultiplier": self._retry_config.backoff_multiplier,
+                        "retryableStatusCodes": [code.name for code in self._retry_config.retryable_status_codes],
+                    },
+                }
+            ],
         }
-        
+
         return json.dumps(config)
 
 
@@ -168,10 +169,10 @@ async def create_client_from_settings(
     settings: Any,
 ) -> GRPCClientFactory:
     """Create client factory from settings.
-    
+
     Args:
         settings: GRPCClientSettings instance
-        
+
     Returns:
         Configured GRPCClientFactory instance
     """
@@ -181,12 +182,12 @@ async def create_client_from_settings(
         backoff_max=settings.retry_backoff_max,
         backoff_multiplier=settings.retry_backoff_multiplier,
     )
-    
+
     circuit_breaker_config = CircuitBreakerConfig(
         failure_threshold=settings.circuit_breaker_threshold,
         recovery_timeout=settings.circuit_breaker_timeout,
     )
-    
+
     return GRPCClientFactory(
         default_timeout=settings.default_timeout,
         retry_config=retry_config,

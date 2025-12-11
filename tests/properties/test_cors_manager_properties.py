@@ -4,12 +4,7 @@
 **Validates: Requirements 5.3**
 """
 
-import pytest
-
-pytest.skip("Module interface.api not implemented", allow_module_level=True)
-
-
-from interface.api.middleware.cors_manager import (
+from interface.middleware.security.cors_manager import (
     CORSManager,
     CORSPolicy,
     CORSRequest,
@@ -276,9 +271,7 @@ class TestCORSManagerProperties:
 
     def test_handle_actual_request(self) -> None:
         """Actual request SHALL return CORS headers."""
-        manager = CORSManager(
-            default_policy=CORSPolicy(allow_origins=["https://example.com"])
-        )
+        manager = CORSManager(default_policy=CORSPolicy(allow_origins=["https://example.com"]))
 
         request = CORSRequest(
             origin="https://example.com",

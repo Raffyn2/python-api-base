@@ -7,8 +7,9 @@
 
 from __future__ import annotations
 
-import logging
-from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Self, TypeVar
+
+import structlog
 
 from infrastructure.kafka.message import KafkaMessage, MessageMetadata
 
@@ -22,16 +23,18 @@ from infrastructure.kafka.transaction import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from aiokafka import AIOKafkaProducer
 
     from infrastructure.kafka.config import KafkaConfig
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 T = TypeVar("T")
 
 
-class KafkaProducer(Generic[T]):
+class KafkaProducer[T]:
     """Generic async Kafka producer.
 
     Type-safe producer for sending messages to Kafka topics.
@@ -90,7 +93,8 @@ class KafkaProducer(Generic[T]):
 
         logger.info(
             "Kafka producer started",
-            extra={"topic": self._topic, "servers": self._config.bootstrap_servers},
+            topic=self._topic,
+            servers=self._config.bootstrap_servers,
         )
 
         return self
@@ -165,11 +169,9 @@ class KafkaProducer(Generic[T]):
 
         logger.debug(
             "Message sent",
-            extra={
-                "topic": metadata.topic,
-                "partition": metadata.partition,
-                "offset": metadata.offset,
-            },
+            topic=metadata.topic,
+            partition=metadata.partition,
+            offset=metadata.offset,
         )
 
         return metadata
@@ -177,7 +179,7 @@ class KafkaProducer(Generic[T]):
     async def send_batch(
         self,
         payloads: list[T],
-        key_func: callable | None = None,
+        key_func: Callable[[T], str | None] | None = None,
         topic: str | None = None,
     ) -> list[MessageMetadata]:
         """Send multiple messages in a batch.
@@ -220,7 +222,10 @@ class KafkaProducer(Generic[T]):
             results.append(metadata)
 
         logger.info(
-            f"Batch sent: {len(results)} messages", extra={"topic": target_topic}
+            "Batch sent",
+            operation="KAFKA_BATCH_SEND",
+            message_count=len(results),
+            topic=target_topic,
         )
 
         return results

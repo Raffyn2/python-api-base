@@ -188,9 +188,7 @@ class TestRequestCoalescerProperties:
             return 42
 
         # Start multiple concurrent requests
-        tasks = [
-            asyncio.create_task(coalescer.execute("key1", fetch)) for _ in range(5)
-        ]
+        tasks = [asyncio.create_task(coalescer.execute("key1", fetch)) for _ in range(5)]
 
         results = await asyncio.gather(*tasks)
 
@@ -363,11 +361,7 @@ class TestBatchCoalescerProperties:
         assert len(batch_calls) == 1
         assert set(batch_calls[0]) == {"a", "bb", "ccc"}
 
-    @given(
-        keys=st.lists(
-            st.text(min_size=1, max_size=10), min_size=1, max_size=5, unique=True
-        )
-    )
+    @given(keys=st.lists(st.text(min_size=1, max_size=10), min_size=1, max_size=5, unique=True))
     @settings(max_examples=20)
     async def test_all_keys_resolved(self, keys: list[str]) -> None:
         """**Property 16: All keys are resolved**

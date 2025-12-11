@@ -5,6 +5,7 @@
 
 from typing import Any
 
+import structlog
 from fastapi import APIRouter, HTTPException
 
 from infrastructure.rbac import Permission
@@ -20,6 +21,8 @@ from interface.v1.enterprise.models import (
     RBACCheckRequest,
     RBACCheckResponse,
 )
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(tags=["RBAC"])
 
@@ -44,9 +47,14 @@ async def check_rbac_permission(request: RBACCheckRequest) -> RBACCheckResponse:
         resource = ExampleResource(request.resource)
         action = ExampleAction(request.action)
     except ValueError as e:
+        logger.warning(
+            "rbac_invalid_request",
+            resource=request.resource,
+            action=request.action,
+        )
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid resource '{request.resource}' or action '{request.action}'",
+            detail="Invalid resource or action specified",
         ) from e
 
     permission = Permission[ExampleResource, ExampleAction](

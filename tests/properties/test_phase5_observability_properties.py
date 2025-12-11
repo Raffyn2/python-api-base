@@ -28,25 +28,25 @@ from hypothesis import given, settings, strategies as st
 correlation_id_st = st.text(
     min_size=16,
     max_size=64,
-    alphabet=st.characters(
-        whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="-_"
-    ),
+    alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="-_"),
 )
 
 # Strategy for log messages
 log_message_st = st.text(min_size=1, max_size=500)
 
 # Strategy for sensitive field names
-sensitive_field_st = st.sampled_from([
-    "password",
-    "secret",
-    "api_key",
-    "token",
-    "authorization",
-    "credit_card",
-    "ssn",
-    "cvv",
-])
+sensitive_field_st = st.sampled_from(
+    [
+        "password",
+        "secret",
+        "api_key",
+        "token",
+        "authorization",
+        "credit_card",
+        "ssn",
+        "cvv",
+    ]
+)
 
 # Strategy for sensitive values
 sensitive_value_st = st.text(min_size=8, max_size=50)
@@ -86,9 +86,7 @@ class TestCorrelationIDPropagation:
         request_id=correlation_id_st,
     )
     @settings(max_examples=50)
-    def test_multiple_context_vars_independent(
-        self, correlation_id: str, request_id: str
-    ) -> None:
+    def test_multiple_context_vars_independent(self, correlation_id: str, request_id: str) -> None:
         """Different context variables are independent."""
         from infrastructure.observability.correlation_id import (
             clear_context,
@@ -262,9 +260,7 @@ class TestLogEntryStructure:
         correlation_id=correlation_id_st,
     )
     @settings(max_examples=30)
-    def test_correlation_id_included_in_log(
-        self, message: str, correlation_id: str
-    ) -> None:
+    def test_correlation_id_included_in_log(self, message: str, correlation_id: str) -> None:
         """Correlation ID is included in log when present."""
         from infrastructure.observability.logging_config import JSONFormatter
 
@@ -359,9 +355,7 @@ class TestHealthCheckAccuracy:
         cache_healthy=st.booleans(),
     )
     @settings(max_examples=50)
-    def test_health_status_reflects_dependencies(
-        self, db_healthy: bool, cache_healthy: bool
-    ) -> None:
+    def test_health_status_reflects_dependencies(self, db_healthy: bool, cache_healthy: bool) -> None:
         """Health status correctly reflects dependency states."""
         # Simulate health check logic
         dependencies = {
@@ -370,7 +364,6 @@ class TestHealthCheckAccuracy:
         }
 
         all_healthy = all(dependencies.values())
-        any_unhealthy = not all_healthy
 
         # Overall health should match
         if all_healthy:
@@ -379,16 +372,12 @@ class TestHealthCheckAccuracy:
             assert any(not v for v in dependencies.values())
 
     @given(
-        component_name=st.text(
-            min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz_"
-        ),
+        component_name=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz_"),
         is_healthy=st.booleans(),
         latency_ms=st.floats(min_value=0.1, max_value=5000.0),
     )
     @settings(max_examples=50)
-    def test_health_check_response_structure(
-        self, component_name: str, is_healthy: bool, latency_ms: float
-    ) -> None:
+    def test_health_check_response_structure(self, component_name: str, is_healthy: bool, latency_ms: float) -> None:
         """Health check response has correct structure."""
         # Simulate health check response
         response = {
@@ -422,9 +411,7 @@ class TestHealthCheckLatencyReporting:
         latency2=st.floats(min_value=1.0, max_value=1000.0),
     )
     @settings(max_examples=30)
-    def test_aggregate_latency_calculation(
-        self, latency1: float, latency2: float
-    ) -> None:
+    def test_aggregate_latency_calculation(self, latency1: float, latency2: float) -> None:
         """Aggregate latency is correctly calculated."""
         total = latency1 + latency2
         average = (latency1 + latency2) / 2
@@ -514,9 +501,7 @@ class TestSpanAttributeCompleteness:
         status_code=st.integers(min_value=100, max_value=599),
     )
     @settings(max_examples=50)
-    def test_http_span_attributes(
-        self, method: str, path: str, status_code: int
-    ) -> None:
+    def test_http_span_attributes(self, method: str, path: str, status_code: int) -> None:
         """HTTP span has required attributes."""
         # Simulate span attributes
         attributes = {

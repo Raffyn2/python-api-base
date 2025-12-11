@@ -6,9 +6,8 @@ Demonstrates versioned API with deprecation headers.
 **Validates: Requirements 1.1, 1.2, 1.3**
 """
 
-from typing import Any
-
-from fastapi import Depends, HTTPException, Query, Request, status
+import structlog
+from fastapi import Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.common.dto import ApiResponse, PaginatedResponse
@@ -16,10 +15,8 @@ from application.examples import (
     ItemExampleCreate,
     ItemExampleResponse,
     ItemExampleUseCase,
-    NotFoundError,
     PedidoExampleResponse,
     PedidoExampleUseCase,
-    ValidationError,
 )
 from infrastructure.db.repositories.examples import (
     ItemExampleRepository,
@@ -27,10 +24,13 @@ from infrastructure.db.repositories.examples import (
 )
 from infrastructure.db.session import get_async_session
 from infrastructure.kafka import EventPublisher, create_event_publisher
+from interface.v1.examples.error_handling import handle_result_error
 from interface.versioning import (
     ApiVersion,
     VersionedRouter,
 )
+
+logger = structlog.get_logger(__name__)
 
 # Create versioned router for v2
 v2_version = ApiVersion[int](version=2, deprecated=False)
@@ -82,15 +82,6 @@ async def get_pedido_use_case(
     )
 
 
-def handle_result_error(error: Any) -> HTTPException:
-    """Convert use case error to HTTP exception."""
-    if isinstance(error, NotFoundError):
-        return HTTPException(status_code=404, detail=error.message)
-    if isinstance(error, ValidationError):
-        return HTTPException(status_code=422, detail=error.message)
-    return HTTPException(status_code=500, detail=str(error))
-
-
 # === ItemExample v2 Routes ===
 
 
@@ -101,6 +92,7 @@ def handle_result_error(error: Any) -> HTTPException:
     description="Get paginated list of ItemExample entities with enhanced filtering.",
 )
 async def list_items_v2(
+    request: Request,
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     category: str | None = Query(None, description="Filter by category"),
@@ -112,6 +104,7 @@ async def list_items_v2(
     **Feature: interface-modules-workflow-analysis**
     **Validates: Requirements 1.1**
     """
+    correlation_id = getattr(request.state, "correlation_id", None)
     result = await use_case.list(
         page=page,
         page_size=page_size,
@@ -119,9 +112,15 @@ async def list_items_v2(
         status=status,
     )
     if result.is_err():
-        raise handle_result_error(result.unwrap_err())
+        raise handle_result_error(result.unwrap_err(), correlation_id=correlation_id)
 
     items = result.unwrap()
+    logger.info(
+        "items_listed_v2",
+        count=len(items),
+        page=page,
+        correlation_id=correlation_id,
+    )
     return PaginatedResponse(
         items=items,
         total=len(items),
@@ -136,6 +135,7 @@ async def list_items_v2(
     summary="Get item by ID (v2)",
 )
 async def get_item_v2(
+    request: Request,
     item_id: str,
     use_case: ItemExampleUseCase = Depends(get_item_use_case),
 ) -> ApiResponse[ItemExampleResponse]:
@@ -144,9 +144,10 @@ async def get_item_v2(
     **Feature: interface-modules-workflow-analysis**
     **Validates: Requirements 1.1**
     """
+    correlation_id = getattr(request.state, "correlation_id", None)
     result = await use_case.get(item_id)
     if result.is_err():
-        raise handle_result_error(result.unwrap_err())
+        raise handle_result_error(result.unwrap_err(), correlation_id=correlation_id)
     return ApiResponse(data=result.unwrap())
 
 
@@ -157,6 +158,7 @@ async def get_item_v2(
     summary="Create item (v2)",
 )
 async def create_item_v2(
+    request: Request,
     data: ItemExampleCreate,
     use_case: ItemExampleUseCase = Depends(get_item_use_case),
 ) -> ApiResponse[ItemExampleResponse]:
@@ -165,9 +167,11 @@ async def create_item_v2(
     **Feature: interface-modules-workflow-analysis**
     **Validates: Requirements 1.1**
     """
+    correlation_id = getattr(request.state, "correlation_id", None)
     result = await use_case.create(data, created_by="v2-api")
     if result.is_err():
-        raise handle_result_error(result.unwrap_err())
+        raise handle_result_error(result.unwrap_err(), correlation_id=correlation_id)
+    logger.info("item_created_v2", correlation_id=correlation_id)
     return ApiResponse(data=result.unwrap(), status_code=201)
 
 
@@ -180,6 +184,7 @@ async def create_item_v2(
     summary="List all orders (v2)",
 )
 async def list_pedidos_v2(
+    request: Request,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     customer_id: str | None = Query(None),
@@ -191,6 +196,7 @@ async def list_pedidos_v2(
     **Feature: interface-modules-workflow-analysis**
     **Validates: Requirements 1.1**
     """
+    correlation_id = getattr(request.state, "correlation_id", None)
     result = await use_case.list(
         page=page,
         page_size=page_size,
@@ -198,9 +204,15 @@ async def list_pedidos_v2(
         status=status,
     )
     if result.is_err():
-        raise handle_result_error(result.unwrap_err())
+        raise handle_result_error(result.unwrap_err(), correlation_id=correlation_id)
 
     pedidos = result.unwrap()
+    logger.info(
+        "pedidos_listed_v2",
+        count=len(pedidos),
+        page=page,
+        correlation_id=correlation_id,
+    )
     return PaginatedResponse(
         items=pedidos,
         total=len(pedidos),
@@ -215,6 +227,7 @@ async def list_pedidos_v2(
     summary="Get order by ID (v2)",
 )
 async def get_pedido_v2(
+    request: Request,
     pedido_id: str,
     use_case: PedidoExampleUseCase = Depends(get_pedido_use_case),
 ) -> ApiResponse[PedidoExampleResponse]:
@@ -223,7 +236,8 @@ async def get_pedido_v2(
     **Feature: interface-modules-workflow-analysis**
     **Validates: Requirements 1.1**
     """
+    correlation_id = getattr(request.state, "correlation_id", None)
     result = await use_case.get(pedido_id)
     if result.is_err():
-        raise handle_result_error(result.unwrap_err())
+        raise handle_result_error(result.unwrap_err(), correlation_id=correlation_id)
     return ApiResponse(data=result.unwrap())

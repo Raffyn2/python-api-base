@@ -5,7 +5,6 @@ and map_error function.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
 
 import pytest
 
@@ -24,7 +23,7 @@ class TestErrorContext:
     def test_default_values(self) -> None:
         """Test default context values."""
         ctx: ErrorContext[None] = ErrorContext()
-        
+
         assert ctx.correlation_id is not None
         assert ctx.timestamp is not None
         assert ctx.context_data is None
@@ -33,10 +32,8 @@ class TestErrorContext:
 
     def test_with_context_data(self) -> None:
         """Test context with typed data."""
-        ctx: ErrorContext[dict] = ErrorContext(
-            context_data={"user_id": "123", "action": "update"}
-        )
-        
+        ctx: ErrorContext[dict] = ErrorContext(context_data={"user_id": "123", "action": "update"})
+
         assert ctx.context_data == {"user_id": "123", "action": "update"}
 
     def test_with_request_info(self) -> None:
@@ -45,7 +42,7 @@ class TestErrorContext:
             request_path="/api/users/123",
             operation="UpdateUser",
         )
-        
+
         assert ctx.request_path == "/api/users/123"
         assert ctx.operation == "UpdateUser"
 
@@ -56,9 +53,9 @@ class TestErrorContext:
             request_path="/api/test",
             operation="TestOp",
         )
-        
+
         result = ctx.to_dict()
-        
+
         assert "correlation_id" in result
         assert "timestamp" in result
         assert result["context_data"] == "test-data"
@@ -68,7 +65,7 @@ class TestErrorContext:
     def test_immutability(self) -> None:
         """Test context is immutable."""
         ctx: ErrorContext[None] = ErrorContext()
-        
+
         with pytest.raises(AttributeError):
             ctx.correlation_id = "new-id"  # type: ignore[misc]
 
@@ -79,7 +76,7 @@ class TestDomainError:
     def test_basic_creation(self) -> None:
         """Test basic error creation."""
         error: DomainError[None] = DomainError(message="Test error")
-        
+
         assert error.message == "Test error"
         assert error.error_code == "DOMAIN_ERROR"
         assert error.context is None
@@ -91,11 +88,12 @@ class TestDomainError:
             message="User not found",
             error_code="USER_NOT_FOUND",
         )
-        
+
         assert error.error_code == "USER_NOT_FOUND"
 
     def test_with_typed_context(self) -> None:
         """Test error with typed context."""
+
         @dataclass
         class UserContext:
             user_id: str
@@ -106,7 +104,7 @@ class TestDomainError:
             message="User action failed",
             context=ctx,
         )
-        
+
         assert error.context is not None
         assert error.context.user_id == "123"
         assert error.context.action == "update"
@@ -118,7 +116,7 @@ class TestDomainError:
             message="Wrapped error",
             cause=cause,
         )
-        
+
         assert error._cause is cause
         assert error.__cause__ is cause
 
@@ -129,9 +127,9 @@ class TestDomainError:
             error_code="TEST_ERROR",
             context="test-context",
         )
-        
+
         result = error.to_dict()
-        
+
         assert result["type"] == "DomainError"
         assert result["message"] == "Test error"
         assert result["error_code"] == "TEST_ERROR"
@@ -144,9 +142,9 @@ class TestDomainError:
             message="Wrapped",
             cause=cause,
         )
-        
+
         result = error.to_dict()
-        
+
         assert "cause" in result
         assert result["cause"] == "Original"
 
@@ -160,13 +158,14 @@ class TestApplicationError:
             message="Use case failed",
             operation="CreateUser",
         )
-        
+
         assert error.message == "Use case failed"
         assert error.operation == "CreateUser"
         assert error.error_code == "APPLICATION_ERROR"
 
     def test_with_context(self) -> None:
         """Test error with typed context."""
+
         @dataclass
         class OpContext:
             use_case: str
@@ -178,7 +177,7 @@ class TestApplicationError:
             operation="CreateUser",
             context=ctx,
         )
-        
+
         assert error.context is not None
         assert error.context.use_case == "CreateUser"
 
@@ -189,9 +188,9 @@ class TestApplicationError:
             operation="TestOp",
             error_code="CUSTOM_ERROR",
         )
-        
+
         result = error.to_dict()
-        
+
         assert result["type"] == "ApplicationError"
         assert result["operation"] == "TestOp"
         assert result["error_code"] == "CUSTOM_ERROR"
@@ -206,7 +205,7 @@ class TestInfrastructureError:
             message="Connection failed",
             service="PostgreSQL",
         )
-        
+
         assert error.message == "Connection failed"
         assert error.service == "PostgreSQL"
         assert error.error_code == "INFRASTRUCTURE_ERROR"
@@ -219,11 +218,12 @@ class TestInfrastructureError:
             service="Database",
             recoverable=False,
         )
-        
+
         assert error.recoverable is False
 
     def test_with_context(self) -> None:
         """Test error with typed context."""
+
         @dataclass
         class DbContext:
             connection_string: str
@@ -235,7 +235,7 @@ class TestInfrastructureError:
             service="PostgreSQL",
             context=ctx,
         )
-        
+
         assert error.context is not None
         assert error.context.query == "SELECT..."
 
@@ -246,9 +246,9 @@ class TestInfrastructureError:
             service="Redis",
             recoverable=False,
         )
-        
+
         result = error.to_dict()
-        
+
         assert result["type"] == "InfrastructureError"
         assert result["service"] == "Redis"
         assert result["recoverable"] is False
@@ -264,9 +264,9 @@ class TestMapError:
             error_code="TEST",
             context="original-context",
         )
-        
+
         result = map_error(original, lambda ctx: len(ctx) if ctx else 0)
-        
+
         assert isinstance(result, DomainError)
         assert result.context == 16  # len("original-context")
         assert result.message == "Error"
@@ -279,9 +279,9 @@ class TestMapError:
             operation="TestOp",
             context={"key": "value"},
         )
-        
+
         result = map_error(original, lambda ctx: list(ctx.keys()) if ctx else [])
-        
+
         assert isinstance(result, ApplicationError)
         assert result.context == ["key"]
         assert result.operation == "TestOp"
@@ -294,9 +294,9 @@ class TestMapError:
             context="test",
             recoverable=False,
         )
-        
+
         result = map_error(original, lambda ctx: ctx.upper() if ctx else None)
-        
+
         assert isinstance(result, InfrastructureError)
         assert result.context == "TEST"
         assert result.service == "Redis"
@@ -305,9 +305,9 @@ class TestMapError:
     def test_map_with_none_context(self) -> None:
         """Test mapping error with None context."""
         original: DomainError[None] = DomainError(message="Error")
-        
+
         result = map_error(original, lambda ctx: "mapped" if ctx else None)
-        
+
         assert result.context is None
 
     def test_preserves_cause(self) -> None:
@@ -318,7 +318,7 @@ class TestMapError:
             context="test",
             cause=cause,
         )
-        
+
         result = map_error(original, lambda ctx: ctx)
-        
+
         assert result._cause is cause

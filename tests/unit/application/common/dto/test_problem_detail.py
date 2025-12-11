@@ -118,4 +118,3 @@ class TestProblemDetail:
         json_str = detail.model_dump_json()
         assert "Error" in json_str
         assert "500" in json_str
-

@@ -3,15 +3,15 @@
 This module provides workflow orchestration with activities.
 """
 
+import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, TypeVar
-import uuid
 
 from core.shared.logging import get_logger
 from infrastructure.dapr.client import DaprClientWrapper
-from infrastructure.dapr.errors import DaprConnectionError, WorkflowError
+from infrastructure.dapr.errors import WorkflowError
 
 logger = get_logger(__name__)
 
@@ -29,7 +29,7 @@ class WorkflowStatus(Enum):
     SUSPENDED = "SUSPENDED"
 
 
-@dataclass
+@dataclass(slots=True)
 class WorkflowState:
     """Workflow instance state."""
 
@@ -241,11 +241,15 @@ class WorkflowEngine:
 
             return instance
         except Exception as e:
+            logger.exception(
+                "Failed to start workflow",
+                workflow=workflow_name,
+                instance_id=instance,
+            )
             raise WorkflowError(
                 message=f"Failed to start workflow {workflow_name}",
                 workflow_name=workflow_name,
                 instance_id=instance,
-                details={"error": str(e)},
             ) from e
 
     async def get_workflow_state(self, instance_id: str) -> WorkflowState:
@@ -275,10 +279,10 @@ class WorkflowEngine:
                 error=data.get("failureDetails", {}).get("message"),
             )
         except Exception as e:
+            logger.exception("Failed to get workflow state", instance_id=instance_id)
             raise WorkflowError(
-                message=f"Failed to get workflow state",
+                message="Failed to get workflow state",
                 instance_id=instance_id,
-                details={"error": str(e)},
             ) from e
 
     async def terminate_workflow(
@@ -304,10 +308,10 @@ class WorkflowEngine:
                 reason=reason,
             )
         except Exception as e:
+            logger.exception("Failed to terminate workflow", instance_id=instance_id)
             raise WorkflowError(
-                message=f"Failed to terminate workflow",
+                message="Failed to terminate workflow",
                 instance_id=instance_id,
-                details={"error": str(e)},
             ) from e
 
     async def raise_event(
@@ -341,10 +345,14 @@ class WorkflowEngine:
                 event_name=event_name,
             )
         except Exception as e:
+            logger.exception(
+                "Failed to raise event",
+                instance_id=instance_id,
+                event_name=event_name,
+            )
             raise WorkflowError(
                 message=f"Failed to raise event {event_name}",
                 instance_id=instance_id,
-                details={"error": str(e)},
             ) from e
 
     async def pause_workflow(self, instance_id: str) -> None:
@@ -360,10 +368,10 @@ class WorkflowEngine:
             response.raise_for_status()
             logger.info("workflow_paused", instance_id=instance_id)
         except Exception as e:
+            logger.exception("Failed to pause workflow", instance_id=instance_id)
             raise WorkflowError(
                 message="Failed to pause workflow",
                 instance_id=instance_id,
-                details={"error": str(e)},
             ) from e
 
     async def resume_workflow(self, instance_id: str) -> None:
@@ -379,8 +387,8 @@ class WorkflowEngine:
             response.raise_for_status()
             logger.info("workflow_resumed", instance_id=instance_id)
         except Exception as e:
+            logger.exception("Failed to resume workflow", instance_id=instance_id)
             raise WorkflowError(
                 message="Failed to resume workflow",
                 instance_id=instance_id,
-                details={"error": str(e)},
             ) from e

@@ -65,11 +65,7 @@ class TestDiffCalculatorProperties:
         changed_fields = {c.field_name for c in changes}
         assert changed_fields == set(before.keys())
 
-    @given(
-        st.dictionaries(
-            st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=10
-        )
-    )
+    @given(st.dictionaries(st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=10))
     @settings(max_examples=100)
     def test_no_diff_for_identical(self, data: dict[str, int]) -> None:
         """No diff for identical objects."""
@@ -77,17 +73,11 @@ class TestDiffCalculatorProperties:
         assert len(changes) == 0
 
     @given(
-        st.dictionaries(
-            st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=5
-        ),
-        st.dictionaries(
-            st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=5
-        ),
+        st.dictionaries(st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=5),
+        st.dictionaries(st.text(min_size=1, max_size=10), st.integers(), min_size=1, max_size=5),
     )
     @settings(max_examples=50)
-    def test_apply_diff_reconstructs_state(
-        self, before: dict[str, int], after: dict[str, int]
-    ) -> None:
+    def test_apply_diff_reconstructs_state(self, before: dict[str, int], after: dict[str, int]) -> None:
         """Applying diff to before produces after."""
         changes = DiffCalculator.compute_diff(before, after)
         reconstructed = DiffCalculator.apply_diff(before, changes)
@@ -109,9 +99,7 @@ class TestAuditServiceProperties:
     )
     @settings(max_examples=50)
     @pytest.mark.asyncio
-    async def test_create_logs_all_fields(
-        self, entity_type: str, entity_id: str, name: str, value: int
-    ) -> None:
+    async def test_create_logs_all_fields(self, entity_type: str, entity_id: str, name: str, value: int) -> None:
         """Create action logs all entity fields."""
         backend = InMemoryAuditBackend()
         service: AuditService[AuditEntity] = AuditService(backend)
@@ -126,9 +114,7 @@ class TestAuditServiceProperties:
     @given(st.text(min_size=1, max_size=20), st.text(min_size=1, max_size=20))
     @settings(max_examples=50)
     @pytest.mark.asyncio
-    async def test_history_returns_all_entries(
-        self, entity_type: str, entity_id: str
-    ) -> None:
+    async def test_history_returns_all_entries(self, entity_type: str, entity_id: str) -> None:
         """History returns all entries for entity."""
         backend = InMemoryAuditBackend()
         service: AuditService[AuditEntity] = AuditService(backend)

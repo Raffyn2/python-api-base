@@ -6,16 +6,20 @@
 
 from __future__ import annotations
 
-import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-logger = logging.getLogger(__name__)
+import structlog
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+logger = structlog.get_logger(__name__)
 
 
 class IndexOperations:
     """Handles Elasticsearch index management operations."""
 
-    def __init__(self, client_getter: callable) -> None:
+    def __init__(self, client_getter: Callable[[], Any]) -> None:
         """Initialize with client getter function.
 
         Args:
@@ -49,10 +53,18 @@ class IndexOperations:
 
         try:
             await client.indices.create(index=index, body=body if body else None)
-            logger.info(f"Created index: {index}")
+            logger.info(
+                "Created index",
+                operation="ES_CREATE_INDEX",
+                index=index,
+            )
             return True
-        except Exception as e:
-            logger.error(f"Failed to create index {index}: {e}")
+        except Exception:
+            logger.exception(
+                "Failed to create index",
+                operation="ES_CREATE_INDEX",
+                index=index,
+            )
             raise
 
     async def delete_index(self, index: str) -> bool:
@@ -68,10 +80,18 @@ class IndexOperations:
 
         try:
             await client.indices.delete(index=index)
-            logger.info(f"Deleted index: {index}")
+            logger.info(
+                "Deleted index",
+                operation="ES_DELETE_INDEX",
+                index=index,
+            )
             return True
-        except Exception as e:
-            logger.error(f"Failed to delete index {index}: {e}")
+        except Exception:
+            logger.exception(
+                "Failed to delete index",
+                operation="ES_DELETE_INDEX",
+                index=index,
+            )
             raise
 
     async def index_exists(self, index: str) -> bool:
@@ -99,7 +119,7 @@ class IndexOperations:
 class DocumentOperations:
     """Handles Elasticsearch document CRUD operations."""
 
-    def __init__(self, client_getter: callable) -> None:
+    def __init__(self, client_getter: Callable[[], Any]) -> None:
         """Initialize with client getter function.
 
         Args:
@@ -149,14 +169,26 @@ class DocumentOperations:
 
         Returns:
             Document or None if not found
+
+        Note:
+            Returns None for NotFoundError, re-raises other exceptions.
         """
         client = await self._get_client()
 
         try:
             result = await client.get(index=index, id=doc_id)
             return dict(result)
-        except Exception:
-            return None
+        except Exception as e:
+            # Only return None for "not found" errors
+            if "NotFoundError" in type(e).__name__ or "not_found" in str(e).lower():
+                return None
+            logger.exception(
+                "Failed to get document",
+                operation="ES_GET_DOCUMENT",
+                index=index,
+                doc_id=doc_id,
+            )
+            raise
 
     async def update_document(
         self,
@@ -201,15 +233,27 @@ class DocumentOperations:
             refresh: Whether to refresh after delete
 
         Returns:
-            True if deleted
+            True if deleted, False if not found
+
+        Note:
+            Returns False for NotFoundError, re-raises other exceptions.
         """
         client = await self._get_client()
 
         try:
             await client.delete(index=index, id=doc_id, refresh=refresh)
             return True
-        except Exception:
-            return False
+        except Exception as e:
+            # Only return False for "not found" errors
+            if "NotFoundError" in type(e).__name__ or "not_found" in str(e).lower():
+                return False
+            logger.exception(
+                "Failed to delete document",
+                operation="ES_DELETE_DOCUMENT",
+                index=index,
+                doc_id=doc_id,
+            )
+            raise
 
     async def bulk(
         self,

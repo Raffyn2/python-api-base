@@ -37,9 +37,7 @@ type WriteOnlyRepository[T, CreateT] = "IRepository[T, CreateT, None]"
 # Use Case Type Aliases
 # =============================================================================
 
-type StandardUseCase[T, CreateDTO, UpdateDTO, ResponseDTO] = (
-    "BaseUseCase[T, CreateDTO, UpdateDTO, ResponseDTO]"
-)
+type StandardUseCase[T, CreateDTO, UpdateDTO, ResponseDTO] = "BaseUseCase[T, CreateDTO, UpdateDTO, ResponseDTO]"
 """Type alias for standard CRUD use case with all operations."""
 
 type ReadOnlyUseCase[T, ResponseDTO] = "BaseUseCase[T, None, None, ResponseDTO]"

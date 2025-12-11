@@ -79,9 +79,7 @@ def test_err_result_round_trip(error: Any) -> None:
 
 @given(st.integers(), st.booleans(), st.booleans())
 @settings(max_examples=100)
-def test_specification_and_composition(
-    value: int, pred1_result: bool, pred2_result: bool
-) -> None:
+def test_specification_and_composition(value: int, pred1_result: bool, pred2_result: bool) -> None:
     """
     **Feature: ultimate-generics-code-review-2025, Property 5: Specification Composition Laws**
     **Validates: Requirements 8.2, 8.3, 8.4**
@@ -99,9 +97,7 @@ def test_specification_and_composition(
 
 @given(st.integers(), st.booleans(), st.booleans())
 @settings(max_examples=100)
-def test_specification_or_composition(
-    value: int, pred1_result: bool, pred2_result: bool
-) -> None:
+def test_specification_or_composition(value: int, pred1_result: bool, pred2_result: bool) -> None:
     """
     **Feature: ultimate-generics-code-review-2025, Property 5: Specification Composition Laws**
     **Validates: Requirements 8.2, 8.3, 8.4**
@@ -428,9 +424,7 @@ def test_collect_results_all_ok(values: list[int]) -> None:
     st.text(min_size=1),
 )
 @settings(max_examples=100)
-def test_collect_results_first_err(
-    ok_values: list[int], err_index: int, error: str
-) -> None:
+def test_collect_results_first_err(ok_values: list[int], err_index: int, error: str) -> None:
     """
     **Feature: ultimate-generics-code-review-2025, Property 15: Collect Results Aggregation**
     **Validates: Requirements 5.4**
@@ -609,15 +603,10 @@ def test_pep695_no_legacy_generic_imports() -> None:
                     for base in node.bases:
                         # Check for Generic[...] pattern
                         if isinstance(base, ast.Subscript):
-                            if (
-                                isinstance(base.value, ast.Name)
-                                and base.value.id == "Generic"
-                            ):
+                            if isinstance(base.value, ast.Name) and base.value.id == "Generic":
                                 # This is a legacy Generic[T] usage
                                 # Allow if it's in a docstring example or fallback import
-                                violations.append(
-                                    f"{file_path}:{node.lineno} - class {node.name} uses Generic[T]"
-                                )
+                                violations.append(f"{file_path}:{node.lineno} - class {node.name} uses Generic[T]")
         except SyntaxError:
             # Skip files with syntax errors
             continue
@@ -630,9 +619,7 @@ def test_pep695_no_legacy_generic_imports() -> None:
         and "use_case.py" not in v  # Fallback import for compatibility
     ]
 
-    assert len(filtered_violations) == 0, "Legacy Generic[T] found:\n" + "\n".join(
-        filtered_violations
-    )
+    assert len(filtered_violations) == 0, "Legacy Generic[T] found:\n" + "\n".join(filtered_violations)
 
 
 def test_pep695_type_aliases_use_type_statement() -> None:
@@ -665,11 +652,7 @@ def test_pep695_type_aliases_use_type_statement() -> None:
             for i, line in enumerate(lines, 1):
                 # Skip comments and docstrings
                 stripped = line.strip()
-                if (
-                    stripped.startswith("#")
-                    or stripped.startswith('"""')
-                    or stripped.startswith("'''")
-                ):
+                if stripped.startswith("#") or stripped.startswith('"""') or stripped.startswith("'''"):
                     continue
 
                 if legacy_pattern.match(line):

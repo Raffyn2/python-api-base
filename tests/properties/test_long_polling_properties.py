@@ -66,13 +66,9 @@ class TestPollConfig:
         max_timeout=st.floats(min_value=20.0, max_value=120.0),
     )
     @settings(max_examples=50)
-    def test_validate_timeout_clamps_value(
-        self, timeout: float, min_timeout: float, max_timeout: float
-    ):
+    def test_validate_timeout_clamps_value(self, timeout: float, min_timeout: float, max_timeout: float):
         """validate_timeout should clamp value to range."""
-        config = PollConfig(
-            min_timeout_seconds=min_timeout, max_timeout_seconds=max_timeout
-        )
+        config = PollConfig(min_timeout_seconds=min_timeout, max_timeout_seconds=max_timeout)
         result = config.validate_timeout(timeout)
         assert result >= min_timeout
         assert result <= max_timeout

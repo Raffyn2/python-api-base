@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 class TestPrometheusEndpoint:
     """Integration tests for /metrics endpoint."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def client(self) -> TestClient:
         """Create test client with Prometheus enabled."""
         import os

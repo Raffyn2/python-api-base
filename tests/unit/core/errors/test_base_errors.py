@@ -3,8 +3,9 @@
 Tests error hierarchy, context, and serialization.
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 from core.errors import (
     AppError,
@@ -17,12 +18,12 @@ from core.errors import (
     ValidationError,
 )
 from core.errors.base.infrastructure_errors import (
+    CacheError,
+    ConfigurationError,
     DatabaseError,
     ExternalServiceError,
     InfrastructureError,
-    CacheError,
     TokenStoreError,
-    ConfigurationError,
 )
 
 

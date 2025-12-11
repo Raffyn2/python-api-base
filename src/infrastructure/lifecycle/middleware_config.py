@@ -154,8 +154,7 @@ def _configure_security_headers_middleware(app: FastAPI) -> None:
         strict_transport_security="max-age=31536000; includeSubDomains; preload",
         referrer_policy="strict-origin-when-cross-origin",
         permissions_policy=(
-            "geolocation=(), microphone=(), camera=(), "
-            "payment=(), usb=(), magnetometer=(), gyroscope=()"
+            "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=()"
         ),
     )
     logger.info("middleware_configured", middleware="SecurityHeadersMiddleware")
@@ -203,25 +202,32 @@ def configure_rate_limiting(app: FastAPI) -> None:
     """Configure rate limiting middleware."""
     config = RateLimitConfig(
         default_limit=RateLimit(
-            requests=DEFAULT_RATE_LIMIT_REQUESTS, window=timedelta(minutes=1)
-        )
+            requests=DEFAULT_RATE_LIMIT_REQUESTS,
+            window=timedelta(minutes=1),
+        ),
     )
     limiter = InMemoryRateLimiter[str](config)
 
-    limiter.configure({
-        "GET:/api/v1/examples/*": RateLimit(
-            requests=READ_RATE_LIMIT_REQUESTS, window=timedelta(minutes=1)
-        ),
-        "POST:/api/v1/examples/*": RateLimit(
-            requests=WRITE_RATE_LIMIT_REQUESTS, window=timedelta(minutes=1)
-        ),
-        "PUT:/api/v1/examples/*": RateLimit(
-            requests=WRITE_RATE_LIMIT_REQUESTS, window=timedelta(minutes=1)
-        ),
-        "DELETE:/api/v1/examples/*": RateLimit(
-            requests=DELETE_RATE_LIMIT_REQUESTS, window=timedelta(minutes=1)
-        ),
-    })
+    limiter.configure(
+        {
+            "GET:/api/v1/examples/*": RateLimit(
+                requests=READ_RATE_LIMIT_REQUESTS,
+                window=timedelta(minutes=1),
+            ),
+            "POST:/api/v1/examples/*": RateLimit(
+                requests=WRITE_RATE_LIMIT_REQUESTS,
+                window=timedelta(minutes=1),
+            ),
+            "PUT:/api/v1/examples/*": RateLimit(
+                requests=WRITE_RATE_LIMIT_REQUESTS,
+                window=timedelta(minutes=1),
+            ),
+            "DELETE:/api/v1/examples/*": RateLimit(
+                requests=DELETE_RATE_LIMIT_REQUESTS,
+                window=timedelta(minutes=1),
+            ),
+        }
+    )
 
     app.add_middleware(
         RateLimitMiddleware[str],

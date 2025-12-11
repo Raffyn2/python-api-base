@@ -3,8 +3,6 @@
 Tests ErrorMessages and typed error classes.
 """
 
-import pytest
-
 from infrastructure.generics.core.errors import (
     AuthenticationError,
     CacheError,

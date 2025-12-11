@@ -4,11 +4,11 @@
 **Validates: Requirements 8.3**
 """
 
+from datetime import UTC
 from decimal import Decimal
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from application.examples.item.dtos import ItemExampleResponse
 from application.examples.item.mappers.mapper import ItemExampleMapper
@@ -19,12 +19,12 @@ from domain.examples.item.entity import ItemExample, Money
 class TestItemExampleMapper:
     """Tests for ItemExampleMapper class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mapper(self) -> ItemExampleMapper:
         """Create mapper instance."""
         return ItemExampleMapper()
 
-    @pytest.fixture
+    @pytest.fixture()
     def sample_entity(self) -> ItemExample:
         """Create sample entity for testing."""
         return ItemExample.create(
@@ -38,9 +38,7 @@ class TestItemExampleMapper:
             created_by="test_user",
         )
 
-    def test_to_dto_converts_entity(
-        self, mapper: ItemExampleMapper, sample_entity: ItemExample
-    ) -> None:
+    def test_to_dto_converts_entity(self, mapper: ItemExampleMapper, sample_entity: ItemExample) -> None:
         """Test entity to DTO conversion."""
         dto = mapper.to_dto(sample_entity)
 
@@ -55,9 +53,9 @@ class TestItemExampleMapper:
 
     def test_to_entity_converts_dto(self, mapper: ItemExampleMapper) -> None:
         """Test DTO to entity conversion."""
-        from datetime import datetime, timezone
-        
-        now = datetime.now(timezone.utc)
+        from datetime import datetime
+
+        now = datetime.now(UTC)
         dto = ItemExampleResponse(
             id="test-id",
             name="Test Item",
@@ -85,9 +83,7 @@ class TestItemExampleMapper:
         assert entity.quantity == dto.quantity
         assert entity.category == dto.category
 
-    def test_to_dto_list_converts_multiple(
-        self, mapper: ItemExampleMapper
-    ) -> None:
+    def test_to_dto_list_converts_multiple(self, mapper: ItemExampleMapper) -> None:
         """Test batch entity to DTO conversion."""
         entities = [
             ItemExample.create(
@@ -106,13 +102,11 @@ class TestItemExampleMapper:
             assert dto.name == f"Item {i}"
             assert dto.sku == f"SKU-{i:03d}"
 
-    def test_to_entity_list_converts_multiple(
-        self, mapper: ItemExampleMapper
-    ) -> None:
+    def test_to_entity_list_converts_multiple(self, mapper: ItemExampleMapper) -> None:
         """Test batch DTO to entity conversion."""
-        from datetime import datetime, timezone
-        
-        now = datetime.now(timezone.utc)
+        from datetime import datetime
+
+        now = datetime.now(UTC)
         dtos = [
             ItemExampleResponse(
                 id=f"id-{i}",
@@ -141,9 +135,7 @@ class TestItemExampleMapper:
             assert entity.name == f"Item {i}"
             assert entity.sku == f"SKU-{i:03d}"
 
-    def test_static_to_response_method(
-        self, sample_entity: ItemExample
-    ) -> None:
+    def test_static_to_response_method(self, sample_entity: ItemExample) -> None:
         """Test backward compatible static method."""
         dto = ItemExampleMapper.to_response(sample_entity)
 
@@ -169,42 +161,51 @@ class TestItemExampleMapper:
 
 # Property-based tests
 
+
 @st.composite
 def item_entity_strategy(draw: st.DrawFn) -> ItemExample:
     """Strategy to generate valid ItemExample entities."""
-    name = draw(st.text(min_size=1, max_size=100, alphabet=st.characters(
-        whitelist_categories=("L", "N", "P", "S"),
-        whitelist_characters=" -_"
-    )).filter(lambda x: x.strip()))
-    
-    sku = draw(st.text(min_size=3, max_size=20, alphabet=st.characters(
-        whitelist_categories=("L", "N"),
-        whitelist_characters="-_"
-    )).filter(lambda x: x.strip()))
-    
-    amount = draw(st.decimals(
-        min_value=Decimal("0.01"),
-        max_value=Decimal("999999.99"),
-        places=2,
-        allow_nan=False,
-        allow_infinity=False,
-    ))
-    
+    name = draw(
+        st.text(
+            min_size=1,
+            max_size=100,
+            alphabet=st.characters(whitelist_categories=("L", "N", "P", "S"), whitelist_characters=" -_"),
+        ).filter(lambda x: x.strip())
+    )
+
+    sku = draw(
+        st.text(
+            min_size=3, max_size=20, alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="-_")
+        ).filter(lambda x: x.strip())
+    )
+
+    amount = draw(
+        st.decimals(
+            min_value=Decimal("0.01"),
+            max_value=Decimal("999999.99"),
+            places=2,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+
     currency = draw(st.sampled_from(["BRL", "USD", "EUR"]))
-    
+
     description = draw(st.text(max_size=500).filter(lambda x: "\x00" not in x))
-    
+
     quantity = draw(st.integers(min_value=0, max_value=10000))
-    
+
     category = draw(st.sampled_from(["electronics", "clothing", "food", "other"]))
-    
-    tags = draw(st.lists(
-        st.text(min_size=1, max_size=20, alphabet=st.characters(
-            whitelist_categories=("L", "N")
-        )).filter(lambda x: x.strip()),
-        max_size=5,
-    ))
-    
+
+    tags = draw(
+        st.lists(
+            st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L", "N"))).filter(
+                lambda x: x.strip()
+            ),
+            max_size=5,
+        )
+    )
+
     return ItemExample.create(
         name=name,
         sku=sku,
@@ -219,29 +220,27 @@ def item_entity_strategy(draw: st.DrawFn) -> ItemExample:
 
 class TestItemMapperProperties:
     """Property-based tests for ItemExampleMapper.
-    
+
     **Feature: test-coverage-80-percent-v3, Property 1: Mapper Round-trip Consistency**
     **Validates: Requirements 2.2, 8.3**
     """
 
     @given(entity=item_entity_strategy())
     @settings(max_examples=100, deadline=5000)
-    def test_mapper_roundtrip_preserves_essential_fields(
-        self, entity: ItemExample
-    ) -> None:
+    def test_mapper_roundtrip_preserves_essential_fields(self, entity: ItemExample) -> None:
         """
         **Feature: test-coverage-80-percent-v3, Property 1: Mapper Round-trip Consistency**
         **Validates: Requirements 2.2, 8.3**
-        
+
         For any valid domain entity, converting to DTO and back to entity
         should preserve all essential data fields.
         """
         mapper = ItemExampleMapper()
-        
+
         # Entity -> DTO -> Entity
         dto = mapper.to_dto(entity)
         result = mapper.to_entity(dto)
-        
+
         # Essential fields should be preserved
         assert result.id == entity.id
         assert result.name == entity.name

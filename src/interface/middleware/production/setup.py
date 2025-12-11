@@ -5,8 +5,9 @@
 **Refactored: Split from production.py for one-class-per-file compliance**
 """
 
-import logging
 from typing import Any
+
+import structlog
 
 from infrastructure.audit import AuditStore
 from infrastructure.feature_flags import FeatureFlagEvaluator
@@ -21,7 +22,7 @@ from interface.middleware.production.resilience import (
     ResilienceMiddleware,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def setup_production_middleware(

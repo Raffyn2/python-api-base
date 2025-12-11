@@ -90,9 +90,7 @@ class AuditRecord[T]:
         return {"value": snapshot}
 
 
-def compute_changes[T: BaseModel](
-    before: T | None, after: T | None
-) -> dict[str, tuple[Any, Any]]:
+def compute_changes[T: BaseModel](before: T | None, after: T | None) -> dict[str, tuple[Any, Any]]:
     """Compute changes between two entity states.
 
     **Feature: python-api-base-2025-generics-audit**

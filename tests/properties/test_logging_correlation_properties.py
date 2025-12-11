@@ -68,13 +68,15 @@ class TestLoggingCorrelationProperties:
 
     @settings(max_examples=20)
     @given(
-        key=st.sampled_from([
-            "password",
-            "secret",
-            "token",
-            "api_key",
-            "authorization",
-        ]),
+        key=st.sampled_from(
+            [
+                "password",
+                "secret",
+                "token",
+                "api_key",
+                "authorization",
+            ]
+        ),
         value=st.text(min_size=1, max_size=50),
     )
     def test_pii_redaction_removes_sensitive_data(self, key: str, value: str) -> None:
@@ -92,9 +94,7 @@ class TestLoggingCorrelationProperties:
 
     @settings(max_examples=20)
     @given(
-        key=st.text(
-            min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))
-        ).filter(
+        key=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))).filter(
             lambda x: x.lower()
             not in [
                 "password",
@@ -119,12 +119,7 @@ class TestLoggingCorrelationProperties:
         """
         import logging
 
-        assume(
-            not any(
-                p in key.lower()
-                for p in ["password", "secret", "token", "api", "auth", "cred"]
-            )
-        )
+        assume(not any(p in key.lower() for p in ["password", "secret", "token", "api", "auth", "cred"]))
 
         event_dict = {key: value}
         result = redact_pii(logging.getLogger(), "info", event_dict)

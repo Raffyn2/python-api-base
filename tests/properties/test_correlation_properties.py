@@ -93,9 +93,7 @@ class TestCorrelationContextProperties:
         request_id=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=100)
-    def test_to_dict_contains_required_fields(
-        self, correlation_id: str, request_id: str
-    ) -> None:
+    def test_to_dict_contains_required_fields(self, correlation_id: str, request_id: str) -> None:
         """Property: to_dict always contains correlation_id and request_id."""
         context = CorrelationContext(
             correlation_id=correlation_id,
@@ -113,9 +111,7 @@ class TestCorrelationContextProperties:
         request_id=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=100)
-    def test_to_headers_contains_required_headers(
-        self, correlation_id: str, request_id: str
-    ) -> None:
+    def test_to_headers_contains_required_headers(self, correlation_id: str, request_id: str) -> None:
         """Property: to_headers always contains X-Correlation-ID and X-Request-ID."""
         context = CorrelationContext(
             correlation_id=correlation_id,
@@ -133,9 +129,7 @@ class TestCorrelationContextProperties:
         request_id=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=100)
-    def test_from_headers_round_trip(
-        self, correlation_id: str, request_id: str
-    ) -> None:
+    def test_from_headers_round_trip(self, correlation_id: str, request_id: str) -> None:
         """Property: from_headers(to_headers()) preserves IDs."""
         original = CorrelationContext(
             correlation_id=correlation_id,
@@ -201,9 +195,7 @@ class TestCorrelationContextManagerProperties:
         request_id=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=100)
-    def test_context_manager_sets_values(
-        self, correlation_id: str, request_id: str
-    ) -> None:
+    def test_context_manager_sets_values(self, correlation_id: str, request_id: str) -> None:
         """Property: Context manager sets correlation values."""
         clear_context()
         context = CorrelationContext(
@@ -258,9 +250,7 @@ class TestCorrelationServiceProperties:
         request_id=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=100)
-    def test_extract_from_headers_preserves_ids(
-        self, correlation_id: str, request_id: str
-    ) -> None:
+    def test_extract_from_headers_preserves_ids(self, correlation_id: str, request_id: str) -> None:
         """Property: extract_from_headers preserves provided IDs."""
         service = create_correlation_service()
         headers = {
@@ -311,9 +301,7 @@ class TestStructlogProcessorProperties:
         request_id=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=100)
-    def test_processor_adds_correlation_to_logs(
-        self, correlation_id: str, request_id: str
-    ) -> None:
+    def test_processor_adds_correlation_to_logs(self, correlation_id: str, request_id: str) -> None:
         """Property: Processor adds correlation IDs to log events."""
         clear_context()
         set_correlation_id(correlation_id)
@@ -345,9 +333,7 @@ class TestDecoratorProperties:
         request_id=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=100)
-    def test_with_correlation_sets_context(
-        self, correlation_id: str, request_id: str
-    ) -> None:
+    def test_with_correlation_sets_context(self, correlation_id: str, request_id: str) -> None:
         """Property: with_correlation decorator sets context."""
         clear_context()
         captured_correlation: list[str | None] = []

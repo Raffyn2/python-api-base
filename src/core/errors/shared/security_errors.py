@@ -3,6 +3,10 @@
 **Feature: shared-modules-security-fixes**
 **Validates: Requirements 1.3, 4.3**
 **Refactored: Split from exceptions.py for one-class-per-file compliance**
+
+Note:
+    AuthenticationError here is for cryptographic authentication (GCM tag verification).
+    For HTTP authentication errors, use core.errors.base.domain_errors.AuthenticationError.
 """
 
 from __future__ import annotations
@@ -60,8 +64,12 @@ class PatternValidationError(SecurityModuleError):
     Raised when pattern validation fails due to dangerous patterns
     or invalid syntax.
 
+    Note:
+        Pattern is stored but truncated in error message to prevent
+        exposing potentially malicious input in logs.
+
     Attributes:
-        pattern: The invalid pattern.
+        pattern: The invalid pattern (stored, truncated in message).
         reason: Reason for the validation failure.
     """
 
@@ -74,4 +82,6 @@ class PatternValidationError(SecurityModuleError):
         """
         self.pattern = pattern
         self.reason = reason
-        super().__init__(f"Invalid pattern '{pattern}': {reason}")
+        # Security: Truncate pattern to prevent log injection
+        truncated = pattern[:20] + "..." if len(pattern) > 20 else pattern
+        super().__init__(f"Invalid pattern '{truncated}': {reason}")

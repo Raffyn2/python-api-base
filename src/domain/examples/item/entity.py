@@ -2,7 +2,7 @@
 
 Demonstrates:
 - BaseEntity[IdType] with PEP 695 generics
-- Value Objects (Money)
+- Value Objects (Money from domain.common)
 - Domain Events
 - Soft delete support
 - Audit fields
@@ -10,52 +10,16 @@ Demonstrates:
 **Feature: example-system-demo**
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
-from typing import Any
+from typing import Any, Self
 
 from pydantic import Field, PrivateAttr
 
 from core.base.domain.entity import AuditableEntity
 from core.base.events.domain_event import DomainEvent
-from core.shared.utils.datetime import utc_now
-
-# === Value Objects ===
-
-
-@dataclass(frozen=True, slots=True)
-class Money:
-    """Value object for monetary amounts.
-
-    Immutable, comparable, and supports arithmetic operations.
-    """
-
-    amount: Decimal
-    currency: str = "BRL"
-
-    def __post_init__(self) -> None:
-        if self.amount < 0:
-            raise ValueError("Amount cannot be negative")
-        if len(self.currency) != 3:
-            raise ValueError("Currency must be 3-letter ISO code")
-
-    def __add__(self, other: "Money") -> "Money":
-        if self.currency != other.currency:
-            raise ValueError("Cannot add different currencies")
-        return Money(self.amount + other.amount, self.currency)
-
-    def __mul__(self, quantity: int) -> "Money":
-        return Money(self.amount * quantity, self.currency)
-
-    def to_dict(self) -> dict[str, Any]:
-        return {"amount": str(self.amount), "currency": self.currency}
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Money":
-        return cls(Decimal(data["amount"]), data.get("currency", "BRL"))
-
+from domain.common.value_objects import Money
 
 # === Enums ===
 
@@ -134,7 +98,7 @@ class ItemExample(AuditableEntity[str]):
     name: str = ""
     description: str = ""
     sku: str = ""
-    price: Money = Field(default_factory=lambda: Money(Decimal("0")))
+    price: Money = Field(default_factory=lambda: Money(Decimal(0)))
     quantity: int = 0
     status: ItemExampleStatus = ItemExampleStatus.ACTIVE
     category: str = ""
@@ -155,7 +119,7 @@ class ItemExample(AuditableEntity[str]):
         category: str = "",
         tags: list[str] | None = None,
         created_by: str = "system",
-    ) -> "ItemExample":
+    ) -> Self:
         """Factory method to create a new ItemExample with events."""
         from uuid import uuid4
 
@@ -201,7 +165,10 @@ class ItemExample(AuditableEntity[str]):
             self.description = description
 
         if price is not None and price != self.price:
-            changes["price"] = {"old": self.price.to_dict(), "new": price.to_dict()}
+            changes["price"] = {
+                "old": {"amount": str(self.price.amount), "currency": self.price.currency},
+                "new": {"amount": str(price.amount), "currency": price.currency},
+            }
             self.price = price
 
         if quantity is not None and quantity != self.quantity:
@@ -252,11 +219,7 @@ class ItemExample(AuditableEntity[str]):
     @property
     def is_available(self) -> bool:
         """Check if item is available for ordering."""
-        return (
-            self.status == ItemExampleStatus.ACTIVE
-            and self.quantity > 0
-            and not self.is_deleted
-        )
+        return self.status == ItemExampleStatus.ACTIVE and self.quantity > 0 and not self.is_deleted
 
     @property
     def total_value(self) -> Money:

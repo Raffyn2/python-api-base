@@ -68,9 +68,7 @@ class TestPEP695Compliance:
 
             # Should have PEP 695 style generics
             if "Protocol" in content or "[T" in content:
-                assert re.search(pep695_pattern, content), (
-                    f"{file_path} should use PEP 695 syntax"
-                )
+                assert re.search(pep695_pattern, content), f"{file_path} should use PEP 695 syntax"
 
 
 class TestSecretStrNonDisclosure:
@@ -193,10 +191,7 @@ class TestNoHardcodedSecrets:
                     matches = re.findall(pattern, content, re.IGNORECASE)
                     for match in matches:
                         # Check if it's an excluded pattern
-                        is_excluded = any(
-                            re.search(exc, match, re.IGNORECASE)
-                            for exc in exclude_patterns
-                        )
+                        is_excluded = any(re.search(exc, match, re.IGNORECASE) for exc in exclude_patterns)
                         if not is_excluded:
                             violations.append(f"{py_file}: {match}")
 
@@ -224,6 +219,4 @@ class TestResultPatternUsage:
             assert "Result" in content, f"{file_path} should use Result pattern"
 
             # Should use Ok/Err
-            assert "Ok(" in content or "Err(" in content, (
-                f"{file_path} should use Ok/Err"
-            )
+            assert "Ok(" in content or "Err(" in content, f"{file_path} should use Ok/Err"

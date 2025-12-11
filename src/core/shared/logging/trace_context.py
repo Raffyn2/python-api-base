@@ -14,8 +14,10 @@ Example:
 
 from __future__ import annotations
 
-import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import logging
 
 
 def add_trace_context(
@@ -50,8 +52,8 @@ def add_trace_context(
             if span.is_recording():
                 event_dict["trace_sampled"] = True
     except ImportError:
-        pass
-    except Exception:
+        pass  # OpenTelemetry not installed - optional dependency
+    except Exception:  # noqa: S110 - Trace context is optional, don't break logging
         pass
 
     return event_dict
@@ -75,14 +77,14 @@ def add_dapr_context(
         The event dictionary with Dapr context added
     """
     try:
-        from core.config.dapr import get_dapr_settings
+        from core.config.infrastructure.dapr import get_dapr_settings
 
         settings = get_dapr_settings()
         if settings.enabled:
             event_dict["dapr_app_id"] = settings.app_id
     except ImportError:
-        pass
-    except Exception:
+        pass  # Dapr config not available - optional dependency
+    except Exception:  # noqa: S110 - Dapr context is optional, don't break logging
         pass
 
     return event_dict

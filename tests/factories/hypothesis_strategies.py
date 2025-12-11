@@ -36,9 +36,7 @@ non_empty_str_strategy = st.text(min_size=1, max_size=100, alphabet=SAFE_ALPHABE
 short_str_strategy = st.text(min_size=1, max_size=50, alphabet=SAFE_ALPHABET)
 medium_str_strategy = st.text(min_size=1, max_size=255, alphabet=SAFE_ALPHABET)
 long_str_strategy = st.text(min_size=1, max_size=1000, alphabet=SAFE_ALPHABET)
-slug_strategy = st.from_regex(r"^[a-z0-9]+(-[a-z0-9]+)*$", fullmatch=True).filter(
-    lambda s: 1 <= len(s) <= 100
-)
+slug_strategy = st.from_regex(r"^[a-z0-9]+(-[a-z0-9]+)*$", fullmatch=True).filter(lambda s: 1 <= len(s) <= 100)
 
 # =============================================================================
 # Contact Strategies
@@ -53,18 +51,12 @@ phone_strategy = st.from_regex(r"^\+?[0-9]{10,15}$", fullmatch=True)
 
 positive_int_strategy = st.integers(min_value=1, max_value=1_000_000)
 non_negative_int_strategy = st.integers(min_value=0, max_value=1_000_000)
-positive_float_strategy = st.floats(
-    min_value=0.01, max_value=1_000_000, allow_nan=False, allow_infinity=False
+positive_float_strategy = st.floats(min_value=0.01, max_value=1_000_000, allow_nan=False, allow_infinity=False)
+non_negative_float_strategy = st.floats(min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False)
+percentage_strategy = st.floats(min_value=0, max_value=100, allow_nan=False, allow_infinity=False)
+price_strategy = st.floats(min_value=0.01, max_value=100_000, allow_nan=False, allow_infinity=False).map(
+    lambda x: round(x, 2)
 )
-non_negative_float_strategy = st.floats(
-    min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False
-)
-percentage_strategy = st.floats(
-    min_value=0, max_value=100, allow_nan=False, allow_infinity=False
-)
-price_strategy = st.floats(
-    min_value=0.01, max_value=100_000, allow_nan=False, allow_infinity=False
-).map(lambda x: round(x, 2))
 
 # =============================================================================
 # Pagination Strategies
@@ -146,14 +138,10 @@ def _get_float_strategy(field_info: FieldInfo | None) -> st.SearchStrategy[float
                 max_value = meta.le
     if exclude_min:
         min_value += 0.01
-    return st.floats(
-        min_value=min_value, max_value=max_value, allow_nan=False, allow_infinity=False
-    )
+    return st.floats(min_value=min_value, max_value=max_value, allow_nan=False, allow_infinity=False)
 
 
-def _get_strategy_for_type(
-    field_type: type, field_info: FieldInfo | None = None
-) -> st.SearchStrategy[Any]:
+def _get_strategy_for_type(field_type: type, field_info: FieldInfo | None = None) -> st.SearchStrategy[Any]:
     """Get a Hypothesis strategy for a given Python type."""
     origin = get_origin(field_type)
     args = get_args(field_type)
@@ -207,7 +195,7 @@ def _get_strategy_for_type(
 # =============================================================================
 
 
-def pydantic_strategy(model_class: type[T]) -> st.SearchStrategy[T]:
+def pydantic_strategy[T: BaseModel](model_class: type[T]) -> st.SearchStrategy[T]:
     """Create a Hypothesis strategy for a Pydantic model."""
     field_strategies: dict[str, st.SearchStrategy[Any]] = {}
     for field_name, field_info in model_class.model_fields.items():
@@ -215,13 +203,11 @@ def pydantic_strategy(model_class: type[T]) -> st.SearchStrategy[T]:
         if field_type is None:
             field_strategies[field_name] = st.none()
         else:
-            field_strategies[field_name] = _get_strategy_for_type(
-                field_type, field_info
-            )
+            field_strategies[field_name] = _get_strategy_for_type(field_type, field_info)
     return st.builds(model_class, **field_strategies)
 
 
-def entity_strategy(
+def entity_strategy[T: BaseModel](
     entity_class: type[T], *, with_id: bool = True, with_timestamps: bool = True
 ) -> st.SearchStrategy[T]:
     """Create a Hypothesis strategy for a domain entity."""
@@ -243,18 +229,16 @@ def entity_strategy(
         if field_type is None:
             field_strategies[field_name] = st.none()
         else:
-            field_strategies[field_name] = _get_strategy_for_type(
-                field_type, field_info
-            )
+            field_strategies[field_name] = _get_strategy_for_type(field_type, field_info)
     return st.builds(entity_class, **field_strategies)
 
 
-def create_dto_strategy(dto_class: type[T]) -> st.SearchStrategy[T]:
+def create_dto_strategy[T: BaseModel](dto_class: type[T]) -> st.SearchStrategy[T]:
     """Create a Hypothesis strategy for a Create DTO."""
     return pydantic_strategy(dto_class)
 
 
-def update_dto_strategy(dto_class: type[T]) -> st.SearchStrategy[T]:
+def update_dto_strategy[T: BaseModel](dto_class: type[T]) -> st.SearchStrategy[T]:
     """Create a Hypothesis strategy for an Update DTO."""
     field_strategies: dict[str, st.SearchStrategy[Any]] = {}
     for field_name, field_info in dto_class.model_fields.items():
@@ -278,19 +262,19 @@ def update_dto_strategy(dto_class: type[T]) -> st.SearchStrategy[T]:
 # =============================================================================
 
 
-def list_of(
+def list_of[T: BaseModel](
     strategy: st.SearchStrategy[T], *, min_size: int = 0, max_size: int = 10
 ) -> st.SearchStrategy[list[T]]:
     """Create a strategy for lists of items."""
     return st.lists(strategy, min_size=min_size, max_size=max_size)
 
 
-def optional(strategy: st.SearchStrategy[T]) -> st.SearchStrategy[T | None]:
+def optional[T: BaseModel](strategy: st.SearchStrategy[T]) -> st.SearchStrategy[T | None]:
     """Create a strategy that may return None."""
     return st.one_of(st.none(), strategy)
 
 
-def one_of_models(*model_classes: type[T]) -> st.SearchStrategy[T]:
+def one_of_models[T: BaseModel](*model_classes: type[T]) -> st.SearchStrategy[T]:
     """Create a strategy that generates one of several model types."""
     strategies = [pydantic_strategy(cls) for cls in model_classes]
     return st.one_of(*strategies)
@@ -314,7 +298,7 @@ def strategy_for_field(field_name: str, field_type: type) -> st.SearchStrategy[A
     return _get_strategy_for_type(field_type, None)
 
 
-def create_model_strategy(
+def create_model_strategy[T: BaseModel](
     model_class: type[T], overrides: dict[str, st.SearchStrategy[Any]] | None = None
 ) -> st.SearchStrategy[T]:
     """Create a model strategy with field overrides."""
@@ -327,7 +311,5 @@ def create_model_strategy(
             if field_type is None:
                 field_strategies[field_name] = st.none()
             else:
-                field_strategies[field_name] = _get_strategy_for_type(
-                    field_type, field_info
-                )
+                field_strategies[field_name] = _get_strategy_for_type(field_type, field_info)
     return st.builds(model_class, **field_strategies)

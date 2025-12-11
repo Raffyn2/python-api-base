@@ -58,13 +58,9 @@ class TestBatchResult:
     def test_create_successful_result(self) -> None:
         """BatchResult should store successful items."""
         result = BatchResult(
-            succeeded=["item1", "item2"],
-            failed=[],
-            total_processed=2,
-            total_succeeded=2,
-            total_failed=0
+            succeeded=["item1", "item2"], failed=[], total_processed=2, total_succeeded=2, total_failed=0
         )
-        
+
         assert result.succeeded == ["item1", "item2"]
         assert result.total_succeeded == 2
         assert result.total_failed == 0
@@ -73,13 +69,9 @@ class TestBatchResult:
         """BatchResult should store failed items."""
         error = ValueError("test error")
         result = BatchResult(
-            succeeded=["item1"],
-            failed=[("item2", error)],
-            total_processed=2,
-            total_succeeded=1,
-            total_failed=1
+            succeeded=["item1"], failed=[("item2", error)], total_processed=2, total_succeeded=1, total_failed=1
         )
-        
+
         assert result.total_succeeded == 1
         assert result.total_failed == 1
         assert len(result.failed) == 1
@@ -91,45 +83,29 @@ class TestBatchResult:
             failed=[("item3", ValueError("error"))],
             total_processed=3,
             total_succeeded=2,
-            total_failed=1
+            total_failed=1,
         )
-        
+
         assert result.success_rate == pytest.approx(66.67, rel=0.01)
 
     def test_success_rate_zero_processed(self) -> None:
         """BatchResult should return 100% for zero processed."""
-        result = BatchResult(
-            succeeded=[],
-            failed=[],
-            total_processed=0,
-            total_succeeded=0,
-            total_failed=0
-        )
-        
+        result = BatchResult(succeeded=[], failed=[], total_processed=0, total_succeeded=0, total_failed=0)
+
         assert result.success_rate == 100.0
 
     def test_is_complete_success(self) -> None:
         """BatchResult should detect complete success."""
-        result = BatchResult(
-            succeeded=["item1"],
-            failed=[],
-            total_processed=1,
-            total_succeeded=1,
-            total_failed=0
-        )
-        
+        result = BatchResult(succeeded=["item1"], failed=[], total_processed=1, total_succeeded=1, total_failed=0)
+
         assert result.is_complete_success is True
 
     def test_has_failures(self) -> None:
         """BatchResult should detect failures."""
         result = BatchResult(
-            succeeded=[],
-            failed=[("item1", ValueError("error"))],
-            total_processed=1,
-            total_succeeded=0,
-            total_failed=1
+            succeeded=[], failed=[("item1", ValueError("error"))], total_processed=1, total_succeeded=0, total_failed=1
         )
-        
+
         assert result.has_failures is True
 
     def test_rolled_back_result(self) -> None:
@@ -141,9 +117,9 @@ class TestBatchResult:
             total_succeeded=0,
             total_failed=1,
             rolled_back=True,
-            rollback_error=None
+            rollback_error=None,
         )
-        
+
         assert result.rolled_back is True
         assert result.has_failures is True
 
@@ -154,7 +130,7 @@ class TestBatchConfig:
     def test_default_config(self) -> None:
         """BatchConfig should have sensible defaults."""
         config = BatchConfig()
-        
+
         assert config.chunk_size == 100
         assert config.max_concurrent == 5
         assert config.error_strategy == BatchErrorStrategy.CONTINUE
@@ -162,12 +138,8 @@ class TestBatchConfig:
 
     def test_custom_config(self) -> None:
         """BatchConfig should accept custom values."""
-        config = BatchConfig(
-            chunk_size=50,
-            error_strategy=BatchErrorStrategy.FAIL_FAST,
-            max_retries=5
-        )
-        
+        config = BatchConfig(chunk_size=50, error_strategy=BatchErrorStrategy.FAIL_FAST, max_retries=5)
+
         assert config.chunk_size == 50
         assert config.error_strategy == BatchErrorStrategy.FAIL_FAST
         assert config.max_retries == 5
@@ -198,48 +170,28 @@ class TestBatchProgress:
 
     def test_progress_calculation(self) -> None:
         """BatchProgress should calculate percentage correctly."""
-        progress = BatchProgress(
-            total_items=100,
-            processed_items=50,
-            succeeded_items=45,
-            failed_items=5
-        )
-        
+        progress = BatchProgress(total_items=100, processed_items=50, succeeded_items=45, failed_items=5)
+
         assert progress.total_items == 100
         assert progress.processed_items == 50
         assert progress.progress_percentage == 50.0
 
     def test_progress_zero_total(self) -> None:
         """BatchProgress should handle zero total."""
-        progress = BatchProgress(
-            total_items=0,
-            processed_items=0,
-            succeeded_items=0,
-            failed_items=0
-        )
-        
+        progress = BatchProgress(total_items=0, processed_items=0, succeeded_items=0, failed_items=0)
+
         assert progress.progress_percentage == 100.0
 
     def test_is_complete(self) -> None:
         """BatchProgress should detect completion."""
-        progress = BatchProgress(
-            total_items=10,
-            processed_items=10,
-            succeeded_items=10,
-            failed_items=0
-        )
-        
+        progress = BatchProgress(total_items=10, processed_items=10, succeeded_items=10, failed_items=0)
+
         assert progress.is_complete is True
 
     def test_not_complete(self) -> None:
         """BatchProgress should detect incomplete state."""
-        progress = BatchProgress(
-            total_items=10,
-            processed_items=5,
-            succeeded_items=5,
-            failed_items=0
-        )
-        
+        progress = BatchProgress(total_items=10, processed_items=5, succeeded_items=5, failed_items=0)
+
         assert progress.is_complete is False
 
 
@@ -254,9 +206,9 @@ class TestBatchOperationStats:
             succeeded=95,
             failed=5,
             duration_ms=10500.0,
-            items_per_second=10.0
+            items_per_second=10.0,
         )
-        
+
         assert stats.operation_type == BatchOperationType.CREATE
         assert stats.total_items == 100
         assert stats.succeeded == 95
@@ -265,22 +217,12 @@ class TestBatchOperationStats:
 
     def test_stats_success_rate(self) -> None:
         """BatchOperationStats should calculate success rate."""
-        stats = BatchOperationStats(
-            operation_type=BatchOperationType.UPDATE,
-            total_items=100,
-            succeeded=80,
-            failed=20
-        )
-        
+        stats = BatchOperationStats(operation_type=BatchOperationType.UPDATE, total_items=100, succeeded=80, failed=20)
+
         assert stats.success_rate == 80.0
 
     def test_stats_success_rate_zero_items(self) -> None:
         """BatchOperationStats should handle zero items."""
-        stats = BatchOperationStats(
-            operation_type=BatchOperationType.DELETE,
-            total_items=0,
-            succeeded=0,
-            failed=0
-        )
-        
+        stats = BatchOperationStats(operation_type=BatchOperationType.DELETE, total_items=0, succeeded=0, failed=0)
+
         assert stats.success_rate == 100.0

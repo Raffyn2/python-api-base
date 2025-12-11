@@ -1,44 +1,43 @@
-"""
-Sustainability service for orchestrating metrics collection and reporting.
+"""Sustainability service for orchestrating metrics collection and reporting.
 
 Provides high-level interface for energy metrics, carbon calculations,
 and sustainability reporting.
 """
 
-import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
-from src.infrastructure.sustainability.calculator import (
+import structlog
+
+from infrastructure.sustainability.calculator import (
     aggregate_emissions,
-    calculate_cost,
     calculate_progress,
     calculate_savings,
     calculate_trend,
     create_carbon_metrics,
 )
-from src.infrastructure.sustainability.client import (
+from infrastructure.sustainability.client import (
     CarbonIntensityClient,
     PrometheusClient,
 )
-from src.infrastructure.sustainability.config import (
+from infrastructure.sustainability.config import (
     SustainabilitySettings,
     get_sustainability_settings,
 )
-from src.infrastructure.sustainability.models import (
+from infrastructure.sustainability.models import (
     CarbonMetric,
     EnergyCost,
     EnergyMetric,
     SustainabilityReport,
 )
-from src.infrastructure.sustainability.serializer import (
+from infrastructure.sustainability.serializer import (
     export_to_csv,
     export_to_json,
     serialize_carbon_metric,
     serialize_report,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class SustainabilityService:
@@ -82,9 +81,7 @@ class SustainabilityService:
     ) -> list[CarbonMetric]:
         """Calculate carbon metrics from energy consumption."""
         energy_metrics = await self.get_energy_metrics(namespace)
-        intensity = await self.carbon_client.get_carbon_intensity(
-            region or self.settings.default_region
-        )
+        intensity = await self.carbon_client.get_carbon_intensity(region or self.settings.default_region)
         return create_carbon_metrics(energy_metrics, intensity)
 
     async def get_emissions_by_namespace(
@@ -105,7 +102,7 @@ class SustainabilityService:
         energy_metrics = await self.get_energy_metrics(namespace)
         total_energy_kwh = sum(m.energy_kwh for m in energy_metrics)
 
-        now = datetime.now()
+        now = datetime.now(UTC)
         return EnergyCost.calculate(
             energy_kwh=total_energy_kwh,
             price_per_kwh=self.settings.electricity_price_per_kwh,
@@ -124,14 +121,12 @@ class SustainabilityService:
     ) -> SustainabilityReport:
         """Generate sustainability report for a namespace."""
         carbon_metrics = await self.get_carbon_metrics(namespace)
-        energy_cost = await self.calculate_energy_cost(
-            namespace, period_start, period_end
-        )
+        energy_cost = await self.calculate_energy_cost(namespace, period_start, period_end)
 
         total_energy_kwh = sum(m.energy_kwh for m in carbon_metrics)
         total_emissions = sum(m.emissions_gco2 for m in carbon_metrics)
 
-        return SustainabilityReport(
+        report = SustainabilityReport(
             namespace=namespace,
             period_start=period_start,
             period_end=period_end,
@@ -142,6 +137,17 @@ class SustainabilityService:
             baseline_emissions_gco2=baseline_emissions,
             target_emissions_gco2=target_emissions,
         )
+
+        logger.info(
+            "Sustainability report generated",
+            operation="REPORT_GENERATED",
+            namespace=namespace,
+            total_energy_kwh=str(total_energy_kwh),
+            total_emissions_gco2=str(total_emissions),
+            total_cost=str(energy_cost.total_cost),
+        )
+
+        return report
 
     async def get_progress(
         self,

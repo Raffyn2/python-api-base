@@ -6,13 +6,13 @@
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 if TYPE_CHECKING:
     from infrastructure.db.event_sourcing.aggregate import Aggregate
 
 
-@dataclass
+@dataclass(slots=True)
 class Snapshot[AggregateT: "Aggregate[Any]"]:
     """Snapshot of aggregate state for performance optimization.
 
@@ -53,7 +53,7 @@ class Snapshot[AggregateT: "Aggregate[Any]"]:
         return self._compute_hash(self.state) == self.state_hash
 
     @classmethod
-    def from_aggregate(cls, aggregate: "Aggregate[Any]") -> "Snapshot[Any]":
+    def from_aggregate(cls, aggregate: "Aggregate[Any]") -> Self:
         """Create a snapshot from an aggregate instance."""
         state = aggregate.to_snapshot_state()
         return cls(

@@ -7,16 +7,23 @@ This module provides:
 
 **Feature: python-api-base-2025-state-of-art**
 **Validates: Requirements 2.2**
+**Refactored: 2025 - Fixed logging, improved type safety**
 """
 
-import logging
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+import structlog
+
 from application.common.cqrs.exceptions.exceptions import HandlerNotFoundError
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+
+# Module constants
+_LOG_OP_REGISTER = "QUERY_REGISTER"
+_LOG_OP_DISPATCH = "QUERY_DISPATCH"
+_LOG_OP_CACHE = "QUERY_CACHE"
 
 
 # =============================================================================
@@ -60,10 +67,11 @@ class Query[T](ABC):
 # Query Handler Types
 # =============================================================================
 
-QueryHandler = Callable[[Any], Awaitable[Any]]
+type QueryHandlerFunc = Callable[[Any], Awaitable[Any]]
 """Type alias for query handler functions.
 
 A query handler is an async function that takes a query and returns the result data.
+Note: Named QueryHandlerFunc to avoid conflict with QueryHandler class in handlers.py.
 """
 
 
@@ -88,13 +96,13 @@ class QueryBus:
 
     def __init__(self) -> None:
         """Initialize query bus."""
-        self._handlers: dict[type, QueryHandler] = {}
+        self._handlers: dict[type, QueryHandlerFunc] = {}
         self._cache: Any = None
 
     def register(
         self,
         query_type: type[Query[Any]],
-        handler: QueryHandler,
+        handler: QueryHandlerFunc,
     ) -> None:
         """Register a handler for a query type.
 
@@ -106,9 +114,14 @@ class QueryBus:
             ValueError: If handler is already registered for this type.
         """
         if query_type in self._handlers:
-            raise ValueError(f"Handler already registered for {query_type.__name__}")
+            msg = f"Handler already registered for {query_type.__name__}"
+            raise ValueError(msg)
         self._handlers[query_type] = handler
-        logger.debug(f"Registered handler for {query_type.__name__}")
+        logger.debug(
+            "Registered query handler",
+            query_type=query_type.__name__,
+            operation=_LOG_OP_REGISTER,
+        )
 
     def unregister(self, query_type: type[Query[Any]]) -> None:
         """Unregister a handler for a query type.
@@ -117,7 +130,10 @@ class QueryBus:
             query_type: The query class to unregister.
         """
         self._handlers.pop(query_type, None)
-        logger.debug(f"Unregistered handler for {query_type.__name__}")
+        logger.debug(
+            "Unregistered query handler",
+            query_type=query_type.__name__,
+        )
 
     def set_cache(self, cache: Any) -> None:
         """Set cache provider for query results.
@@ -126,7 +142,10 @@ class QueryBus:
             cache: Cache provider implementing get/set methods.
         """
         self._cache = cache
-        logger.debug("Cache provider set for query bus")
+        logger.debug(
+            "Cache provider configured",
+            operation=_LOG_OP_CACHE,
+        )
 
     async def dispatch[T](self, query: Query[T]) -> T:
         """Dispatch a query to its registered handler.
@@ -151,18 +170,33 @@ class QueryBus:
         if self._cache is not None and cache_key:
             cached = await self._cache.get(cache_key)
             if cached is not None:
-                logger.debug(f"Cache hit for {query_type.__name__}")
+                logger.debug(
+                    "Cache hit",
+                    query_type=query_type.__name__,
+                    cache_key=cache_key,
+                    operation=_LOG_OP_CACHE,
+                )
                 return cached
 
         # Execute query
-        logger.debug(f"Dispatching query {query_type.__name__}")
+        logger.debug(
+            "Dispatching query",
+            query_type=query_type.__name__,
+            operation=_LOG_OP_DISPATCH,
+        )
         result = await handler(query)
 
         # Cache result if caching is enabled
         if self._cache is not None and cache_key:
             ttl = getattr(query, "cache_ttl", None)
             await self._cache.set(cache_key, result, ttl)
-            logger.debug(f"Cached result for {query_type.__name__}")
+            logger.debug(
+                "Cached query result",
+                query_type=query_type.__name__,
+                cache_key=cache_key,
+                ttl=ttl,
+                operation=_LOG_OP_CACHE,
+            )
 
         return result
 

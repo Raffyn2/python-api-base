@@ -11,6 +11,6 @@ from application.examples.item.commands.commands import (
 
 __all__ = [
     "CreateItemCommand",
-    "UpdateItemCommand",
     "DeleteItemCommand",
+    "UpdateItemCommand",
 ]

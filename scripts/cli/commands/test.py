@@ -28,18 +28,10 @@ def _handle_cli_error(error: CLIError) -> None:
 @app.command()
 def run(
     path: Annotated[str, typer.Argument(help="Test path or pattern")] = "tests/",
-    coverage: Annotated[
-        bool, typer.Option("--coverage", "-c", help="Run with coverage")
-    ] = False,
-    verbose: Annotated[
-        bool, typer.Option("--verbose", "-v", help="Verbose output")
-    ] = False,
-    markers: Annotated[
-        str, typer.Option("--markers", "-m", help="Run tests with specific markers")
-    ] = "",
-    parallel: Annotated[
-        bool, typer.Option("--parallel", "-p", help="Run tests in parallel")
-    ] = False,
+    coverage: Annotated[bool, typer.Option("--coverage", "-c", help="Run with coverage")] = False,
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Verbose output")] = False,
+    markers: Annotated[str, typer.Option("--markers", "-m", help="Run tests with specific markers")] = "",
+    parallel: Annotated[bool, typer.Option("--parallel", "-p", help="Run tests in parallel")] = False,
 ) -> None:
     """Run tests."""
     logger.debug(f"run command called with path={path}, coverage={coverage}")
@@ -140,9 +132,7 @@ def coverage() -> None:
         exit_code = run_pytest(args)
 
         if exit_code == 0:
-            typer.secho(
-                "✓ Coverage report generated in htmlcov/", fg=typer.colors.GREEN
-            )
+            typer.secho("✓ Coverage report generated in htmlcov/", fg=typer.colors.GREEN)
         raise typer.Exit(code=exit_code)
     except CLIError as e:
         _handle_cli_error(e)
@@ -188,12 +178,14 @@ def quick() -> None:
 
     try:
         validated_path = validate_path("tests/unit/")
-        exit_code = run_pytest([
-            validated_path,
-            "-x",  # Stop on first failure
-            "--tb=short",
-            "-q",
-        ])
+        exit_code = run_pytest(
+            [
+                validated_path,
+                "-x",  # Stop on first failure
+                "--tb=short",
+                "-q",
+            ]
+        )
         raise typer.Exit(code=exit_code)
     except CLIError as e:
         _handle_cli_error(e)

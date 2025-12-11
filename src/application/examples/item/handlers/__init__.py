@@ -7,14 +7,16 @@ from application.examples.item.handlers.handlers import (
     CreateItemCommandHandler,
     DeleteItemCommandHandler,
     GetItemQueryHandler,
+    IItemRepository,
     ListItemsQueryHandler,
     UpdateItemCommandHandler,
 )
 
 __all__ = [
     "CreateItemCommandHandler",
-    "UpdateItemCommandHandler",
     "DeleteItemCommandHandler",
     "GetItemQueryHandler",
+    "IItemRepository",
     "ListItemsQueryHandler",
+    "UpdateItemCommandHandler",
 ]

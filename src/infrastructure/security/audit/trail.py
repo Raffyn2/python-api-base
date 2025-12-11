@@ -19,7 +19,7 @@ class AuditAction(Enum):
     ARCHIVE = "archive"
 
 
-@dataclass
+@dataclass(slots=True)
 class FieldChange:
     """Single field change."""
 
@@ -29,7 +29,7 @@ class FieldChange:
     field_type: str = "unknown"
 
 
-@dataclass
+@dataclass(slots=True)
 class AuditEntry:
     """Audit log entry with diff tracking."""
 
@@ -60,22 +60,16 @@ class AuditBackend(Protocol):
     """Protocol for audit storage backend."""
 
     async def save(self, entry: AuditEntry) -> None: ...
-    async def find_by_entity(
-        self, entity_type: str, entity_id: str
-    ) -> list[AuditEntry]: ...
+    async def find_by_entity(self, entity_type: str, entity_id: str) -> list[AuditEntry]: ...
     async def find_by_user(self, user_id: str) -> list[AuditEntry]: ...
-    async def find_by_time_range(
-        self, start: datetime, end: datetime
-    ) -> list[AuditEntry]: ...
+    async def find_by_time_range(self, start: datetime, end: datetime) -> list[AuditEntry]: ...
 
 
 class DiffCalculator:
     """Calculate differences between object states."""
 
     @staticmethod
-    def compute_diff(
-        before: dict[str, Any] | None, after: dict[str, Any] | None
-    ) -> list[FieldChange]:
+    def compute_diff(before: dict[str, Any] | None, after: dict[str, Any] | None) -> list[FieldChange]:
         """Compute field-level differences."""
         changes: list[FieldChange] = []
 
@@ -231,9 +225,7 @@ class AuditService[T]:
         """Get complete history for an entity."""
         return await self._backend.find_by_entity(entity_type, entity_id)
 
-    async def reconstruct_at(
-        self, entity_type: str, entity_id: str, timestamp: datetime
-    ) -> dict[str, Any] | None:
+    async def reconstruct_at(self, entity_type: str, entity_id: str, timestamp: datetime) -> dict[str, Any] | None:
         """Reconstruct entity state at a point in time."""
         history = await self.get_history(entity_type, entity_id)
         history = sorted(history, key=lambda e: e.timestamp)
@@ -261,19 +253,11 @@ class InMemoryAuditBackend:
     async def save(self, entry: AuditEntry) -> None:
         self._entries.append(entry)
 
-    async def find_by_entity(
-        self, entity_type: str, entity_id: str
-    ) -> list[AuditEntry]:
-        return [
-            e
-            for e in self._entries
-            if e.entity_type == entity_type and e.entity_id == entity_id
-        ]
+    async def find_by_entity(self, entity_type: str, entity_id: str) -> list[AuditEntry]:
+        return [e for e in self._entries if e.entity_type == entity_type and e.entity_id == entity_id]
 
     async def find_by_user(self, user_id: str) -> list[AuditEntry]:
         return [e for e in self._entries if e.user_id == user_id]
 
-    async def find_by_time_range(
-        self, start: datetime, end: datetime
-    ) -> list[AuditEntry]:
+    async def find_by_time_range(self, start: datetime, end: datetime) -> list[AuditEntry]:
         return [e for e in self._entries if start <= e.timestamp <= end]

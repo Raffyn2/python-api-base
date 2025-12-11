@@ -61,10 +61,14 @@ class SnapshotIntegrityError(Phase2ModuleError):
 
     Raised when a snapshot's state hash doesn't match the expected hash.
 
+    Note:
+        Hash values are truncated in the error message to prevent
+        exposing full cryptographic details.
+
     Attributes:
         aggregate_id: ID of the aggregate with corrupted snapshot.
-        expected_hash: Expected hash value.
-        actual_hash: Actual computed hash value.
+        expected_hash: Expected hash value (stored, truncated in message).
+        actual_hash: Actual computed hash value (stored, truncated in message).
     """
 
     def __init__(
@@ -83,9 +87,12 @@ class SnapshotIntegrityError(Phase2ModuleError):
         self.aggregate_id = aggregate_id
         self.expected_hash = expected_hash
         self.actual_hash = actual_hash
+        # Security: Truncate hashes to prevent full exposure
+        expected_prefix = expected_hash[:8] if len(expected_hash) >= 8 else expected_hash
+        actual_prefix = actual_hash[:8] if len(actual_hash) >= 8 else actual_hash
         super().__init__(
-            f"Snapshot integrity check failed for aggregate '{aggregate_id}': "
-            f"expected hash '{expected_hash[:16]}...', got '{actual_hash[:16]}...'"
+            f"Snapshot integrity check failed for aggregate: "
+            f"hash mismatch (expected: {expected_prefix}..., got: {actual_prefix}...)"
         )
 
 
@@ -94,9 +101,13 @@ class FilterValidationError(Phase2ModuleError):
 
     Raised when a filter or sort field is not in the allowed list.
 
+    Note:
+        Allowed fields are stored but NOT exposed in the error message
+        to prevent information leakage about internal data structure.
+
     Attributes:
         field: The invalid field name.
-        allowed_fields: Set of allowed field names.
+        allowed_fields: Set of allowed field names (stored, not exposed).
         operation: The operation type ('filter' or 'sort').
     """
 
@@ -110,18 +121,14 @@ class FilterValidationError(Phase2ModuleError):
 
         Args:
             field: The invalid field name.
-            allowed_fields: Set of allowed field names.
+            allowed_fields: Set of allowed field names (stored, not exposed).
             operation: The operation type ('filter' or 'sort').
         """
         self.field = field
         self.allowed_fields = allowed_fields
         self.operation = operation
-        allowed_str = ", ".join(sorted(allowed_fields)[:10])
-        if len(allowed_fields) > 10:
-            allowed_str += f", ... ({len(allowed_fields) - 10} more)"
-        super().__init__(
-            f"Invalid {operation} field '{field}'. Allowed fields: [{allowed_str}]"
-        )
+        # Security: Do not expose allowed fields to prevent info leak
+        super().__init__(f"Invalid {operation} field specified")
 
 
 class FederationValidationError(Phase2ModuleError):
@@ -144,9 +151,7 @@ class FederationValidationError(Phase2ModuleError):
         error_summary = "; ".join(errors[:3])
         if error_count > 3:
             error_summary += f" ... and {error_count - 3} more errors"
-        super().__init__(
-            f"Federation schema validation failed with {error_count} error(s): {error_summary}"
-        )
+        super().__init__(f"Federation schema validation failed with {error_count} error(s): {error_summary}")
 
 
 class EntityResolutionError(Phase2ModuleError):

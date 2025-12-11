@@ -5,13 +5,13 @@
 **Fix: F-04 - Password hash validation awareness**
 """
 
-import logging
+import structlog
 
 from application.common.mappers import IMapper
 from application.users.dtos import UserDTO, UserListDTO
 from domain.users.aggregates import UserAggregate
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class UserMapper(IMapper[UserAggregate, UserDTO]):
@@ -37,9 +37,7 @@ class UserMapper(IMapper[UserAggregate, UserDTO]):
         if aggregate is None:
             raise ValueError("aggregate parameter cannot be None")
         if not isinstance(aggregate, UserAggregate):
-            raise TypeError(
-                f"Expected UserAggregate instance, got {type(aggregate).__name__}"
-            )
+            raise TypeError(f"Expected UserAggregate instance, got {type(aggregate).__name__}")
 
         return UserDTO(
             id=str(aggregate.id),
@@ -87,7 +85,8 @@ class UserMapper(IMapper[UserAggregate, UserDTO]):
         if password_hash is None:
             logger.debug(
                 "Creating UserAggregate without password_hash (reconstitution mode)",
-                extra={"user_id": dto.id, "operation": "USER_RECONSTITUTION"},
+                user_id=dto.id,
+                operation="USER_RECONSTITUTION",
             )
 
         return UserAggregate(

@@ -170,9 +170,7 @@ class TestRepositorySpecificationIntegration:
         ]
 
         # Filter by active AND price > 1.0
-        active_spec = FieldSpecification[TestItem](
-            "active", ComparisonOperator.EQ, True
-        )
+        active_spec = FieldSpecification[TestItem]("active", ComparisonOperator.EQ, True)
         price_spec = FieldSpecification[TestItem]("price", ComparisonOperator.GT, 1.0)
         combined = active_spec & price_spec
 
@@ -190,12 +188,8 @@ class TestRepositorySpecificationIntegration:
         ]
 
         # Filter by inactive OR price > 2.0
-        inactive_spec = FieldSpecification[TestItem](
-            "active", ComparisonOperator.EQ, False
-        )
-        expensive_spec = FieldSpecification[TestItem](
-            "price", ComparisonOperator.GT, 2.0
-        )
+        inactive_spec = FieldSpecification[TestItem]("active", ComparisonOperator.EQ, False)
+        expensive_spec = FieldSpecification[TestItem]("price", ComparisonOperator.GT, 2.0)
         combined = inactive_spec | expensive_spec
 
         filtered = [item for item in items if combined.is_satisfied_by(item)]
@@ -348,7 +342,7 @@ class TestRepositoryInterfaceCompliance:
     **Validates: Requirements 7.2, 7.5**
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(
         self,
     ) -> InMemoryRepository[TestItemEntity, TestItemCreate, TestItemUpdate, str]:
@@ -358,16 +352,12 @@ class TestRepositoryInterfaceCompliance:
             id_generator=lambda: str(pytest.importorskip("uuid").uuid4()),
         )
 
-    @given(
-        st.text(min_size=1, max_size=50), st.floats(min_value=0.01, max_value=1000.0)
-    )
+    @given(st.text(min_size=1, max_size=50), st.floats(min_value=0.01, max_value=1000.0))
     @settings(max_examples=100)
     @pytest.mark.asyncio
     async def test_create_returns_entity_with_id(self, name: str, price: float) -> None:
         """Repository create returns entity with generated ID."""
-        repo: InMemoryRepository[
-            TestItemEntity, TestItemCreate, TestItemUpdate, str
-        ] = InMemoryRepository(
+        repo: InMemoryRepository[TestItemEntity, TestItemCreate, TestItemUpdate, str] = InMemoryRepository(
             entity_type=TestItemEntity,
         )
 
@@ -383,9 +373,7 @@ class TestRepositoryInterfaceCompliance:
     @pytest.mark.asyncio
     async def test_get_by_id_returns_created_entity(self, name: str) -> None:
         """Repository get_by_id returns the created entity."""
-        repo: InMemoryRepository[
-            TestItemEntity, TestItemCreate, TestItemUpdate, str
-        ] = InMemoryRepository(
+        repo: InMemoryRepository[TestItemEntity, TestItemCreate, TestItemUpdate, str] = InMemoryRepository(
             entity_type=TestItemEntity,
         )
 
@@ -398,16 +386,12 @@ class TestRepositoryInterfaceCompliance:
         assert retrieved.id == created.id
         assert retrieved.name == created.name
 
-    @given(
-        st.lists(st.text(min_size=1, max_size=20), min_size=1, max_size=10, unique=True)
-    )
+    @given(st.lists(st.text(min_size=1, max_size=20), min_size=1, max_size=10, unique=True))
     @settings(max_examples=50)
     @pytest.mark.asyncio
     async def test_get_all_returns_all_entities(self, names: list[str]) -> None:
         """Repository get_all returns all created entities."""
-        repo: InMemoryRepository[
-            TestItemEntity, TestItemCreate, TestItemUpdate, str
-        ] = InMemoryRepository(
+        repo: InMemoryRepository[TestItemEntity, TestItemCreate, TestItemUpdate, str] = InMemoryRepository(
             entity_type=TestItemEntity,
         )
 
@@ -422,15 +406,11 @@ class TestRepositoryInterfaceCompliance:
     @given(st.text(min_size=1, max_size=50), st.text(min_size=1, max_size=50))
     @settings(max_examples=100)
     @pytest.mark.asyncio
-    async def test_update_modifies_entity(
-        self, original_name: str, new_name: str
-    ) -> None:
+    async def test_update_modifies_entity(self, original_name: str, new_name: str) -> None:
         """Repository update modifies entity fields."""
         assume(original_name != new_name)
 
-        repo: InMemoryRepository[
-            TestItemEntity, TestItemCreate, TestItemUpdate, str
-        ] = InMemoryRepository(
+        repo: InMemoryRepository[TestItemEntity, TestItemCreate, TestItemUpdate, str] = InMemoryRepository(
             entity_type=TestItemEntity,
         )
 
@@ -446,9 +426,7 @@ class TestRepositoryInterfaceCompliance:
     @pytest.mark.asyncio
     async def test_delete_removes_entity(self, name: str) -> None:
         """Repository delete removes entity from storage."""
-        repo: InMemoryRepository[
-            TestItemEntity, TestItemCreate, TestItemUpdate, str
-        ] = InMemoryRepository(
+        repo: InMemoryRepository[TestItemEntity, TestItemCreate, TestItemUpdate, str] = InMemoryRepository(
             entity_type=TestItemEntity,
         )
 
@@ -465,9 +443,7 @@ class TestRepositoryInterfaceCompliance:
     @pytest.mark.asyncio
     async def test_exists_returns_correct_status(self, name: str) -> None:
         """Repository exists returns correct boolean status."""
-        repo: InMemoryRepository[
-            TestItemEntity, TestItemCreate, TestItemUpdate, str
-        ] = InMemoryRepository(
+        repo: InMemoryRepository[TestItemEntity, TestItemCreate, TestItemUpdate, str] = InMemoryRepository(
             entity_type=TestItemEntity,
         )
 
@@ -476,16 +452,12 @@ class TestRepositoryInterfaceCompliance:
         assert await repo.exists(created.id) is True  # type: ignore
         assert await repo.exists("nonexistent-id") is False
 
-    @given(
-        st.lists(st.text(min_size=1, max_size=20), min_size=2, max_size=5, unique=True)
-    )
+    @given(st.lists(st.text(min_size=1, max_size=20), min_size=2, max_size=5, unique=True))
     @settings(max_examples=50)
     @pytest.mark.asyncio
     async def test_create_many_creates_all_entities(self, names: list[str]) -> None:
         """Repository create_many creates all entities."""
-        repo: InMemoryRepository[
-            TestItemEntity, TestItemCreate, TestItemUpdate, str
-        ] = InMemoryRepository(
+        repo: InMemoryRepository[TestItemEntity, TestItemCreate, TestItemUpdate, str] = InMemoryRepository(
             entity_type=TestItemEntity,
         )
 
@@ -525,9 +497,7 @@ class CreateItemHandler(CommandHandler[CreateItemCommand, TestItemEntity]):
     ) -> None:
         self._repo = repo
 
-    async def handle(
-        self, command: CreateItemCommand
-    ) -> Result[TestItemEntity, Exception]:
+    async def handle(self, command: CreateItemCommand) -> Result[TestItemEntity, Exception]:
         """Handle create item command."""
         try:
             create_dto = TestItemCreate(name=command.name, price=command.price)
@@ -546,9 +516,7 @@ class GetItemHandler(QueryHandler[GetItemQuery, TestItemEntity | None]):
     ) -> None:
         self._repo = repo
 
-    async def handle(
-        self, query: GetItemQuery
-    ) -> Result[TestItemEntity | None, Exception]:
+    async def handle(self, query: GetItemQuery) -> Result[TestItemEntity | None, Exception]:
         """Handle get item query."""
         try:
             entity = await self._repo.get_by_id(query.item_id)
@@ -564,18 +532,12 @@ class TestHandlerTypeSafety:
     **Validates: Requirements 8.3**
     """
 
-    @given(
-        st.text(min_size=1, max_size=50), st.floats(min_value=0.01, max_value=1000.0)
-    )
+    @given(st.text(min_size=1, max_size=50), st.floats(min_value=0.01, max_value=1000.0))
     @settings(max_examples=100)
     @pytest.mark.asyncio
-    async def test_command_handler_returns_result(
-        self, name: str, price: float
-    ) -> None:
+    async def test_command_handler_returns_result(self, name: str, price: float) -> None:
         """CommandHandler returns Result[TResult, Exception]."""
-        repo: InMemoryRepository[
-            TestItemEntity, TestItemCreate, TestItemUpdate, str
-        ] = InMemoryRepository(
+        repo: InMemoryRepository[TestItemEntity, TestItemCreate, TestItemUpdate, str] = InMemoryRepository(
             entity_type=TestItemEntity,
         )
         handler = CreateItemHandler(repo)
@@ -597,9 +559,7 @@ class TestHandlerTypeSafety:
     @pytest.mark.asyncio
     async def test_query_handler_returns_result(self, name: str) -> None:
         """QueryHandler returns Result[TResult, Exception]."""
-        repo: InMemoryRepository[
-            TestItemEntity, TestItemCreate, TestItemUpdate, str
-        ] = InMemoryRepository(
+        repo: InMemoryRepository[TestItemEntity, TestItemCreate, TestItemUpdate, str] = InMemoryRepository(
             entity_type=TestItemEntity,
         )
 
@@ -622,9 +582,7 @@ class TestHandlerTypeSafety:
     @pytest.mark.asyncio
     async def test_query_handler_returns_none_for_missing(self) -> None:
         """QueryHandler returns Ok(None) for missing entity."""
-        repo: InMemoryRepository[
-            TestItemEntity, TestItemCreate, TestItemUpdate, str
-        ] = InMemoryRepository(
+        repo: InMemoryRepository[TestItemEntity, TestItemCreate, TestItemUpdate, str] = InMemoryRepository(
             entity_type=TestItemEntity,
         )
 

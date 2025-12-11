@@ -3,13 +3,13 @@
 **Feature: example-system-demo**
 """
 
+from domain.common.value_objects import Money
 from domain.examples.item.entity import (
     ItemExample,
     ItemExampleCreated,
     ItemExampleDeleted,
     ItemExampleStatus,
     ItemExampleUpdated,
-    Money,
 )
 from domain.examples.item.specifications import (
     ItemExampleActiveSpec,
@@ -36,6 +36,7 @@ __all__ = [
     "ItemExampleStatus",
     "ItemExampleTagSpec",
     "ItemExampleUpdated",
+    # Value Objects (re-exported from domain.common)
     "Money",
     "available_items_in_category",
 ]

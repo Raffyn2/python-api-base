@@ -3,8 +3,6 @@
 Tests ExportFormat, ExportConfig, ExportResult, and ImportResult.
 """
 
-import pytest
-
 from application.common.export import (
     ExportConfig,
     ExportFormat,

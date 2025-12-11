@@ -4,8 +4,6 @@
 **Validates: Requirements 8.8, 8.9, 8.10**
 """
 
-from datetime import datetime
-
 import pytest
 
 from infrastructure.messaging.notification.models import (

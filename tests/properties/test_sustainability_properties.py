@@ -7,12 +7,13 @@ Uses Hypothesis to verify correctness properties across random inputs.
 import csv
 import io
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 
 import pytest
 from hypothesis import given, settings, strategies as st
 
+from src.infrastructure.sustainability.alerts import generate_alert_rule
 from src.infrastructure.sustainability.calculator import (
     aggregate_emissions,
     calculate_cost,
@@ -37,21 +38,19 @@ from src.infrastructure.sustainability.serializer import (
     serialize_carbon_metric,
     serialize_carbon_metric_to_json,
 )
-from src.infrastructure.sustainability.alerts import generate_alert_rule
-
 
 # Strategies for generating test data
 decimal_positive = st.decimals(
     min_value=Decimal("0.001"),
-    max_value=Decimal("1000000"),
+    max_value=Decimal(1000000),
     allow_nan=False,
     allow_infinity=False,
     places=6,
 )
 
 decimal_non_negative = st.decimals(
-    min_value=Decimal("0"),
-    max_value=Decimal("1000000"),
+    min_value=Decimal(0),
+    max_value=Decimal(1000000),
     allow_nan=False,
     allow_infinity=False,
     places=6,
@@ -112,9 +111,7 @@ class TestCarbonEmissionCalculation:
 
     @settings(max_examples=100)
     @given(energy=decimal_positive, intensity=decimal_positive)
-    def test_emissions_equals_energy_times_intensity(
-        self, energy: Decimal, intensity: Decimal
-    ):
+    def test_emissions_equals_energy_times_intensity(self, energy: Decimal, intensity: Decimal):
         """Feature: kepler-greenops-sustainability, Property 2: Carbon Emission Calculation"""
         result = calculate_emissions(energy, intensity)
         expected = energy * intensity
@@ -167,16 +164,14 @@ class TestGoalProgressCalculation:
         current=decimal_non_negative,
         target=decimal_non_negative,
     )
-    def test_progress_calculation(
-        self, baseline: Decimal, current: Decimal, target: Decimal
-    ):
+    def test_progress_calculation(self, baseline: Decimal, current: Decimal, target: Decimal):
         """Feature: kepler-greenops-sustainability, Property 5: Goal Progress Calculation"""
         if baseline == target:
             result = calculate_progress(baseline, current, target)
             assert result is None
         else:
             result = calculate_progress(baseline, current, target)
-            expected = ((baseline - current) / (baseline - target)) * Decimal("100")
+            expected = ((baseline - current) / (baseline - target)) * Decimal(100)
             assert result is not None
             assert abs(result - expected) < Decimal("0.000001")
 
@@ -194,12 +189,10 @@ class TestEnergyEfficiencyCalculation:
         requests=st.integers(min_value=1, max_value=1000000),
         transactions=st.integers(min_value=1, max_value=1000000),
     )
-    def test_efficiency_calculation(
-        self, energy: Decimal, requests: int, transactions: int
-    ):
+    def test_efficiency_calculation(self, energy: Decimal, requests: int, transactions: int):
         """Feature: kepler-greenops-sustainability, Property 6: Energy Efficiency Calculation"""
         per_request, per_transaction = calculate_efficiency(energy, requests, transactions)
-        
+
         assert per_request is not None
         assert per_transaction is not None
         assert per_request == energy / Decimal(requests)
@@ -234,7 +227,7 @@ class TestTrendCalculation:
     def test_trend_calculation(self, previous: Decimal, current: Decimal):
         """Feature: kepler-greenops-sustainability, Property 8: Trend Calculation"""
         result = calculate_trend(previous, current)
-        expected = ((current - previous) / previous) * Decimal("100")
+        expected = ((current - previous) / previous) * Decimal(100)
         assert result is not None
         assert abs(result - expected) < Decimal("0.000001")
 
@@ -252,7 +245,7 @@ class TestRoundTripSerialization:
         """Feature: kepler-greenops-sustainability, Property 1: Carbon Metrics Round-Trip Serialization"""
         serialized = serialize_carbon_metric(metric)
         deserialized = deserialize_carbon_metric(serialized)
-        
+
         assert deserialized.namespace == metric.namespace
         assert deserialized.pod == metric.pod
         assert deserialized.container == metric.container
@@ -267,7 +260,7 @@ class TestRoundTripSerialization:
         """Feature: kepler-greenops-sustainability, Property 1: JSON Round-Trip"""
         json_str = serialize_carbon_metric_to_json(metric)
         deserialized = deserialize_carbon_metric_from_json(json_str)
-        
+
         assert deserialized.namespace == metric.namespace
         assert deserialized.emissions_gco2 == metric.emissions_gco2
 
@@ -284,11 +277,11 @@ class TestExportFormatValidity:
     def test_csv_export_is_valid(self, metrics: list[CarbonMetric]):
         """Feature: kepler-greenops-sustainability, Property 14: CSV Export Validity"""
         csv_output = export_to_csv(metrics)
-        
+
         # Verify CSV is parseable
         reader = csv.DictReader(io.StringIO(csv_output))
         rows = list(reader)
-        
+
         assert len(rows) == len(metrics)
         assert "namespace" in reader.fieldnames
         assert "emissions_gco2" in reader.fieldnames
@@ -298,10 +291,10 @@ class TestExportFormatValidity:
     def test_json_export_is_valid(self, metrics: list[CarbonMetric]):
         """Feature: kepler-greenops-sustainability, Property 14: JSON Export Validity"""
         json_output = export_to_json(metrics)
-        
+
         # Verify JSON is parseable
         parsed = json.loads(json_output)
-        
+
         assert isinstance(parsed, list)
         assert len(parsed) == len(metrics)
         assert all("namespace" in item for item in parsed)
@@ -315,16 +308,19 @@ class TestMalformedJsonRejection:
     Validates: Requirements 7.4
     """
 
-    @pytest.mark.parametrize("invalid_json", [
-        "",
-        "not json",
-        "{",
-        '{"incomplete": ',
-        "null",
-        "[]",
-        "123",
-        '"string"',
-    ])
+    @pytest.mark.parametrize(
+        "invalid_json",
+        [
+            "",
+            "not json",
+            "{",
+            '{"incomplete": ',
+            "null",
+            "[]",
+            "123",
+            '"string"',
+        ],
+    )
     def test_malformed_json_raises_error(self, invalid_json: str):
         """Feature: kepler-greenops-sustainability, Property 15: Malformed JSON Rejection"""
         with pytest.raises(ValidationError):
@@ -365,12 +361,12 @@ class TestAlertRuleGeneration:
             cost_threshold=cost_threshold,
             severity=severity,
         )
-        
+
         rule = generate_alert_rule(threshold)
-        
+
         assert str(energy_threshold) in rule.expr
         assert rule.severity == severity
         assert rule.name.endswith(severity)
-        
+
         if namespace:
             assert namespace in rule.expr

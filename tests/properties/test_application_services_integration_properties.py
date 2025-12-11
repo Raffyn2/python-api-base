@@ -121,9 +121,7 @@ class TestTenantQueryIsolation:
         entity_name=st.text(min_size=1, max_size=20),
     )
     @settings(max_examples=100)
-    def test_tenant_isolation_in_queries(
-        self, tenant1: str, tenant2: str, entity_name: str
-    ) -> None:
+    def test_tenant_isolation_in_queries(self, tenant1: str, tenant2: str, entity_name: str) -> None:
         """**Property 1: Tenant Query Isolation**
 
         *For any* tenant context and any query operation, all returned results
@@ -182,9 +180,7 @@ class TestTenantAssignmentOnCreate:
         entity_name=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=100)
-    def test_tenant_automatically_assigned_on_create(
-        self, tenant_id: str, entity_id: str, entity_name: str
-    ) -> None:
+    def test_tenant_automatically_assigned_on_create(self, tenant_id: str, entity_id: str, entity_name: str) -> None:
         """**Property 2: Tenant Assignment on Create**
 
         *For any* tenant context and any create operation, the created entity
@@ -227,9 +223,7 @@ class TestFeatureFlagConsistency:
         percentage=st.floats(min_value=0.0, max_value=100.0),
     )
     @settings(max_examples=100)
-    def test_same_user_gets_consistent_result(
-        self, user_id: str, percentage: float
-    ) -> None:
+    def test_same_user_gets_consistent_result(self, user_id: str, percentage: float) -> None:
         """**Property 3: Feature Flag Evaluation Consistency**
 
         *For any* user ID and any percentage rollout, multiple evaluations
@@ -249,14 +243,10 @@ class TestFeatureFlagConsistency:
         context = EvaluationContext(user_id=user_id)
 
         # Evaluate multiple times
-        results = [
-            service.is_enabled("test-consistency-flag", context) for _ in range(10)
-        ]
+        results = [service.is_enabled("test-consistency-flag", context) for _ in range(10)]
 
         # All results should be identical
-        assert len(set(results)) == 1, (
-            f"Inconsistent results for user {user_id}: {results}"
-        )
+        assert len(set(results)) == 1, f"Inconsistent results for user {user_id}: {results}"
 
     @given(
         user_id=user_ids(),

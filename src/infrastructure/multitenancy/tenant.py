@@ -43,9 +43,7 @@ class TenantInfo[TId]:
 
 
 # Context variable for current tenant
-_current_tenant: ContextVar[TenantInfo[Any] | None] = ContextVar(
-    "current_tenant", default=None
-)
+_current_tenant: ContextVar[TenantInfo[Any] | None] = ContextVar("current_tenant", default=None)
 
 
 class TenantContext[TId]:
@@ -166,7 +164,7 @@ class TenantAwareRepositoryBase[T: BaseModel, TenantId](ABC):
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class SchemaConfig:
     """Schema-per-tenant configuration.
 

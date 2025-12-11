@@ -6,8 +6,6 @@ Tests URL credential redaction utility.
 **Requirements: 3.2**
 """
 
-import pytest
-
 from core.config.shared.utils import redact_url_credentials
 
 

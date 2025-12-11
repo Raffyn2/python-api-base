@@ -5,7 +5,6 @@
 """
 
 import time
-from unittest.mock import patch
 
 import pytest
 
@@ -15,7 +14,7 @@ from infrastructure.cache.providers.local import LRUCache
 class TestLRUCache:
     """Tests for LRUCache."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def cache(self) -> LRUCache[str, str]:
         """Create cache instance."""
         return LRUCache[str, str](max_size=5)

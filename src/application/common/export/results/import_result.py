@@ -7,7 +7,7 @@
 from dataclasses import dataclass, field
 
 
-@dataclass
+@dataclass(slots=True)
 class ImportResult:
     """Import operation result."""
 

@@ -12,13 +12,14 @@ Provides a decorator that:
 
 import functools
 import inspect
-import logging
 from collections.abc import Callable
 from typing import Any, TypeVar
 
+import structlog
+
 from infrastructure.cache.protocols import CacheProvider
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 T = TypeVar("T")
 
@@ -75,9 +76,7 @@ def _get_entity_name(repository: Any) -> str:
     return class_name
 
 
-def _make_cache_key(
-    prefix: str, entity_name: str, method_name: str, *args: Any, **kwargs: Any
-) -> str:
+def _make_cache_key(prefix: str, entity_name: str, method_name: str, *args: Any, **kwargs: Any) -> str:
     """Generate cache key for repository method.
 
     Format: {prefix}:{entity_name}:{method_name}:{arg_hash}
@@ -129,10 +128,10 @@ async def _try_get_cached(
     try:
         cached_value = await cache_provider.get(cache_key)
         return (cached_value, cached_value is not None)
-    except Exception as e:
-        logger.warning(
+    except Exception:
+        logger.exception(
             "Cache read failed, falling back to database",
-            extra={"cache_key": cache_key, "error": str(e)},
+            cache_key=cache_key,
         )
         return (None, False)
 
@@ -146,11 +145,8 @@ async def _try_set_cached(
     """Try to set value in cache. Logs warning on failure."""
     try:
         await cache_provider.set(cache_key, value, ttl)
-    except Exception as e:
-        logger.warning(
-            "Cache write failed",
-            extra={"cache_key": cache_key, "error": str(e)},
-        )
+    except Exception:
+        logger.exception("Cache write failed", cache_key=cache_key)
 
 
 async def _try_invalidate_cache(
@@ -164,18 +160,13 @@ async def _try_invalidate_cache(
         count = await cache_provider.clear_pattern(pattern)
         logger.debug(
             "Cache invalidated after mutation",
-            extra={
-                "entity": entity_name,
-                "method": method_name,
-                "pattern": pattern,
-                "keys_cleared": count,
-            },
+            entity=entity_name,
+            method=method_name,
+            pattern=pattern,
+            keys_cleared=count,
         )
-    except Exception as e:
-        logger.warning(
-            "Cache invalidation failed",
-            extra={"pattern": pattern, "error": str(e)},
-        )
+    except Exception:
+        logger.exception("Cache invalidation failed", pattern=pattern)
 
 
 def _create_cached_method(
@@ -189,23 +180,25 @@ def _create_cached_method(
     @functools.wraps(original_method)
     async def cached_wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
         entity_name = _get_entity_name(self)
-        cache_key = _make_cache_key(
-            config.key_prefix, entity_name, method_name, *args, **kwargs
-        )
+        cache_key = _make_cache_key(config.key_prefix, entity_name, method_name, *args, **kwargs)
 
         cached_value, found = await _try_get_cached(cache_provider, cache_key)
         if found:
             if config.log_hits:
                 logger.info(
                     "Repository cache HIT",
-                    extra={"entity": entity_name, "method": method_name, "cache_key": cache_key},
+                    entity=entity_name,
+                    method=method_name,
+                    cache_key=cache_key,
                 )
             return cached_value
 
         if config.log_misses:
             logger.debug(
                 "Repository cache MISS",
-                extra={"entity": entity_name, "method": method_name, "cache_key": cache_key},
+                entity=entity_name,
+                method=method_name,
+                cache_key=cache_key,
             )
 
         result = await original_method(self, *args, **kwargs)
@@ -304,9 +297,7 @@ def cached_repository[R](
         if not effective_config.enabled:
             return repository_class
 
-        original_methods = _wrap_repository_methods(
-            repository_class, cache_provider, effective_config
-        )
+        original_methods = _wrap_repository_methods(repository_class, cache_provider, effective_config)
 
         repository_class._original_methods = original_methods  # type: ignore
         repository_class._cache_config = effective_config  # type: ignore
@@ -343,10 +334,8 @@ async def invalidate_repository_cache(
     count = await cache_provider.clear_pattern(pattern)
     logger.info(
         "Manual repository cache invalidation",
-        extra={
-            "entity": entity_name,
-            "pattern": pattern,
-            "keys_cleared": count,
-        },
+        entity=entity_name,
+        pattern=pattern,
+        keys_cleared=count,
     )
     return count

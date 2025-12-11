@@ -16,7 +16,7 @@ import re
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from core.base.patterns.result import Err, Ok, Result
+from core.base.patterns.result import Err, Ok
 from core.base.patterns.validation import (
     CompositeValidator,
     FieldError,
@@ -24,7 +24,7 @@ from core.base.patterns.validation import (
 )
 
 if TYPE_CHECKING:
-    pass
+    from core.base.patterns.result import Result
 
 
 class AllowlistValidator[T](CompositeValidator[T]):
@@ -79,7 +79,8 @@ class AllowlistValidator[T](CompositeValidator[T]):
         else:
             # Normalize to lowercase for case-insensitive comparison
             self._allowed = {
-                v.lower() if isinstance(v, str) else v for v in allowed_values  # type: ignore[union-attr]
+                v.lower() if isinstance(v, str) else v
+                for v in allowed_values  # type: ignore[union-attr]
             }
 
     def validate(self, value: T) -> Result[T, ValidationError[T]]:
@@ -157,14 +158,10 @@ class AllowlistValidator[T](CompositeValidator[T]):
 # =============================================================================
 
 # Email regex pattern (simplified but effective)
-_EMAIL_PATTERN = re.compile(
-    r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-)
+_EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 # Phone regex pattern (international format)
-_PHONE_PATTERN = re.compile(
-    r"^\+?[1-9]\d{1,14}$"
-)
+_PHONE_PATTERN = re.compile(r"^\+?[1-9]\d{1,14}$")
 
 # URL regex pattern
 _URL_PATTERN = re.compile(
@@ -173,9 +170,7 @@ _URL_PATTERN = re.compile(
 )
 
 
-def validate_email(
-    value: str, field_name: str = "email"
-) -> Result[str, ValidationError[str]]:
+def validate_email(value: str, field_name: str = "email") -> Result[str, ValidationError[str]]:
     """Validate email address format.
 
     Args:
@@ -192,11 +187,7 @@ def validate_email(
         return Err(
             ValidationError(
                 message="Email is required",
-                errors=[
-                    FieldError(
-                        field=field_name, message="Email is required", code="required"
-                    )
-                ],
+                errors=[FieldError(field=field_name, message="Email is required", code="required")],
                 context=value if isinstance(value, str) else "",
             )
         )
@@ -334,11 +325,7 @@ def validate_url(
         return Err(
             ValidationError(
                 message="URL is required",
-                errors=[
-                    FieldError(
-                        field=field_name, message="URL is required", code="required"
-                    )
-                ],
+                errors=[FieldError(field=field_name, message="URL is required", code="required")],
                 context=value if isinstance(value, str) else "",
             )
         )
@@ -402,11 +389,7 @@ def validate_uuid(
         return Err(
             ValidationError(
                 message="UUID is required",
-                errors=[
-                    FieldError(
-                        field=field_name, message="UUID is required", code="required"
-                    )
-                ],
+                errors=[FieldError(field=field_name, message="UUID is required", code="required")],
                 context=value if isinstance(value, str) else "",
             )
         )
@@ -438,12 +421,12 @@ def validate_uuid(
 __all__ = [
     # Validator class
     "AllowlistValidator",
+    "FieldError",
+    # Re-export from core for convenience
+    "ValidationError",
     # Domain validators
     "validate_email",
     "validate_phone",
     "validate_url",
     "validate_uuid",
-    # Re-export from core for convenience
-    "ValidationError",
-    "FieldError",
 ]

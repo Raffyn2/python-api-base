@@ -7,10 +7,11 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Final, Self
+
+import structlog
 
 from infrastructure.errors import DatabaseError
 
@@ -21,9 +22,7 @@ if TYPE_CHECKING:
 
 # Regex pattern for valid CQL identifiers (table names, keyspace names, etc.)
 # Allows alphanumeric and underscore, must start with letter or underscore
-VALID_IDENTIFIER_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"^[a-zA-Z_][a-zA-Z0-9_]*$"
-)
+VALID_IDENTIFIER_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 
 
 def _validate_identifier(value: str, identifier_type: str = "identifier") -> str:
@@ -46,7 +45,8 @@ def _validate_identifier(value: str, identifier_type: str = "identifier") -> str
         )
     return value
 
-logger = logging.getLogger(__name__)
+
+logger = structlog.get_logger(__name__)
 
 
 class ScyllaDBClient:
@@ -101,16 +101,12 @@ class ScyllaDBClient:
             session.default_consistency_level = self._config.get_consistency_level()
             return cluster, session
 
-        self._cluster, self._session = await loop.run_in_executor(
-            self._executor, _connect
-        )
+        self._cluster, self._session = await loop.run_in_executor(self._executor, _connect)
 
         logger.info(
             "Connected to ScyllaDB",
-            extra={
-                "hosts": self._config.hosts,
-                "keyspace": self._config.keyspace,
-            },
+            hosts=self._config.hosts,
+            keyspace=self._config.keyspace,
         )
 
         return self
@@ -278,8 +274,7 @@ class ScyllaDBClient:
         }
 
         replication_str = ", ".join(
-            f"'{k}': '{v}'" if isinstance(v, str) else f"'{k}': {v}"
-            for k, v in replication.items()
+            f"'{k}': '{v}'" if isinstance(v, str) else f"'{k}': {v}" for k, v in replication.items()
         )
 
         # S608: Identifier validated above, safe to use in query
@@ -287,7 +282,11 @@ class ScyllaDBClient:
         query += f"WITH replication = {{{replication_str}}}"
 
         await self.execute(query)
-        logger.info(f"Created keyspace: {validated_keyspace}")
+        logger.info(
+            "Created keyspace",
+            keyspace=validated_keyspace,
+            operation="SCYLLA_CREATE_KEYSPACE",
+        )
 
     async def create_table(
         self,
@@ -333,7 +332,11 @@ class ScyllaDBClient:
             query += f" WITH {opts}"
 
         await self.execute(query)
-        logger.info(f"Created table: {validated_table}")
+        logger.info(
+            "Created table",
+            table=validated_table,
+            operation="SCYLLA_CREATE_TABLE",
+        )
 
     async def drop_table(self, table: str, if_exists: bool = True) -> None:
         """Drop a table.
@@ -349,7 +352,11 @@ class ScyllaDBClient:
         # S608: Identifier validated above, safe to use in query
         query = f"DROP TABLE {'IF EXISTS ' if if_exists else ''}{validated_table}"
         await self.execute(query)
-        logger.info(f"Dropped table: {validated_table}")
+        logger.info(
+            "Dropped table",
+            table=validated_table,
+            operation="SCYLLA_DROP_TABLE",
+        )
 
     async def truncate_table(self, table: str) -> None:
         """Truncate a table.
@@ -363,4 +370,8 @@ class ScyllaDBClient:
         validated_table = _validate_identifier(table, "table name")
         # S608: Identifier validated above, safe to use in query
         await self.execute(f"TRUNCATE TABLE {validated_table}")
-        logger.info(f"Truncated table: {validated_table}")
+        logger.info(
+            "Truncated table",
+            table=validated_table,
+            operation="SCYLLA_TRUNCATE_TABLE",
+        )

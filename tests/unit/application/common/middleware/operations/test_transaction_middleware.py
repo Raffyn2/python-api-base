@@ -69,11 +69,10 @@ class TestDefaultTransactionConfig:
         assert DEFAULT_TRANSACTION_CONFIG.auto_commit is True
 
 
-
 class TestTransactionMiddleware:
     """Tests for TransactionMiddleware."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_uow(self) -> MagicMock:
         """Create mock unit of work."""
         uow = MagicMock()
@@ -82,12 +81,12 @@ class TestTransactionMiddleware:
         uow.commit = AsyncMock()
         return uow
 
-    @pytest.fixture
+    @pytest.fixture()
     def uow_factory(self, mock_uow: MagicMock) -> MagicMock:
         """Create UoW factory."""
         return MagicMock(return_value=mock_uow)
 
-    @pytest.fixture
+    @pytest.fixture()
     def middleware(self, uow_factory: MagicMock) -> TransactionMiddleware:
         """Create middleware instance."""
         return TransactionMiddleware(uow_factory)
@@ -282,7 +281,7 @@ class TestTransactionMiddleware:
 class TestGetTransactionConfig:
     """Tests for _get_transaction_config method."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def middleware(self) -> TransactionMiddleware:
         """Create middleware instance."""
         return TransactionMiddleware(lambda: MagicMock())
@@ -312,9 +311,7 @@ class TestGetTransactionConfig:
 
         assert config.isolation_level == "SERIALIZABLE"
 
-    def test_returns_default_when_no_config(
-        self, middleware: TransactionMiddleware
-    ) -> None:
+    def test_returns_default_when_no_config(self, middleware: TransactionMiddleware) -> None:
         """Test returns default config when command has no config."""
         command = MagicMock()
         del command.transaction_config

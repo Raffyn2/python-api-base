@@ -44,11 +44,7 @@ def sse_event_strategy(draw: st.DrawFn) -> SSEEvent:
                 st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz"),
             )
         ),
-        id=draw(
-            st.one_of(
-                st.none(), st.text(min_size=1, max_size=10, alphabet="0123456789")
-            )
-        ),
+        id=draw(st.one_of(st.none(), st.text(min_size=1, max_size=10, alphabet="0123456789"))),
         retry=draw(st.one_of(st.none(), st.integers(min_value=1000, max_value=30000))),
     )
 
@@ -61,11 +57,7 @@ def sse_event_strategy(draw: st.DrawFn) -> SSEEvent:
 class TestSSEEventProperties:
     """Property tests for SSE events."""
 
-    @given(
-        data=st.text(
-            min_size=1, max_size=100, alphabet="abcdefghijklmnopqrstuvwxyz0123456789 "
-        )
-    )
+    @given(data=st.text(min_size=1, max_size=100, alphabet="abcdefghijklmnopqrstuvwxyz0123456789 "))
     @settings(max_examples=100)
     def test_event_contains_data(self, data: str) -> None:
         """**Property 1: SSE event contains data**
@@ -79,11 +71,7 @@ class TestSSEEventProperties:
 
         assert f"data: {data}" in result
 
-    @given(
-        event_type=st.text(
-            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz"
-        )
-    )
+    @given(event_type=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz"))
     @settings(max_examples=100)
     def test_event_contains_type(self, event_type: str) -> None:
         """**Property 2: SSE event contains event type**

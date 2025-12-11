@@ -45,13 +45,13 @@ class TestDeleteUserCommand:
 class TestDeleteUserHandler:
     """Tests for DeleteUserHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_repository(self) -> AsyncMock:
         """Create mock user repository."""
         repo = AsyncMock()
         return repo
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, mock_repository: AsyncMock) -> DeleteUserHandler:
         """Create handler with mocked dependencies."""
         return DeleteUserHandler(user_repository=mock_repository)

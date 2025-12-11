@@ -3,7 +3,12 @@
 Defines protocols for data access patterns including repositories,
 caches, and unit of work for transaction management.
 
-Feature: file-size-compliance-phase2
+Note:
+    For simplified protocols used by BaseUseCase, see:
+    - core.base.patterns.use_case.IMapper
+    - core.base.patterns.use_case.IRepository
+
+**Feature: file-size-compliance-phase2**
 """
 
 from collections.abc import Sequence
@@ -13,9 +18,7 @@ from pydantic import BaseModel
 
 
 @runtime_checkable
-class AsyncRepository[T: BaseModel, CreateDTO: BaseModel, UpdateDTO: BaseModel](
-    Protocol
-):
+class AsyncRepository[T: BaseModel, CreateDTO: BaseModel, UpdateDTO: BaseModel](Protocol):
     """Protocol for async repository implementations.
 
     Defines the contract for data access operations. Implementations can use
@@ -98,9 +101,7 @@ class AsyncRepository[T: BaseModel, CreateDTO: BaseModel, UpdateDTO: BaseModel](
         """
         ...
 
-    async def bulk_update(
-        self, updates: Sequence[tuple[Any, UpdateDTO]]
-    ) -> Sequence[T | None]:
+    async def bulk_update(self, updates: Sequence[tuple[Any, UpdateDTO]]) -> Sequence[T | None]:
         """Update multiple entities in bulk.
 
         Args:

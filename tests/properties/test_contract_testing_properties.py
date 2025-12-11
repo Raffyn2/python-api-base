@@ -6,9 +6,7 @@
 
 import pytest
 
-pytest.skip(
-    "Module core.shared.contract_testing not implemented", allow_module_level=True
-)
+pytest.skip("Module core.shared.contract_testing not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 from pydantic import BaseModel
@@ -60,9 +58,7 @@ class TestMatcherProperties:
         value1=st.text(min_size=1, max_size=20),
         value2=st.text(min_size=1, max_size=20),
     )
-    def test_exact_matcher_rejects_different_values(
-        self, value1: str, value2: str
-    ) -> None:
+    def test_exact_matcher_rejects_different_values(self, value1: str, value2: str) -> None:
         """Exact matcher SHALL reject different values."""
         if value1 != value2:
             matcher = exact(value1)
@@ -87,9 +83,7 @@ class TestMatcherProperties:
         min_val=st.integers(min_value=0, max_value=50),
         max_val=st.integers(min_value=51, max_value=100),
     )
-    def test_range_matcher_accepts_values_in_range(
-        self, min_val: int, max_val: int
-    ) -> None:
+    def test_range_matcher_accepts_values_in_range(self, min_val: int, max_val: int) -> None:
         """Range matcher SHALL accept values within range."""
         matcher = range_match(min_val, max_val)
         mid_val = (min_val + max_val) // 2
@@ -100,9 +94,7 @@ class TestMatcherProperties:
         min_val=st.integers(min_value=50, max_value=100),
         test_val=st.integers(min_value=0, max_value=49),
     )
-    def test_range_matcher_rejects_values_below_min(
-        self, min_val: int, test_val: int
-    ) -> None:
+    def test_range_matcher_rejects_values_below_min(self, min_val: int, test_val: int) -> None:
         """Range matcher SHALL reject values below minimum."""
         matcher = range_match(min_val=min_val)
         assert matcher.matches(test_val) is False
@@ -114,11 +106,7 @@ class TestMatcherProperties:
         assert matcher.matches("test-abc") is False
 
     @settings(max_examples=30)
-    @given(
-        substring=st.text(
-            min_size=1, max_size=10, alphabet=st.characters(whitelist_categories=("L",))
-        )
-    )
+    @given(substring=st.text(min_size=1, max_size=10, alphabet=st.characters(whitelist_categories=("L",))))
     def test_contains_matcher_finds_substring(self, substring: str) -> None:
         """Contains matcher SHALL find substring in string."""
         full_string = f"prefix-{substring}-suffix"
@@ -138,19 +126,11 @@ class TestContractProperties:
 
     @settings(max_examples=30)
     @given(
-        name=st.text(
-            min_size=1, max_size=30, alphabet=st.characters(whitelist_categories=("L",))
-        ),
-        consumer=st.text(
-            min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))
-        ),
-        provider=st.text(
-            min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))
-        ),
+        name=st.text(min_size=1, max_size=30, alphabet=st.characters(whitelist_categories=("L",))),
+        consumer=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))),
+        provider=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))),
     )
-    def test_contract_preserves_metadata(
-        self, name: str, consumer: str, provider: str
-    ) -> None:
+    def test_contract_preserves_metadata(self, name: str, consumer: str, provider: str) -> None:
         """Contract SHALL preserve name, consumer, and provider."""
         contract = Contract(name=name, consumer=consumer, provider=provider)
         assert contract.name == name
@@ -233,11 +213,13 @@ class TestContractTesterProperties:
             response_type=SampleResponse,
         )
 
-        valid, errors = tester.validate_response({
-            "id": "123",
-            "name": "test",
-            "created": True,
-        })
+        valid, errors = tester.validate_response(
+            {
+                "id": "123",
+                "name": "test",
+                "created": True,
+            }
+        )
         assert valid is True
         assert len(errors) == 0
 
@@ -275,14 +257,10 @@ class TestContractTesterProperties:
             ),
         )
 
-        result = tester.verify_interaction(
-            interaction, 200, {"Content-Type": "application/json"}, {}
-        )
+        result = tester.verify_interaction(interaction, 200, {"Content-Type": "application/json"}, {})
         assert result.status == ContractStatus.PASSED
 
-        result = tester.verify_interaction(
-            interaction, 200, {"Content-Type": "text/html"}, {}
-        )
+        result = tester.verify_interaction(interaction, 200, {"Content-Type": "text/html"}, {})
         assert result.status == ContractStatus.FAILED
 
     def test_verify_interaction_checks_body_matchers(self) -> None:
@@ -301,14 +279,10 @@ class TestContractTesterProperties:
             ),
         )
 
-        result = tester.verify_interaction(
-            interaction, 200, {}, {"id": "abc", "count": 5}
-        )
+        result = tester.verify_interaction(interaction, 200, {}, {"id": "abc", "count": 5})
         assert result.status == ContractStatus.PASSED
 
-        result = tester.verify_interaction(
-            interaction, 200, {}, {"id": 123, "count": 5}
-        )
+        result = tester.verify_interaction(interaction, 200, {}, {"id": 123, "count": 5})
         assert result.status == ContractStatus.FAILED
 
     def test_verify_contract_returns_report(self) -> None:
@@ -410,7 +384,7 @@ class TestOpenAPIContractValidatorProperties:
             request_path="/items",
             expectation=ContractExpectation(status_code=200),
         )
-        valid, errors = validator.validate_interaction(interaction)
+        valid, _errors = validator.validate_interaction(interaction)
         assert valid is True
 
     def test_rejects_undocumented_paths(self) -> None:

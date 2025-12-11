@@ -5,7 +5,6 @@ completing in-flight requests and cleaning up resources.
 """
 
 import asyncio
-import logging
 import signal
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -14,7 +13,9 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class ShutdownState(Enum):
@@ -25,7 +26,7 @@ class ShutdownState(Enum):
     SHUTDOWN = "shutdown"
 
 
-@dataclass
+@dataclass(slots=True)
 class ShutdownConfig:
     """Configuration for graceful shutdown."""
 
@@ -33,7 +34,7 @@ class ShutdownConfig:
     drain_timeout: float = 10.0  # Time to wait for in-flight requests
     force_exit: bool = True  # Force exit after timeout
     signals: list[signal.Signals] = field(
-        default_factory=lambda: [signal.SIGTERM, signal.SIGINT]
+        default_factory=lambda: [signal.SIGTERM, signal.SIGINT],
     )
 
 
@@ -99,7 +100,12 @@ class ShutdownHandler:
         self._hooks.append((name, hook, priority))
         # Sort by priority (higher first)
         self._hooks.sort(key=lambda x: x[2], reverse=True)
-        logger.debug(f"Added shutdown hook: {name} (priority: {priority})")
+        logger.debug(
+            "Added shutdown hook",
+            operation="SHUTDOWN_HOOK_ADD",
+            hook_name=name,
+            priority=priority,
+        )
 
     def remove_hook(self, name: str) -> bool:
         """Remove a shutdown hook by name.
@@ -124,11 +130,17 @@ class ShutdownHandler:
                     sig,
                     lambda s=sig: asyncio.create_task(self._handle_signal(s)),
                 )
-                logger.info(f"Registered signal handler for {sig.name}")
+                logger.info(
+                    "Registered signal handler",
+                    operation="SHUTDOWN_SIGNAL_REGISTER",
+                    signal=sig.name,
+                )
             except NotImplementedError:
                 # Windows doesn't support add_signal_handler
                 logger.warning(
-                    f"Signal handler for {sig.name} not supported on this platform"
+                    "Signal handler not supported on this platform",
+                    operation="SHUTDOWN_SIGNAL_REGISTER",
+                    signal=sig.name,
                 )
 
     async def _handle_signal(self, sig: signal.Signals) -> None:
@@ -137,7 +149,11 @@ class ShutdownHandler:
         Args:
             sig: Signal received.
         """
-        logger.info(f"Received signal {sig.name}, initiating graceful shutdown")
+        logger.info(
+            "Received signal, initiating graceful shutdown",
+            operation="SHUTDOWN_SIGNAL_RECEIVED",
+            signal=sig.name,
+        )
         await self.shutdown()
 
     def request_started(self) -> None:
@@ -179,7 +195,11 @@ class ShutdownHandler:
             logger.info("No in-flight requests to drain")
             return
 
-        logger.info(f"Waiting for {self._in_flight_requests} in-flight requests")
+        logger.info(
+            "Waiting for in-flight requests",
+            operation="SHUTDOWN_DRAIN",
+            in_flight_requests=self._in_flight_requests,
+        )
 
         try:
             await asyncio.wait_for(
@@ -189,25 +209,41 @@ class ShutdownHandler:
             logger.info("All in-flight requests completed")
         except TimeoutError:
             logger.warning(
-                f"Drain timeout reached with {self._in_flight_requests} requests remaining"
+                "Drain timeout reached with requests remaining",
+                operation="SHUTDOWN_DRAIN",
+                remaining_requests=self._in_flight_requests,
             )
 
     async def _run_hooks(self) -> None:
         """Run all shutdown hooks."""
         for name, hook, _priority in self._hooks:
             try:
-                logger.info(f"Running shutdown hook: {name}")
+                logger.info(
+                    "Running shutdown hook",
+                    operation="SHUTDOWN_HOOK_RUN",
+                    hook_name=name,
+                )
                 await asyncio.wait_for(
                     hook(),
-                    timeout=self._config.timeout / len(self._hooks)
-                    if self._hooks
-                    else self._config.timeout,
+                    timeout=self._config.timeout / len(self._hooks) if self._hooks else self._config.timeout,
                 )
-                logger.info(f"Shutdown hook completed: {name}")
+                logger.info(
+                    "Shutdown hook completed",
+                    operation="SHUTDOWN_HOOK_RUN",
+                    hook_name=name,
+                )
             except TimeoutError:
-                logger.error(f"Shutdown hook timed out: {name}")
-            except Exception as e:
-                logger.error(f"Shutdown hook failed: {name} - {e}")
+                logger.error(
+                    "Shutdown hook timed out",
+                    operation="SHUTDOWN_HOOK_RUN",
+                    hook_name=name,
+                )
+            except Exception:
+                logger.exception(
+                    "Shutdown hook failed",
+                    operation="SHUTDOWN_HOOK_RUN",
+                    hook_name=name,
+                )
 
     def get_status(self) -> dict[str, Any]:
         """Get shutdown handler status."""
@@ -267,10 +303,12 @@ class ShutdownMiddleware:
                 ],
             }
             await send(response)
-            await send({
-                "type": "http.response.body",
-                "body": b'{"error": "Service is shutting down"}',
-            })
+            await send(
+                {
+                    "type": "http.response.body",
+                    "body": b'{"error": "Service is shutting down"}',
+                }
+            )
             return
 
         # Track request

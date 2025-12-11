@@ -22,7 +22,7 @@ class ProtocolType(str, Enum):
 class SecuritySchemeType(str, Enum):
     """Security scheme types."""
 
-    USER_PASSWORD = "userPassword"  # noqa: S105 - Enum value, not password
+    USER_PASSWORD = "userPassword"
     API_KEY = "apiKey"
     X509 = "X509"
     SYMMETRIC_ENCRYPTION = "symmetricEncryption"

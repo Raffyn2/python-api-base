@@ -38,9 +38,7 @@ class TestCoreBaseImportIntegrity:
         "core.base.repository.memory",
     ]
 
-    @given(
-        module_index=st.integers(min_value=0, max_value=len(CORE_BASE_SUBMODULES) - 1)
-    )
+    @given(module_index=st.integers(min_value=0, max_value=len(CORE_BASE_SUBMODULES) - 1))
     @settings(max_examples=50, deadline=5000)
     def test_all_core_base_submodules_are_importable(self, module_index: int) -> None:
         """
@@ -196,6 +194,4 @@ class TestCoreBaseExports:
         )
         normalized_path = os.path.normpath(base_py_path)
 
-        assert not os.path.exists(normalized_path), (
-            f"Orphan file {normalized_path} should have been deleted"
-        )
+        assert not os.path.exists(normalized_path), f"Orphan file {normalized_path} should have been deleted"

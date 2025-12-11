@@ -8,10 +8,10 @@ Extends QueryTimingMiddleware with Prometheus metrics collection.
 
 from __future__ import annotations
 
-import logging
 import time
 from typing import TYPE_CHECKING, Any
 
+import structlog
 from prometheus_client import Counter, Histogram
 
 from infrastructure.db.middleware.query_timing import (
@@ -22,7 +22,7 @@ from infrastructure.db.middleware.query_timing import (
 if TYPE_CHECKING:
     from sqlalchemy.engine import Connection, Engine
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class QueryTimingPrometheusMiddleware(QueryTimingMiddleware):
@@ -122,14 +122,12 @@ class QueryTimingPrometheusMiddleware(QueryTimingMiddleware):
 
         logger.info(
             "Prometheus metrics initialized for query timing",
-            extra={
-                "metric_prefix": self.metric_prefix,
-                "metrics": [
-                    f"{self.metric_prefix}_queries_total",
-                    f"{self.metric_prefix}_slow_queries_total",
-                    f"{self.metric_prefix}_query_duration_seconds",
-                ],
-            },
+            metric_prefix=self.metric_prefix,
+            metrics=[
+                f"{self.metric_prefix}_queries_total",
+                f"{self.metric_prefix}_slow_queries_total",
+                f"{self.metric_prefix}_query_duration_seconds",
+            ],
         )
 
     def _after_cursor_execute(
@@ -152,9 +150,7 @@ class QueryTimingPrometheusMiddleware(QueryTimingMiddleware):
             executemany: If True, multiple parameters were executed
         """
         # Call parent implementation for logging and stats
-        super()._after_cursor_execute(
-            conn, cursor, statement, parameters, context, executemany
-        )
+        super()._after_cursor_execute(conn, cursor, statement, parameters, context, executemany)
 
         # Calculate duration
         start_time = getattr(context, "_query_start_time", None)
@@ -173,18 +169,16 @@ class QueryTimingPrometheusMiddleware(QueryTimingMiddleware):
             self.queries_counter.labels(query_type=query_type).inc()
 
             # Record duration in histogram
-            self.query_duration_histogram.labels(query_type=query_type).observe(
-                duration_s
-            )
+            self.query_duration_histogram.labels(query_type=query_type).observe(duration_s)
 
             # Increment slow queries counter if applicable
             if duration_ms >= self.slow_query_threshold_ms:
                 self.slow_queries_counter.labels(query_type=query_type).inc()
 
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Failed to update Prometheus metrics",
-                extra={"error": str(e), "query_type": query_type},
+                query_type=query_type,
             )
 
 

@@ -4,8 +4,6 @@
 **Validates: Requirements R5.2 - Metrics Decorators**
 """
 
-import asyncio
-
 import pytest
 
 from infrastructure.prometheus.metrics import (
@@ -23,6 +21,7 @@ class TestCounterDecorator:
 
     def test_sync_counter(self) -> None:
         """Test counter with sync function."""
+
         @counter("test_sync_counter", "Test counter")
         def my_func() -> str:
             return "result"
@@ -33,6 +32,7 @@ class TestCounterDecorator:
     @pytest.mark.asyncio
     async def test_async_counter(self) -> None:
         """Test counter with async function."""
+
         @counter("test_async_counter", "Test counter")
         async def my_func() -> str:
             return "result"
@@ -42,6 +42,7 @@ class TestCounterDecorator:
 
     def test_counter_with_labels(self) -> None:
         """Test counter with label values."""
+
         @counter(
             "test_counter_labels",
             "Test counter",
@@ -60,6 +61,7 @@ class TestGaugeDecorator:
 
     def test_sync_gauge(self) -> None:
         """Test gauge with sync function."""
+
         @gauge("test_sync_gauge", "Test gauge")
         def my_func() -> str:
             return "result"
@@ -70,6 +72,7 @@ class TestGaugeDecorator:
     @pytest.mark.asyncio
     async def test_async_gauge(self) -> None:
         """Test gauge with async function."""
+
         @gauge("test_async_gauge", "Test gauge")
         async def my_func() -> str:
             return "result"
@@ -79,6 +82,7 @@ class TestGaugeDecorator:
 
     def test_gauge_with_labels(self) -> None:
         """Test gauge with label values."""
+
         @gauge(
             "test_gauge_labels",
             "Test gauge",
@@ -93,6 +97,7 @@ class TestGaugeDecorator:
 
     def test_gauge_no_track_inprogress(self) -> None:
         """Test gauge without tracking in-progress."""
+
         @gauge("test_gauge_no_track", "Test gauge", track_inprogress=False)
         def my_func() -> str:
             return "result"
@@ -106,6 +111,7 @@ class TestHistogramDecorator:
 
     def test_sync_histogram(self) -> None:
         """Test histogram with sync function."""
+
         @histogram("test_sync_histogram", "Test histogram")
         def my_func() -> str:
             return "result"
@@ -116,6 +122,7 @@ class TestHistogramDecorator:
     @pytest.mark.asyncio
     async def test_async_histogram(self) -> None:
         """Test histogram with async function."""
+
         @histogram("test_async_histogram", "Test histogram")
         async def my_func() -> str:
             return "result"
@@ -125,6 +132,7 @@ class TestHistogramDecorator:
 
     def test_histogram_with_labels(self) -> None:
         """Test histogram with label values."""
+
         @histogram(
             "test_histogram_labels",
             "Test histogram",
@@ -139,6 +147,7 @@ class TestHistogramDecorator:
 
     def test_histogram_with_buckets(self) -> None:
         """Test histogram with custom buckets."""
+
         @histogram(
             "test_histogram_buckets",
             "Test histogram",
@@ -156,6 +165,7 @@ class TestSummaryDecorator:
 
     def test_sync_summary(self) -> None:
         """Test summary with sync function."""
+
         @summary("test_sync_summary", "Test summary")
         def my_func() -> str:
             return "result"
@@ -166,6 +176,7 @@ class TestSummaryDecorator:
     @pytest.mark.asyncio
     async def test_async_summary(self) -> None:
         """Test summary with async function."""
+
         @summary("test_async_summary", "Test summary")
         async def my_func() -> str:
             return "result"
@@ -175,6 +186,7 @@ class TestSummaryDecorator:
 
     def test_summary_with_labels(self) -> None:
         """Test summary with label values."""
+
         @summary(
             "test_summary_labels",
             "Test summary",
@@ -201,6 +213,7 @@ class TestCountExceptionsDecorator:
 
     def test_sync_no_exception(self) -> None:
         """Test count_exceptions with no exception."""
+
         @count_exceptions("test_sync_errors", "Test errors")
         def my_func() -> str:
             return "result"
@@ -211,6 +224,7 @@ class TestCountExceptionsDecorator:
     @pytest.mark.asyncio
     async def test_async_no_exception(self) -> None:
         """Test count_exceptions async with no exception."""
+
         @count_exceptions("test_async_errors", "Test errors")
         async def my_func() -> str:
             return "result"
@@ -220,6 +234,7 @@ class TestCountExceptionsDecorator:
 
     def test_sync_with_exception(self) -> None:
         """Test count_exceptions counts exception."""
+
         @count_exceptions("test_sync_errors_exc", "Test errors")
         def my_func() -> str:
             raise ValueError("test error")
@@ -230,6 +245,7 @@ class TestCountExceptionsDecorator:
     @pytest.mark.asyncio
     async def test_async_with_exception(self) -> None:
         """Test count_exceptions async counts exception."""
+
         @count_exceptions("test_async_errors_exc", "Test errors")
         async def my_func() -> str:
             raise ValueError("test error")
@@ -239,6 +255,7 @@ class TestCountExceptionsDecorator:
 
     def test_with_labels(self) -> None:
         """Test count_exceptions with labels."""
+
         @count_exceptions(
             "test_errors_labels",
             "Test errors",
@@ -253,6 +270,7 @@ class TestCountExceptionsDecorator:
 
     def test_specific_exception_type(self) -> None:
         """Test count_exceptions with specific exception type."""
+
         @count_exceptions(
             "test_errors_specific",
             "Test errors",

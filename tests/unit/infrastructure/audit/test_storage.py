@@ -15,12 +15,12 @@ from infrastructure.audit.trail import AuditAction, AuditRecord
 class TestInMemoryAuditStore:
     """Tests for InMemoryAuditStore."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def store(self) -> InMemoryAuditStore:
         """Create a fresh store for each test."""
         return InMemoryAuditStore()
 
-    @pytest.fixture
+    @pytest.fixture()
     def sample_record(self) -> AuditRecord[dict]:
         """Create a sample audit record."""
         return AuditRecord(
@@ -34,17 +34,13 @@ class TestInMemoryAuditStore:
         )
 
     @pytest.mark.asyncio
-    async def test_save_returns_record_id(
-        self, store: InMemoryAuditStore, sample_record: AuditRecord
-    ) -> None:
+    async def test_save_returns_record_id(self, store: InMemoryAuditStore, sample_record: AuditRecord) -> None:
         """Test that save returns the record ID."""
         result = await store.save(sample_record)
         assert result == sample_record.id
 
     @pytest.mark.asyncio
-    async def test_get_by_id_returns_saved_record(
-        self, store: InMemoryAuditStore, sample_record: AuditRecord
-    ) -> None:
+    async def test_get_by_id_returns_saved_record(self, store: InMemoryAuditStore, sample_record: AuditRecord) -> None:
         """Test retrieving a saved record by ID."""
         await store.save(sample_record)
         result = await store.get_by_id(sample_record.id)
@@ -53,17 +49,13 @@ class TestInMemoryAuditStore:
         assert result.entity_type == sample_record.entity_type
 
     @pytest.mark.asyncio
-    async def test_get_by_id_returns_none_for_missing(
-        self, store: InMemoryAuditStore
-    ) -> None:
+    async def test_get_by_id_returns_none_for_missing(self, store: InMemoryAuditStore) -> None:
         """Test that get_by_id returns None for non-existent record."""
         result = await store.get_by_id("non-existent-id")
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_by_entity_returns_matching_records(
-        self, store: InMemoryAuditStore
-    ) -> None:
+    async def test_get_by_entity_returns_matching_records(self, store: InMemoryAuditStore) -> None:
         """Test retrieving records by entity type and ID."""
         records = [
             AuditRecord(
@@ -92,9 +84,7 @@ class TestInMemoryAuditStore:
         assert all(r.entity_id == "user-123" for r in result)
 
     @pytest.mark.asyncio
-    async def test_get_by_entity_respects_limit(
-        self, store: InMemoryAuditStore
-    ) -> None:
+    async def test_get_by_entity_respects_limit(self, store: InMemoryAuditStore) -> None:
         """Test that get_by_entity respects the limit parameter."""
         for i in range(10):
             record = AuditRecord(
@@ -110,9 +100,7 @@ class TestInMemoryAuditStore:
         assert len(result) == 5
 
     @pytest.mark.asyncio
-    async def test_get_by_entity_returns_sorted_by_timestamp(
-        self, store: InMemoryAuditStore
-    ) -> None:
+    async def test_get_by_entity_returns_sorted_by_timestamp(self, store: InMemoryAuditStore) -> None:
         """Test that records are sorted by timestamp descending."""
         base_time = datetime.now()
         for i in range(3):
@@ -131,9 +119,7 @@ class TestInMemoryAuditStore:
         assert result[2].id == "rec-2"
 
     @pytest.mark.asyncio
-    async def test_get_by_user_returns_matching_records(
-        self, store: InMemoryAuditStore
-    ) -> None:
+    async def test_get_by_user_returns_matching_records(self, store: InMemoryAuditStore) -> None:
         """Test retrieving records by user ID."""
         for i in range(3):
             record = AuditRecord(
@@ -161,9 +147,7 @@ class TestInMemoryAuditStore:
         assert all(r.user_id == "user-admin" for r in result)
 
     @pytest.mark.asyncio
-    async def test_get_by_user_respects_limit(
-        self, store: InMemoryAuditStore
-    ) -> None:
+    async def test_get_by_user_respects_limit(self, store: InMemoryAuditStore) -> None:
         """Test that get_by_user respects the limit parameter."""
         for i in range(10):
             record = AuditRecord(
@@ -180,9 +164,7 @@ class TestInMemoryAuditStore:
         assert len(result) == 3
 
     @pytest.mark.asyncio
-    async def test_get_by_correlation_returns_matching_records(
-        self, store: InMemoryAuditStore
-    ) -> None:
+    async def test_get_by_correlation_returns_matching_records(self, store: InMemoryAuditStore) -> None:
         """Test retrieving records by correlation ID."""
         correlation_id = "request-12345"
         for i in range(3):
@@ -210,17 +192,13 @@ class TestInMemoryAuditStore:
         assert all(r.correlation_id == correlation_id for r in result)
 
     @pytest.mark.asyncio
-    async def test_get_by_correlation_returns_empty_for_no_match(
-        self, store: InMemoryAuditStore
-    ) -> None:
+    async def test_get_by_correlation_returns_empty_for_no_match(self, store: InMemoryAuditStore) -> None:
         """Test that get_by_correlation returns empty list for no matches."""
         result = await store.get_by_correlation("non-existent-correlation")
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_multiple_saves_same_id_overwrites(
-        self, store: InMemoryAuditStore
-    ) -> None:
+    async def test_multiple_saves_same_id_overwrites(self, store: InMemoryAuditStore) -> None:
         """Test that saving with same ID overwrites the record."""
         record1 = AuditRecord(
             id="same-id",
@@ -254,6 +232,4 @@ class TestAuditStoreProtocol:
 
     def test_protocol_is_runtime_checkable(self) -> None:
         """Test that AuditStore protocol is runtime checkable."""
-        assert hasattr(AuditStore, "__protocol_attrs__") or hasattr(
-            AuditStore, "_is_protocol"
-        )
+        assert hasattr(AuditStore, "__protocol_attrs__") or hasattr(AuditStore, "_is_protocol")

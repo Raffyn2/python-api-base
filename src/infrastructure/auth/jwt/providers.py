@@ -14,7 +14,7 @@ from infrastructure.auth.jwt.hs256_provider import HS256Provider
 from infrastructure.auth.jwt.rs256_provider import RS256Provider
 
 __all__ = [
-    "RS256Provider",
     "ES256Provider",
     "HS256Provider",
+    "RS256Provider",
 ]

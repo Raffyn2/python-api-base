@@ -62,20 +62,18 @@ class MockItemRepository:
 class TestCreateItemCommandHandler:
     """Tests for CreateItemCommandHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, repository: MockItemRepository) -> CreateItemCommandHandler:
         """Create handler with mock repository."""
         return CreateItemCommandHandler(repository=repository)
 
     @pytest.mark.asyncio
-    async def test_create_item_success(
-        self, handler: CreateItemCommandHandler, repository: MockItemRepository
-    ) -> None:
+    async def test_create_item_success(self, handler: CreateItemCommandHandler, repository: MockItemRepository) -> None:
         """Test successful item creation."""
         command = CreateItemCommand(
             name="Test Item",
@@ -121,17 +119,17 @@ class TestCreateItemCommandHandler:
 class TestUpdateItemCommandHandler:
     """Tests for UpdateItemCommandHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, repository: MockItemRepository) -> UpdateItemCommandHandler:
         """Create handler with mock repository."""
         return UpdateItemCommandHandler(repository=repository)
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_item(self, repository: MockItemRepository) -> ItemExample:
         """Create existing item in repository."""
         item = ItemExample.create(
@@ -164,9 +162,7 @@ class TestUpdateItemCommandHandler:
         assert response.name == "Updated Name"
 
     @pytest.mark.asyncio
-    async def test_update_nonexistent_item_fails(
-        self, handler: UpdateItemCommandHandler
-    ) -> None:
+    async def test_update_nonexistent_item_fails(self, handler: UpdateItemCommandHandler) -> None:
         """Test updating non-existent item fails."""
         command = UpdateItemCommand(
             item_id="nonexistent-id",
@@ -181,17 +177,17 @@ class TestUpdateItemCommandHandler:
 class TestDeleteItemCommandHandler:
     """Tests for DeleteItemCommandHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, repository: MockItemRepository) -> DeleteItemCommandHandler:
         """Create handler with mock repository."""
         return DeleteItemCommandHandler(repository=repository)
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_item(self, repository: MockItemRepository) -> ItemExample:
         """Create existing item in repository."""
         item = ItemExample.create(
@@ -221,9 +217,7 @@ class TestDeleteItemCommandHandler:
         assert result.unwrap() is True
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_item_fails(
-        self, handler: DeleteItemCommandHandler
-    ) -> None:
+    async def test_delete_nonexistent_item_fails(self, handler: DeleteItemCommandHandler) -> None:
         """Test deleting non-existent item fails."""
         command = DeleteItemCommand(item_id="nonexistent-id")
 
@@ -235,17 +229,17 @@ class TestDeleteItemCommandHandler:
 class TestGetItemQueryHandler:
     """Tests for GetItemQueryHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, repository: MockItemRepository) -> GetItemQueryHandler:
         """Create handler with mock repository."""
         return GetItemQueryHandler(repository=repository)
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_item(self, repository: MockItemRepository) -> ItemExample:
         """Create existing item in repository."""
         item = ItemExample.create(
@@ -274,9 +268,7 @@ class TestGetItemQueryHandler:
         assert response.sku == "QRY-001"
 
     @pytest.mark.asyncio
-    async def test_get_nonexistent_item_fails(
-        self, handler: GetItemQueryHandler
-    ) -> None:
+    async def test_get_nonexistent_item_fails(self, handler: GetItemQueryHandler) -> None:
         """Test getting non-existent item fails."""
         query = GetItemQuery(item_id="nonexistent-id")
 
@@ -288,12 +280,12 @@ class TestGetItemQueryHandler:
 class TestListItemsQueryHandler:
     """Tests for ListItemsQueryHandler."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, repository: MockItemRepository) -> ListItemsQueryHandler:
         """Create handler with mock repository."""
         return ListItemsQueryHandler(repository=repository)
@@ -311,9 +303,7 @@ class TestListItemsQueryHandler:
         assert len(response.items) == 0
 
     @pytest.mark.asyncio
-    async def test_list_items_with_data(
-        self, handler: ListItemsQueryHandler, repository: MockItemRepository
-    ) -> None:
+    async def test_list_items_with_data(self, handler: ListItemsQueryHandler, repository: MockItemRepository) -> None:
         """Test listing items with data."""
         for i in range(3):
             item = ItemExample.create(
@@ -340,27 +330,23 @@ from unittest.mock import AsyncMock
 class TestCreateItemCommandHandlerWithEventBus:
     """Tests for CreateItemCommandHandler with event bus."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def event_bus(self) -> AsyncMock:
         """Create mock event bus."""
         return AsyncMock()
 
-    @pytest.fixture
-    def handler(
-        self, repository: MockItemRepository, event_bus: AsyncMock
-    ) -> CreateItemCommandHandler:
+    @pytest.fixture()
+    def handler(self, repository: MockItemRepository, event_bus: AsyncMock) -> CreateItemCommandHandler:
         """Create handler with event bus."""
         return CreateItemCommandHandler(repository=repository, event_bus=event_bus)
 
     @pytest.mark.asyncio
-    async def test_publishes_events_on_create(
-        self, handler: CreateItemCommandHandler, event_bus: AsyncMock
-    ) -> None:
+    async def test_publishes_events_on_create(self, handler: CreateItemCommandHandler, event_bus: AsyncMock) -> None:
         """Should publish events after creation."""
         command = CreateItemCommand(
             name="Event Test",
@@ -377,24 +363,22 @@ class TestCreateItemCommandHandlerWithEventBus:
 class TestUpdateItemCommandHandlerWithEventBus:
     """Tests for UpdateItemCommandHandler with event bus."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def event_bus(self) -> AsyncMock:
         """Create mock event bus."""
         return AsyncMock()
 
-    @pytest.fixture
-    def handler(
-        self, repository: MockItemRepository, event_bus: AsyncMock
-    ) -> UpdateItemCommandHandler:
+    @pytest.fixture()
+    def handler(self, repository: MockItemRepository, event_bus: AsyncMock) -> UpdateItemCommandHandler:
         """Create handler with event bus."""
         return UpdateItemCommandHandler(repository=repository, event_bus=event_bus)
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_item(self, repository: MockItemRepository) -> ItemExample:
         """Create existing item."""
         item = ItemExample.create(
@@ -437,24 +421,22 @@ class TestUpdateItemCommandHandlerWithEventBus:
 class TestDeleteItemCommandHandlerWithEventBus:
     """Tests for DeleteItemCommandHandler with event bus."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def event_bus(self) -> AsyncMock:
         """Create mock event bus."""
         return AsyncMock()
 
-    @pytest.fixture
-    def handler(
-        self, repository: MockItemRepository, event_bus: AsyncMock
-    ) -> DeleteItemCommandHandler:
+    @pytest.fixture()
+    def handler(self, repository: MockItemRepository, event_bus: AsyncMock) -> DeleteItemCommandHandler:
         """Create handler with event bus."""
         return DeleteItemCommandHandler(repository=repository, event_bus=event_bus)
 
-    @pytest.fixture
+    @pytest.fixture()
     def existing_item(self, repository: MockItemRepository) -> ItemExample:
         """Create existing item."""
         item = ItemExample.create(
@@ -488,12 +470,12 @@ class TestDeleteItemCommandHandlerWithEventBus:
 class TestListItemsQueryHandlerWithFilters:
     """Tests for ListItemsQueryHandler with filters."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def repository(self) -> MockItemRepository:
         """Create mock repository."""
         return MockItemRepository()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self, repository: MockItemRepository) -> ListItemsQueryHandler:
         """Create handler."""
         return ListItemsQueryHandler(repository=repository)

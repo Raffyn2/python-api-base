@@ -81,7 +81,7 @@ class TestFederationRequiresExternalValidation:
         schema = FederatedSchema()
         schema.add_subgraph(subgraph)
 
-        errors = schema.validate()
+        schema.validate()
         # Should detect the @requires/@external mismatch
         # Note: Current implementation may not catch all cases
 
@@ -187,9 +187,7 @@ class TestSDLGeneration:
             max_size=30,
             alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
         ),
-        key_field=st.text(
-            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"
-        ),
+        key_field=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"),
     )
     def test_sdl_contains_entity_name(self, name: str, key_field: str) -> None:
         """Generated SDL should contain entity name."""

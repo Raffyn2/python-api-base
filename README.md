@@ -457,7 +457,7 @@ curl http://localhost:8000/health/live
 
 | Módulo | Descrição | Componentes |
 |--------|-----------|-------------|
-| `interface.v1` | API v1 endpoints | `users_router`, `items_router`, `health_router` |
+| `interface.v1` | API v1 endpoints | `users_router`, `examples_router`, `health_router` |
 | `interface.v2` | API v2 endpoints | `examples_router` |
 | `interface.middleware` | HTTP middleware | `SecurityHeadersMiddleware`, `LoggingMiddleware` |
 | `interface.graphql` | GraphQL | `schema`, `resolvers`, `dataloader` |

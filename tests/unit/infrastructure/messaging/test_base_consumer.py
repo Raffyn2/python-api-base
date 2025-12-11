@@ -4,9 +4,6 @@
 **Validates: Requirements 6.6 - Message Consumer Pattern**
 """
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
-
 import pytest
 
 from infrastructure.messaging.consumers.base_consumer import (
@@ -157,7 +154,6 @@ class TestBaseConsumerStart:
         consumer.messages_to_return = []
 
         # Stop immediately after first iteration
-        original_fetch = consumer.fetch_messages
 
         async def fetch_and_stop(batch_size: int) -> list[str]:
             consumer.stop()

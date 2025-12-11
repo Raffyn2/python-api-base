@@ -4,17 +4,18 @@
 **Refactored: Split from strategies.py for one-class-per-file compliance**
 """
 
-import logging
 from collections.abc import Callable
 
+import structlog
+
 from application.services.feature_flags.config import FlagConfig
-from application.services.feature_flags.models import EvaluationContext
 from application.services.feature_flags.core.base import (
     EvaluationStrategy,
     FlagEvaluationResult,
 )
+from application.services.feature_flags.models import EvaluationContext
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class CustomRuleStrategy(EvaluationStrategy):
@@ -68,18 +69,13 @@ class CustomRuleStrategy(EvaluationStrategy):
                     value=flag.enabled_value,
                     reason="Custom rule matched",
                 )
-        except Exception as e:
+        except Exception:
             logger.warning(
                 "custom_rule_evaluation_failed",
                 exc_info=True,
-                extra={
-                    "flag_key": flag.key,
-                    "user_id": context.user_id,
-                    "error": str(e),
-                    "operation": "FLAG_EVALUATION_ERROR",
-                },
+                flag_key=flag.key,
+                user_id=context.user_id,
+                operation="FLAG_EVALUATION_ERROR",
             )
 
         return FlagEvaluationResult.no_match()
-
-

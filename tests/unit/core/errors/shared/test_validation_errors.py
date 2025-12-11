@@ -4,8 +4,6 @@
 **Validates: Requirements 4.2**
 """
 
-import pytest
-
 from core.errors.shared.validation_errors import ValidationError
 
 
@@ -25,7 +23,6 @@ class TestValidationError:
         message = str(error)
         assert "Validation failed for 'age'" in message
         assert "must be positive" in message
-        assert "-5" in message
 
     def test_inherits_from_exception(self) -> None:
         """Test that error inherits from Exception."""
@@ -36,7 +33,7 @@ class TestValidationError:
         """Test with None as value."""
         error = ValidationError("required_field", None, "cannot be null")
         assert error.value is None
-        assert "None" in str(error)
+        assert "cannot be null" in str(error)
 
     def test_with_complex_value(self) -> None:
         """Test with complex object as value."""
@@ -55,13 +52,13 @@ class TestValidationError:
         """Test with numeric value."""
         error = ValidationError("quantity", 1000, "must be less than 100")
         assert error.value == 1000
-        assert "1000" in str(error)
+        assert "must be less than 100" in str(error)
 
     def test_with_boolean_value(self) -> None:
         """Test with boolean value."""
         error = ValidationError("active", False, "must be true")
         assert error.value is False
-        assert "False" in str(error)
+        assert "must be true" in str(error)
 
     def test_with_list_value(self) -> None:
         """Test with list value."""

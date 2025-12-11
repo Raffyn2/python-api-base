@@ -3,8 +3,6 @@
 Tests fluent builder API for batch operations.
 """
 
-from collections.abc import Sequence
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -12,12 +10,9 @@ from pydantic import BaseModel
 
 from application.common.batch.builders.builder import BatchOperationBuilder
 from application.common.batch.config.config import (
-    BatchConfig,
     BatchErrorStrategy,
     BatchResult,
-    ProgressCallback,
 )
-from application.common.batch.interfaces.interfaces import IBatchRepository
 
 
 class SampleModel(BaseModel):
@@ -133,7 +128,7 @@ class TestBatchOperationBuilderChaining:
         repo = MockBatchRepository()
         builder = BatchOperationBuilder(repo)
 
-        result = builder.with_retry()
+        builder.with_retry()
 
         assert builder._config.retry_failed is True
         assert builder._config.max_retries == 3
@@ -229,9 +224,7 @@ class TestBatchOperationBuilderUpdate:
     async def test_update_passes_config(self) -> None:
         """Test update passes config to repository."""
         repo = MockBatchRepository()
-        builder = BatchOperationBuilder(repo).with_error_strategy(
-            BatchErrorStrategy.FAIL_FAST
-        )
+        builder = BatchOperationBuilder(repo).with_error_strategy(BatchErrorStrategy.FAIL_FAST)
         items = [("1", UpdateModel(name="Updated"))]
 
         await builder.update(items)
@@ -250,7 +243,7 @@ class TestBatchOperationBuilderDelete:
         builder = BatchOperationBuilder(repo)
         ids = ["1", "2", "3"]
 
-        result = await builder.delete(ids)
+        await builder.delete(ids)
 
         repo.bulk_delete.assert_called_once()
 

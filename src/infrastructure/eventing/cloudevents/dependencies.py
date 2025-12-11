@@ -4,11 +4,11 @@ from typing import Annotated
 
 from fastapi import Depends, Header, Request
 
-from src.infrastructure.eventing.cloudevents.models import (
+from infrastructure.eventing.cloudevents.models import (
     CloudEvent,
     CloudEventSerializationError,
 )
-from src.infrastructure.eventing.cloudevents.parser import CloudEventParser
+from infrastructure.eventing.cloudevents.parser import CloudEventParser
 
 
 async def get_cloud_event(
@@ -44,13 +44,14 @@ async def get_cloud_event(
     try:
         return CloudEventParser.parse(headers, body)
     except Exception as e:
-        raise CloudEventSerializationError(f"Failed to parse CloudEvent: {e}") from e
+        msg = "Failed to parse CloudEvent"
+        raise CloudEventSerializationError(msg) from e
 
 
 class CloudEventDependency:
     """Configurable CloudEvent dependency for FastAPI."""
 
-    def __init__(self, required: bool = True, validate: bool = True):
+    def __init__(self, required: bool = True, validate: bool = True) -> None:
         """Initialize CloudEvent dependency.
 
         Args:
@@ -76,7 +77,8 @@ class CloudEventDependency:
         content_type = headers.get("content-type", "")
         has_ce_headers = any(k.lower().startswith("ce-") for k in headers)
 
-        if not content_type.startswith("application/cloudevents") and not has_ce_headers:
+        is_cloudevent = content_type.startswith("application/cloudevents")
+        if not is_cloudevent and not has_ce_headers:
             if self.required:
                 raise CloudEventSerializationError("Request is not a CloudEvent")
             return None
@@ -88,7 +90,8 @@ class CloudEventDependency:
             return event
         except Exception as e:
             if self.required:
-                raise CloudEventSerializationError(f"Failed to parse CloudEvent: {e}") from e
+                msg = "Failed to parse CloudEvent"
+                raise CloudEventSerializationError(msg) from e
             return None
 
 

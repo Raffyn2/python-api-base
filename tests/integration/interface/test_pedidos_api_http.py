@@ -79,7 +79,7 @@ class MockPedidoRepository:
         return len(self._pedidos)
 
 
-@pytest.fixture
+@pytest.fixture()
 def auth_headers() -> dict[str, str]:
     """Headers for authenticated requests with admin role."""
     return {
@@ -89,7 +89,7 @@ def auth_headers() -> dict[str, str]:
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def tenant_headers() -> dict[str, str]:
     """Headers with tenant context."""
     return {
@@ -99,7 +99,7 @@ def tenant_headers() -> dict[str, str]:
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def pedido_create_data() -> dict[str, Any]:
     """Valid pedido creation data."""
     return {
@@ -156,9 +156,7 @@ class TestPedidosAPIStructure:
 class TestPedidosAPIEndpoints:
     """Tests for PedidoExample API endpoints."""
 
-    def test_pedido_create_dto_validation(
-        self, pedido_create_data: dict[str, Any]
-    ) -> None:
+    def test_pedido_create_dto_validation(self, pedido_create_data: dict[str, Any]) -> None:
         """Test PedidoExampleCreate DTO validation.
 
         **Feature: interface-middleware-routes-analysis**

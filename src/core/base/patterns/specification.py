@@ -83,9 +83,7 @@ class AndSpecification[T](CompositeSpecification[T]):
 
     def is_satisfied_by(self, candidate: T) -> bool:
         """Check if candidate satisfies both specifications."""
-        return self._left.is_satisfied_by(candidate) and self._right.is_satisfied_by(
-            candidate
-        )
+        return self._left.is_satisfied_by(candidate) and self._right.is_satisfied_by(candidate)
 
 
 class OrSpecification[T](CompositeSpecification[T]):
@@ -106,9 +104,7 @@ class OrSpecification[T](CompositeSpecification[T]):
 
     def is_satisfied_by(self, candidate: T) -> bool:
         """Check if candidate satisfies at least one specification."""
-        return self._left.is_satisfied_by(candidate) or self._right.is_satisfied_by(
-            candidate
-        )
+        return self._left.is_satisfied_by(candidate) or self._right.is_satisfied_by(candidate)
 
 
 class NotSpecification[T](CompositeSpecification[T]):
@@ -184,3 +180,23 @@ class AttributeSpecification[T](Specification[T]):
     def is_satisfied_by(self, candidate: T) -> bool:
         """Check if candidate's attribute equals expected value."""
         return getattr(candidate, self._attribute, None) == self._value
+
+
+def spec[T](predicate: "Callable[[T], bool]", name: str = "") -> PredicateSpecification[T]:
+    """Create a specification from a predicate function.
+
+    Factory function for creating specifications from lambdas or functions.
+
+    Args:
+        predicate: Function that takes candidate and returns bool.
+        name: Optional name for debugging (stored but not used).
+
+    Returns:
+        PredicateSpecification wrapping the predicate.
+
+    Example:
+        >>> is_adult = spec(lambda p: p.age >= 18)
+        >>> is_active = spec(lambda p: p.status == "active")
+        >>> can_vote = is_adult & is_active
+    """
+    return PredicateSpecification(predicate)

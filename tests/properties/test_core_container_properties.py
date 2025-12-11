@@ -77,14 +77,10 @@ class TestLifecycleHookErrorAggregation:
 
     @given(
         num_hooks=st.integers(min_value=3, max_value=10),
-        failing_indices=st.lists(
-            st.integers(min_value=0, max_value=9), min_size=1, max_size=5, unique=True
-        ),
+        failing_indices=st.lists(st.integers(min_value=0, max_value=9), min_size=1, max_size=5, unique=True),
     )
     @settings(max_examples=50)
-    def test_all_shutdown_hooks_attempted_even_if_some_fail(
-        self, num_hooks: int, failing_indices: list[int]
-    ):
+    def test_all_shutdown_hooks_attempted_even_if_some_fail(self, num_hooks: int, failing_indices: list[int]):
         """For any set of hooks where some fail, all SHALL be attempted."""
         # Adjust failing indices to be within range
         failing_indices = [i % num_hooks for i in failing_indices]

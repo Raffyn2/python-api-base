@@ -16,13 +16,9 @@ from application.common.cqrs.exceptions.exceptions import (
 class SampleCommand:
     """Sample command for testing."""
 
-    pass
-
 
 class AnotherCommand:
     """Another sample command for testing."""
-
-    pass
 
 
 class TestCQRSError:

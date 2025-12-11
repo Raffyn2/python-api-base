@@ -179,7 +179,7 @@ class TestInMemoryQueueBackend:
     async def test_dequeue_respects_status(self) -> None:
         """Test dequeue only returns pending messages."""
         backend = InMemoryQueueBackend[SamplePayload]()
-        
+
         msg1 = QueueMessage(
             id="msg-1",
             payload=SamplePayload(name="test1"),
@@ -192,10 +192,10 @@ class TestInMemoryQueueBackend:
             created_at=datetime.now(UTC),
             status=MessageStatus.PROCESSING,
         )
-        
+
         await backend.enqueue(msg1)
         await backend.enqueue(msg2)
-        
+
         messages = await backend.dequeue(10)
         assert len(messages) == 1
         assert messages[0].id == "msg-1"
@@ -210,10 +210,10 @@ class TestInMemoryQueueBackend:
             created_at=datetime.now(UTC),
         )
         await backend.enqueue(msg)
-        
+
         msg.status = MessageStatus.COMPLETED
         await backend.update(msg)
-        
+
         # Completed messages won't be dequeued
         messages = await backend.dequeue(10)
         assert len(messages) == 0
@@ -229,11 +229,11 @@ class TestInMemoryQueueBackend:
         )
         await backend.enqueue(msg)
         await backend.move_to_dlq(msg)
-        
+
         # Message removed from main queue
         messages = await backend.dequeue(10)
         assert len(messages) == 0
-        
+
         # Message in DLQ
         dlq_messages = await backend.get_dlq_messages(10)
         assert len(dlq_messages) == 1
@@ -251,10 +251,10 @@ class TestInMemoryQueueBackend:
         )
         await backend.enqueue(msg)
         await backend.move_to_dlq(msg)
-        
+
         result = await backend.requeue_from_dlq("msg-1")
         assert result is True
-        
+
         # Message back in main queue with reset status
         messages = await backend.dequeue(10)
         assert len(messages) == 1
@@ -278,9 +278,9 @@ class TestRetryQueue:
         backend = InMemoryQueueBackend[SamplePayload]()
         handler = MockHandler()
         queue = RetryQueue(backend, handler)
-        
+
         msg = await queue.enqueue(SamplePayload(name="test"))
-        
+
         assert msg.id is not None
         assert msg.status == MessageStatus.PENDING
 
@@ -290,12 +290,12 @@ class TestRetryQueue:
         backend = InMemoryQueueBackend[SamplePayload]()
         handler = MockHandler()
         queue = RetryQueue(backend, handler)
-        
+
         msg = await queue.enqueue(
             SamplePayload(name="test"),
             metadata={"source": "api"},
         )
-        
+
         assert msg.metadata["source"] == "api"
 
     @pytest.mark.asyncio
@@ -304,10 +304,10 @@ class TestRetryQueue:
         backend = InMemoryQueueBackend[SamplePayload]()
         handler = MockHandler()
         queue = RetryQueue(backend, handler)
-        
+
         await queue.enqueue(SamplePayload(name="test"))
         processed = await queue.process_one()
-        
+
         assert processed is True
         assert handler._call_count == 1
 
@@ -317,9 +317,9 @@ class TestRetryQueue:
         backend = InMemoryQueueBackend[SamplePayload]()
         handler = MockHandler()
         queue = RetryQueue(backend, handler)
-        
+
         processed = await queue.process_one()
-        
+
         assert processed is False
 
     @pytest.mark.asyncio
@@ -329,9 +329,9 @@ class TestRetryQueue:
         handler = MockHandler(fail_count=1)
         config = RetryConfig(max_retries=3, initial_delay_ms=0)
         queue = RetryQueue(backend, handler, config)
-        
+
         await queue.enqueue(SamplePayload(name="test"))
-        
+
         # First attempt fails
         await queue.process_one()
         messages = await backend.dequeue(10)
@@ -345,9 +345,9 @@ class TestRetryQueue:
         handler = MockHandler(should_fail=True)
         config = RetryConfig(max_retries=2, initial_delay_ms=0)
         queue = RetryQueue(backend, handler, config)
-        
-        msg = await queue.enqueue(SamplePayload(name="test"))
-        
+
+        await queue.enqueue(SamplePayload(name="test"))
+
         # Process until max retries exceeded
         for _ in range(3):
             await queue.process_one()
@@ -356,7 +356,7 @@ class TestRetryQueue:
             if messages:
                 messages[0].next_retry_at = None
                 await backend.update(messages[0])
-        
+
         dlq_messages = await queue.get_dlq_messages()
         assert len(dlq_messages) >= 1
 
@@ -366,12 +366,12 @@ class TestRetryQueue:
         backend = InMemoryQueueBackend[SamplePayload]()
         handler = MockHandler()
         queue = RetryQueue(backend, handler)
-        
+
         for i in range(5):
             await queue.enqueue(SamplePayload(name=f"test-{i}"))
-        
+
         processed = await queue.process_batch(batch_size=3)
-        
+
         assert processed == 3
         assert handler._call_count == 3
 
@@ -381,7 +381,7 @@ class TestRetryQueue:
         backend = InMemoryQueueBackend[SamplePayload]()
         handler = MockHandler()
         queue = RetryQueue(backend, handler)
-        
+
         hook_called = []
 
         async def before_hook(msg: QueueMessage) -> None:
@@ -392,10 +392,10 @@ class TestRetryQueue:
 
         queue.register_hook("before_process", before_hook)
         queue.register_hook("after_process", after_hook)
-        
+
         await queue.enqueue(SamplePayload(name="test"))
         await queue.process_one()
-        
+
         assert "before" in hook_called
         assert "after" in hook_called
 
@@ -405,17 +405,17 @@ class TestRetryQueue:
         backend = InMemoryQueueBackend[SamplePayload]()
         handler = MockHandler(should_fail=True, should_retry=False)
         queue = RetryQueue(backend, handler)
-        
+
         dlq_messages = []
 
         async def dlq_hook(msg: QueueMessage) -> None:
             dlq_messages.append(msg)
 
         queue.register_hook("on_dlq", dlq_hook)
-        
+
         await queue.enqueue(SamplePayload(name="test"))
         await queue.process_one()
-        
+
         assert len(dlq_messages) == 1
 
     @pytest.mark.asyncio
@@ -424,14 +424,14 @@ class TestRetryQueue:
         backend = InMemoryQueueBackend[SamplePayload]()
         handler = MockHandler(should_fail=True, should_retry=False)
         queue = RetryQueue(backend, handler)
-        
-        msg = await queue.enqueue(SamplePayload(name="test"))
+
+        await queue.enqueue(SamplePayload(name="test"))
         await queue.process_one()
-        
+
         # Requeue from DLQ
         dlq_messages = await queue.get_dlq_messages()
         assert len(dlq_messages) == 1
-        
+
         result = await queue.requeue_from_dlq(dlq_messages[0].id)
         assert result is True
 
@@ -441,11 +441,11 @@ class TestRetryQueue:
         backend = InMemoryQueueBackend[SamplePayload]()
         handler = MockHandler(should_fail=True, should_retry=False)
         queue = RetryQueue(backend, handler)
-        
+
         for i in range(3):
             await queue.enqueue(SamplePayload(name=f"test-{i}"))
             await queue.process_one()
-        
+
         count = await queue.requeue_all_dlq()
         assert count == 3
 
@@ -460,11 +460,11 @@ class TestRetryQueue:
             jitter_factor=0,
         )
         queue = RetryQueue(backend, handler, config)
-        
+
         # First retry: 1000 * 2^1 = 2000
         delay1 = queue._calculate_delay(1)
         assert delay1 == 2000
-        
+
         # Second retry: 1000 * 2^2 = 4000
         delay2 = queue._calculate_delay(2)
         assert delay2 == 4000
@@ -480,7 +480,7 @@ class TestRetryQueue:
             jitter_factor=0,
         )
         queue = RetryQueue(backend, handler, config)
-        
+
         # Would be 1000 * 2^10 = 1024000, but capped at 5000
         delay = queue._calculate_delay(10)
         assert delay == 5000
@@ -490,28 +490,28 @@ class TestRetryQueue:
         backend = InMemoryQueueBackend[SamplePayload]()
         handler = MockHandler()
         queue = RetryQueue(backend, handler)
-        
+
         queue._running = True
         queue.stop()
-        
+
         assert queue._running is False
 
     @pytest.mark.asyncio
     async def test_process_exception_handling(self) -> None:
         """Test exception handling during processing."""
         backend = InMemoryQueueBackend[SamplePayload]()
-        
+
         class ExceptionHandler:
             async def handle(self, message: QueueMessage) -> ProcessingResult:
                 raise RuntimeError("Unexpected error")
-        
+
         handler = ExceptionHandler()
         config = RetryConfig(max_retries=1, initial_delay_ms=0)
         queue = RetryQueue(backend, handler, config)
-        
+
         await queue.enqueue(SamplePayload(name="test"))
         await queue.process_one()
-        
+
         # Message should be retried
         messages = await backend.dequeue(10)
         if messages:

@@ -1,23 +1,24 @@
 """Mapper for ItemExample.
 
-Implements IMapper interface for entity-DTO transformations.
+Implements BaseMapper for entity-DTO transformations with reduced duplication.
 
 **Feature: application-common-integration**
+**Feature: mapper-consolidation-2025**
 **Validates: Requirements 4.1, 4.3**
 """
 
-from collections.abc import Sequence
-
 from application.common.mappers import IMapper
+from application.common.mappers.base_mapper import BaseMapper
 from application.examples.item.dtos import ItemExampleResponse
 from application.examples.shared.dtos import MoneyDTO
 from domain.examples.item.entity import ItemExample, Money
 
 
-class ItemExampleMapper(IMapper[ItemExample, ItemExampleResponse]):
+class ItemExampleMapper(BaseMapper, IMapper[ItemExample, ItemExampleResponse]):
     """Mapper for ItemExample entity to DTOs.
 
-    Implements IMapper interface for consistent mapping patterns.
+    Inherits common list operations from BaseMapper to eliminate duplication.
+    Only implements domain-specific conversions (to_dto, to_entity).
     """
 
     def to_dto(self, entity: ItemExample) -> ItemExampleResponse:
@@ -60,15 +61,9 @@ class ItemExampleMapper(IMapper[ItemExample, ItemExampleResponse]):
             created_by=dto.created_by,
         )
 
-    def to_dto_list(self, entities: Sequence[ItemExample]) -> list[ItemExampleResponse]:
-        """Map list of entities to response DTOs."""
-        return [self.to_dto(e) for e in entities]
+    # Note: to_dto_list, to_entity_list are inherited from BaseMapper
 
-    def to_entity_list(self, dtos: Sequence[ItemExampleResponse]) -> list[ItemExample]:
-        """Map list of DTOs to entities."""
-        return [self.to_entity(d) for d in dtos]
-
-    # Backward compatibility static methods
+    # Static methods for backward compatibility
     @staticmethod
     def to_response(entity: ItemExample) -> ItemExampleResponse:
         """Static method for backward compatibility."""

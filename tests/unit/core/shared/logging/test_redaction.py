@@ -51,7 +51,7 @@ class TestPIIPattern:
 class TestRedactionProcessor:
     """Tests for RedactionProcessor."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def processor(self) -> RedactionProcessor:
         return RedactionProcessor()
 
@@ -217,7 +217,7 @@ class TestCreateRedactionProcessor:
 class TestEmailMasking:
     """Tests for email masking function."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def processor(self) -> RedactionProcessor:
         return RedactionProcessor()
 
@@ -241,7 +241,7 @@ class TestEmailMasking:
 class TestCreditCardMasking:
     """Tests for credit card masking."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def processor(self) -> RedactionProcessor:
         return RedactionProcessor()
 
@@ -260,4 +260,3 @@ class TestCreditCardMasking:
         event = {"event": "4111111111119999"}
         result = processor(None, None, event)
         assert "9999" in result["event"]
-

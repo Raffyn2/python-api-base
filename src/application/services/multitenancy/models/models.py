@@ -3,6 +3,7 @@
 # Import at runtime to avoid circular dependency
 from contextvars import ContextVar
 from dataclasses import dataclass
+from typing import Self
 
 # Context variable for current tenant
 _current_tenant: ContextVar[str | None] = ContextVar("current_tenant", default=None)
@@ -18,7 +19,7 @@ def set_current_tenant(tenant_id: str | None) -> None:
     _current_tenant.set(tenant_id)
 
 
-@dataclass
+@dataclass(slots=True)
 class TenantContext:
     """Context manager for tenant scope.
 
@@ -31,8 +32,9 @@ class TenantContext:
     """
 
     tenant_id: str
+    _previous: str | None = None
 
-    def __enter__(self) -> "TenantContext":
+    def __enter__(self) -> Self:
         """Enter tenant context."""
         self._previous = get_current_tenant()
         set_current_tenant(self.tenant_id)
@@ -42,7 +44,7 @@ class TenantContext:
         """Exit tenant context and restore previous."""
         set_current_tenant(self._previous)
 
-    async def __aenter__(self) -> "TenantContext":
+    async def __aenter__(self) -> Self:
         """Async enter tenant context."""
         return self.__enter__()
 

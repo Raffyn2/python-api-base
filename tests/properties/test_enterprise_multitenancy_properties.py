@@ -12,9 +12,7 @@ import pytest
 from hypothesis import given, settings, strategies as st
 
 # Tenant context using contextvars
-_current_tenant: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "current_tenant", default=None
-)
+_current_tenant: contextvars.ContextVar[str | None] = contextvars.ContextVar("current_tenant", default=None)
 
 
 def get_current_tenant() -> str | None:
@@ -72,15 +70,11 @@ class TenantRepository[T]:
         prefix = f"{tenant}:"
         return [v for k, v in self._storage.items() if k.startswith(prefix)]  # type: ignore
 
-    async def cross_tenant_access(
-        self, entity_id: str, target_tenant: str
-    ) -> TenantAwareEntity | None:
+    async def cross_tenant_access(self, entity_id: str, target_tenant: str) -> TenantAwareEntity | None:
         """Attempt cross-tenant access (should be blocked)."""
         current = self._get_tenant()
         if target_tenant != current:
-            raise PermissionError(
-                f"Cross-tenant access denied: {current} -> {target_tenant}"
-            )
+            raise PermissionError(f"Cross-tenant access denied: {current} -> {target_tenant}")
         return self._storage.get(f"{target_tenant}:{entity_id}")  # type: ignore
 
 
@@ -145,9 +139,7 @@ class TestTenantInsertTagging:
         data=data_values,
     )
     @settings(max_examples=50)
-    def test_insert_auto_tags_tenant(
-        self, tenant_id: str, entity_id: str, data: str
-    ) -> None:
+    def test_insert_auto_tags_tenant(self, tenant_id: str, entity_id: str, data: str) -> None:
         """Inserted entities are automatically tagged with current tenant."""
 
         async def run_test() -> None:
@@ -175,9 +167,7 @@ class TestCrossTenantBlocking:
         entity_id=entity_ids,
     )
     @settings(max_examples=50)
-    def test_cross_tenant_access_blocked(
-        self, tenant1: str, tenant2: str, entity_id: str
-    ) -> None:
+    def test_cross_tenant_access_blocked(self, tenant1: str, tenant2: str, entity_id: str) -> None:
         """Cross-tenant access attempts are blocked."""
         if tenant1 == tenant2:
             return  # Skip if same tenant

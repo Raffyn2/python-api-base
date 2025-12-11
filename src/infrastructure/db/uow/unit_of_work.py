@@ -1,15 +1,12 @@
 """Unit of Work pattern for transaction management."""
 
+import asyncio
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
 from sqlalchemy.ext.asyncio import AsyncSession
-
-if TYPE_CHECKING:
-    import asyncio
-    from collections.abc import Awaitable, Callable
 
 
 class IUnitOfWork(ABC):
@@ -81,7 +78,7 @@ class SQLAlchemyUnitOfWork(IUnitOfWork):
 
 
 @asynccontextmanager
-async def transaction(uow: IUnitOfWork) -> AsyncGenerator[IUnitOfWork, None]:
+async def transaction(uow: IUnitOfWork) -> AsyncGenerator[IUnitOfWork]:
     """Context manager for transactional operations.
 
     Usage:
@@ -177,8 +174,8 @@ class AsyncLock[T]:
 
     def __init__(
         self,
-        lock: "asyncio.Lock",
-        operation: "Callable[[], Awaitable[T]]",
+        lock: asyncio.Lock,
+        operation: Callable[[], Awaitable[T]],
     ) -> None:
         """Initialize the lock context.
 
@@ -222,7 +219,7 @@ class AsyncTimeout[T]:
     def __init__(
         self,
         timeout_seconds: float,
-        operation: "Callable[[], Awaitable[T]]",
+        operation: Callable[[], Awaitable[T]],
     ) -> None:
         """Initialize the timeout context.
 
@@ -236,8 +233,6 @@ class AsyncTimeout[T]:
 
     async def __aenter__(self) -> T:
         """Execute operation with timeout."""
-        import asyncio
-
         self._result = await asyncio.wait_for(
             self._operation(),
             timeout=self._timeout,
@@ -250,9 +245,9 @@ class AsyncTimeout[T]:
 
 @asynccontextmanager
 async def managed_resource[T](
-    acquire: "Callable[[], Awaitable[T]]",
-    release: "Callable[[T], Awaitable[None]]",
-) -> AsyncGenerator[T, None]:
+    acquire: Callable[[], Awaitable[T]],
+    release: Callable[[T], Awaitable[None]],
+) -> AsyncGenerator[T]:
     """Generic context manager for any async resource.
 
     A functional approach to resource management that doesn't require
@@ -284,10 +279,10 @@ async def managed_resource[T](
 
 @asynccontextmanager
 async def atomic_operation[T](
-    operation: "Callable[[], Awaitable[T]]",
-    on_success: "Callable[[T], Awaitable[None]] | None" = None,
-    on_failure: "Callable[[Exception], Awaitable[None]] | None" = None,
-) -> AsyncGenerator[T, None]:
+    operation: Callable[[], Awaitable[T]],
+    on_success: Callable[[T], Awaitable[None]] | None = None,
+    on_failure: Callable[[Exception], Awaitable[None]] | None = None,
+) -> AsyncGenerator[T]:
     """Generic context manager for atomic operations with callbacks.
 
     Executes an operation and calls success/failure callbacks based

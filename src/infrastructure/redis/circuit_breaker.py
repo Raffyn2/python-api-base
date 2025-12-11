@@ -7,12 +7,13 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import time
 from dataclasses import dataclass, field
 from enum import Enum
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class CircuitState(str, Enum):
@@ -23,7 +24,7 @@ class CircuitState(str, Enum):
     HALF_OPEN = "half_open"  # Testing if recovered
 
 
-@dataclass
+@dataclass(slots=True)
 class CircuitBreaker:
     """Circuit breaker implementation for Redis operations.
 
@@ -117,20 +118,15 @@ class CircuitBreaker:
                 self._state = CircuitState.OPEN
                 logger.warning(
                     "Circuit breaker OPEN after half-open failure",
-                    extra={"error": str(error) if error else None},
+                    exc_info=error if error else None,
                 )
-            elif (
-                self._state == CircuitState.CLOSED
-                and self._failure_count >= self.failure_threshold
-            ):
+            elif self._state == CircuitState.CLOSED and self._failure_count >= self.failure_threshold:
                 self._state = CircuitState.OPEN
                 logger.warning(
                     "Circuit breaker OPEN after threshold exceeded",
-                    extra={
-                        "failures": self._failure_count,
-                        "threshold": self.failure_threshold,
-                        "error": str(error) if error else None,
-                    },
+                    failures=self._failure_count,
+                    threshold=self.failure_threshold,
+                    exc_info=error if error else None,
                 )
 
     async def reset(self) -> None:

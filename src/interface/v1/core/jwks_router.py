@@ -6,9 +6,9 @@
 Provides /.well-known/jwks.json endpoint for JWT verification by clients.
 """
 
-import logging
 from typing import Any
 
+import structlog
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
@@ -19,7 +19,7 @@ from core.config import (
 )
 from infrastructure.auth.jwt.jwks import get_jwks_service
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(tags=["Security"])
 
@@ -67,7 +67,7 @@ router = APIRouter(tags=["Security"])
         }
     },
 )
-async def get_jwks(request: Request) -> JSONResponse:  # noqa: ARG001
+async def get_jwks(request: Request) -> JSONResponse:
     """Get the JSON Web Key Set.
 
     **Feature: api-best-practices-review-2025**

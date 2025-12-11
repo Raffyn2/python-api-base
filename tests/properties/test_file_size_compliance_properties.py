@@ -61,10 +61,7 @@ class TestFileSizeComplianceProperties:
                 f"  {path}: {lines} lines (+{lines - MAX_LINES})"
                 for path, lines in sorted(violations, key=lambda x: x[1], reverse=True)
             ]
-            pytest.fail(
-                f"{len(violations)} files exceed {MAX_LINES} lines:\n"
-                + "\n".join(violation_msgs)
-            )
+            pytest.fail(f"{len(violations)} files exceed {MAX_LINES} lines:\n" + "\n".join(violation_msgs))
 
     def test_refactored_packages_exist(self) -> None:
         """Property: Refactored packages exist with proper structure.
@@ -106,10 +103,7 @@ class TestFileSizeComplianceProperties:
 
             py_files = list(package.glob("*.py"))
             # Should have more than just __init__.py
-            assert len(py_files) > 1, (
-                f"Package {package_path} should have multiple modules, "
-                f"found only {len(py_files)}"
-            )
+            assert len(py_files) > 1, f"Package {package_path} should have multiple modules, found only {len(py_files)}"
 
     @given(st.integers(min_value=1, max_value=100))
     @settings(max_examples=10)

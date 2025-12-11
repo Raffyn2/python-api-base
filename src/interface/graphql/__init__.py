@@ -4,19 +4,18 @@ Organized into subpackages by responsibility:
 - core/: Schema and router setup
 - queries/: Query definitions
 - mutations/: Mutation definitions
-- resolvers/: Resolver functions and data loaders
-- mappers/: DTO mappers
-- relay/: Relay cursor-based pagination
-- types/: GraphQL type definitions
+- resolvers/: DataLoader for N+1 prevention
+- mappers/: DTO mappers (centralized in application.mappers.graphql)
+- relay/: Relay pagination types (re-exports from types/)
+- types/: GraphQL type definitions (Strawberry)
 
 **Feature: python-api-base-2025-generics-audit**
 **Feature: interface-modules-workflow-analysis**
 **Validates: Requirements 20.1-20.5, 3.1, 3.2, 3.3**
 """
 
-from interface.graphql.mappers import map_user_to_graphql
-from interface.graphql.relay import RelayConnection
-from interface.graphql.resolvers import DataLoaderService
+from interface.graphql.relay import PageInfoType
+from interface.graphql.resolvers import DataLoader, DataLoaderConfig
 
 # Import router and schema for integration
 try:
@@ -30,13 +29,12 @@ except ImportError:
 
 __all__ = [
     "HAS_STRAWBERRY",
+    # Resolvers
+    "DataLoader",
+    "DataLoaderConfig",
+    # Relay
+    "PageInfoType",
     # Core
     "graphql_router",
     "graphql_schema",
-    # Resolvers
-    "DataLoaderService",
-    # Mappers
-    "map_user_to_graphql",
-    # Relay
-    "RelayConnection",
 ]

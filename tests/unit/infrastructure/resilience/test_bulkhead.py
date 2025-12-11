@@ -13,8 +13,8 @@ import pytest
 from infrastructure.resilience.bulkhead import (
     Bulkhead,
     BulkheadConfig,
-    BulkheadRejectedError,
     BulkheadRegistry,
+    BulkheadRejectedError,
     BulkheadState,
     BulkheadStats,
 )

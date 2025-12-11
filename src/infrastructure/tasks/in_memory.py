@@ -5,15 +5,16 @@
 """
 
 import asyncio
-import logging
 import time
 from collections.abc import Sequence
+
+import structlog
 
 from infrastructure.tasks.protocols import TaskHandler
 from infrastructure.tasks.retry import DEFAULT_RETRY_POLICY, RetryPolicy
 from infrastructure.tasks.task import Task, TaskResult, TaskStatus
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class InMemoryTaskQueue[TPayload, TResult]:
@@ -46,15 +47,15 @@ class InMemoryTaskQueue[TPayload, TResult]:
             retry_policy: Policy for retry delays.
         """
         self._tasks: dict[str, Task[TPayload, TResult]] = {}
-        self._queue: asyncio.PriorityQueue[tuple[int, float, str]] = (
-            asyncio.PriorityQueue()
-        )
+        self._queue: asyncio.PriorityQueue[tuple[int, float, str]] = asyncio.PriorityQueue()
         self._retry_policy = retry_policy or DEFAULT_RETRY_POLICY
         self._handlers: dict[str, TaskHandler[TPayload, TResult]] = {}
         self._lock = asyncio.Lock()
 
     def register_handler(
-        self, name: str, handler: TaskHandler[TPayload, TResult]
+        self,
+        name: str,
+        handler: TaskHandler[TPayload, TResult],
     ) -> None:
         """Register a task handler.
 
@@ -84,13 +85,12 @@ class InMemoryTaskQueue[TPayload, TResult]:
             await self._queue.put((priority, timestamp, task.task_id))
 
             logger.info(
-                f"Task enqueued: {task.task_id}",
-                extra={
-                    "task_id": task.task_id,
-                    "task_name": task.name,
-                    "queue": task.queue_name,
-                    "priority": task.priority.value,
-                },
+                "Task enqueued",
+                operation="TASK_ENQUEUE",
+                task_id=task.task_id,
+                task_name=task.name,
+                queue=task.queue_name,
+                priority=task.priority.value,
             )
 
         return task.task_id
@@ -121,12 +121,12 @@ class InMemoryTaskQueue[TPayload, TResult]:
             self._tasks[task.task_id] = task
 
     async def get_tasks_by_status(
-        self, status: TaskStatus, limit: int = 100
+        self,
+        status: TaskStatus,
+        limit: int = 100,
     ) -> Sequence[Task[TPayload, TResult]]:
         """Get tasks by status."""
-        return [
-            task for task in list(self._tasks.values())[:limit] if task.status == status
-        ]
+        return [task for task in list(self._tasks.values())[:limit] if task.status == status]
 
     async def cancel_task(self, task_id: str) -> bool:
         """Cancel a pending task."""
@@ -169,12 +169,11 @@ class InMemoryTaskQueue[TPayload, TResult]:
 
         if not handler:
             logger.error(
-                f"No handler registered for: {task.handler}",
-                extra={
-                    "task_id": task.task_id,
-                    "handler": task.handler,
-                    "correlation_id": task.correlation_id,
-                },
+                "No handler registered for task",
+                operation="TASK_PROCESS",
+                task_id=task.task_id,
+                handler=task.handler,
+                correlation_id=task.correlation_id,
             )
             task.mark_failed(f"Handler not found: {task.handler}", "HandlerNotFound")
             await self.update_task(task)
@@ -190,43 +189,38 @@ class InMemoryTaskQueue[TPayload, TResult]:
             task.mark_completed(result, execution_time)
 
             logger.info(
-                f"Task completed: {task.task_id}",
-                extra={
-                    "task_id": task.task_id,
-                    "task_name": task.name,
-                    "execution_time_ms": execution_time,
-                    "correlation_id": task.correlation_id,
-                },
+                "Task completed",
+                operation="TASK_COMPLETE",
+                task_id=task.task_id,
+                task_name=task.name,
+                execution_time_ms=execution_time,
+                correlation_id=task.correlation_id,
             )
 
         except Exception as e:
             execution_time = (time.perf_counter() - start_time) * 1000
             task.mark_failed(str(e), type(e).__name__, execution_time)
 
-            logger.error(
-                f"Task failed: {task.task_id}",
-                extra={
-                    "task_id": task.task_id,
-                    "task_name": task.name,
-                    "error": str(e),
-                    "error_type": type(e).__name__,
-                    "attempt": task.attempt,
-                    "max_attempts": task.max_attempts,
-                    "correlation_id": task.correlation_id,
-                },
-                exc_info=True,
+            logger.exception(
+                "Task failed",
+                operation="TASK_FAIL",
+                task_id=task.task_id,
+                task_name=task.name,
+                error_type=type(e).__name__,
+                attempt=task.attempt,
+                max_attempts=task.max_attempts,
+                correlation_id=task.correlation_id,
             )
 
             # Schedule retry if applicable
             if task.can_retry:
                 delay = self._retry_policy.get_delay(task.attempt)
                 logger.info(
-                    f"Scheduling retry for task {task.task_id} in {delay:.1f}s",
-                    extra={
-                        "task_id": task.task_id,
-                        "attempt": task.attempt,
-                        "delay_seconds": delay,
-                    },
+                    "Scheduling retry for task",
+                    operation="TASK_RETRY",
+                    task_id=task.task_id,
+                    attempt=task.attempt,
+                    delay_seconds=delay,
                 )
                 await asyncio.sleep(delay)
                 task.status = TaskStatus.PENDING
@@ -260,9 +254,7 @@ class InMemoryTaskQueue[TPayload, TResult]:
     @property
     def pending_count(self) -> int:
         """Get count of pending tasks."""
-        return sum(
-            1 for task in self._tasks.values() if task.status == TaskStatus.PENDING
-        )
+        return sum(1 for task in self._tasks.values() if task.status == TaskStatus.PENDING)
 
     @property
     def total_count(self) -> int:

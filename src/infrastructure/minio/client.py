@@ -8,8 +8,9 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import TYPE_CHECKING, Any
+
+import structlog
 
 from core.base.patterns.result import Err
 from infrastructure.minio.config import MinIOConfig
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
 
     from core.base.patterns.result import Result
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class MinIOClient:
@@ -73,25 +74,33 @@ class MinIOClient:
 
             logger.info(
                 "MinIO connected",
-                extra={
-                    "endpoint": self._config.endpoint,
-                    "bucket": self._config.bucket,
-                },
+                endpoint=self._config.endpoint,
+                bucket=self._config.bucket,
             )
             return True
 
         except ImportError:
-            logger.error("minio package not installed")
+            logger.error(
+                "minio package not installed",
+                operation="MINIO_CONNECT",
+            )
             return False
-        except Exception as e:
-            logger.error(f"MinIO connection failed: {e}")
+        except Exception:
+            logger.exception(
+                "MinIO connection failed",
+                operation="MINIO_CONNECT",
+            )
             return False
 
     def _ensure_bucket(self) -> None:
         """Ensure default bucket exists."""
         if not self._client.bucket_exists(self._config.bucket):
             self._client.make_bucket(self._config.bucket)
-            logger.info(f"Created bucket: {self._config.bucket}")
+            logger.info(
+                "Created bucket",
+                operation="MINIO_CREATE_BUCKET",
+                bucket=self._config.bucket,
+            )
 
     def _init_operations(self) -> None:
         """Initialize operation handlers."""

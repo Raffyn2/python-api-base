@@ -1,7 +1,11 @@
 """Dapr configuration settings.
 
 This module provides configuration for Dapr sidecar integration.
+
+**Feature: core-config-restructuring-2025**
 """
+
+from functools import lru_cache
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -38,11 +42,15 @@ class DaprSettings(BaseSettings):
     )
     app_port: int = Field(
         default=8000,
+        ge=1,
+        le=65535,
         description="Application port for Dapr callbacks",
     )
     timeout_seconds: int = Field(
         default=60,
-        description="Default timeout for Dapr operations",
+        ge=1,
+        le=3600,
+        description="Default timeout for Dapr operations (1-3600 seconds)",
     )
     state_store_name: str = Field(
         default="statestore",
@@ -66,7 +74,9 @@ class DaprSettings(BaseSettings):
     )
     sidecar_wait_timeout: int = Field(
         default=60,
-        description="Timeout for waiting for sidecar",
+        ge=1,
+        le=300,
+        description="Timeout for waiting for sidecar (1-300 seconds)",
     )
     tracing_enabled: bool = Field(
         default=True,
@@ -78,12 +88,11 @@ class DaprSettings(BaseSettings):
     )
 
 
-_dapr_settings: DaprSettings | None = None
-
-
+@lru_cache
 def get_dapr_settings() -> DaprSettings:
-    """Get Dapr settings singleton."""
-    global _dapr_settings
-    if _dapr_settings is None:
-        _dapr_settings = DaprSettings()
-    return _dapr_settings
+    """Get cached Dapr settings.
+
+    Returns:
+        DaprSettings: Dapr configuration instance.
+    """
+    return DaprSettings()

@@ -24,15 +24,13 @@ class ApiResponse[T](BaseModel):
         ...     data={"id": "123", "name": "John"},
         ...     message="User retrieved successfully",
         ...     status_code=200,
-        ...     request_id="req-456"
+        ...     request_id="req-456",
         ... )
     """
 
     data: T
     message: str = Field(default="Success", description="Response message")
-    status_code: int = Field(
-        default=200, ge=100, le=599, description="HTTP status code"
-    )
+    status_code: int = Field(default=200, ge=100, le=599, description="HTTP status code")
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(tz=UTC),
         description="Response timestamp in UTC",

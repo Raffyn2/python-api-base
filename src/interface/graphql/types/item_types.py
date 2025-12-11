@@ -48,9 +48,10 @@ class ItemCreateInput:
     """Input for creating an Item."""
 
     name: str
-    description: str | None = None
+    sku: str
     category: str
     price: float
+    description: str | None = None
     quantity: int = 0
 
 

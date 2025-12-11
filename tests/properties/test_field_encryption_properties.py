@@ -47,9 +47,7 @@ class TestFieldEncryptionProperties:
     @given(st.text(min_size=1, max_size=100))
     @settings(max_examples=50)
     @pytest.mark.asyncio
-    async def test_different_encryptions_different_ciphertext(
-        self, plaintext: str
-    ) -> None:
+    async def test_different_encryptions_different_ciphertext(self, plaintext: str) -> None:
         """Same plaintext produces different ciphertext (due to nonce)."""
         provider = InMemoryKeyProvider()
         encryptor = FieldEncryptor(provider)
@@ -58,10 +56,7 @@ class TestFieldEncryptionProperties:
         encrypted2 = await encryptor.encrypt(plaintext)
 
         # Ciphertext should differ due to random nonce
-        assert (
-            encrypted1.ciphertext != encrypted2.ciphertext
-            or encrypted1.nonce != encrypted2.nonce
-        )
+        assert encrypted1.ciphertext != encrypted2.ciphertext or encrypted1.nonce != encrypted2.nonce
 
     @given(st.text(min_size=1, max_size=100))
     @settings(max_examples=50)
@@ -98,9 +93,7 @@ class TestEncryptedValueProperties:
         st.binary(min_size=16, max_size=16),
     )
     @settings(max_examples=100)
-    def test_serialization_round_trip(
-        self, key_id: str, nonce: bytes, ciphertext: bytes, tag: bytes
-    ) -> None:
+    def test_serialization_round_trip(self, key_id: str, nonce: bytes, ciphertext: bytes, tag: bytes) -> None:
         """Serialization round trip preserves data."""
         # Skip if key_id contains colons (delimiter)
         if ":" in key_id:

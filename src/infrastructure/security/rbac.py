@@ -2,20 +2,32 @@
 
 **Feature: api-base-improvements**
 **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
+
+Note:
+    For advanced RBAC with generics and typed permissions, consider using
+    `infrastructure.rbac` module which provides:
+    - PEP 695 type parameters
+    - Generic RBAC[TUser, TResource, TAction]
+    - Typed audit logging
+    - Role registry with dynamic permissions
+
+    This module provides a simpler RBAC implementation suitable for
+    basic permission checking scenarios.
 """
 
 import contextlib
-import logging
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import wraps
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, Self, runtime_checkable
+
+import structlog
 
 from core.errors import AuthorizationError
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class Permission(str, Enum):
@@ -63,7 +75,7 @@ class Role:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Role":
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create role from dictionary."""
         return cls(
             name=data["name"],
@@ -93,12 +105,14 @@ ROLE_VIEWER = Role(
 
 ROLE_MODERATOR = Role(
     name="moderator",
-    permissions=frozenset([
-        Permission.READ,
-        Permission.WRITE,
-        Permission.DELETE,
-        Permission.VIEW_AUDIT,
-    ]),
+    permissions=frozenset(
+        [
+            Permission.READ,
+            Permission.WRITE,
+            Permission.DELETE,
+            Permission.VIEW_AUDIT,
+        ]
+    ),
     description="Content moderator",
 )
 
@@ -118,7 +132,7 @@ class UserProtocol(Protocol):
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class RBACUser:
     """Simple user implementation for RBAC.
 
@@ -172,7 +186,11 @@ class RBACService:
             role: Role to add.
         """
         self._roles[role.name] = role
-        logger.debug(f"Added role: {role.name}")
+        logger.debug(
+            "Added role",
+            role_name=role.name,
+            operation="RBAC_ADD_ROLE",
+        )
 
     def get_user_permissions(self, user: UserProtocol | RBACUser) -> set[Permission]:
         """Get all permissions for a user from their roles.
@@ -219,9 +237,11 @@ class RBACService:
 
         if not has_permission:
             logger.debug(
-                f"Permission denied: user={user.id}, "
-                f"required={required.value}, "
-                f"has={[p.value for p in permissions]}"
+                "Permission denied",
+                operation="RBAC_CHECK",
+                user_id=user.id,
+                required=required.value,
+                has_permissions=[p.value for p in permissions],
             )
 
         return has_permission
@@ -276,7 +296,10 @@ class RBACService:
         """
         if not self.check_permission(user, required):
             logger.warning(
-                f"Authorization failed: user={user.id}, required={required.value}"
+                "Authorization failed",
+                operation="RBAC_REQUIRE",
+                user_id=user.id,
+                required=required.value,
             )
             raise AuthorizationError(
                 message=f"Permission '{required.value}' required",

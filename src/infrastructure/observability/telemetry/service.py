@@ -6,11 +6,12 @@
 """
 
 import functools
-import logging
 import threading
 from collections.abc import Callable
 from contextvars import ContextVar
 from typing import Any, ParamSpec
+
+import structlog
 
 from infrastructure.observability.telemetry.noop import (
     _NoOpCounter,
@@ -23,7 +24,7 @@ from infrastructure.observability.telemetry.types import Attributes
 
 P = ParamSpec("P")
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Global telemetry instance with thread safety
 _telemetry: "TelemetryProvider | None" = None
@@ -101,13 +102,24 @@ class TelemetryProvider:
             self._setup_metrics()
             self._initialized = True
             logger.info(
-                f"Telemetry initialized for {self._service_name} "
-                f"(tracing={self._enable_tracing}, metrics={self._enable_metrics})"
+                "Telemetry initialized",
+                service_name=self._service_name,
+                tracing_enabled=self._enable_tracing,
+                metrics_enabled=self._enable_metrics,
+                operation="TELEMETRY_INIT",
             )
-        except ImportError as e:
-            logger.warning(f"OpenTelemetry packages not installed: {e}")
-        except Exception as e:
-            logger.warning(f"Failed to initialize telemetry: {e}")
+        except ImportError:
+            logger.warning(
+                "OpenTelemetry packages not installed",
+                operation="TELEMETRY_INIT",
+                exc_info=True,
+            )
+        except Exception:
+            logger.warning(
+                "Failed to initialize telemetry",
+                operation="TELEMETRY_INIT",
+                exc_info=True,
+            )
 
     def _setup_tracing(self) -> None:
         """Set up distributed tracing with OTLP exporter."""
@@ -121,10 +133,12 @@ class TelemetryProvider:
             from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
             # Create resource with service info
-            resource = Resource.create({
-                "service.name": self._service_name,
-                "service.version": self._service_version,
-            })
+            resource = Resource.create(
+                {
+                    "service.name": self._service_name,
+                    "service.version": self._service_version,
+                }
+            )
 
             # Create tracer provider
             self._tracer_provider = TracerProvider(resource=resource)
@@ -136,9 +150,7 @@ class TelemetryProvider:
                 )
 
                 otlp_exporter = OTLPSpanExporter(endpoint=self._otlp_endpoint)
-                self._tracer_provider.add_span_processor(
-                    BatchSpanProcessor(otlp_exporter)
-                )
+                self._tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
 
             # Set as global tracer provider
             trace.set_tracer_provider(self._tracer_provider)
@@ -157,10 +169,12 @@ class TelemetryProvider:
             from opentelemetry.sdk.metrics import MeterProvider
             from opentelemetry.sdk.resources import Resource
 
-            resource = Resource.create({
-                "service.name": self._service_name,
-                "service.version": self._service_version,
-            })
+            resource = Resource.create(
+                {
+                    "service.name": self._service_name,
+                    "service.version": self._service_version,
+                }
+            )
 
             self._meter_provider = MeterProvider(resource=resource)
 
@@ -211,14 +225,22 @@ class TelemetryProvider:
         if self._tracer_provider is not None:
             try:
                 self._tracer_provider.shutdown()
-            except Exception as e:
-                logger.warning(f"Error shutting down tracer: {e}")
+            except Exception:
+                logger.warning(
+                    "Error shutting down tracer",
+                    operation="TELEMETRY_SHUTDOWN",
+                    exc_info=True,
+                )
 
         if self._meter_provider is not None:
             try:
                 self._meter_provider.shutdown()
-            except Exception as e:
-                logger.warning(f"Error shutting down meter: {e}")
+            except Exception:
+                logger.warning(
+                    "Error shutting down meter",
+                    operation="TELEMETRY_SHUTDOWN",
+                    exc_info=True,
+                )
 
         self._initialized = False
 
@@ -294,7 +316,7 @@ def _update_trace_context() -> None:
         if ctx.is_valid:
             _current_trace_id.set(format(ctx.trace_id, "032x"))
             _current_span_id.set(format(ctx.span_id, "016x"))
-    except Exception:  # noqa: S110 - Optional telemetry, fail silently
+    except Exception:  # noqa: S110 - Trace context update is optional
         pass
 
 

@@ -154,7 +154,7 @@ class IRepository[
             CursorPage with items and navigation cursors.
         """
         # Default implementation using offset pagination
-        items, total = await self.get_all(skip=0, limit=limit + 1, filters=filters)
+        items, _total = await self.get_all(skip=0, limit=limit + 1, filters=filters)
         has_more = len(items) > limit
         items = items[:limit]
 

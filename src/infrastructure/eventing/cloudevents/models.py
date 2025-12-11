@@ -1,12 +1,12 @@
 """CloudEvents v1.0 specification models."""
 
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any
+from datetime import UTC, datetime
+from typing import Any, Self
 from uuid import uuid4
 
 
-@dataclass
+@dataclass(slots=True)
 class CloudEvent:
     """CloudEvents v1.0 specification model.
 
@@ -50,9 +50,7 @@ class CloudEvent:
         if not self.type:
             raise CloudEventValidationError("CloudEvent 'type' is required")
         if self.specversion != "1.0":
-            raise CloudEventValidationError(
-                f"Unsupported specversion: {self.specversion}. Only '1.0' is supported"
-            )
+            raise CloudEventValidationError(f"Unsupported specversion: {self.specversion}. Only '1.0' is supported")
 
     @classmethod
     def create(
@@ -63,7 +61,7 @@ class CloudEvent:
         subject: str | None = None,
         datacontenttype: str = "application/json",
         extensions: dict[str, Any] | None = None,
-    ) -> "CloudEvent":
+    ) -> Self:
         """Factory method to create a new CloudEvent with auto-generated id and time.
 
         Args:
@@ -81,7 +79,7 @@ class CloudEvent:
             id=str(uuid4()),
             source=source,
             type=event_type,
-            time=datetime.utcnow(),
+            time=datetime.now(UTC),
             data=data,
             subject=subject,
             datacontenttype=datacontenttype,
@@ -108,15 +106,20 @@ class CloudEvent:
         if self.subject:
             result["subject"] = self.subject
         if self.time:
-            result["time"] = self.time.isoformat() + "Z"
+            # Format as ISO 8601 with Z suffix for UTC
+            time_str = self.time.isoformat()
+            if time_str.endswith("+00:00"):
+                time_str = time_str[:-6] + "Z"
+            elif not time_str.endswith("Z"):
+                time_str = time_str + "Z"
+            result["time"] = time_str
         if self.data is not None:
             result["data"] = self.data
         if self.data_base64:
             result["data_base64"] = self.data_base64
 
         # Add extension attributes
-        for key, value in self.extensions.items():
-            result[key] = value
+        result.update(self.extensions)
 
         return result
 
@@ -141,16 +144,10 @@ class CloudEvent:
 class CloudEventError(Exception):
     """Base error for CloudEvent issues."""
 
-    pass
-
 
 class CloudEventValidationError(CloudEventError):
     """CloudEvent missing required attributes or invalid values."""
 
-    pass
-
 
 class CloudEventSerializationError(CloudEventError):
     """Error serializing/deserializing CloudEvent."""
-
-    pass

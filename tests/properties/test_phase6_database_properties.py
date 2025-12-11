@@ -115,9 +115,7 @@ class TestTransactionRollbackOnFailure:
             try:
                 async with uow:
                     # Simulate some operations
-                    await session.execute(
-                        f"INSERT INTO entities (name) VALUES ('{entity_name}')"
-                    )
+                    await session.execute(f"INSERT INTO entities (name) VALUES ('{entity_name}')")
                     # Raise an exception
                     raise ValueError("Simulated error")
             except ValueError:
@@ -138,9 +136,7 @@ class TestTransactionRollbackOnFailure:
 
         async def run_test() -> None:
             async with uow:
-                await session.execute(
-                    f"INSERT INTO entities (name) VALUES ('{entity_name}')"
-                )
+                await session.execute(f"INSERT INTO entities (name) VALUES ('{entity_name}')")
                 await uow.commit()
 
             # Should not have rolled back
@@ -162,9 +158,7 @@ class TestTransactionIsolation:
         entity2_name=entity_name_st,
     )
     @settings(max_examples=30)
-    def test_separate_sessions_isolated(
-        self, entity1_name: str, entity2_name: str
-    ) -> None:
+    def test_separate_sessions_isolated(self, entity1_name: str, entity2_name: str) -> None:
         """Separate sessions have isolated operations."""
         # Ensure names are different for proper isolation test
         assume(entity1_name != entity2_name)
@@ -199,9 +193,7 @@ class TestTransactionIsolation:
             # Original operation was recorded
             assert f"execute:INSERT ('{entity_name}')" in session.operations
             # Rollback was recorded after
-            assert session.operations.index("rollback") > session.operations.index(
-                f"execute:INSERT ('{entity_name}')"
-            )
+            assert session.operations.index("rollback") > session.operations.index(f"execute:INSERT ('{entity_name}')")
 
         asyncio.get_event_loop().run_until_complete(run_test())
 
@@ -266,9 +258,7 @@ class TestUoWRollbackCompleteness:
         fail_index=st.integers(min_value=0, max_value=4),
     )
     @settings(max_examples=30)
-    def test_rollback_undoes_all_operations(
-        self, names: list[str], fail_index: int
-    ) -> None:
+    def test_rollback_undoes_all_operations(self, names: list[str], fail_index: int) -> None:
         """Rollback undoes all pending operations."""
         assume(fail_index < len(names))
         session = MockSession()
@@ -417,9 +407,7 @@ class TestVersionConflictDetection:
         concurrent_version=version_st,
     )
     @settings(max_examples=50)
-    def test_version_mismatch_detected(
-        self, initial_version: int, concurrent_version: int
-    ) -> None:
+    def test_version_mismatch_detected(self, initial_version: int, concurrent_version: int) -> None:
         """Version mismatch is detected correctly."""
         assume(initial_version != concurrent_version)
 

@@ -38,9 +38,7 @@ class MockChannel:
         self._error = error
         self._sent: list[tuple[str, EmailPayload]] = []
 
-    async def send(
-        self, recipient: str, payload: EmailPayload
-    ) -> Result[NotificationStatus, NotificationError]:
+    async def send(self, recipient: str, payload: EmailPayload) -> Result[NotificationStatus, NotificationError]:
         if self._should_fail:
             return Err(self._error)
         self._sent.append((recipient, payload))
@@ -62,18 +60,18 @@ class TestNotificationService:
         """Test registering a channel."""
         service = NotificationService[EmailPayload]()
         channel = MockChannel()
-        
+
         service.register_channel("email", channel)
-        
+
         assert "email" in service._channels
 
     def test_set_preferences(self) -> None:
         """Test setting user preferences."""
         service = NotificationService[EmailPayload]()
         prefs = UserPreferences(user_id="user-123", email_enabled=False)
-        
+
         service.set_preferences(prefs)
-        
+
         result = service.get_preferences("user-123")
         assert result is not None
         assert result.email_enabled is False
@@ -95,7 +93,7 @@ class TestNotificationService:
         service = NotificationService[EmailPayload]()
         prefs = UserPreferences(user_id="user-123", email_enabled=False)
         service.set_preferences(prefs)
-        
+
         result = service.is_opted_out("user-123", "email")
         assert result is True
 
@@ -104,7 +102,7 @@ class TestNotificationService:
         service = NotificationService[EmailPayload]()
         prefs = UserPreferences(user_id="user-123", sms_enabled=False)
         service.set_preferences(prefs)
-        
+
         result = service.is_opted_out("user-123", "sms")
         assert result is True
 
@@ -113,7 +111,7 @@ class TestNotificationService:
         service = NotificationService[EmailPayload]()
         prefs = UserPreferences(user_id="user-123", push_enabled=False)
         service.set_preferences(prefs)
-        
+
         result = service.is_opted_out("user-123", "push")
         assert result is True
 
@@ -125,7 +123,7 @@ class TestNotificationService:
             opted_out_channels=frozenset(["marketing"]),
         )
         service.set_preferences(prefs)
-        
+
         result = service.is_opted_out("user-123", "marketing")
         assert result is True
 
@@ -139,7 +137,7 @@ class TestNotificationService:
         """Test rate limit check at limit."""
         service = NotificationService[EmailPayload]()
         service._rate_limits["user-123"] = 100
-        
+
         result = service.is_rate_limited("user-123")
         assert result is True
 
@@ -149,7 +147,7 @@ class TestNotificationService:
         service = NotificationService[EmailPayload]()
         channel = MockChannel()
         service.register_channel("email", channel)
-        
+
         notification = Notification(
             id="notif-123",
             recipient_id="user-456",
@@ -158,9 +156,9 @@ class TestNotificationService:
             context={},
         )
         payload = EmailPayload(subject="Welcome", body="Hello!")
-        
+
         result = await service.send(notification, payload)
-        
+
         assert result.is_ok()
         assert result.unwrap() == NotificationStatus.SENT
 
@@ -170,10 +168,10 @@ class TestNotificationService:
         service = NotificationService[EmailPayload]()
         channel = MockChannel()
         service.register_channel("email", channel)
-        
+
         prefs = UserPreferences(user_id="user-456", email_enabled=False)
         service.set_preferences(prefs)
-        
+
         notification = Notification(
             id="notif-123",
             recipient_id="user-456",
@@ -182,9 +180,9 @@ class TestNotificationService:
             context={},
         )
         payload = EmailPayload(subject="Welcome", body="Hello!")
-        
+
         result = await service.send(notification, payload)
-        
+
         assert result.is_err()
         assert result.error == NotificationError.OPT_OUT
 
@@ -195,7 +193,7 @@ class TestNotificationService:
         channel = MockChannel()
         service.register_channel("email", channel)
         service._rate_limits["user-456"] = 100
-        
+
         notification = Notification(
             id="notif-123",
             recipient_id="user-456",
@@ -204,9 +202,9 @@ class TestNotificationService:
             context={},
         )
         payload = EmailPayload(subject="Welcome", body="Hello!")
-        
+
         result = await service.send(notification, payload)
-        
+
         assert result.is_err()
         assert result.error == NotificationError.RATE_LIMITED
 
@@ -214,7 +212,7 @@ class TestNotificationService:
     async def test_send_channel_not_found(self) -> None:
         """Test send with unknown channel."""
         service = NotificationService[EmailPayload]()
-        
+
         notification = Notification(
             id="notif-123",
             recipient_id="user-456",
@@ -223,9 +221,9 @@ class TestNotificationService:
             context={},
         )
         payload = EmailPayload(subject="Welcome", body="Hello!")
-        
+
         result = await service.send(notification, payload)
-        
+
         assert result.is_err()
         assert result.error == NotificationError.CHANNEL_ERROR
 
@@ -235,7 +233,7 @@ class TestNotificationService:
         service = NotificationService[EmailPayload]()
         channel = MockChannel()
         service.register_channel("email", channel)
-        
+
         notification = Notification(
             id="notif-123",
             recipient_id="user-456",
@@ -244,9 +242,9 @@ class TestNotificationService:
             context={},
         )
         payload = EmailPayload(subject="Welcome", body="Hello!")
-        
+
         await service.send(notification, payload)
-        
+
         assert service._rate_limits["user-456"] == 1
 
     @pytest.mark.asyncio
@@ -255,7 +253,7 @@ class TestNotificationService:
         service = NotificationService[EmailPayload]()
         channel = MockChannel()
         service.register_channel("email", channel)
-        
+
         notifications = [
             (
                 Notification(
@@ -269,8 +267,8 @@ class TestNotificationService:
             )
             for i in range(3)
         ]
-        
+
         results = await service.send_batch(notifications)
-        
+
         assert len(results) == 3
         assert all(r.is_ok() for r in results)

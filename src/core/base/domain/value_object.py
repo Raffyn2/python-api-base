@@ -140,10 +140,7 @@ class EntityId:
         if not self.value:
             raise ValueError("Entity ID cannot be empty")
         if not ULID_PATTERN.match(self.value):
-            raise ValueError(
-                f"Invalid ULID format: {self.value}. "
-                "Must be 26 characters using Crockford Base32"
-            )
+            raise ValueError(f"Invalid ULID format: {self.value}. Must be 26 characters using Crockford Base32")
         # Normalize to uppercase
         object.__setattr__(self, "value", self.value.upper())
 

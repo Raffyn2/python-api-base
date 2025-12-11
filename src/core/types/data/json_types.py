@@ -1,10 +1,9 @@
 """JSON type aliases using PEP 695 type statement.
 
 **Feature: core-types-split-2025**
-
-Note: Forward references are intentional for types defined in other modules.
 """
-# ruff: noqa: F821
+
+from typing import Any, Literal
 
 __all__ = [
     "FilterDict",
@@ -37,10 +36,10 @@ type JSONArray = list[JSONValue]
 # Filter and Query Type Aliases
 # =============================================================================
 
-type FilterDict = dict[str, "Any"]
+type FilterDict = dict[str, Any]
 """Type alias for filter dictionary used in repository queries."""
 
-type SortOrder = "Literal['asc', 'desc']"
+type SortOrder = Literal["asc", "desc"]
 """Type alias for sort order in queries."""
 
 type QueryParams = dict[str, str | int | float | bool | None]

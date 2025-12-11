@@ -5,6 +5,10 @@ Combined fault tolerance patterns: retry and circuit breaker.
 **Feature: enterprise-features-2025**
 **Validates: Requirements 11.1, 11.2, 11.3**
 **Refactored: 2025 - Split into modular components for maintainability**
+
+Note: This is the CQRS/Application layer resilience for CommandBus.
+For HTTP/Infrastructure layer, see: src/infrastructure/resilience/
+Architecture decision documented in: docs/architecture/adr/ADR-003-resilience-layers.md
 """
 
 from collections.abc import Awaitable, Callable
@@ -13,6 +17,7 @@ from typing import Any
 from application.common.middleware.resilience.circuit_breaker import (
     CircuitBreakerConfig,
     CircuitBreakerMiddleware,
+    CircuitBreakerStats,
     CircuitState,
 )
 from application.common.middleware.resilience.retry import RetryConfig, RetryMiddleware
@@ -27,6 +32,7 @@ class ResilienceMiddleware:
 
     Example:
         >>> resilience = ResilienceMiddleware(
+        ...     name="payment-service",
         ...     retry_config=RetryConfig(max_retries=3),
         ...     circuit_config=CircuitBreakerConfig(failure_threshold=5),
         ... )
@@ -37,20 +43,34 @@ class ResilienceMiddleware:
         self,
         retry_config: RetryConfig | None = None,
         circuit_config: CircuitBreakerConfig | None = None,
+        *,
+        name: str = "default",
     ) -> None:
         """Initialize resilience middleware.
 
         Args:
             retry_config: Retry configuration.
             circuit_config: Circuit breaker configuration.
+            name: Middleware name for identification in logs/metrics.
         """
-        self._retry = RetryMiddleware(retry_config)
-        self._circuit_breaker = CircuitBreakerMiddleware(circuit_config)
+        self._name = name
+        self._retry = RetryMiddleware(retry_config, name=f"{name}-retry")
+        self._circuit_breaker = CircuitBreakerMiddleware(circuit_config, name=f"{name}-circuit")
+
+    @property
+    def name(self) -> str:
+        """Get middleware name."""
+        return self._name
 
     @property
     def circuit_state(self) -> CircuitState:
         """Get current circuit breaker state."""
         return self._circuit_breaker.state
+
+    @property
+    def circuit_stats(self) -> CircuitBreakerStats:
+        """Get circuit breaker statistics."""
+        return self._circuit_breaker.stats
 
     async def __call__(
         self,

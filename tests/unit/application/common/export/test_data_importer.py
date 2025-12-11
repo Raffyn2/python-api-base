@@ -30,9 +30,7 @@ class SampleSerializer:
         return {"id": obj.id, "name": obj.name, "email": obj.email, "age": obj.age}
 
     def from_dict(self, data: dict[str, Any]) -> SampleRecord:
-        return SampleRecord(
-            id=data["id"], name=data["name"], email=data["email"], age=int(data["age"])
-        )
+        return SampleRecord(id=data["id"], name=data["name"], email=data["email"], age=int(data["age"]))
 
 
 class FailingSerializer:
@@ -44,9 +42,7 @@ class FailingSerializer:
     def from_dict(self, data: dict[str, Any]) -> SampleRecord:
         if data.get("id") == "fail":
             raise ValueError("Invalid record")
-        return SampleRecord(
-            id=data["id"], name=data["name"], email=data["email"], age=int(data["age"])
-        )
+        return SampleRecord(id=data["id"], name=data["name"], email=data["email"], age=int(data["age"]))
 
 
 class TestDataImporterJSON:
@@ -274,7 +270,7 @@ class TestDataImporterGeneric:
         data = [{"id": "1", "name": "Alice", "email": "alice@test.com", "age": 30}]
         content = json.dumps(data).encode()
 
-        records, result = importer.import_data(content, ExportFormat.JSON)
+        records, _result = importer.import_data(content, ExportFormat.JSON)
 
         assert len(records) == 1
         assert records[0].name == "Alice"
@@ -285,7 +281,7 @@ class TestDataImporterGeneric:
         importer = DataImporter(serializer)
         content = b"id,name,email,age\n1,Alice,alice@test.com,30"
 
-        records, result = importer.import_data(content, ExportFormat.CSV)
+        records, _result = importer.import_data(content, ExportFormat.CSV)
 
         assert len(records) == 1
         assert records[0].name == "Alice"
@@ -294,11 +290,9 @@ class TestDataImporterGeneric:
         """Test import_data dispatches to JSONL."""
         serializer = SampleSerializer()
         importer = DataImporter(serializer)
-        content = json.dumps(
-            {"id": "1", "name": "Alice", "email": "alice@test.com", "age": 30}
-        ).encode()
+        content = json.dumps({"id": "1", "name": "Alice", "email": "alice@test.com", "age": 30}).encode()
 
-        records, result = importer.import_data(content, ExportFormat.JSONL)
+        records, _result = importer.import_data(content, ExportFormat.JSONL)
 
         assert len(records) == 1
         assert records[0].name == "Alice"

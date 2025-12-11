@@ -42,7 +42,7 @@ from core.config.application import (
     Settings,
     get_settings,
 )
-from core.config.infrastructure import DatabaseSettings
+from core.config.infrastructure import DaprSettings, DatabaseSettings, GRPCSettings
 from core.config.observability import ObservabilitySettings
 from core.config.security import RATE_LIMIT_PATTERN, RedisSettings, SecuritySettings
 from core.config.shared import redact_url_credentials
@@ -79,7 +79,9 @@ __all__ = [
     "STORAGE_TTL_MIN_SECONDS",
     "UPLOAD_REQUEST_SIZE_BYTES",
     "WRITE_RATE_LIMIT_REQUESTS",
+    "DaprSettings",
     "DatabaseSettings",
+    "GRPCSettings",
     "ObservabilitySettings",
     "RedisSettings",
     "SecuritySettings",

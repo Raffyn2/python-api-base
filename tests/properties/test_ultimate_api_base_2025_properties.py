@@ -95,9 +95,7 @@ class TestPEP695Compliance:
                         for base in node.bases:
                             if isinstance(base, ast.Subscript):
                                 if isinstance(base.value, ast.Name):
-                                    assert base.value.id != "Generic", (
-                                        f"{py_file}: {node.name} uses Generic[T]"
-                                    )
+                                    assert base.value.id != "Generic", f"{py_file}: {node.name} uses Generic[T]"
             except SyntaxError:
                 pass  # Skip files with syntax errors
 
@@ -116,15 +114,11 @@ class TestExceptionSerialization:
 
     @given(
         message=st.text(min_size=1, max_size=50, alphabet=string.ascii_letters + " "),
-        error_code=st.text(
-            min_size=1, max_size=30, alphabet=string.ascii_uppercase + "_"
-        ),
+        error_code=st.text(min_size=1, max_size=30, alphabet=string.ascii_uppercase + "_"),
         status_code=st.integers(min_value=400, max_value=599),
     )
     @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
-    def test_exception_to_dict_contains_required_fields(
-        self, message: str, error_code: str, status_code: int
-    ):
+    def test_exception_to_dict_contains_required_fields(self, message: str, error_code: str, status_code: int):
         """For any AppException, to_dict() SHALL contain all required fields."""
         assume(len(message) > 0 and len(error_code) > 0)
 
@@ -168,9 +162,7 @@ class TestExceptionChainPreservation:
         wrapper_msg=st.text(min_size=1, max_size=50),
     )
     @settings(max_examples=100)
-    def test_chained_exception_preserved_in_serialization(
-        self, original_msg: str, wrapper_msg: str
-    ):
+    def test_chained_exception_preserved_in_serialization(self, original_msg: str, wrapper_msg: str):
         """For any chained exception, cause SHALL appear in serialized output."""
         assume(len(original_msg) > 0 and len(wrapper_msg) > 0)
 
@@ -203,9 +195,7 @@ class TestValidationErrorNormalization:
     """
 
     @given(
-        field_name=st.text(
-            min_size=1, max_size=30, alphabet=string.ascii_lowercase + "_"
-        ),
+        field_name=st.text(min_size=1, max_size=30, alphabet=string.ascii_lowercase + "_"),
         error_msg=st.text(min_size=1, max_size=100),
     )
     @settings(max_examples=100)
@@ -237,17 +227,14 @@ class TestSecretKeyEntropy:
     **Validates: Requirements 6.2**
     """
 
-    @given(
-        st.text(min_size=1, max_size=31, alphabet=string.ascii_letters + string.digits)
-    )
+    @given(st.text(min_size=1, max_size=31, alphabet=string.ascii_letters + string.digits))
     @settings(max_examples=100)
     def test_short_secret_keys_rejected(self, secret: str):
         """For any secret key < 32 chars, validation SHALL raise ValueError."""
         assume(0 < len(secret) < 32)
 
-        with patch.dict(os.environ, {"SECURITY__SECRET_KEY": secret}):
-            with pytest.raises(ValidationError):
-                SecuritySettings()
+        with patch.dict(os.environ, {"SECURITY__SECRET_KEY": secret}), pytest.raises(ValidationError):
+            SecuritySettings()
 
 
 # =============================================================================
@@ -304,9 +291,7 @@ class TestSecretStrNonDisclosure:
     **Validates: Requirements 6.1**
     """
 
-    @given(
-        st.text(min_size=32, max_size=64, alphabet=string.ascii_letters + string.digits)
-    )
+    @given(st.text(min_size=32, max_size=64, alphabet=string.ascii_letters + string.digits))
     @settings(max_examples=100)
     def test_secretstr_never_reveals_value(self, secret: str):
         """For any SecretStr, str() and repr() SHALL never reveal the value."""
@@ -413,9 +398,7 @@ class TestSpecificationComposition:
         threshold_b=st.integers(min_value=0, max_value=100),
     )
     @settings(max_examples=100)
-    def test_and_composition_equals_logical_and(
-        self, value: int, threshold_a: int, threshold_b: int
-    ):
+    def test_and_composition_equals_logical_and(self, value: int, threshold_a: int, threshold_b: int):
         """(A & B).is_satisfied_by(x) SHALL equal A.is_satisfied_by(x) and B.is_satisfied_by(x)."""
         spec_a = spec(lambda x: x >= threshold_a, "gte_a")
         spec_b = spec(lambda x: x <= threshold_b, "lte_b")
@@ -433,9 +416,7 @@ class TestSpecificationComposition:
         threshold_b=st.integers(min_value=0, max_value=100),
     )
     @settings(max_examples=100)
-    def test_or_composition_equals_logical_or(
-        self, value: int, threshold_a: int, threshold_b: int
-    ):
+    def test_or_composition_equals_logical_or(self, value: int, threshold_a: int, threshold_b: int):
         """(A | B).is_satisfied_by(x) SHALL equal A.is_satisfied_by(x) or B.is_satisfied_by(x)."""
         spec_a = spec(lambda x: x >= threshold_a, "gte_a")
         spec_b = spec(lambda x: x <= threshold_b, "lte_b")

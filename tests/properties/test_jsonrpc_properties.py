@@ -157,9 +157,7 @@ class TestMethodDescriptor:
         async def handler():
             pass
 
-        descriptor = MethodDescriptor(
-            name=name, handler=handler, description=description
-        )
+        descriptor = MethodDescriptor(name=name, handler=handler, description=description)
         result = descriptor.to_dict()
         assert result["name"] == name
 
@@ -277,9 +275,7 @@ class TestJSONRPCServer:
             return a + b
 
         server.register_method("add", add)
-        json_request = (
-            '{"jsonrpc": "2.0", "method": "add", "params": {"a": 1, "b": 2}, "id": 1}'
-        )
+        json_request = '{"jsonrpc": "2.0", "method": "add", "params": {"a": 1, "b": 2}, "id": 1}'
         json_response = await server.handle_json(json_request)
         response = json.loads(json_response)
         assert response["result"] == 3

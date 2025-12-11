@@ -3,10 +3,6 @@
 Tests for correlation ID generation, context management, and propagation.
 """
 
-from datetime import UTC, datetime
-
-import pytest
-
 from infrastructure.observability.correlation_id import (
     CorrelationConfig,
     CorrelationContext,

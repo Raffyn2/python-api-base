@@ -11,8 +11,9 @@ from __future__ import annotations
 import functools
 import hashlib
 import json
-import logging
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
+
+import structlog
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 P = ParamSpec("P")
 T = TypeVar("T")
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def cached(
@@ -74,21 +75,21 @@ def cached(
             try:
                 cached_value = await redis.get(cache_key)
                 if cached_value is not None:
-                    logger.debug("cache_hit", key=cache_key)
+                    logger.debug("Cache hit", key=cache_key)
                     return cached_value
-            except Exception as e:
-                logger.warning("cache_get_error", key=cache_key, error=str(e))
+            except Exception:
+                logger.exception("Cache get failed", key=cache_key)
 
             # Cache miss - execute function
-            logger.debug("cache_miss", key=cache_key)
+            logger.debug("Cache miss", key=cache_key)
             result = await func(self, *args, **kwargs)
 
             # Store in cache
             try:
                 await redis.set(cache_key, result, ttl)
-                logger.debug("cache_set", key=cache_key, ttl=ttl)
-            except Exception as e:
-                logger.warning("cache_set_error", key=cache_key, error=str(e))
+                logger.debug("Cache set", key=cache_key, ttl=ttl)
+            except Exception:
+                logger.exception("Cache set failed", key=cache_key)
 
             return result
 
@@ -144,9 +145,9 @@ def invalidate_cache(
             # Invalidate cache
             try:
                 await redis.delete(cache_key)
-                logger.debug("cache_invalidated", key=cache_key)
-            except Exception as e:
-                logger.warning("cache_invalidate_error", key=cache_key, error=str(e))
+                logger.debug("Cache invalidated", key=cache_key)
+            except Exception:
+                logger.exception("Cache invalidation failed", key=cache_key)
 
             return result
 
@@ -205,11 +206,9 @@ def invalidate_pattern(
 
             try:
                 deleted = await redis.delete_pattern(pattern)
-                logger.debug(
-                    "cache_pattern_invalidated", pattern=pattern, count=deleted
-                )
-            except Exception as e:
-                logger.warning("cache_pattern_error", pattern=pattern, error=str(e))
+                logger.debug("Cache pattern invalidated", pattern=pattern, count=deleted)
+            except Exception:
+                logger.exception("Cache pattern invalidation failed", pattern=pattern)
 
             return result
 

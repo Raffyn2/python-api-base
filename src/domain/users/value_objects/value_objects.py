@@ -109,9 +109,7 @@ class Username(BaseValueObject):
         if len(self.value) > self.MAX_LENGTH:
             raise ValueError(f"Username must be at most {self.MAX_LENGTH} characters")
         if not re.match(r"^[a-zA-Z0-9_-]+$", self.value):
-            raise ValueError(
-                "Username can only contain letters, numbers, underscores, and hyphens"
-            )
+            raise ValueError("Username can only contain letters, numbers, underscores, and hyphens")
 
     @classmethod
     def create(cls, value: str) -> Self:

@@ -29,7 +29,7 @@ price_strategy = st.floats(
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def anyio_backend() -> str:
     return "asyncio"
 
@@ -38,9 +38,7 @@ def anyio_backend() -> str:
 class TestEndpointPostProperty:
     """Property tests for POST endpoint."""
 
-    @settings(
-        max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None
-    )
+    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         name=item_name_strategy,
         price=price_strategy,
@@ -71,16 +69,12 @@ class TestEndpointPostProperty:
 class TestEndpointGetListProperty:
     """Property tests for GET list endpoint."""
 
-    @settings(
-        max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None
-    )
+    @settings(max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         page=st.integers(min_value=1, max_value=10),
         size=st.integers(min_value=1, max_value=50),
     )
-    async def test_get_list_returns_paginated_response(
-        self, page: int, size: int
-    ) -> None:
+    async def test_get_list_returns_paginated_response(self, page: int, size: int) -> None:
         """
         **Feature: generic-fastapi-crud, Property 12: Endpoint GET List Returns Paginated Response**
 
@@ -117,9 +111,7 @@ class TestEndpointGetListProperty:
 class TestEndpointGetDetailProperty:
     """Property tests for GET detail endpoint."""
 
-    @settings(
-        max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None
-    )
+    @settings(max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         name=item_name_strategy,
         price=price_strategy,
@@ -146,9 +138,7 @@ class TestEndpointGetDetailProperty:
             assert data["data"]["id"] is not None
             assert data["data"]["name"] == name
 
-    @settings(
-        max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None
-    )
+    @settings(max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         fake_id=st.text(
             min_size=10,
@@ -172,9 +162,7 @@ class TestEndpointGetDetailProperty:
 class TestEndpointDeleteProperty:
     """Property tests for DELETE endpoint."""
 
-    @settings(
-        max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None
-    )
+    @settings(max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         fake_id=st.text(
             min_size=10,
@@ -195,9 +183,7 @@ class TestEndpointDeleteProperty:
             response = await client.delete(f"/api/v1/items/{fake_id}")
             assert response.status_code == 404
 
-    @settings(
-        max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None
-    )
+    @settings(max_examples=10, suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         fake_id=st.text(
             min_size=10,

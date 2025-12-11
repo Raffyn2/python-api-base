@@ -5,7 +5,7 @@
 """
 
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import datetime
 from uuid import UUID
 
 from infrastructure.messaging.outbox.outbox_message import (
@@ -91,18 +91,16 @@ class OutboxRepository:
         Returns:
             List of pending messages.
         """
-        now = datetime.now(UTC)
         pending: list[OutboxMessage] = []
 
         for msg in self._messages.values():
             if len(pending) >= limit:
                 break
 
-            if msg.status == OutboxMessageStatus.PENDING:
+            is_pending = msg.status == OutboxMessageStatus.PENDING
+            is_failed_ready = include_failed and msg.status == OutboxMessageStatus.FAILED and msg.is_ready_for_retry
+            if is_pending or is_failed_ready:
                 pending.append(msg)
-            elif include_failed and msg.status == OutboxMessageStatus.FAILED:
-                if msg.is_ready_for_retry:
-                    pending.append(msg)
 
         # Sort by created_at for FIFO processing
         pending.sort(key=lambda m: m.created_at)
@@ -184,11 +182,7 @@ class OutboxRepository:
         Returns:
             List of dead letter messages.
         """
-        dead_letters = [
-            msg
-            for msg in self._messages.values()
-            if msg.status == OutboxMessageStatus.DEAD_LETTER
-        ]
+        dead_letters = [msg for msg in self._messages.values() if msg.status == OutboxMessageStatus.DEAD_LETTER]
         dead_letters.sort(key=lambda m: m.created_at)
         return dead_letters[:limit]
 
@@ -218,9 +212,7 @@ class OutboxRepository:
         to_delete = [
             msg_id
             for msg_id, msg in self._messages.items()
-            if msg.status == OutboxMessageStatus.PUBLISHED
-            and msg.processed_at
-            and msg.processed_at < older_than
+            if msg.status == OutboxMessageStatus.PUBLISHED and msg.processed_at and msg.processed_at < older_than
         ]
 
         for msg_id in to_delete:

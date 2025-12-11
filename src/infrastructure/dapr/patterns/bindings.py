@@ -4,8 +4,9 @@ This module provides bindings integration with external systems.
 """
 
 import json
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Awaitable
+from typing import Any
 
 from core.shared.logging import get_logger
 from infrastructure.dapr.client import DaprClientWrapper
@@ -14,7 +15,7 @@ from infrastructure.dapr.errors import DaprConnectionError
 logger = get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class BindingRequest:
     """Request for output binding invocation."""
 
@@ -23,7 +24,7 @@ class BindingRequest:
     metadata: dict[str, str] | None = None
 
 
-@dataclass
+@dataclass(slots=True)
 class BindingResponse:
     """Response from binding invocation."""
 
@@ -31,7 +32,7 @@ class BindingResponse:
     metadata: dict[str, str] | None
 
 
-@dataclass
+@dataclass(slots=True)
 class InputBindingEvent:
     """Event from input binding."""
 
@@ -50,9 +51,7 @@ class BindingsManager:
             client: Dapr client wrapper.
         """
         self._client = client
-        self._handlers: dict[
-            str, Callable[[InputBindingEvent], Awaitable[dict[str, Any] | None]]
-        ] = {}
+        self._handlers: dict[str, Callable[[InputBindingEvent], Awaitable[dict[str, Any] | None]]] = {}
 
     async def invoke_binding(
         self,
@@ -100,9 +99,14 @@ class BindingsManager:
                 metadata=dict(response.headers),
             )
         except Exception as e:
+            logger.exception(
+                "Failed to invoke binding",
+                binding=binding_name,
+                operation=operation,
+            )
             raise DaprConnectionError(
                 message=f"Failed to invoke binding {binding_name}",
-                details={"operation": operation, "error": str(e)},
+                details={"operation": operation},
             ) from e
 
     def register_handler(
@@ -148,11 +152,10 @@ class BindingsManager:
 
         try:
             return await handler(event)
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "binding_handler_error",
                 binding=binding_name,
-                error=str(e),
             )
             raise
 

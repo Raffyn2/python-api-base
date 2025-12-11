@@ -8,12 +8,9 @@ Tests Item specifications.
 
 from decimal import Decimal
 
-import pytest
-
 from domain.examples.item.entity import ItemExample, ItemExampleStatus, Money
 from domain.examples.item.specifications import (
     ItemExampleActiveSpec,
-    ItemExampleAvailableSpec,
     ItemExampleCategorySpec,
     ItemExampleInStockSpec,
     ItemExamplePriceRangeSpec,
@@ -26,7 +23,7 @@ from domain.examples.item.specifications import (
 
 def create_item(
     name: str = "Test",
-    price: Decimal = Decimal("50"),
+    price: Decimal = Decimal(50),
     quantity: int = 10,
     category: str = "General",
     tags: list[str] | None = None,
@@ -96,29 +93,29 @@ class TestItemExamplePriceRangeSpec:
 
     def test_price_in_range_satisfies(self) -> None:
         """Test item with price in range satisfies spec."""
-        item = create_item(price=Decimal("50"))
-        spec = ItemExamplePriceRangeSpec(Decimal("10"), Decimal("100"))
+        item = create_item(price=Decimal(50))
+        spec = ItemExamplePriceRangeSpec(Decimal(10), Decimal(100))
 
         assert spec.is_satisfied_by(item) is True
 
     def test_price_below_range_not_satisfies(self) -> None:
         """Test item with price below range doesn't satisfy."""
-        item = create_item(price=Decimal("5"))
-        spec = ItemExamplePriceRangeSpec(Decimal("10"), Decimal("100"))
+        item = create_item(price=Decimal(5))
+        spec = ItemExamplePriceRangeSpec(Decimal(10), Decimal(100))
 
         assert spec.is_satisfied_by(item) is False
 
     def test_price_above_range_not_satisfies(self) -> None:
         """Test item with price above range doesn't satisfy."""
-        item = create_item(price=Decimal("150"))
-        spec = ItemExamplePriceRangeSpec(Decimal("10"), Decimal("100"))
+        item = create_item(price=Decimal(150))
+        spec = ItemExamplePriceRangeSpec(Decimal(10), Decimal(100))
 
         assert spec.is_satisfied_by(item) is False
 
     def test_price_at_boundary_satisfies(self) -> None:
         """Test item with price at boundary satisfies."""
-        item = create_item(price=Decimal("100"))
-        spec = ItemExamplePriceRangeSpec(Decimal("10"), Decimal("100"))
+        item = create_item(price=Decimal(100))
+        spec = ItemExamplePriceRangeSpec(Decimal(10), Decimal(100))
 
         assert spec.is_satisfied_by(item) is True
 
@@ -171,21 +168,21 @@ class TestCompositeSpecifications:
 
     def test_premium_items(self) -> None:
         """Test premium_items composite spec."""
-        item = create_item(price=Decimal("150"), quantity=10)
-        spec = premium_items(Decimal("100"))
+        item = create_item(price=Decimal(150), quantity=10)
+        spec = premium_items(Decimal(100))
 
         assert spec.is_satisfied_by(item) is True
 
     def test_premium_items_below_threshold(self) -> None:
         """Test premium_items rejects items below threshold."""
-        item = create_item(price=Decimal("50"), quantity=10)
-        spec = premium_items(Decimal("100"))
+        item = create_item(price=Decimal(50), quantity=10)
+        spec = premium_items(Decimal(100))
 
         assert spec.is_satisfied_by(item) is False
 
     def test_clearance_items(self) -> None:
         """Test clearance_items composite spec."""
-        item = create_item(price=Decimal("15"), quantity=10)
-        spec = clearance_items(Decimal("20"))
+        item = create_item(price=Decimal(15), quantity=10)
+        spec = clearance_items(Decimal(20))
 
         assert spec.is_satisfied_by(item) is True

@@ -19,7 +19,7 @@ class TestCircuitBreakerIntegration:
     **Validates: Requirements 2.1**
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     def breaker(self) -> CircuitBreaker:
         """Create circuit breaker for testing."""
         return CircuitBreaker(
@@ -43,9 +43,7 @@ class TestCircuitBreakerIntegration:
         assert not await breaker.can_execute()
 
     @pytest.mark.asyncio
-    async def test_circuit_uses_fallback_when_open(
-        self, breaker: CircuitBreaker
-    ) -> None:
+    async def test_circuit_uses_fallback_when_open(self, breaker: CircuitBreaker) -> None:
         """Test fallback is used when circuit is open.
 
         **Validates: Requirements 2.1**
@@ -59,9 +57,7 @@ class TestCircuitBreakerIntegration:
         assert not can_execute
 
     @pytest.mark.asyncio
-    async def test_circuit_recovers_after_timeout(
-        self, breaker: CircuitBreaker
-    ) -> None:
+    async def test_circuit_recovers_after_timeout(self, breaker: CircuitBreaker) -> None:
         """Test circuit recovers after reset timeout.
 
         **Validates: Requirements 2.1**
@@ -106,7 +102,7 @@ class TestCircuitBreakerIntegration:
 class TestRedisCacheOperations:
     """Integration tests for Redis cache operations."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def mock_redis_client(self):
         """Create mock Redis client."""
         client = MagicMock()

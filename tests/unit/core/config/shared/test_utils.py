@@ -4,8 +4,6 @@
 **Validates: Requirements for core-code-review**
 """
 
-import pytest
-
 from core.config.shared.utils import redact_url_credentials
 
 

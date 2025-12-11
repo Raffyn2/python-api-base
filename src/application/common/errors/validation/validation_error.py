@@ -3,6 +3,10 @@
 Used for input validation failures with detailed field-level error information.
 
 **Feature: python-api-base-2025-state-of-art**
+
+Note: This is a simplified version for application layer use.
+For HTTP/API handlers, use core.errors.ValidationError which includes
+correlation_id, timestamp, and RFC 7807 support.
 """
 
 from typing import Any
@@ -25,8 +29,8 @@ class ValidationError(ApplicationError):
         ...     message="Validation failed",
         ...     errors=[
         ...         {"field": "email", "message": "Invalid email format", "code": "invalid_email"},
-        ...         {"field": "age", "message": "Must be >= 18", "code": "min_value"}
-        ...     ]
+        ...         {"field": "age", "message": "Must be >= 18", "code": "min_value"},
+        ...     ],
         ... )
     """
 
@@ -53,8 +57,7 @@ class ValidationError(ApplicationError):
         """Return formatted error message with field details."""
         if self.errors:
             error_details = "; ".join(
-                f"{e.get('field', 'unknown')}: {e.get('message', 'invalid')}"
-                for e in self.errors
+                f"{e.get('field', 'unknown')}: {e.get('message', 'invalid')}" for e in self.errors
             )
             return f"{self.message}: {error_details}"
         return self.message

@@ -4,15 +4,12 @@
 **Validates: Requirements 7.3**
 """
 
-import pytest
-
 from infrastructure.multitenancy.tenant import (
+    SchemaConfig,
     TenantContext,
     TenantInfo,
-    TenantResolutionStrategy,
     TenantSchemaManager,
     TenantScopedCache,
-    SchemaConfig,
 )
 
 
@@ -54,15 +51,15 @@ class TestTenantContext:
     def test_get_set_clear_tenant(self) -> None:
         """Test tenant context operations."""
         tenant = TenantInfo[str](id="t1", name="Test")
-        
+
         # Initially None
         TenantContext.set_current(None)
         assert TenantContext.get_current() is None
-        
+
         # Set tenant
         TenantContext.set_current(tenant)
         assert TenantContext.get_current() == tenant
-        
+
         # Clear tenant
         TenantContext.set_current(None)
         assert TenantContext.get_current() is None
@@ -71,27 +68,27 @@ class TestTenantContext:
         """Test resolving tenant from headers."""
         context = TenantContext[str]()
         headers = {"X-Tenant-ID": "tenant-123"}
-        
+
         tenant_id = context.resolve_from_headers(headers)
-        
+
         assert tenant_id == "tenant-123"
 
     def test_resolve_from_jwt(self) -> None:
         """Test resolving tenant from JWT claims."""
         context = TenantContext[str]()
         claims = {"tenant_id": "tenant-456"}
-        
+
         tenant_id = context.resolve_from_jwt(claims)
-        
+
         assert tenant_id == "tenant-456"
 
     def test_resolve_from_query(self) -> None:
         """Test resolving tenant from query params."""
         context = TenantContext[str]()
         params = {"tenant_id": "tenant-789"}
-        
+
         tenant_id = context.resolve_from_query(params)
-        
+
         assert tenant_id == "tenant-789"
 
 
@@ -102,9 +99,9 @@ class TestTenantSchemaManager:
         """Test getting schema name for tenant."""
         config = SchemaConfig()
         manager = TenantSchemaManager[str](config)
-        
+
         schema = manager.get_schema_name("tenant-1")
-        
+
         assert schema == "tenant_tenant-1"
 
     def test_get_connection_schema_with_custom(self) -> None:
@@ -112,9 +109,9 @@ class TestTenantSchemaManager:
         config = SchemaConfig()
         manager = TenantSchemaManager[str](config)
         tenant = TenantInfo[str](id="t1", name="Test", schema_name="custom_schema")
-        
+
         schema = manager.get_connection_schema(tenant)
-        
+
         assert schema == "custom_schema"
 
 
@@ -124,15 +121,15 @@ class TestTenantScopedCache:
     def test_get_key(self) -> None:
         """Test getting tenant-scoped cache key."""
         cache = TenantScopedCache[str]()
-        
+
         key = cache.get_key("tenant-1", "user:123")
-        
+
         assert key == "tenant:tenant-1:user:123"
 
     def test_get_pattern(self) -> None:
         """Test getting pattern for tenant keys."""
         cache = TenantScopedCache[str]()
-        
+
         pattern = cache.get_pattern("tenant-1")
-        
+
         assert pattern == "tenant:tenant-1:*"

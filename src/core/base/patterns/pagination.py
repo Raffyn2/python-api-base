@@ -8,11 +8,12 @@ Uses PEP 695 type parameter syntax (Python 3.12+) for cleaner generic definition
 
 import base64
 import json
-import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,17 +92,14 @@ class CursorPagination[T, CursorT]:
             return json.loads(decoded_bytes)
         except (ValueError, json.JSONDecodeError) as e:
             logger.warning(
-                f"Invalid cursor decode: {e}",
-                extra={
-                    "operation": "CURSOR_DECODE",
-                    "error_type": type(e).__name__,
-                },
+                "Invalid cursor decode",
+                operation="CURSOR_DECODE",
+                error_type=type(e).__name__,
             )
             return {}  # type: ignore
-        except Exception as e:
-            logger.error(
-                f"Unexpected error decoding cursor: {e}",
-                exc_info=True,
-                extra={"operation": "CURSOR_DECODE"},
+        except Exception:
+            logger.exception(
+                "Unexpected error decoding cursor",
+                operation="CURSOR_DECODE",
             )
             return {}  # type: ignore

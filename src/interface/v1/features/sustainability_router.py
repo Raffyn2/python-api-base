@@ -1,22 +1,24 @@
-"""
-Sustainability API router.
+"""Sustainability API router.
 
 Provides REST endpoints for energy metrics, carbon emissions,
 and sustainability reporting.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+import structlog
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from pydantic import BaseModel
 
-from src.infrastructure.sustainability.config import (
+from infrastructure.sustainability.config import (
     SustainabilitySettings,
     get_sustainability_settings,
 )
-from src.infrastructure.sustainability.service import SustainabilityService
+from infrastructure.sustainability.service import SustainabilityService
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/sustainability", tags=["sustainability"])
 
@@ -90,17 +92,24 @@ def get_service(
 
 @router.get("/metrics", response_model=list[EnergyMetricResponse])
 async def get_energy_metrics(
+    request: Request,
     namespace: Annotated[str | None, Query(description="Filter by namespace")] = None,
     service: SustainabilityService = Depends(get_service),
 ) -> list[EnergyMetricResponse]:
-    """
-    Get energy consumption metrics from Kepler.
+    """Get energy consumption metrics from Kepler.
 
     Property 10: API Response Structure
     Response contains energy_kwh and required fields.
     """
+    correlation_id = getattr(request.state, "correlation_id", None)
     try:
         metrics = await service.get_energy_metrics(namespace)
+        logger.info(
+            "energy_metrics_fetched",
+            count=len(metrics),
+            namespace=namespace,
+            correlation_id=correlation_id,
+        )
         return [
             EnergyMetricResponse(
                 namespace=m.namespace,
@@ -113,29 +122,40 @@ async def get_energy_metrics(
             )
             for m in metrics
         ]
-    except Exception as e:
+    except Exception:
+        logger.exception(
+            "energy_metrics_fetch_failed",
+            namespace=namespace,
+            correlation_id=correlation_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to fetch metrics: {e}",
-        )
+            detail="Failed to fetch energy metrics",
+        ) from None
 
 
 @router.get("/emissions", response_model=list[CarbonMetricResponse])
 async def get_carbon_emissions(
+    request: Request,
     namespace: Annotated[str | None, Query(description="Filter by namespace")] = None,
-    region: Annotated[
-        str | None, Query(description="Region for carbon intensity")
-    ] = None,
+    region: Annotated[str | None, Query(description="Region for carbon intensity")] = None,
     service: SustainabilityService = Depends(get_service),
 ) -> list[CarbonMetricResponse]:
-    """
-    Get carbon emission metrics.
+    """Get carbon emission metrics.
 
     Property 10: API Response Structure
     Response contains emissions_gco2 and confidence interval fields.
     """
+    correlation_id = getattr(request.state, "correlation_id", None)
     try:
         metrics = await service.get_carbon_metrics(namespace, region)
+        logger.info(
+            "carbon_emissions_fetched",
+            count=len(metrics),
+            namespace=namespace,
+            region=region,
+            correlation_id=correlation_id,
+        )
         return [
             CarbonMetricResponse(
                 namespace=m.namespace,
@@ -147,54 +167,69 @@ async def get_carbon_emissions(
                 confidence_lower=str(m.confidence_lower),
                 confidence_upper=str(m.confidence_upper),
                 carbon_intensity_region=m.carbon_intensity.region,
-                carbon_intensity_gco2_per_kwh=str(
-                    m.carbon_intensity.intensity_gco2_per_kwh
-                ),
+                carbon_intensity_gco2_per_kwh=str(m.carbon_intensity.intensity_gco2_per_kwh),
             )
             for m in metrics
         ]
-    except Exception as e:
+    except Exception:
+        logger.exception(
+            "carbon_emissions_fetch_failed",
+            namespace=namespace,
+            region=region,
+            correlation_id=correlation_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to calculate emissions: {e}",
-        )
+            detail="Failed to calculate carbon emissions",
+        ) from None
 
 
 @router.get("/emissions/aggregated", response_model=EmissionsResponse)
 async def get_aggregated_emissions(
+    request: Request,
     namespace: Annotated[str | None, Query(description="Filter by namespace")] = None,
     service: SustainabilityService = Depends(get_service),
 ) -> EmissionsResponse:
     """Get aggregated emissions by namespace."""
+    correlation_id = getattr(request.state, "correlation_id", None)
     try:
         emissions = await service.get_emissions_by_namespace(namespace)
         total = sum(emissions.values())
+        logger.info(
+            "aggregated_emissions_fetched",
+            namespace_count=len(emissions),
+            total_emissions=str(total),
+            correlation_id=correlation_id,
+        )
         return EmissionsResponse(
             emissions_by_namespace={k: str(v) for k, v in emissions.items()},
             total_emissions_gco2=str(total),
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
         )
-    except Exception as e:
+    except Exception:
+        logger.exception(
+            "aggregated_emissions_fetch_failed",
+            namespace=namespace,
+            correlation_id=correlation_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to aggregate emissions: {e}",
-        )
+            detail="Failed to aggregate emissions",
+        ) from None
 
 
 @router.get("/reports/{namespace}", response_model=ReportResponse)
 async def get_sustainability_report(
+    request: Request,
     namespace: str,
     period_start: Annotated[datetime, Query(description="Report period start")],
     period_end: Annotated[datetime, Query(description="Report period end")],
-    baseline_emissions: Annotated[
-        Decimal | None, Query(description="Baseline emissions for comparison")
-    ] = None,
-    target_emissions: Annotated[
-        Decimal | None, Query(description="Target emissions goal")
-    ] = None,
+    baseline_emissions: Annotated[Decimal | None, Query(description="Baseline emissions for comparison")] = None,
+    target_emissions: Annotated[Decimal | None, Query(description="Target emissions goal")] = None,
     service: SustainabilityService = Depends(get_service),
 ) -> ReportResponse:
     """Generate sustainability report for a namespace."""
+    correlation_id = getattr(request.state, "correlation_id", None)
     try:
         report = await service.generate_report(
             namespace=namespace,
@@ -202,6 +237,13 @@ async def get_sustainability_report(
             period_end=period_end,
             baseline_emissions=baseline_emissions,
             target_emissions=target_emissions,
+        )
+        logger.info(
+            "sustainability_report_generated",
+            namespace=namespace,
+            period_start=period_start.isoformat(),
+            period_end=period_end.isoformat(),
+            correlation_id=correlation_id,
         )
         return ReportResponse(
             namespace=report.namespace,
@@ -211,82 +253,110 @@ async def get_sustainability_report(
             total_emissions_gco2=str(report.total_emissions_gco2),
             total_cost=str(report.total_cost),
             currency=report.currency,
-            baseline_emissions_gco2=(
-                str(report.baseline_emissions_gco2)
-                if report.baseline_emissions_gco2
-                else None
-            ),
-            target_emissions_gco2=(
-                str(report.target_emissions_gco2)
-                if report.target_emissions_gco2
-                else None
-            ),
-            progress_percentage=(
-                str(report.progress_percentage)
-                if report.progress_percentage
-                else None
-            ),
-            reduction_percentage=(
-                str(report.reduction_percentage)
-                if report.reduction_percentage
-                else None
-            ),
+            baseline_emissions_gco2=(str(report.baseline_emissions_gco2) if report.baseline_emissions_gco2 else None),
+            target_emissions_gco2=(str(report.target_emissions_gco2) if report.target_emissions_gco2 else None),
+            progress_percentage=(str(report.progress_percentage) if report.progress_percentage else None),
+            reduction_percentage=(str(report.reduction_percentage) if report.reduction_percentage else None),
         )
-    except Exception as e:
+    except Exception:
+        logger.exception(
+            "sustainability_report_generation_failed",
+            namespace=namespace,
+            correlation_id=correlation_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to generate report: {e}",
-        )
+            detail="Failed to generate sustainability report",
+        ) from None
 
 
 @router.get("/costs", response_model=CostResponse)
 async def get_energy_costs(
+    request: Request,
     namespace: Annotated[str | None, Query(description="Filter by namespace")] = None,
     service: SustainabilityService = Depends(get_service),
 ) -> CostResponse:
     """Get energy cost calculations."""
+    correlation_id = getattr(request.state, "correlation_id", None)
     try:
         cost = await service.calculate_energy_cost(namespace)
+        logger.info(
+            "energy_costs_calculated",
+            namespace=namespace,
+            total_cost=str(cost.total_cost),
+            correlation_id=correlation_id,
+        )
         return CostResponse(
             energy_kwh=str(cost.energy_kwh),
             price_per_kwh=str(cost.price_per_kwh),
             total_cost=str(cost.total_cost),
             currency=cost.currency,
         )
-    except Exception as e:
+    except Exception:
+        logger.exception(
+            "energy_costs_calculation_failed",
+            namespace=namespace,
+            correlation_id=correlation_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to calculate costs: {e}",
-        )
+            detail="Failed to calculate energy costs",
+        ) from None
 
 
 @router.get("/export/csv")
 async def export_metrics_csv(
+    request: Request,
     namespace: Annotated[str | None, Query(description="Filter by namespace")] = None,
     service: SustainabilityService = Depends(get_service),
 ) -> str:
     """Export carbon metrics as CSV."""
+    correlation_id = getattr(request.state, "correlation_id", None)
     try:
         metrics = await service.get_carbon_metrics(namespace)
+        logger.info(
+            "metrics_exported_csv",
+            namespace=namespace,
+            count=len(metrics),
+            correlation_id=correlation_id,
+        )
         return service.export_metrics_csv(metrics)
-    except Exception as e:
+    except Exception:
+        logger.exception(
+            "metrics_export_csv_failed",
+            namespace=namespace,
+            correlation_id=correlation_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to export metrics: {e}",
-        )
+            detail="Failed to export metrics as CSV",
+        ) from None
 
 
 @router.get("/export/json")
 async def export_metrics_json(
+    request: Request,
     namespace: Annotated[str | None, Query(description="Filter by namespace")] = None,
     service: SustainabilityService = Depends(get_service),
 ) -> str:
     """Export carbon metrics as JSON."""
+    correlation_id = getattr(request.state, "correlation_id", None)
     try:
         metrics = await service.get_carbon_metrics(namespace)
+        logger.info(
+            "metrics_exported_json",
+            namespace=namespace,
+            count=len(metrics),
+            correlation_id=correlation_id,
+        )
         return service.export_metrics_json(metrics)
-    except Exception as e:
+    except Exception:
+        logger.exception(
+            "metrics_export_json_failed",
+            namespace=namespace,
+            correlation_id=correlation_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to export metrics: {e}",
-        )
+            detail="Failed to export metrics as JSON",
+        ) from None

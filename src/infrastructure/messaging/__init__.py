@@ -21,9 +21,6 @@ from infrastructure.messaging.outbox import (
 )
 
 __all__ = [
-    # Brokers
-    "KafkaBroker",
-    "RabbitMQBroker",
     # Consumers
     "BaseConsumer",
     # Dead Letter Queue
@@ -31,10 +28,13 @@ __all__ = [
     "DLQHandler",
     # Outbox Pattern
     "IOutboxRepository",
+    # Brokers
+    "KafkaBroker",
     "OutboxMessage",
     "OutboxMessageStatus",
     "OutboxPublisher",
     "OutboxPublisherContext",
     "OutboxRepository",
+    "RabbitMQBroker",
     "create_outbox_message",
 ]

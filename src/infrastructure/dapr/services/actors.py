@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 T = TypeVar("T")
 
 
-@dataclass
+@dataclass(slots=True)
 class ActorConfig:
     """Actor configuration."""
 
@@ -26,7 +26,7 @@ class ActorConfig:
     max_stack_depth: int | None = None
 
 
-@dataclass
+@dataclass(slots=True)
 class ActorTimer:
     """Actor timer configuration."""
 
@@ -37,7 +37,7 @@ class ActorTimer:
     data: Any = None
 
 
-@dataclass
+@dataclass(slots=True)
 class ActorReminder:
     """Actor reminder configuration."""
 
@@ -57,7 +57,7 @@ class Actor(ABC):
             actor_id: Unique actor instance ID.
         """
         self._actor_id = actor_id
-        self._state_manager: "ActorStateManager | None" = None
+        self._state_manager: ActorStateManager | None = None
 
     @property
     def id(self) -> str:
@@ -206,8 +206,6 @@ class ActorStateManager:
 
     async def get_state(self, key: str) -> Any:
         """Get actor state."""
-        import json
-
         url = f"{self._dapr_endpoint}/v1.0/actors/{self._actor_type}/{self._actor_id}/state/{key}"
         response = await self._http_client.get(url)
         if response.status_code == 204:
@@ -237,12 +235,14 @@ class ActorStateManager:
         url = f"{self._dapr_endpoint}/v1.0/actors/{self._actor_type}/{self._actor_id}/timers/{timer.name}"
         await self._http_client.post(
             url,
-            content=json.dumps({
-                "callback": timer.callback,
-                "dueTime": timer.due_time,
-                "period": timer.period,
-                "data": timer.data,
-            }),
+            content=json.dumps(
+                {
+                    "callback": timer.callback,
+                    "dueTime": timer.due_time,
+                    "period": timer.period,
+                    "data": timer.data,
+                }
+            ),
             headers={"Content-Type": "application/json"},
         )
 
@@ -258,11 +258,13 @@ class ActorStateManager:
         url = f"{self._dapr_endpoint}/v1.0/actors/{self._actor_type}/{self._actor_id}/reminders/{reminder.name}"
         await self._http_client.post(
             url,
-            content=json.dumps({
-                "dueTime": reminder.due_time,
-                "period": reminder.period,
-                "data": reminder.data,
-            }),
+            content=json.dumps(
+                {
+                    "dueTime": reminder.due_time,
+                    "period": reminder.period,
+                    "data": reminder.data,
+                }
+            ),
             headers={"Content-Type": "application/json"},
         )
 

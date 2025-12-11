@@ -5,7 +5,6 @@
 **Validates: Requirements 33.1, 33.2**
 """
 
-from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -17,7 +16,6 @@ from infrastructure.messaging.outbox.outbox_message import (
     create_outbox_message,
 )
 from infrastructure.messaging.outbox.outbox_repository import OutboxRepository
-
 
 # =============================================================================
 # Property 28: Outbox Transactional Atomicity
@@ -228,4 +226,3 @@ class TestOutboxTransactionalAtomicity:
         assert event_dict["type"] == "TestEvent"
         assert event_dict["aggregate_type"] == "Test"
         assert event_dict["aggregate_id"] == "1"
-

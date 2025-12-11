@@ -21,9 +21,7 @@ from core.exceptions import (
 )
 
 # Strategies for generating test data
-error_code_strategy = st.text(
-    min_size=1, max_size=50, alphabet=string.ascii_uppercase + "_"
-)
+error_code_strategy = st.text(min_size=1, max_size=50, alphabet=string.ascii_uppercase + "_")
 message_strategy = st.text(min_size=1, max_size=200)
 status_code_strategy = st.integers(min_value=400, max_value=599)
 
@@ -41,9 +39,7 @@ class TestExceptionSerializationConsistency:
         status_code=status_code_strategy,
     )
     @settings(max_examples=100)
-    def test_to_dict_contains_required_fields(
-        self, message: str, error_code: str, status_code: int
-    ):
+    def test_to_dict_contains_required_fields(self, message: str, error_code: str, status_code: int):
         """For any AppException, to_dict() SHALL contain required fields."""
         assume(len(message) > 0 and len(error_code) > 0)
 
@@ -154,12 +150,12 @@ class TestValidationErrorFormats:
 
     @given(
         st.lists(
-            st.fixed_dictionaries({
-                "field": st.text(
-                    min_size=1, max_size=30, alphabet=string.ascii_lowercase
-                ),
-                "message": st.text(min_size=1, max_size=100),
-            }),
+            st.fixed_dictionaries(
+                {
+                    "field": st.text(min_size=1, max_size=30, alphabet=string.ascii_lowercase),
+                    "message": st.text(min_size=1, max_size=100),
+                }
+            ),
             min_size=1,
             max_size=10,
         )

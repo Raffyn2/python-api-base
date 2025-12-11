@@ -63,7 +63,7 @@ class TestFileMetadata:
             uploaded_at=now,
             tenant_id="tenant-789",
         )
-        
+
         assert metadata.id == "file-123"
         assert metadata.filename == "test.pdf"
         assert metadata.content_type == "application/pdf"
@@ -85,7 +85,7 @@ class TestFileMetadata:
             uploaded_at=datetime.now(UTC),
             tenant_id="tenant-789",
         )
-        
+
         assert metadata.storage_key == ""
 
     def test_default_metadata_dict(self) -> None:
@@ -100,7 +100,7 @@ class TestFileMetadata:
             uploaded_at=datetime.now(UTC),
             tenant_id="tenant-789",
         )
-        
+
         assert metadata.metadata == {}
 
     def test_with_custom_metadata(self) -> None:
@@ -117,7 +117,7 @@ class TestFileMetadata:
             storage_key="uploads/test.pdf",
             metadata={"category": "documents", "tags": ["important"]},
         )
-        
+
         assert metadata.storage_key == "uploads/test.pdf"
         assert metadata.metadata["category"] == "documents"
 
@@ -133,7 +133,7 @@ class TestFileMetadata:
             uploaded_at=datetime.now(UTC),
             tenant_id="tenant-789",
         )
-        
+
         with pytest.raises(AttributeError):
             metadata.id = "new-id"  # type: ignore[misc]
 
@@ -153,14 +153,14 @@ class TestUploadResult:
             uploaded_at=datetime.now(UTC),
             tenant_id="tenant-789",
         )
-        
+
         result = UploadResult(
             file_id="file-123",
             storage_key="uploads/test.pdf",
             url="https://storage.example.com/uploads/test.pdf",
             metadata=metadata,
         )
-        
+
         assert result.file_id == "file-123"
         assert result.storage_key == "uploads/test.pdf"
         assert result.url == "https://storage.example.com/uploads/test.pdf"
@@ -178,14 +178,14 @@ class TestUploadResult:
             uploaded_at=datetime.now(UTC),
             tenant_id="tenant-789",
         )
-        
+
         result = UploadResult(
             file_id="file-123",
             storage_key="uploads/test.pdf",
             url="https://example.com/test.pdf",
             metadata=metadata,
         )
-        
+
         with pytest.raises(AttributeError):
             result.file_id = "new-id"  # type: ignore[misc]
 
@@ -196,14 +196,14 @@ class TestFileValidationConfig:
     def test_default_values(self) -> None:
         """Test default configuration values."""
         config = FileValidationConfig()
-        
+
         assert config.max_size_bytes == 10 * 1024 * 1024  # 10MB
         assert config.scan_for_viruses is False
 
     def test_default_allowed_types(self) -> None:
         """Test default allowed MIME types."""
         config = FileValidationConfig()
-        
+
         assert "image/jpeg" in config.allowed_types
         assert "image/png" in config.allowed_types
         assert "application/pdf" in config.allowed_types
@@ -212,7 +212,7 @@ class TestFileValidationConfig:
     def test_default_allowed_extensions(self) -> None:
         """Test default allowed extensions."""
         config = FileValidationConfig()
-        
+
         assert ".jpg" in config.allowed_extensions
         assert ".pdf" in config.allowed_extensions
         assert ".txt" in config.allowed_extensions
@@ -225,7 +225,7 @@ class TestFileValidationConfig:
             allowed_extensions=frozenset({".jpg", ".png"}),
             scan_for_viruses=True,
         )
-        
+
         assert config.max_size_bytes == 5 * 1024 * 1024
         assert len(config.allowed_types) == 2
         assert len(config.allowed_extensions) == 2
@@ -234,6 +234,6 @@ class TestFileValidationConfig:
     def test_immutability(self) -> None:
         """Test config is immutable."""
         config = FileValidationConfig()
-        
+
         with pytest.raises(AttributeError):
             config.max_size_bytes = 1024  # type: ignore[misc]

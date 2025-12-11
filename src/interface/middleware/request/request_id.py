@@ -8,7 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-from core.config.logging import clear_request_id, set_request_id
+from core.config.observability.logging import clear_request_id, set_request_id
 
 # UUID format pattern for validation
 UUID_PATTERN = re.compile(
@@ -42,9 +42,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
     HEADER_NAME = "X-Request-ID"
 
-    async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Response]
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Response]) -> Response:
         """Add request ID to request and response.
 
         Args:

@@ -85,9 +85,7 @@ class TestSecuritySettings:
 
     def test_rate_limit_validation_valid(self) -> None:
         """Test valid rate limit format."""
-        settings = SecuritySettings(
-            secret_key=SecretStr("a" * 32), rate_limit="200/minute"
-        )
+        settings = SecuritySettings(secret_key=SecretStr("a" * 32), rate_limit="200/minute")
         assert settings.rate_limit == "200/minute"
 
     def test_rate_limit_validation_invalid(self) -> None:
@@ -98,9 +96,7 @@ class TestSecuritySettings:
     def test_cors_wildcard_warning_in_development(self) -> None:
         """Test wildcard CORS is allowed in development."""
         with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=False):
-            settings = SecuritySettings(
-                secret_key=SecretStr("a" * 32), cors_origins=["*"]
-            )
+            settings = SecuritySettings(secret_key=SecretStr("a" * 32), cors_origins=["*"])
             assert "*" in settings.cors_origins
 
     def test_cors_wildcard_blocked_in_production(self) -> None:
@@ -127,9 +123,7 @@ class TestSecuritySettings:
     def test_access_token_expire_minutes_min(self) -> None:
         """Test access_token_expire_minutes minimum validation."""
         with pytest.raises(ValueError):
-            SecuritySettings(
-                secret_key=SecretStr("a" * 32), access_token_expire_minutes=0
-            )
+            SecuritySettings(secret_key=SecretStr("a" * 32), access_token_expire_minutes=0)
 
     def test_custom_csp(self) -> None:
         """Test custom CSP header."""

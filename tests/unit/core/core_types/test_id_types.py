@@ -68,10 +68,10 @@ class TestUUID:
         model = UUIDModel(value="f47ac10b-58cc-4372-a567-0e02b2c3d479")
         assert model.value == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
 
-    def test_uppercase_invalid(self) -> None:
-        # UUID pattern expects lowercase
-        with pytest.raises(ValidationError):
-            UUIDModel(value="550E8400-E29B-41D4-A716-446655440000")
+    def test_uppercase_valid(self) -> None:
+        # UUID pattern is case-insensitive (accepts a-fA-F)
+        model = UUIDModel(value="550E8400-E29B-41D4-A716-446655440000")
+        assert model.value == "550E8400-E29B-41D4-A716-446655440000"
 
     def test_no_hyphens_invalid(self) -> None:
         with pytest.raises(ValidationError):
@@ -124,9 +124,10 @@ class TestUUID7:
         with pytest.raises(ValidationError):
             UUID7Model(value="01902f4a-7b8c-7def-0123-456789abcdef")
 
-    def test_uppercase_invalid(self) -> None:
-        with pytest.raises(ValidationError):
-            UUID7Model(value="01902F4A-7B8C-7DEF-8123-456789ABCDEF")
+    def test_uppercase_valid(self) -> None:
+        # UUID7 pattern is case-insensitive (accepts a-fA-F)
+        model = UUID7Model(value="01902F4A-7B8C-7DEF-8123-456789ABCDEF")
+        assert model.value == "01902F4A-7B8C-7DEF-8123-456789ABCDEF"
 
     def test_empty_invalid(self) -> None:
         with pytest.raises(ValidationError):

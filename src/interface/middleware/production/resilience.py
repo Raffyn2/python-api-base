@@ -5,21 +5,21 @@
 **Refactored: Split from production.py for one-class-per-file compliance**
 """
 
-import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
+import structlog
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from infrastructure.resilience import CircuitBreaker, CircuitBreakerConfig, CircuitState
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class ResilienceConfig:
     """Configuration for resilience middleware."""
 
@@ -58,11 +58,16 @@ class ResilienceMiddleware(BaseHTTPMiddleware):
         if not self._config.enabled:
             return await call_next(request)
 
+        # Get correlation_id for logging
+        correlation_id = request.headers.get("X-Request-ID") or request.headers.get("X-Correlation-ID")
+
         # Check circuit state
-        if not self._circuit.can_execute():
+        if not self._circuit._can_execute():
             logger.warning(
-                f"Circuit breaker OPEN for {request.url.path}",
-                extra={"path": request.url.path, "state": CircuitState.OPEN.value},
+                "circuit_breaker_open",
+                correlation_id=correlation_id,
+                path=request.url.path,
+                state=CircuitState.OPEN.value,
             )
             from core.errors.http import PROBLEM_JSON_MEDIA_TYPE, ProblemDetail
 
@@ -79,11 +84,15 @@ class ResilienceMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
             if response.status_code < 500:
-                self._circuit.record_success()
+                self._circuit._record_success()
             else:
-                self._circuit.record_failure()
+                self._circuit._record_failure()
             return response
-        except Exception as e:
-            self._circuit.record_failure()
-            logger.error(f"Request failed: {e}", exc_info=True)
+        except Exception:
+            self._circuit._record_failure()
+            logger.exception(
+                "request_failed",
+                correlation_id=correlation_id,
+                path=request.url.path,
+            )
             raise

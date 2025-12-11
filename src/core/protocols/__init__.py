@@ -9,16 +9,6 @@ Organized into subpackages by responsibility:
 Feature: file-size-compliance-phase2
 """
 
-from core.protocols.entity import Identifiable, SoftDeletable, Timestamped
-from core.protocols.domain import (
-    Auditable,
-    DeletableEntity,
-    Entity,
-    FullEntity,
-    TrackedEntity,
-    Versionable,
-    VersionedEntity,
-)
 from core.protocols.application import (
     Command,
     CommandHandler,
@@ -32,6 +22,16 @@ from core.protocols.data_access import (
     CacheProvider,
     UnitOfWork,
 )
+from core.protocols.domain import (
+    Auditable,
+    DeletableEntity,
+    Entity,
+    FullEntity,
+    TrackedEntity,
+    Versionable,
+    VersionedEntity,
+)
+from core.protocols.entity import Identifiable, Named, SoftDeletable, Timestamped
 
 __all__ = [
     "AsyncRepository",
@@ -45,6 +45,7 @@ __all__ = [
     "FullEntity",
     "Identifiable",
     "Mapper",
+    "Named",
     "Query",
     "QueryHandler",
     "SoftDeletable",

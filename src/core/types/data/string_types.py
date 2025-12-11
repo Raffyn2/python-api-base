@@ -118,11 +118,11 @@ URLPath = Annotated[
     StringConstraints(
         min_length=1,
         max_length=2048,
-        pattern=r"^/[a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=%]*$",
+        pattern=r"^/[a-zA-Z0-9\-._~:/?#\[\]@!'()*+,;=%]*$",
     ),
     Field(description="URL path component (e.g., /api/v1/users)"),
 ]
-"""URL path component with validation."""
+"""URL path component with RFC 3986 compliant validation."""
 
 # =============================================================================
 # Technical Types

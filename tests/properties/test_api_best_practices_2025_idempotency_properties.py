@@ -25,7 +25,7 @@ from infrastructure.idempotency.handler import compute_request_hash
 # === Test Fixtures ===
 
 
-@pytest.fixture
+@pytest.fixture()
 def idempotency_config() -> IdempotencyConfig:
     """Default idempotency configuration."""
     return IdempotencyConfig(
@@ -35,7 +35,7 @@ def idempotency_config() -> IdempotencyConfig:
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_redis() -> AsyncMock:
     """Mock Redis client."""
     mock = AsyncMock()
@@ -46,7 +46,7 @@ def mock_redis() -> AsyncMock:
     return mock
 
 
-@pytest.fixture
+@pytest.fixture()
 def handler_with_mock_redis(
     idempotency_config: IdempotencyConfig,
     mock_redis: AsyncMock,
@@ -64,9 +64,7 @@ def handler_with_mock_redis(
 idempotency_key_strategy = st.uuids().map(str)
 
 request_body_strategy = st.dictionaries(
-    st.text(
-        min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L", "N"))
-    ),
+    st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L", "N"))),
     st.one_of(st.text(max_size=50), st.integers(), st.booleans()),
     min_size=1,
     max_size=5,
@@ -136,14 +134,10 @@ class TestIdempotencyKeyReplay:
             return json.dumps({"result": "success"}), 200
 
         # First request
-        body1, status1, is_replay1 = await handler.execute_idempotent(
-            idempotency_key, request_hash, operation
-        )
+        body1, status1, is_replay1 = await handler.execute_idempotent(idempotency_key, request_hash, operation)
 
         # Second request (duplicate)
-        body2, status2, is_replay2 = await handler.execute_idempotent(
-            idempotency_key, request_hash, operation
-        )
+        body2, status2, is_replay2 = await handler.execute_idempotent(idempotency_key, request_hash, operation)
 
         # Assertions
         assert execution_count == 1, "Operation should execute only once"
@@ -190,14 +184,10 @@ class TestIdempotencyKeyReplay:
             return json.dumps({"id": "123"}), 201
 
         # First request
-        _, status1, _ = await handler.execute_idempotent(
-            idempotency_key, request_hash, operation
-        )
+        _, status1, _ = await handler.execute_idempotent(idempotency_key, request_hash, operation)
 
         # Second request
-        _, status2, is_replay = await handler.execute_idempotent(
-            idempotency_key, request_hash, operation
-        )
+        _, status2, is_replay = await handler.execute_idempotent(idempotency_key, request_hash, operation)
 
         assert status1 == 201
         assert status2 == 201

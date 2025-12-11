@@ -12,17 +12,17 @@ Security features:
 - Production mode warning for HS256
 """
 
-import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol
 
+import structlog
 from jose import JWTError, jwt
 
 from core.exceptions import AuthenticationError
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class KeyType(Enum):
@@ -171,7 +171,7 @@ class JWTValidator:
             logger.warning(
                 "HS256 algorithm used in production mode. "
                 "Consider using RS256 or ES256 for enhanced security. "
-                "Asymmetric algorithms provide better key management and security."
+                "Asymmetric algorithms provide better key management and security.",
             )
 
     @property
@@ -198,8 +198,7 @@ class JWTValidator:
 
         if self._require_secure and algorithm not in self.SECURE_ALGORITHMS:
             raise InvalidTokenError(
-                f"Algorithm '{algorithm}' is not secure enough. "
-                f"Use one of: {', '.join(self.SECURE_ALGORITHMS)}"
+                f"Algorithm '{algorithm}' is not secure enough. Use one of: {', '.join(self.SECURE_ALGORITHMS)}",
             )
 
     def _get_unverified_header(self, token: str) -> dict[str, Any]:
@@ -207,7 +206,7 @@ class JWTValidator:
         try:
             return jwt.get_unverified_header(token)
         except JWTError as e:
-            raise InvalidTokenError(f"Cannot decode token header: {e}") from e
+            raise InvalidTokenError("Cannot decode token header") from e
 
     def validate(self, token: str, expected_type: str | None = None) -> ValidatedToken:
         """Validate JWT token with security checks.
@@ -236,10 +235,11 @@ class JWTValidator:
         if token_alg != self._algorithm:
             logger.warning(
                 "Algorithm mismatch",
-                extra={"expected": self._algorithm, "received": token_alg},
+                expected=self._algorithm,
+                received=token_alg,
             )
             raise InvalidTokenError(
-                f"Algorithm mismatch: expected {self._algorithm}, got {token_alg}"
+                f"Algorithm mismatch: expected {self._algorithm}, got {token_alg}",
             )
 
         # Full validation
@@ -272,7 +272,7 @@ class JWTValidator:
             if "signature" in error_msg:
                 logger.warning("Token signature verification failed")
                 raise InvalidTokenError("Token signature is invalid") from e
-            raise InvalidTokenError(f"Token validation failed: {e}") from e
+            raise InvalidTokenError("Token validation failed") from e
 
         # Validate token type
         token_type = claims.get("token_type", "access")
@@ -316,7 +316,7 @@ class JWTValidator:
                 if await self._revocation_store.is_revoked(validated.jti):
                     logger.warning(
                         "Rejected revoked token",
-                        extra={"jti": validated.jti},
+                        jti=validated.jti,
                     )
                     raise InvalidTokenError("Token has been revoked")
             except InvalidTokenError:
@@ -325,7 +325,8 @@ class JWTValidator:
                 # Fail closed - reject token if revocation check fails
                 logger.error(
                     "Revocation check failed, rejecting token",
-                    extra={"jti": validated.jti, "error": str(e)},
+                    jti=validated.jti,
+                    exc_info=e,
                 )
                 raise InvalidTokenError("Unable to verify token status") from e
 
@@ -349,5 +350,6 @@ class JWTValidator:
 
         logger.info(
             "Token revoked",
-            extra={"jti": validated.jti, "sub": validated.sub},
+            jti=validated.jti,
+            sub=validated.sub,
         )

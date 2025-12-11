@@ -196,9 +196,7 @@ class TestProblemDetailFormat:
 
     @given(
         error_code=st.text(
-            alphabet=st.characters(
-                whitelist_categories=("L", "N"), whitelist_characters="_"
-            ),
+            alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_"),
             min_size=1,
             max_size=50,
         ),
@@ -219,18 +217,18 @@ class TestProblemDetailFormat:
 
         # Verify type starts with valid URI scheme
         assert (
-            problem.type.startswith("https://")
-            or problem.type.startswith("http://")
-            or problem.type == "about:blank"
+            problem.type.startswith("https://") or problem.type.startswith("http://") or problem.type == "about:blank"
         )
 
     @given(
         errors=st.lists(
-            st.fixed_dictionaries({
-                "field": st.text(min_size=1, max_size=50),
-                "message": st.text(min_size=1, max_size=200),
-                "code": st.text(min_size=1, max_size=50),
-            }),
+            st.fixed_dictionaries(
+                {
+                    "field": st.text(min_size=1, max_size=50),
+                    "message": st.text(min_size=1, max_size=200),
+                    "code": st.text(min_size=1, max_size=50),
+                }
+            ),
             min_size=0,
             max_size=10,
         ),

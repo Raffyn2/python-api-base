@@ -5,8 +5,7 @@
 """
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from infrastructure.auth.policies.password_policy import (
     PasswordPolicy,
@@ -22,7 +21,7 @@ class TestPasswordPolicy:
     def test_default_policy_values(self) -> None:
         """Test default policy values."""
         policy = PasswordPolicy()
-        
+
         assert policy.min_length == 12
         assert policy.max_length == 128
         assert policy.require_uppercase is True
@@ -39,7 +38,7 @@ class TestPasswordPolicy:
             require_uppercase=False,
             require_special=False,
         )
-        
+
         assert policy.min_length == 8
         assert policy.max_length == 64
         assert policy.require_uppercase is False
@@ -52,7 +51,7 @@ class TestPasswordValidationResult:
     def test_initial_valid_state(self) -> None:
         """Test initial valid state."""
         result = PasswordValidationResult(valid=True)
-        
+
         assert result.valid is True
         assert result.errors == []
         assert result.strength_score == 0
@@ -61,7 +60,7 @@ class TestPasswordValidationResult:
         """Test adding error sets valid to False."""
         result = PasswordValidationResult(valid=True)
         result.add_error("Test error")
-        
+
         assert result.valid is False
         assert "Test error" in result.errors
 
@@ -69,12 +68,12 @@ class TestPasswordValidationResult:
 class TestPasswordValidator:
     """Tests for PasswordValidator."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def validator(self) -> PasswordValidator:
         """Create default validator."""
         return PasswordValidator()
 
-    @pytest.fixture
+    @pytest.fixture()
     def lenient_validator(self) -> PasswordValidator:
         """Create lenient validator."""
         return PasswordValidator(
@@ -91,7 +90,7 @@ class TestPasswordValidator:
     def test_valid_password(self, validator: PasswordValidator) -> None:
         """Test valid password passes validation."""
         result = validator.validate("SecureP@ssw0rd123!")
-        
+
         assert result.valid is True
         assert result.errors == []
         assert result.strength_score > 0
@@ -99,7 +98,7 @@ class TestPasswordValidator:
     def test_password_too_short(self, validator: PasswordValidator) -> None:
         """Test short password fails."""
         result = validator.validate("Short1!")
-        
+
         assert result.valid is False
         assert any("at least" in e for e in result.errors)
 
@@ -107,42 +106,42 @@ class TestPasswordValidator:
         """Test long password fails."""
         long_password = "A" * 200 + "a1!"
         result = validator.validate(long_password)
-        
+
         assert result.valid is False
         assert any("at most" in e for e in result.errors)
 
     def test_missing_uppercase(self, validator: PasswordValidator) -> None:
         """Test missing uppercase fails."""
         result = validator.validate("lowercase123!@#")
-        
+
         assert result.valid is False
         assert any("uppercase" in e for e in result.errors)
 
     def test_missing_lowercase(self, validator: PasswordValidator) -> None:
         """Test missing lowercase fails."""
         result = validator.validate("UPPERCASE123!@#")
-        
+
         assert result.valid is False
         assert any("lowercase" in e for e in result.errors)
 
     def test_missing_digit(self, validator: PasswordValidator) -> None:
         """Test missing digit fails."""
         result = validator.validate("NoDigitsHere!@#")
-        
+
         assert result.valid is False
         assert any("digit" in e for e in result.errors)
 
     def test_missing_special(self, validator: PasswordValidator) -> None:
         """Test missing special character fails."""
         result = validator.validate("NoSpecialChar123")
-        
+
         assert result.valid is False
         assert any("special" in e for e in result.errors)
 
     def test_common_password_rejected(self, validator: PasswordValidator) -> None:
         """Test common password is rejected."""
         result = validator.validate("password")
-        
+
         assert result.valid is False
         assert any("common" in e for e in result.errors)
 
@@ -154,7 +153,7 @@ class TestPasswordValidator:
     def test_get_requirements(self, validator: PasswordValidator) -> None:
         """Test get_requirements returns list."""
         requirements = validator.get_requirements()
-        
+
         assert isinstance(requirements, list)
         assert len(requirements) > 0
         assert any("12 characters" in r for r in requirements)
@@ -162,23 +161,21 @@ class TestPasswordValidator:
     def test_policy_property(self, validator: PasswordValidator) -> None:
         """Test policy property returns policy."""
         policy = validator.policy
-        
+
         assert isinstance(policy, PasswordPolicy)
         assert policy.min_length == 12
 
-    def test_lenient_policy_accepts_simple(
-        self, lenient_validator: PasswordValidator
-    ) -> None:
+    def test_lenient_policy_accepts_simple(self, lenient_validator: PasswordValidator) -> None:
         """Test lenient policy accepts simple passwords."""
         result = lenient_validator.validate("simplepassword")
-        
+
         assert result.valid is True
 
     def test_hash_password_valid(self, validator: PasswordValidator) -> None:
         """Test hashing valid password."""
         password = "SecureP@ssw0rd123!"
         hashed = validator.hash_password(password)
-        
+
         assert hashed != password
         assert len(hashed) > 0
 
@@ -191,7 +188,7 @@ class TestPasswordValidator:
         """Test password verification."""
         password = "SecureP@ssw0rd123!"
         hashed = validator.hash_password(password)
-        
+
         assert validator.verify_password(password, hashed) is True
         assert validator.verify_password("wrong", hashed) is False
 
@@ -202,21 +199,21 @@ class TestGetPasswordValidator:
     def test_returns_validator(self) -> None:
         """Test returns PasswordValidator instance."""
         validator = get_password_validator()
-        
+
         assert isinstance(validator, PasswordValidator)
 
     def test_returns_same_instance(self) -> None:
         """Test returns same instance (singleton)."""
         v1 = get_password_validator()
         v2 = get_password_validator()
-        
+
         assert v1 is v2
 
 
 class TestPasswordStrengthScore:
     """Tests for password strength scoring."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def validator(self) -> PasswordValidator:
         """Create default validator."""
         return PasswordValidator()
@@ -224,14 +221,14 @@ class TestPasswordStrengthScore:
     def test_strong_password_high_score(self, validator: PasswordValidator) -> None:
         """Test strong password gets high score."""
         result = validator.validate("VerySecureP@ssw0rd123!")
-        
+
         assert result.strength_score >= 80
 
     def test_longer_password_bonus(self, validator: PasswordValidator) -> None:
         """Test longer passwords get bonus score."""
         short_result = validator.validate("SecureP@ss1!")
         long_result = validator.validate("VeryLongSecureP@ssw0rd123!")
-        
+
         assert long_result.strength_score >= short_result.strength_score
 
 
@@ -257,10 +254,8 @@ class TestPasswordValidatorProperties:
     @settings(max_examples=20, deadline=10000)
     def test_valid_password_always_passes(self, password: str) -> None:
         """Property: Valid passwords always pass validation."""
-        validator = PasswordValidator(
-            PasswordPolicy(check_common_passwords=False)
-        )
-        
+        validator = PasswordValidator(PasswordPolicy(check_common_passwords=False))
+
         result = validator.validate(password)
         assert result.valid is True
 
@@ -279,9 +274,7 @@ class TestPasswordValidatorProperties:
     @settings(max_examples=10, deadline=15000)
     def test_hash_verify_round_trip(self, password: str) -> None:
         """Property: Hashed password can be verified."""
-        validator = PasswordValidator(
-            PasswordPolicy(check_common_passwords=False)
-        )
-        
+        validator = PasswordValidator(PasswordPolicy(check_common_passwords=False))
+
         hashed = validator.hash_password(password)
         assert validator.verify_password(password, hashed) is True

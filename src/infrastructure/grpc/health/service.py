@@ -7,17 +7,20 @@ standard gRPC health checking protocol.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator, Awaitable, Callable
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from structlog import get_logger
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Awaitable, Callable
 
 logger = get_logger(__name__)
 
 
 class ServingStatus(Enum):
     """Health check serving status."""
+
     UNKNOWN = 0
     SERVING = 1
     NOT_SERVING = 2
@@ -26,7 +29,7 @@ class ServingStatus(Enum):
 
 class HealthServicer:
     """gRPC health check service implementation.
-    
+
     Implements the standard gRPC health checking protocol with
     support for dependency checks.
     """
@@ -37,7 +40,7 @@ class HealthServicer:
         check_interval: float = 5.0,
     ) -> None:
         """Initialize health servicer.
-        
+
         Args:
             dependency_checks: Dict of service name to health check function
             check_interval: Interval for Watch streaming in seconds
@@ -49,7 +52,7 @@ class HealthServicer:
 
     def set_serving(self, service: str = "") -> None:
         """Set a service as serving.
-        
+
         Args:
             service: Service name (empty for overall health)
         """
@@ -58,7 +61,7 @@ class HealthServicer:
 
     def set_not_serving(self, service: str = "") -> None:
         """Set a service as not serving.
-        
+
         Args:
             service: Service name (empty for overall health)
         """
@@ -67,7 +70,7 @@ class HealthServicer:
 
     def enter_graceful_shutdown(self) -> None:
         """Enter graceful shutdown mode.
-        
+
         Sets all services to NOT_SERVING.
         """
         self._is_shutting_down = True
@@ -78,10 +81,10 @@ class HealthServicer:
 
     async def check(self, service: str = "") -> ServingStatus:
         """Check health status of a service.
-        
+
         Args:
             service: Service name to check (empty for overall)
-            
+
         Returns:
             The serving status
         """
@@ -97,11 +100,10 @@ class HealthServicer:
             try:
                 is_healthy = await self._dependency_checks[service]()
                 return ServingStatus.SERVING if is_healthy else ServingStatus.NOT_SERVING
-            except Exception as exc:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "health_check_failed",
                     service=service,
-                    error=str(exc),
                 )
                 return ServingStatus.NOT_SERVING
 
@@ -114,7 +116,7 @@ class HealthServicer:
 
     async def _check_all_dependencies(self) -> ServingStatus:
         """Check all dependencies for overall health.
-        
+
         Returns:
             SERVING if all dependencies are healthy
         """
@@ -130,11 +132,10 @@ class HealthServicer:
                         dependency=name,
                     )
                     return ServingStatus.NOT_SERVING
-            except Exception as exc:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "health_dependency_check_failed",
                     dependency=name,
-                    error=str(exc),
                 )
                 return ServingStatus.NOT_SERVING
 
@@ -142,24 +143,24 @@ class HealthServicer:
 
     async def watch(self, service: str = "") -> AsyncIterator[ServingStatus]:
         """Stream health status updates.
-        
+
         Args:
             service: Service name to watch
-            
+
         Yields:
             Status updates when health changes
         """
         last_status: ServingStatus | None = None
-        
+
         while not self._is_shutting_down:
             current_status = await self.check(service)
-            
+
             if current_status != last_status:
                 last_status = current_status
                 yield current_status
-            
+
             await asyncio.sleep(self._check_interval)
-        
+
         # Final status on shutdown
         yield ServingStatus.NOT_SERVING
 
@@ -170,7 +171,7 @@ class GRPCHealthServicer:
 
     def __init__(self, health_servicer: HealthServicer) -> None:
         """Initialize adapter.
-        
+
         Args:
             health_servicer: The health servicer instance
         """
@@ -182,20 +183,20 @@ class GRPCHealthServicer:
         context: Any,
     ) -> Any:
         """Handle Check RPC.
-        
+
         Args:
             request: HealthCheckRequest
             context: ServicerContext
-            
+
         Returns:
             HealthCheckResponse
         """
         try:
             from grpc_health.v1 import health_pb2
-            
+
             service = request.service
             status = await self._health.check(service)
-            
+
             return health_pb2.HealthCheckResponse(
                 status=status.value,
             )
@@ -210,17 +211,17 @@ class GRPCHealthServicer:
         context: Any,
     ) -> AsyncIterator[Any]:
         """Handle Watch RPC.
-        
+
         Args:
             request: HealthCheckRequest
             context: ServicerContext
-            
+
         Yields:
             HealthCheckResponse updates
         """
         try:
             from grpc_health.v1 import health_pb2
-            
+
             service = request.service
             async for status in self._health.watch(service):
                 yield health_pb2.HealthCheckResponse(

@@ -90,9 +90,7 @@ class TestTraceSpanCreation:
         ),
         service_version=st.from_regex(r"[0-9]+\.[0-9]+\.[0-9]+", fullmatch=True),
     )
-    def test_telemetry_provider_accepts_valid_config(
-        self, service_name: str, service_version: str
-    ) -> None:
+    def test_telemetry_provider_accepts_valid_config(self, service_name: str, service_version: str) -> None:
         """
         **Feature: advanced-reusability, Property 10: Trace Span Creation**
 

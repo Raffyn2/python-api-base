@@ -5,14 +5,14 @@
 
 import pytest
 
+from infrastructure.tasks.in_memory import InMemoryTaskQueue
+from infrastructure.tasks.retry import ExponentialBackoff
 from infrastructure.tasks.task import (
     Task,
     TaskPriority,
     TaskResult,
     TaskStatus,
 )
-from infrastructure.tasks.in_memory import InMemoryTaskQueue
-from infrastructure.tasks.retry import ExponentialBackoff
 
 
 class TestTask:
@@ -48,7 +48,7 @@ class TestTask:
             handler="test.handler",
         )
         task.mark_running()
-        
+
         assert task.status == TaskStatus.RUNNING
         assert task.started_at is not None
         assert task.attempt == 1
@@ -61,7 +61,7 @@ class TestTask:
             handler="test.handler",
         )
         task.mark_completed("result", execution_time_ms=100.0)
-        
+
         assert task.status == TaskStatus.COMPLETED
         assert task.result is not None
         assert task.result.success is True
@@ -76,7 +76,7 @@ class TestTask:
             max_attempts=3,
         )
         task.mark_failed("Error occurred")
-        
+
         assert task.status == TaskStatus.RETRYING
         assert task.last_error == "Error occurred"
 
@@ -90,7 +90,7 @@ class TestTask:
         )
         task.attempt = 1
         task.mark_failed("Error occurred")
-        
+
         assert task.status == TaskStatus.FAILED
 
 
@@ -121,7 +121,7 @@ class TestTaskResult:
 class TestInMemoryTaskQueue:
     """Tests for InMemoryTaskQueue."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def queue(self) -> InMemoryTaskQueue:
         """Create in-memory queue."""
         return InMemoryTaskQueue()
@@ -135,7 +135,7 @@ class TestInMemoryTaskQueue:
             handler="test.handler",
         )
         await queue.enqueue(task)
-        
+
         assert queue.total_count == 1
 
     @pytest.mark.asyncio
@@ -147,9 +147,9 @@ class TestInMemoryTaskQueue:
             handler="test.handler",
         )
         await queue.enqueue(task)
-        
+
         dequeued = await queue.dequeue()
-        
+
         assert dequeued is not None
         assert dequeued.name == "test"
 
@@ -157,7 +157,7 @@ class TestInMemoryTaskQueue:
     async def test_dequeue_empty_queue(self, queue: InMemoryTaskQueue) -> None:
         """Test dequeueing from empty queue."""
         result = await queue.dequeue()
-        
+
         assert result is None
 
 
@@ -167,7 +167,7 @@ class TestExponentialBackoff:
     def test_default_backoff(self) -> None:
         """Test default backoff settings."""
         backoff = ExponentialBackoff()
-        
+
         assert backoff.base_delay == 1.0
         assert backoff.max_delay == 300.0
         assert backoff.multiplier == 2.0
@@ -179,7 +179,7 @@ class TestExponentialBackoff:
             max_delay=30.0,
             multiplier=3.0,
         )
-        
+
         assert backoff.base_delay == 0.5
         assert backoff.max_delay == 30.0
         assert backoff.multiplier == 3.0
@@ -192,7 +192,7 @@ class TestExponentialBackoff:
             max_delay=60.0,
             jitter=0.0,  # Disable jitter for predictable tests
         )
-        
+
         # First attempt (attempt=1): 1.0 * 2^0 = 1.0
         assert backoff.get_delay(1) == 1.0
         # Second attempt (attempt=2): 1.0 * 2^1 = 2.0
@@ -208,6 +208,6 @@ class TestExponentialBackoff:
             max_delay=5.0,
             jitter=0.0,
         )
-        
+
         # Should be capped at 5.0
         assert backoff.get_delay(5) == 5.0

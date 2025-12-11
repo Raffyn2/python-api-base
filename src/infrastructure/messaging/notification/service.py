@@ -4,7 +4,7 @@
 **Validates: Requirements 8.1, 8.4, 8.7**
 """
 
-import logging
+import structlog
 
 from core.base.patterns.result import Err, Result
 from infrastructure.messaging.notification.models import (
@@ -15,7 +15,7 @@ from infrastructure.messaging.notification.models import (
     UserPreferences,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class NotificationService[TPayload]:
@@ -27,9 +27,7 @@ class NotificationService[TPayload]:
         self._rate_limits: dict[str, int] = {}  # user_id -> count
         self._max_per_hour: int = 100
 
-    def register_channel(
-        self, name: str, channel: NotificationChannel[TPayload]
-    ) -> None:
+    def register_channel(self, name: str, channel: NotificationChannel[TPayload]) -> None:
         """Register a notification channel."""
         self._channels[name] = channel
 
@@ -79,10 +77,8 @@ class NotificationService[TPayload]:
         if self.is_opted_out(notification.recipient_id, notification.channel):
             logger.info(
                 "Notification skipped due to opt-out",
-                extra={
-                    "user_id": notification.recipient_id,
-                    "channel": notification.channel,
-                },
+                user_id=notification.recipient_id,
+                channel=notification.channel,
             )
             return Err(NotificationError.OPT_OUT)
 
@@ -100,9 +96,7 @@ class NotificationService[TPayload]:
 
         # Update rate limit
         if result.is_ok():
-            self._rate_limits[notification.recipient_id] = (
-                self._rate_limits.get(notification.recipient_id, 0) + 1
-            )
+            self._rate_limits[notification.recipient_id] = self._rate_limits.get(notification.recipient_id, 0) + 1
 
         return result
 

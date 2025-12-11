@@ -9,15 +9,16 @@ Provides:
 """
 
 import json
-import logging
 import threading
 from datetime import UTC, datetime
 from typing import Any
 
+import structlog
+
 from infrastructure.auth.token_store.models import StoredToken
 from infrastructure.auth.token_store.protocols import RefreshTokenStore
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def _validate_token_input(jti: str, user_id: str, expires_at: datetime) -> None:
@@ -70,14 +71,15 @@ class InMemoryTokenStore(RefreshTokenStore):
             # Evict oldest tokens if over limit
             if len(self._tokens) > self._max_entries:
                 sorted_tokens = sorted(
-                    self._tokens.items(), key=lambda x: x[1].created_at
+                    self._tokens.items(),
+                    key=lambda x: x[1].created_at,
                 )
                 tokens_to_remove = len(self._tokens) - self._max_entries
                 for jti_to_remove, token_to_remove in sorted_tokens[:tokens_to_remove]:
                     del self._tokens[jti_to_remove]
                     if token_to_remove.user_id in self._user_tokens:
                         self._user_tokens[token_to_remove.user_id].discard(
-                            jti_to_remove
+                            jti_to_remove,
                         )
 
     async def get(self, jti: str) -> StoredToken | None:

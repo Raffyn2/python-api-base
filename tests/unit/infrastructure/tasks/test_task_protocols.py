@@ -5,7 +5,6 @@ Tests for TaskHandler, TaskQueue, and TaskScheduler protocols.
 
 from collections.abc import Sequence
 from datetime import datetime
-from typing import runtime_checkable
 
 from infrastructure.tasks.protocols import TaskHandler, TaskQueue, TaskScheduler
 from infrastructure.tasks.task import Task, TaskStatus
@@ -94,9 +93,7 @@ class TestTaskQueueProtocol:
             async def update_task(self, task: Task) -> None:
                 pass
 
-            async def get_tasks_by_status(
-                self, status: TaskStatus, limit: int = 100
-            ) -> Sequence[Task]:
+            async def get_tasks_by_status(self, status: TaskStatus, limit: int = 100) -> Sequence[Task]:
                 return []
 
             async def cancel_task(self, task_id: str) -> bool:
@@ -135,9 +132,7 @@ class TestTaskSchedulerProtocol:
             async def schedule(self, task: Task, run_at: datetime) -> str:
                 return "schedule-id"
 
-            async def schedule_recurring(
-                self, task: Task, cron_expression: str
-            ) -> str:
+            async def schedule_recurring(self, task: Task, cron_expression: str) -> str:
                 return "recurring-id"
 
             async def cancel_schedule(self, schedule_id: str) -> bool:

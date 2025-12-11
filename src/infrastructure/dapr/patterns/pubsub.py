@@ -5,10 +5,10 @@ This module provides publish/subscribe messaging with CloudEvents support.
 
 import json
 import uuid
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Awaitable
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -45,7 +45,7 @@ class MessageStatus(Enum):
     DROP = "DROP"
 
 
-@dataclass
+@dataclass(slots=True)
 class Subscription:
     """Pub/sub subscription configuration."""
 
@@ -59,7 +59,7 @@ class Subscription:
     max_await_duration_ms: int | None = None
 
 
-@dataclass
+@dataclass(slots=True)
 class PublishOptions:
     """Options for publishing messages."""
 
@@ -81,9 +81,7 @@ class PubSubManager:
         self._client = client
         self._pubsub_name = pubsub_name
         self._subscriptions: list[Subscription] = []
-        self._handlers: dict[str, Callable[[CloudEvent], Awaitable[MessageStatus]]] = (
-            {}
-        )
+        self._handlers: dict[str, Callable[[CloudEvent], Awaitable[MessageStatus]]] = {}
 
     @property
     def pubsub_name(self) -> str:
@@ -181,9 +179,13 @@ class PubSubManager:
                 count=len(messages),
             )
         except Exception as e:
+            logger.exception(
+                "Failed to bulk publish",
+                pubsub=pubsub,
+                topic=topic,
+            )
             raise DaprConnectionError(
                 message=f"Failed to bulk publish to {pubsub}/{topic}",
-                details={"error": str(e)},
             ) from e
 
     def subscribe(
@@ -277,11 +279,10 @@ class PubSubManager:
 
         try:
             return await handler(event)
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "message_handler_error",
                 pubsub=pubsub_name,
                 topic=topic,
-                error=str(e),
             )
             return MessageStatus.RETRY

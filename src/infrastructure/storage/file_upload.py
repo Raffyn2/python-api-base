@@ -9,9 +9,12 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any, Protocol, runtime_checkable
 
+import structlog
 from pydantic import BaseModel
 
 from core.base.patterns.result import Err, Ok, Result
+
+logger = structlog.get_logger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,7 +72,7 @@ class FileValidator[T](Protocol):
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class FileValidationRules:
     """Configurable file validation rules."""
 
@@ -191,7 +194,7 @@ class FileStorage[TProvider](Protocol):
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class ChunkInfo:
     """Chunk information for resumable uploads."""
 
@@ -244,6 +247,13 @@ class FileUploadHandler[TMetadata: BaseModel]:
         if self._validator:
             validation = self._validator.validate(file_info, metadata)
             if validation.is_err():
+                logger.warning(
+                    "File validation failed",
+                    operation="FILE_UPLOAD_VALIDATION_FAILED",
+                    upload_id=upload_id,
+                    filename=file_info.filename,
+                    error=validation.error,
+                )
                 return Err(validation.error)
 
         # Upload to storage
@@ -251,8 +261,23 @@ class FileUploadHandler[TMetadata: BaseModel]:
         result = await self._storage.upload(key, data, file_info.content_type)
 
         if result.is_err():
+            logger.error(
+                "File upload failed",
+                operation="FILE_UPLOAD_ERROR",
+                upload_id=upload_id,
+                filename=file_info.filename,
+                error_type=type(result.error).__name__,
+            )
             return Err(str(result.error))
 
+        logger.info(
+            "File uploaded successfully",
+            operation="FILE_UPLOAD",
+            upload_id=upload_id,
+            filename=file_info.filename,
+            content_type=file_info.content_type,
+            size_bytes=file_info.size_bytes,
+        )
         return Ok(result.unwrap())
 
     async def upload_chunk(
@@ -277,6 +302,13 @@ class FileUploadHandler[TMetadata: BaseModel]:
         result = await self._storage.upload(key, chunk, "application/octet-stream")
 
         if result.is_err():
+            logger.error(
+                "Chunk upload failed",
+                operation="CHUNK_UPLOAD_ERROR",
+                upload_id=upload_id,
+                chunk_number=chunk_info.chunk_number,
+                error_type=type(result.error).__name__,
+            )
             return Err(str(result.error))
 
         # Update progress
@@ -297,6 +329,15 @@ class FileUploadHandler[TMetadata: BaseModel]:
             )
 
         self._uploads[upload_id] = new_progress
+
+        logger.debug(
+            "Chunk uploaded",
+            operation="CHUNK_UPLOAD",
+            upload_id=upload_id,
+            chunk_number=chunk_info.chunk_number,
+            total_chunks=chunk_info.total_chunks,
+            progress_percent=new_progress.percentage,
+        )
         return Ok(new_progress)
 
     def get_progress(self, upload_id: str) -> UploadProgress | None:

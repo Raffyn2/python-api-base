@@ -171,18 +171,16 @@ class QueryWithoutCache:
 class TestQueryCacheMiddleware:
     """Tests for QueryCacheMiddleware."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def cache(self) -> InMemoryQueryCache:
         return InMemoryQueryCache()
 
-    @pytest.fixture
+    @pytest.fixture()
     def middleware(self, cache: InMemoryQueryCache) -> QueryCacheMiddleware:
         return QueryCacheMiddleware(cache, QueryCacheConfig())
 
     @pytest.mark.asyncio
-    async def test_cache_miss_executes_handler(
-        self, middleware: QueryCacheMiddleware
-    ) -> None:
+    async def test_cache_miss_executes_handler(self, middleware: QueryCacheMiddleware) -> None:
         query = SampleQuery(user_id="123")
         handler_called = False
 
@@ -196,9 +194,7 @@ class TestQueryCacheMiddleware:
         assert result == {"id": "123"}
 
     @pytest.mark.asyncio
-    async def test_cache_hit_skips_handler(
-        self, cache: InMemoryQueryCache, middleware: QueryCacheMiddleware
-    ) -> None:
+    async def test_cache_hit_skips_handler(self, cache: InMemoryQueryCache, middleware: QueryCacheMiddleware) -> None:
         query = SampleQuery(user_id="123")
         cache_key = "query_cache:SampleQuery:user:123"
         await cache.set(cache_key, {"cached": True}, ttl=300)
@@ -231,9 +227,7 @@ class TestQueryCacheMiddleware:
         assert cached == {"id": "456"}
 
     @pytest.mark.asyncio
-    async def test_uses_cache_key_attribute(
-        self, cache: InMemoryQueryCache, middleware: QueryCacheMiddleware
-    ) -> None:
+    async def test_uses_cache_key_attribute(self, cache: InMemoryQueryCache, middleware: QueryCacheMiddleware) -> None:
         query = QueryWithCacheKey(item_id="item-1")
 
         async def handler(q: Any) -> dict:
@@ -259,9 +253,7 @@ class TestQueryCacheMiddleware:
         assert cache.size() == 0
 
     @pytest.mark.asyncio
-    async def test_disabled_cache_skips_caching(
-        self, cache: InMemoryQueryCache
-    ) -> None:
+    async def test_disabled_cache_skips_caching(self, cache: InMemoryQueryCache) -> None:
         config = QueryCacheConfig(enabled=False)
         middleware = QueryCacheMiddleware(cache, config)
         query = SampleQuery(user_id="123")
@@ -273,9 +265,7 @@ class TestQueryCacheMiddleware:
         assert cache.size() == 0
 
     @pytest.mark.asyncio
-    async def test_cache_all_queries_generates_key(
-        self, cache: InMemoryQueryCache
-    ) -> None:
+    async def test_cache_all_queries_generates_key(self, cache: InMemoryQueryCache) -> None:
         config = QueryCacheConfig(cache_all_queries=True)
         middleware = QueryCacheMiddleware(cache, config)
         query = QueryWithoutCache(data="test")
@@ -287,9 +277,7 @@ class TestQueryCacheMiddleware:
         assert cache.size() == 1
 
     @pytest.mark.asyncio
-    async def test_generate_cache_key_deterministic(
-        self, cache: InMemoryQueryCache
-    ) -> None:
+    async def test_generate_cache_key_deterministic(self, cache: InMemoryQueryCache) -> None:
         config = QueryCacheConfig(cache_all_queries=True)
         middleware = QueryCacheMiddleware(cache, config)
 
@@ -301,9 +289,7 @@ class TestQueryCacheMiddleware:
         assert key1 == key2
 
     @pytest.mark.asyncio
-    async def test_different_queries_different_keys(
-        self, cache: InMemoryQueryCache
-    ) -> None:
+    async def test_different_queries_different_keys(self, cache: InMemoryQueryCache) -> None:
         config = QueryCacheConfig(cache_all_queries=True)
         middleware = QueryCacheMiddleware(cache, config)
 

@@ -6,8 +6,6 @@ TrueSpecification, FalseSpecification, PredicateSpecification, AttributeSpecific
 
 from dataclasses import dataclass
 
-import pytest
-
 from core.base.patterns.specification import (
     AndSpecification,
     AttributeSpecification,
@@ -282,9 +280,7 @@ class TestComplexSpecificationComposition:
 
     def test_complex_and_or_not(self) -> None:
         # (active AND positive) OR (NOT active AND name="special")
-        spec = (IsActiveSpec() & HasPositiveValueSpec()) | (
-            ~IsActiveSpec() & HasNameSpec("special")
-        )
+        spec = (IsActiveSpec() & HasPositiveValueSpec()) | (~IsActiveSpec() & HasNameSpec("special"))
 
         active_positive = SampleEntity(name="test", value=10, is_active=True)
         inactive_special = SampleEntity(name="special", value=-5, is_active=False)
@@ -308,4 +304,3 @@ class TestComplexSpecificationComposition:
         assert len(filtered) == 2
         assert filtered[0].name == "a"
         assert filtered[1].name == "d"
-

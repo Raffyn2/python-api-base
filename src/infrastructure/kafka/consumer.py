@@ -6,10 +6,11 @@
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Self, TypeVar
+
+import structlog
 
 from infrastructure.kafka.message import KafkaMessage, MessageMetadata
 
@@ -21,7 +22,7 @@ if TYPE_CHECKING:
 
     from infrastructure.kafka.config import KafkaConfig
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 T = TypeVar("T")
 
@@ -29,7 +30,7 @@ T = TypeVar("T")
 MessageHandler = Callable[[KafkaMessage[T]], Awaitable[None]]
 
 
-class KafkaConsumer(Generic[T]):
+class KafkaConsumer[T]:
     """Generic async Kafka consumer.
 
     Type-safe consumer for receiving messages from Kafka topics.
@@ -41,9 +42,7 @@ class KafkaConsumer(Generic[T]):
         >>> class UserEvent(BaseModel):
         ...     user_id: str
         ...     action: str
-        >>> async with KafkaConsumer[UserEvent](
-        ...     config, "user-events", UserEvent
-        ... ) as consumer:
+        >>> async with KafkaConsumer[UserEvent](config, "user-events", UserEvent) as consumer:
         ...     async for message in consumer:
         ...         print(f"User {message.payload.user_id} did {message.payload.action}")
     """
@@ -95,7 +94,8 @@ class KafkaConsumer(Generic[T]):
 
         logger.info(
             "Kafka consumer started",
-            extra={"topics": self._topics, "group_id": self._config.group_id},
+            topics=self._topics,
+            group_id=self._config.group_id,
         )
 
         return self
@@ -137,9 +137,7 @@ class KafkaConsumer(Generic[T]):
             topic=record.topic,
             partition=record.partition,
             offset=record.offset,
-            timestamp=datetime.fromtimestamp(record.timestamp / 1000, UTC)
-            if record.timestamp
-            else None,
+            timestamp=datetime.fromtimestamp(record.timestamp / 1000, UTC) if record.timestamp else None,
             key=message.key,
             headers=message.headers,
         )
@@ -159,14 +157,13 @@ class KafkaConsumer(Generic[T]):
             try:
                 message = self._deserialize_record(record)
                 yield message
-            except Exception as e:
-                logger.error(
-                    f"Failed to deserialize message: {e}",
-                    extra={
-                        "topic": record.topic,
-                        "partition": record.partition,
-                        "offset": record.offset,
-                    },
+            except Exception:
+                logger.exception(
+                    "Failed to deserialize message",
+                    topic=record.topic,
+                    partition=record.partition,
+                    offset=record.offset,
+                    operation="KAFKA_DESERIALIZE",
                 )
 
     async def consume_one(self, timeout_ms: int = 5000) -> KafkaMessage[T] | None:
@@ -217,8 +214,11 @@ class KafkaConsumer(Generic[T]):
                 try:
                     message = self._deserialize_record(record)
                     messages.append(message)
-                except Exception as e:
-                    logger.error(f"Failed to deserialize message: {e}")
+                except Exception:
+                    logger.exception(
+                        "Failed to deserialize message",
+                        operation="KAFKA_DESERIALIZE",
+                    )
 
         return messages
 
@@ -248,17 +248,12 @@ class KafkaConsumer(Generic[T]):
             for handler in self._handlers:
                 try:
                     await handler(message)
-                except Exception as e:
-                    logger.error(
-                        f"Handler error: {e}",
-                        extra={
-                            "topic": message.metadata.topic
-                            if message.metadata
-                            else None,
-                            "offset": message.metadata.offset
-                            if message.metadata
-                            else None,
-                        },
+                except Exception:
+                    logger.exception(
+                        "Handler error",
+                        topic=message.metadata.topic if message.metadata else None,
+                        offset=message.metadata.offset if message.metadata else None,
+                        operation="KAFKA_HANDLE",
                     )
 
     async def commit(self) -> None:

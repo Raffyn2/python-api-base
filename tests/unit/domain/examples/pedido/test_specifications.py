@@ -29,7 +29,7 @@ from domain.examples.pedido.specifications import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def pending_pedido() -> PedidoExample:
     """Create a pending order with items."""
     pedido = PedidoExample.create(
@@ -46,7 +46,7 @@ def pending_pedido() -> PedidoExample:
     return pedido
 
 
-@pytest.fixture
+@pytest.fixture()
 def confirmed_pedido() -> PedidoExample:
     """Create a confirmed order with items."""
     pedido = PedidoExample.create(
@@ -169,9 +169,7 @@ class TestCompositeSpecifications:
         spec = high_value_pending_orders(Decimal("400.00"))
         assert spec.is_satisfied_by(pending_pedido) is True
 
-    def test_high_value_pending_orders_not_pending(
-        self, confirmed_pedido: PedidoExample
-    ) -> None:
+    def test_high_value_pending_orders_not_pending(self, confirmed_pedido: PedidoExample) -> None:
         spec = high_value_pending_orders(Decimal("100.00"))
         assert spec.is_satisfied_by(confirmed_pedido) is False
 
@@ -179,9 +177,7 @@ class TestCompositeSpecifications:
         spec = orders_ready_for_processing()
         assert spec.is_satisfied_by(confirmed_pedido) is True
 
-    def test_orders_ready_for_processing_pending(
-        self, pending_pedido: PedidoExample
-    ) -> None:
+    def test_orders_ready_for_processing_pending(self, pending_pedido: PedidoExample) -> None:
         spec = orders_ready_for_processing()
         assert spec.is_satisfied_by(pending_pedido) is False
 
@@ -190,9 +186,7 @@ class TestCompositeSpecifications:
         # Order total is 2000 (10 * 200)
         assert spec.is_satisfied_by(confirmed_pedido) is True
 
-    def test_vip_customer_orders_wrong_customer(
-        self, confirmed_pedido: PedidoExample
-    ) -> None:
+    def test_vip_customer_orders_wrong_customer(self, confirmed_pedido: PedidoExample) -> None:
         spec = vip_customer_orders("cust-999", Decimal("1000.00"))
         assert spec.is_satisfied_by(confirmed_pedido) is False
 
@@ -206,15 +200,11 @@ class TestCompositeSpecifications:
         # Order has 5 items
         assert spec.is_satisfied_by(pending_pedido) is False
 
-    def test_processable_high_value_orders(
-        self, confirmed_pedido: PedidoExample
-    ) -> None:
+    def test_processable_high_value_orders(self, confirmed_pedido: PedidoExample) -> None:
         spec = processable_high_value_orders(Decimal("1000.00"))
         assert spec.is_satisfied_by(confirmed_pedido) is True
 
-    def test_processable_high_value_orders_pending(
-        self, pending_pedido: PedidoExample
-    ) -> None:
+    def test_processable_high_value_orders_pending(self, pending_pedido: PedidoExample) -> None:
         spec = processable_high_value_orders(Decimal("100.00"))
         assert spec.is_satisfied_by(pending_pedido) is False
 
@@ -222,21 +212,15 @@ class TestCompositeSpecifications:
         spec = multi_tenant_query("tenant-abc", PedidoStatus.PENDING)
         assert spec.is_satisfied_by(pending_pedido) is True
 
-    def test_multi_tenant_query_confirmed(
-        self, confirmed_pedido: PedidoExample
-    ) -> None:
+    def test_multi_tenant_query_confirmed(self, confirmed_pedido: PedidoExample) -> None:
         spec = multi_tenant_query("tenant-xyz", PedidoStatus.CONFIRMED)
         assert spec.is_satisfied_by(confirmed_pedido) is True
 
-    def test_multi_tenant_query_wrong_tenant(
-        self, pending_pedido: PedidoExample
-    ) -> None:
+    def test_multi_tenant_query_wrong_tenant(self, pending_pedido: PedidoExample) -> None:
         spec = multi_tenant_query("tenant-wrong", PedidoStatus.PENDING)
         assert spec.is_satisfied_by(pending_pedido) is False
 
-    def test_multi_tenant_query_wrong_status(
-        self, confirmed_pedido: PedidoExample
-    ) -> None:
+    def test_multi_tenant_query_wrong_status(self, confirmed_pedido: PedidoExample) -> None:
         # Test with wrong status
         spec = multi_tenant_query("tenant-xyz", PedidoStatus.PENDING)
         assert spec.is_satisfied_by(confirmed_pedido) is False
@@ -253,9 +237,7 @@ class TestCompositeSpecifications:
         spec = customer_high_value_orders("cust-123", Decimal("400.00"))
         assert spec.is_satisfied_by(pending_pedido) is True
 
-    def test_customer_high_value_orders_low_value(
-        self, pending_pedido: PedidoExample
-    ) -> None:
+    def test_customer_high_value_orders_low_value(self, pending_pedido: PedidoExample) -> None:
         spec = customer_high_value_orders("cust-123", Decimal("1000.00"))
         assert spec.is_satisfied_by(pending_pedido) is False
 
@@ -263,9 +245,7 @@ class TestCompositeSpecifications:
         spec = processable_bulk_orders(min_items=5)
         assert spec.is_satisfied_by(confirmed_pedido) is True
 
-    def test_processable_bulk_orders_not_confirmed(
-        self, pending_pedido: PedidoExample
-    ) -> None:
+    def test_processable_bulk_orders_not_confirmed(self, pending_pedido: PedidoExample) -> None:
         spec = processable_bulk_orders(min_items=3)
         assert spec.is_satisfied_by(pending_pedido) is False
 

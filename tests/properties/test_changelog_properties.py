@@ -42,9 +42,7 @@ class TestSemanticVersionProperties:
         st.integers(min_value=0, max_value=100),
     )
     @settings(max_examples=100)
-    def test_bump_major_resets_minor_patch(
-        self, major: int, minor: int, patch: int
-    ) -> None:
+    def test_bump_major_resets_minor_patch(self, major: int, minor: int, patch: int) -> None:
         """Bumping major resets minor and patch."""
         version = SemanticVersion(f"{major}.{minor}.{patch}")
         bumped = version.bump_major()
@@ -72,15 +70,10 @@ class TestChangelogGeneratorProperties:
 
     @given(st.lists(st.sampled_from(list(ChangeType)), min_size=1, max_size=10))
     @settings(max_examples=50)
-    def test_markdown_contains_all_change_types(
-        self, change_types: list[ChangeType]
-    ) -> None:
+    def test_markdown_contains_all_change_types(self, change_types: list[ChangeType]) -> None:
         """Generated markdown contains all change types."""
         generator = ChangelogGenerator()
-        changes = [
-            Change(change_type=ct, description=f"Test {ct.value}")
-            for ct in change_types
-        ]
+        changes = [Change(change_type=ct, description=f"Test {ct.value}") for ct in change_types]
         version = Version(version="1.0.0", date=datetime.utcnow(), changes=changes)
         generator.add_version(version)
         markdown = generator.generate_markdown()

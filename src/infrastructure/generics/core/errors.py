@@ -21,13 +21,11 @@ class ErrorMessages:
     # =========================================================================
     # Authentication Errors (AUTH_*)
     # =========================================================================
-    AUTH_TOKEN_EXPIRED: Final[str] = "Token has expired"  # noqa: S105
-    AUTH_TOKEN_INVALID: Final[str] = "Invalid token"  # noqa: S105
-    AUTH_TOKEN_REVOKED: Final[str] = "Token has been revoked"  # noqa: S105
-    AUTH_TOKEN_MALFORMED: Final[str] = "Token is malformed"  # noqa: S105
-    AUTH_ALGORITHM_MISMATCH: Final[str] = (
-        "Algorithm mismatch: expected {expected}, got {received}"
-    )
+    AUTH_TOKEN_EXPIRED: Final[str] = "Token has expired"
+    AUTH_TOKEN_INVALID: Final[str] = "Invalid token"
+    AUTH_TOKEN_REVOKED: Final[str] = "Token has been revoked"
+    AUTH_TOKEN_MALFORMED: Final[str] = "Token is malformed"
+    AUTH_ALGORITHM_MISMATCH: Final[str] = "Algorithm mismatch: expected {expected}, got {received}"
     AUTH_KEY_INVALID: Final[str] = "Invalid key format"
     AUTH_KEY_MISSING: Final[str] = "{algorithm} requires {key_type}"
     AUTH_SIGNATURE_INVALID: Final[str] = "Token signature verification failed"
@@ -40,9 +38,7 @@ class ErrorMessages:
     # =========================================================================
     CACHE_KEY_NOT_FOUND: Final[str] = "Cache key not found: {key}"
     CACHE_SERIALIZATION_FAILED: Final[str] = "Failed to serialize cache value: {error}"
-    CACHE_DESERIALIZATION_FAILED: Final[str] = (
-        "Failed to deserialize cache value: {error}"
-    )
+    CACHE_DESERIALIZATION_FAILED: Final[str] = "Failed to deserialize cache value: {error}"
     CACHE_CONNECTION_FAILED: Final[str] = "Cache connection failed: {error}"
     CACHE_OPERATION_TIMEOUT: Final[str] = "Cache operation timed out after {timeout}s"
     CACHE_TAG_NOT_FOUND: Final[str] = "Cache tag not found: {tag}"
@@ -54,12 +50,8 @@ class ErrorMessages:
     POOL_ACQUIRE_TIMEOUT: Final[str] = "Acquire timeout after {timeout}s"
     POOL_CONNECTION_ERROR: Final[str] = "Connection error: {message}"
     POOL_CLOSED: Final[str] = "Pool is closed"
-    POOL_INVALID_STATE: Final[str] = (
-        "Invalid pool state transition: {from_state} -> {to_state}"
-    )
-    POOL_HEALTH_CHECK_FAILED: Final[str] = (
-        "Health check failed for connection {conn_id}"
-    )
+    POOL_INVALID_STATE: Final[str] = "Invalid pool state transition: {from_state} -> {to_state}"
+    POOL_HEALTH_CHECK_FAILED: Final[str] = "Health check failed for connection {conn_id}"
 
     # =========================================================================
     # Validation Errors (VALIDATION_*)
@@ -69,18 +61,14 @@ class ErrorMessages:
     VALIDATION_OUT_OF_RANGE: Final[str] = "{field} must be between {min} and {max}"
     VALIDATION_REQUIRED: Final[str] = "{field} is required"
     VALIDATION_TYPE_MISMATCH: Final[str] = "{field} must be of type {expected_type}"
-    VALIDATION_PATTERN_MISMATCH: Final[str] = (
-        "{field} does not match pattern: {pattern}"
-    )
+    VALIDATION_PATTERN_MISMATCH: Final[str] = "{field} does not match pattern: {pattern}"
 
     # =========================================================================
     # Security Errors (SECURITY_*)
     # =========================================================================
     SECURITY_UNAUTHORIZED: Final[str] = "Unauthorized access"
     SECURITY_FORBIDDEN: Final[str] = "Access forbidden"
-    SECURITY_RATE_LIMITED: Final[str] = (
-        "Rate limit exceeded, retry after {retry_after}s"
-    )
+    SECURITY_RATE_LIMITED: Final[str] = "Rate limit exceeded, retry after {retry_after}s"
     SECURITY_ENCRYPTION_FAILED: Final[str] = "Encryption failed: {error}"
     SECURITY_DECRYPTION_FAILED: Final[str] = "Decryption failed: {error}"
     SECURITY_POLICY_DENIED: Final[str] = "Policy denied access to {resource}"
@@ -91,9 +79,7 @@ class ErrorMessages:
     MSG_PUBLISH_FAILED: Final[str] = "Failed to publish message to {topic}: {error}"
     MSG_SUBSCRIBE_FAILED: Final[str] = "Failed to subscribe to {topic}: {error}"
     MSG_HANDLER_ERROR: Final[str] = "Message handler error: {error}"
-    MSG_DEAD_LETTER: Final[str] = (
-        "Message moved to dead letter queue after {retries} retries"
-    )
+    MSG_DEAD_LETTER: Final[str] = "Message moved to dead letter queue after {retries} retries"
     MSG_BROKER_UNAVAILABLE: Final[str] = "Message broker unavailable: {error}"
 
     # =========================================================================

@@ -7,9 +7,10 @@
 from __future__ import annotations
 
 import json
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+import structlog
 
 if TYPE_CHECKING:
     import asyncio
@@ -88,10 +89,8 @@ class FallbackWriter:
         Args:
             fallback_path: Path for fallback log file
         """
-        self._path = (
-            Path(fallback_path) if isinstance(fallback_path, str) else fallback_path
-        )
-        self._logger = logging.getLogger(__name__)
+        self._path = Path(fallback_path) if isinstance(fallback_path, str) else fallback_path
+        self._logger = structlog.get_logger(__name__)
 
     async def write(self, events: list[dict[str, Any]]) -> None:
         """Write events to fallback file.
@@ -106,8 +105,12 @@ class FallbackWriter:
                 for event in events:
                     f.write(json.dumps(event) + "\n")
 
-        except Exception as e:
-            self._logger.error(f"Failed to write fallback log: {e}")
+        except Exception:
+            self._logger.exception(
+                "Failed to write fallback log",
+                path=str(self._path),
+                operation="ES_FALLBACK_WRITE",
+            )
 
 
 class BulkIndexer:
@@ -124,7 +127,7 @@ class BulkIndexer:
             index_prefix: Prefix for index names
         """
         self._index_prefix = index_prefix
-        self._logger = logging.getLogger(__name__)
+        self._logger = structlog.get_logger(__name__)
 
     def get_index_name(self) -> str:
         """Get current index name with date suffix.
@@ -167,9 +170,10 @@ class BulkIndexer:
 
         # Check for errors
         if response.get("errors"):
-            error_count = sum(
-                1
-                for item in response.get("items", [])
-                if "error" in item.get("index", {})
+            error_count = sum(1 for item in response.get("items", []) if "error" in item.get("index", {}))
+            self._logger.warning(
+                "Bulk index had errors",
+                error_count=error_count,
+                index=index_name,
+                operation="ES_BULK_INDEX",
             )
-            self._logger.warning(f"Bulk index had {error_count} errors")

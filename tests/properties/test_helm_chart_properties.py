@@ -71,8 +71,7 @@ class TestDependencyVersionConstraint:
         for dep in dependencies:
             version = dep.get("version", "")
             assert semver_pattern.match(version), (
-                f"Dependency '{dep.get('name')}' version '{version}' "
-                "is not in exact semver format (X.Y.Z)."
+                f"Dependency '{dep.get('name')}' version '{version}' is not in exact semver format (X.Y.Z)."
             )
 
 
@@ -99,8 +98,7 @@ class TestYamlRoundTripConsistency:
         reparsed = yaml.safe_load(reserialized)
 
         assert parsed == reparsed, (
-            f"YAML round-trip failed for {filename}. "
-            "Parsed content differs after re-serialization."
+            f"YAML round-trip failed for {filename}. Parsed content differs after re-serialization."
         )
 
 
@@ -120,10 +118,7 @@ class TestValuesJsonRoundTrip:
         json_str = json.dumps(values)
         reparsed = json.loads(json_str)
 
-        assert values == reparsed, (
-            "Values JSON round-trip failed. "
-            "Configuration differs after JSON serialization."
-        )
+        assert values == reparsed, "Values JSON round-trip failed. Configuration differs after JSON serialization."
 
     @given(st.integers(min_value=1, max_value=100))
     @settings(max_examples=20)
@@ -208,9 +203,7 @@ class TestSecurityConfigurationCompleteness:
         values = load_values_yaml()
         security_context = values.get("securityContext", {})
 
-        assert security_context.get("runAsNonRoot") is True, (
-            "securityContext.runAsNonRoot must be true"
-        )
+        assert security_context.get("runAsNonRoot") is True, "securityContext.runAsNonRoot must be true"
         assert security_context.get("readOnlyRootFilesystem") is True, (
             "securityContext.readOnlyRootFilesystem must be true"
         )
@@ -226,9 +219,7 @@ class TestSecurityConfigurationCompleteness:
         assert "limits" in resources, "resources.limits must be defined"
         assert "requests" in resources, "resources.requests must be defined"
         assert "cpu" in resources["limits"], "resources.limits.cpu must be defined"
-        assert "memory" in resources["limits"], (
-            "resources.limits.memory must be defined"
-        )
+        assert "memory" in resources["limits"], "resources.limits.memory must be defined"
 
 
 class TestLabelConsistency:
@@ -253,9 +244,7 @@ class TestLabelConsistency:
         ]
 
         for label in required_labels:
-            assert label in helpers_content, (
-                f"_helpers.tpl must define standard label: {label}"
-            )
+            assert label in helpers_content, f"_helpers.tpl must define standard label: {label}"
 
 
 class TestConditionalResourceCreation:
@@ -271,17 +260,13 @@ class TestConditionalResourceCreation:
         """Verify ingress template has conditional creation."""
         content = load_template("ingress.yaml")
         if content:
-            assert ".Values.ingress.enabled" in content, (
-                "ingress.yaml must check .Values.ingress.enabled"
-            )
+            assert ".Values.ingress.enabled" in content, "ingress.yaml must check .Values.ingress.enabled"
 
     def test_hpa_has_conditional(self):
         """Verify HPA template has conditional creation."""
         content = load_template("hpa.yaml")
         if content:
-            assert ".Values.autoscaling.enabled" in content, (
-                "hpa.yaml must check .Values.autoscaling.enabled"
-            )
+            assert ".Values.autoscaling.enabled" in content, "hpa.yaml must check .Values.autoscaling.enabled"
 
     def test_networkpolicy_has_conditional(self):
         """Verify NetworkPolicy template has conditional creation."""
@@ -307,9 +292,7 @@ class TestPdbConfigurationValidity:
         if content:
             has_min_check = "minAvailable" in content
             has_max_check = "maxUnavailable" in content
-            assert has_min_check or has_max_check, (
-                "pdb.yaml must support minAvailable or maxUnavailable"
-            )
+            assert has_min_check or has_max_check, "pdb.yaml must support minAvailable or maxUnavailable"
 
 
 class TestProbeConfigurationPropagation:
@@ -325,12 +308,8 @@ class TestProbeConfigurationPropagation:
         """Verify deployment template uses probe values from values.yaml."""
         content = load_template("deployment.yaml")
 
-        assert ".Values.livenessProbe" in content, (
-            "deployment.yaml must use .Values.livenessProbe"
-        )
-        assert ".Values.readinessProbe" in content, (
-            "deployment.yaml must use .Values.readinessProbe"
-        )
+        assert ".Values.livenessProbe" in content, "deployment.yaml must use .Values.livenessProbe"
+        assert ".Values.readinessProbe" in content, "deployment.yaml must use .Values.readinessProbe"
 
     def test_values_define_probes(self):
         """Verify values.yaml defines probe configurations."""

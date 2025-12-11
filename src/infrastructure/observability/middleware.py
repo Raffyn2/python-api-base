@@ -126,7 +126,7 @@ class TracingMiddleware(BaseHTTPMiddleware):
             if ctx.is_valid:
                 _current_trace_id.set(format(ctx.trace_id, "032x"))
                 _current_span_id.set(format(ctx.span_id, "016x"))
-        except Exception:  # noqa: S110 - Optional telemetry, fail silently
+        except Exception:  # noqa: S110 - Trace context update is optional
             pass
 
     def _set_response_status(self, span: Any, status_code: int) -> None:
@@ -136,15 +136,11 @@ class TracingMiddleware(BaseHTTPMiddleware):
             try:
                 from opentelemetry.trace import StatusCode
 
-                span.set_status(
-                    StatusCode.ERROR if status_code >= 500 else StatusCode.OK
-                )
+                span.set_status(StatusCode.ERROR if status_code >= 500 else StatusCode.OK)
             except ImportError:
                 pass
 
-    def _record_metrics(
-        self, method: str, path: str, status_code: int, duration: float
-    ) -> None:
+    def _record_metrics(self, method: str, path: str, status_code: int, duration: float) -> None:
         """Record request metrics."""
         labels = {"method": method, "path": path, "status_code": str(status_code)}
         if self._request_counter:
@@ -172,9 +168,7 @@ class TracingMiddleware(BaseHTTPMiddleware):
         start_time = time.perf_counter()
         status_code = 500
 
-        with tracer.start_as_current_span(
-            f"{method} {path}", context=context, kind=_get_span_kind()
-        ) as span:
+        with tracer.start_as_current_span(f"{method} {path}", context=context, kind=_get_span_kind()) as span:
             self._set_request_attributes(span, request)
             self._update_trace_context_vars()
 

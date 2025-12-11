@@ -24,9 +24,7 @@ class DataExporter[T]:
     def __init__(self, serializer: DataSerializer[T]) -> None:
         self._serializer = serializer
 
-    def _filter_fields(
-        self, data: dict[str, Any], config: ExportConfig
-    ) -> dict[str, Any]:
+    def _filter_fields(self, data: dict[str, Any], config: ExportConfig) -> dict[str, Any]:
         if config.include_fields:
             return {k: v for k, v in data.items() if k in config.include_fields}
         if config.exclude_fields:
@@ -37,15 +35,11 @@ class DataExporter[T]:
         """Compute SHA-256 checksum (truncated to 16 chars)."""
         return hashlib.sha256(content).hexdigest()[:16]
 
-    def export_json(
-        self, records: list[T], config: ExportConfig
-    ) -> tuple[bytes, ExportResult]:
+    def export_json(self, records: list[T], config: ExportConfig) -> tuple[bytes, ExportResult]:
         """Export records to JSON."""
         start = time.perf_counter()
 
-        data = [
-            self._filter_fields(self._serializer.to_dict(r), config) for r in records
-        ]
+        data = [self._filter_fields(self._serializer.to_dict(r), config) for r in records]
 
         if config.include_metadata:
             output = {
@@ -70,9 +64,7 @@ class DataExporter[T]:
             checksum=self._compute_checksum(content),
         )
 
-    def export_csv(
-        self, records: list[T], config: ExportConfig
-    ) -> tuple[bytes, ExportResult]:
+    def export_csv(self, records: list[T], config: ExportConfig) -> tuple[bytes, ExportResult]:
         """Export records to CSV."""
         start = time.perf_counter()
 
@@ -85,9 +77,7 @@ class DataExporter[T]:
                 checksum="",
             )
 
-        data = [
-            self._filter_fields(self._serializer.to_dict(r), config) for r in records
-        ]
+        data = [self._filter_fields(self._serializer.to_dict(r), config) for r in records]
 
         output = io.StringIO()
         writer = csv.DictWriter(output, fieldnames=data[0].keys())
@@ -106,9 +96,7 @@ class DataExporter[T]:
             checksum=self._compute_checksum(content),
         )
 
-    def export_jsonl(
-        self, records: list[T], config: ExportConfig
-    ) -> tuple[bytes, ExportResult]:
+    def export_jsonl(self, records: list[T], config: ExportConfig) -> tuple[bytes, ExportResult]:
         """Export records to JSON Lines."""
         start = time.perf_counter()
 
@@ -128,9 +116,7 @@ class DataExporter[T]:
             checksum=self._compute_checksum(content),
         )
 
-    def export(
-        self, records: list[T], config: ExportConfig
-    ) -> tuple[bytes, ExportResult]:
+    def export(self, records: list[T], config: ExportConfig) -> tuple[bytes, ExportResult]:
         """Export records in specified format."""
         if config.format == ExportFormat.JSON:
             return self.export_json(records, config)

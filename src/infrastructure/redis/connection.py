@@ -7,16 +7,17 @@
 from __future__ import annotations
 
 import json
-import logging
 from typing import Any
 
+import structlog
 from pydantic import BaseModel
 
+from infrastructure.cache.config import CacheConfig
 from infrastructure.cache.providers import InMemoryCacheProvider
 from infrastructure.redis.circuit_breaker import CircuitBreaker
 from infrastructure.redis.config import RedisConfig
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class RedisConnection:
@@ -47,8 +48,6 @@ class RedisConnection:
         self._fallback: InMemoryCacheProvider | None = None
 
         if self._config.enable_fallback:
-            from infrastructure.cache.config import CacheConfig
-
             self._fallback = InMemoryCacheProvider(
                 CacheConfig(
                     default_ttl=self._config.default_ttl,
@@ -96,14 +95,19 @@ class RedisConnection:
             )
             await self._redis.ping()
             self._connected = True
-            logger.info("Redis connected", extra={"url": self._config.host})
+            logger.info("Redis connected", url=self._config.host)
             return True
 
         except ImportError:
             logger.warning("redis package not installed")
             return False
         except Exception as e:
-            logger.warning(f"Redis connection failed: {e}")
+            logger.warning(
+                "Redis connection failed",
+                host=self._config.host,
+                operation="REDIS_CONNECT",
+                exc_info=True,
+            )
             await self._circuit.record_failure(e)
             return False
 

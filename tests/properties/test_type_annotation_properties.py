@@ -43,17 +43,21 @@ def get_public_functions_from_module(module_path: Path) -> list[dict[str, Any]]:
                 # Skip 'self' and 'cls'
                 if arg.arg in ("self", "cls"):
                     continue
-                params.append({
-                    "name": arg.arg,
-                    "has_annotation": arg.annotation is not None,
-                })
+                params.append(
+                    {
+                        "name": arg.arg,
+                        "has_annotation": arg.annotation is not None,
+                    }
+                )
 
-            functions.append({
-                "name": node.name,
-                "has_return_type": has_return_type,
-                "params": params,
-                "file": str(module_path),
-            })
+            functions.append(
+                {
+                    "name": node.name,
+                    "has_return_type": has_return_type,
+                    "params": params,
+                    "file": str(module_path),
+                }
+            )
 
     return functions
 
@@ -120,16 +124,12 @@ class TestTypeAnnotationCompleteness:
             for func in functions:
                 is_complete, missing = check_type_completeness(func)
                 if not is_complete:
-                    violations.append(
-                        f"{file_path}:{func['name']} - missing: {', '.join(missing)}"
-                    )
+                    violations.append(f"{file_path}:{func['name']} - missing: {', '.join(missing)}")
 
         # Allow some tolerance for edge cases
         # Most functions should be annotated
         total_functions = sum(
-            len(get_public_functions_from_module(f))
-            for f in source_files
-            if "__pycache__" not in str(f)
+            len(get_public_functions_from_module(f)) for f in source_files if "__pycache__" not in str(f)
         )
 
         if total_functions > 0:
@@ -137,8 +137,7 @@ class TestTypeAnnotationCompleteness:
             # Assert at least 90% compliance
             assert violation_rate < 0.10, (
                 f"Type annotation compliance is {(1 - violation_rate) * 100:.1f}% "
-                f"(expected >= 90%). Violations:\n"
-                + "\n".join(violations[:20])  # Show first 20
+                f"(expected >= 90%). Violations:\n" + "\n".join(violations[:20])  # Show first 20
             )
 
     @settings(max_examples=50)
@@ -157,10 +156,7 @@ class TestTypeAnnotationCompleteness:
         func_info = {
             "name": "test_func",
             "has_return_type": has_return,
-            "params": [
-                {"name": f"param{i}", "has_annotation": ann}
-                for i, ann in enumerate(param_annotations)
-            ],
+            "params": [{"name": f"param{i}", "has_annotation": ann} for i, ann in enumerate(param_annotations)],
             "file": "test.py",
         }
 
@@ -171,9 +167,7 @@ class TestTypeAnnotationCompleteness:
         assert is_complete == expected_complete
 
         # Verify missing count
-        expected_missing_count = (0 if has_return else 1) + sum(
-            1 for ann in param_annotations if not ann
-        )
+        expected_missing_count = (0 if has_return else 1) + sum(1 for ann in param_annotations if not ann)
         assert len(missing) == expected_missing_count
 
     def test_source_files_exist(self) -> None:

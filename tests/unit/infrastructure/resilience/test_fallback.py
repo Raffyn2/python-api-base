@@ -38,6 +38,7 @@ class TestFallback:
     @pytest.mark.asyncio
     async def test_execute_fallback_func(self) -> None:
         """Test execute calls fallback function on failure."""
+
         async def fallback_func() -> str:
             return "from_func"
 
@@ -53,12 +54,11 @@ class TestFallback:
     @pytest.mark.asyncio
     async def test_execute_fallback_func_priority(self) -> None:
         """Test fallback function takes priority over value."""
+
         async def fallback_func() -> str:
             return "from_func"
 
-        fallback = Fallback[str, str](
-            fallback_value="from_value", fallback_func=fallback_func
-        )
+        fallback = Fallback[str, str](fallback_value="from_value", fallback_func=fallback_func)
 
         async def operation() -> str:
             raise ValueError("error")

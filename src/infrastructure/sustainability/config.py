@@ -1,5 +1,4 @@
-"""
-Configuration module for sustainability services.
+"""Configuration module for sustainability services.
 
 Provides settings for carbon intensity, electricity pricing,
 and external API configurations.
@@ -23,7 +22,7 @@ class SustainabilitySettings(BaseSettings):
 
     # Carbon intensity defaults
     default_carbon_intensity_gco2_per_kwh: Decimal = Field(
-        default=Decimal("400"),
+        default=Decimal(400),
         description="Default carbon intensity when regional data unavailable",
     )
     default_region: str = Field(

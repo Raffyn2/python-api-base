@@ -1,5 +1,4 @@
-"""
-Serializer module for sustainability metrics.
+"""Serializer module for sustainability metrics.
 
 Provides JSON serialization/deserialization and export functions
 for carbon metrics and sustainability data.
@@ -12,7 +11,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from src.infrastructure.sustainability.models import (
+from infrastructure.sustainability.models import (
     CarbonIntensity,
     CarbonMetric,
     SustainabilityReport,
@@ -21,8 +20,6 @@ from src.infrastructure.sustainability.models import (
 
 class ValidationError(Exception):
     """Raised when JSON validation fails."""
-
-    pass
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -59,8 +56,7 @@ def deserialize_carbon_intensity(data: dict[str, Any]) -> CarbonIntensity:
 
 
 def serialize_carbon_metric(metric: CarbonMetric) -> dict[str, Any]:
-    """
-    Serialize CarbonMetric to dictionary.
+    """Serialize CarbonMetric to dictionary.
 
     Property 1: Carbon Metrics Round-Trip Serialization
     Serializing and deserializing produces equivalent object.
@@ -79,8 +75,7 @@ def serialize_carbon_metric(metric: CarbonMetric) -> dict[str, Any]:
 
 
 def deserialize_carbon_metric(data: dict[str, Any]) -> CarbonMetric:
-    """
-    Deserialize dictionary to CarbonMetric.
+    """Deserialize dictionary to CarbonMetric.
 
     Property 1: Carbon Metrics Round-Trip Serialization
     Serializing and deserializing produces equivalent object.
@@ -119,8 +114,7 @@ def serialize_carbon_metric_to_json(metric: CarbonMetric) -> str:
 
 
 def deserialize_carbon_metric_from_json(json_str: str) -> CarbonMetric:
-    """
-    Deserialize JSON string to CarbonMetric.
+    """Deserialize JSON string to CarbonMetric.
 
     Property 15: Malformed JSON Rejection
     Malformed JSON raises ValidationError with descriptive message.
@@ -128,7 +122,7 @@ def deserialize_carbon_metric_from_json(json_str: str) -> CarbonMetric:
     try:
         data = json.loads(json_str)
     except json.JSONDecodeError as e:
-        raise ValidationError(f"Invalid JSON: {e}")
+        raise ValidationError(f"Invalid JSON: {e}") from e
 
     if not isinstance(data, dict):
         raise ValidationError("JSON must be an object")
@@ -147,26 +141,17 @@ def serialize_report(report: SustainabilityReport) -> dict[str, Any]:
         "total_cost": str(report.total_cost),
         "currency": report.currency,
         "baseline_emissions_gco2": (
-            str(report.baseline_emissions_gco2)
-            if report.baseline_emissions_gco2 is not None
-            else None
+            str(report.baseline_emissions_gco2) if report.baseline_emissions_gco2 is not None else None
         ),
         "target_emissions_gco2": (
-            str(report.target_emissions_gco2)
-            if report.target_emissions_gco2 is not None
-            else None
+            str(report.target_emissions_gco2) if report.target_emissions_gco2 is not None else None
         ),
-        "progress_percentage": (
-            str(report.progress_percentage)
-            if report.progress_percentage is not None
-            else None
-        ),
+        "progress_percentage": (str(report.progress_percentage) if report.progress_percentage is not None else None),
     }
 
 
 def export_to_csv(data: list[CarbonMetric]) -> str:
-    """
-    Export carbon metrics to CSV format.
+    """Export carbon metrics to CSV format.
 
     Property 14: Export Format Validity
     CSV export produces valid CSV with headers.
@@ -189,25 +174,26 @@ def export_to_csv(data: list[CarbonMetric]) -> str:
     writer.writerow(headers)
 
     for metric in data:
-        writer.writerow([
-            metric.namespace,
-            metric.pod,
-            metric.container,
-            str(metric.energy_kwh),
-            str(metric.emissions_gco2),
-            metric.timestamp.isoformat(),
-            str(metric.confidence_lower),
-            str(metric.confidence_upper),
-            metric.carbon_intensity.region,
-            str(metric.carbon_intensity.intensity_gco2_per_kwh),
-        ])
+        writer.writerow(
+            [
+                metric.namespace,
+                metric.pod,
+                metric.container,
+                str(metric.energy_kwh),
+                str(metric.emissions_gco2),
+                metric.timestamp.isoformat(),
+                str(metric.confidence_lower),
+                str(metric.confidence_upper),
+                metric.carbon_intensity.region,
+                str(metric.carbon_intensity.intensity_gco2_per_kwh),
+            ]
+        )
 
     return output.getvalue()
 
 
 def export_to_json(data: list[CarbonMetric]) -> str:
-    """
-    Export carbon metrics to JSON format.
+    """Export carbon metrics to JSON format.
 
     Property 14: Export Format Validity
     JSON export produces valid JSON array.

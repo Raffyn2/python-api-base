@@ -18,7 +18,6 @@ from domain.examples.pedido.entity import (
 )
 from domain.examples.pedido.events import (
     PedidoCancelled,
-    PedidoCompleted,
     PedidoCreated,
     PedidoItemAdded,
 )
@@ -34,7 +33,7 @@ class TestPedidoItemExample:
             item_id="item-456",
             item_name="Widget",
             quantity=2,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
 
         assert item.pedido_id == "order-123"
@@ -49,7 +48,7 @@ class TestPedidoItemExample:
                 item_id="item-456",
                 item_name="Widget",
                 quantity=0,
-                unit_price=Money(Decimal("50")),
+                unit_price=Money(Decimal(50)),
             )
 
     def test_negative_quantity_raises(self) -> None:
@@ -60,7 +59,7 @@ class TestPedidoItemExample:
                 item_id="item-456",
                 item_name="Widget",
                 quantity=-1,
-                unit_price=Money(Decimal("50")),
+                unit_price=Money(Decimal(50)),
             )
 
     def test_invalid_discount_raises(self) -> None:
@@ -71,8 +70,8 @@ class TestPedidoItemExample:
                 item_id="item-456",
                 item_name="Widget",
                 quantity=1,
-                unit_price=Money(Decimal("50")),
-                discount=Decimal("101"),
+                unit_price=Money(Decimal(50)),
+                discount=Decimal(101),
             )
 
 
@@ -86,10 +85,10 @@ class TestPedidoItemCalculations:
             item_id="item-456",
             item_name="Widget",
             quantity=3,
-            unit_price=Money(Decimal("25")),
+            unit_price=Money(Decimal(25)),
         )
 
-        assert item.subtotal.amount == Decimal("75")
+        assert item.subtotal.amount == Decimal(75)
 
     def test_discount_amount(self) -> None:
         """Test discount amount calculation."""
@@ -98,11 +97,11 @@ class TestPedidoItemCalculations:
             item_id="item-456",
             item_name="Widget",
             quantity=2,
-            unit_price=Money(Decimal("100")),
-            discount=Decimal("10"),
+            unit_price=Money(Decimal(100)),
+            discount=Decimal(10),
         )
 
-        assert item.discount_amount.amount == Decimal("20")
+        assert item.discount_amount.amount == Decimal(20)
 
     def test_total_with_discount(self) -> None:
         """Test total calculation with discount."""
@@ -111,11 +110,11 @@ class TestPedidoItemCalculations:
             item_id="item-456",
             item_name="Widget",
             quantity=2,
-            unit_price=Money(Decimal("100")),
-            discount=Decimal("10"),
+            unit_price=Money(Decimal(100)),
+            discount=Decimal(10),
         )
 
-        assert item.total.amount == Decimal("180")
+        assert item.total.amount == Decimal(180)
 
 
 class TestPedidoExampleCreate:
@@ -160,7 +159,7 @@ class TestPedidoExampleAddItem:
             item_id="item-456",
             item_name="Widget",
             quantity=2,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
 
         assert len(order.items) == 1
@@ -178,7 +177,7 @@ class TestPedidoExampleAddItem:
             item_id="item-456",
             item_name="Widget",
             quantity=2,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
 
         events = order.events
@@ -196,13 +195,13 @@ class TestPedidoExampleAddItem:
             item_id="item-456",
             item_name="Widget",
             quantity=2,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
         order.add_item(
             item_id="item-456",
             item_name="Widget",
             quantity=3,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
 
         assert len(order.items) == 1
@@ -218,7 +217,7 @@ class TestPedidoExampleAddItem:
             item_id="item-456",
             item_name="Widget",
             quantity=1,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
         order.confirm()
 
@@ -227,7 +226,7 @@ class TestPedidoExampleAddItem:
                 item_id="item-789",
                 item_name="Gadget",
                 quantity=1,
-                unit_price=Money(Decimal("30")),
+                unit_price=Money(Decimal(30)),
             )
 
 
@@ -244,7 +243,7 @@ class TestPedidoExampleStatusTransitions:
             item_id="item-456",
             item_name="Widget",
             quantity=1,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
 
         order.confirm()
@@ -271,7 +270,7 @@ class TestPedidoExampleStatusTransitions:
             item_id="item-456",
             item_name="Widget",
             quantity=1,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
         order.confirm()
 
@@ -289,7 +288,7 @@ class TestPedidoExampleStatusTransitions:
             item_id="item-456",
             item_name="Widget",
             quantity=1,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
         order.confirm()
         order.process()
@@ -308,7 +307,7 @@ class TestPedidoExampleStatusTransitions:
             item_id="item-456",
             item_name="Widget",
             quantity=1,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
         order.confirm()
         order.process()
@@ -342,7 +341,7 @@ class TestPedidoExampleStatusTransitions:
             item_id="item-456",
             item_name="Widget",
             quantity=1,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
         order.confirm()
         order.process()
@@ -366,16 +365,16 @@ class TestPedidoExampleCalculations:
             item_id="item-1",
             item_name="Widget",
             quantity=2,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
         order.add_item(
             item_id="item-2",
             item_name="Gadget",
             quantity=1,
-            unit_price=Money(Decimal("30")),
+            unit_price=Money(Decimal(30)),
         )
 
-        assert order.subtotal.amount == Decimal("130")
+        assert order.subtotal.amount == Decimal(130)
 
     def test_total(self) -> None:
         """Test total calculation."""
@@ -387,10 +386,10 @@ class TestPedidoExampleCalculations:
             item_id="item-1",
             item_name="Widget",
             quantity=2,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
 
-        assert order.total.amount == Decimal("100")
+        assert order.total.amount == Decimal(100)
 
     def test_items_count(self) -> None:
         """Test items count."""
@@ -402,13 +401,13 @@ class TestPedidoExampleCalculations:
             item_id="item-1",
             item_name="Widget",
             quantity=3,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
         order.add_item(
             item_id="item-2",
             item_name="Gadget",
             quantity=2,
-            unit_price=Money(Decimal("30")),
+            unit_price=Money(Decimal(30)),
         )
 
         assert order.items_count == 5
@@ -436,7 +435,7 @@ class TestPedidoExampleProperties:
             item_id="item-1",
             item_name="Widget",
             quantity=1,
-            unit_price=Money(Decimal("50")),
+            unit_price=Money(Decimal(50)),
         )
         order.confirm()
 

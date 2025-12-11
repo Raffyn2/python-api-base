@@ -6,11 +6,11 @@
 
 from __future__ import annotations
 
-import logging
 from enum import Enum
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
+import structlog
 from fastapi import HTTPException, Request
 
 from infrastructure.rbac.permission import Permission
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
     from infrastructure.rbac.role import RoleRegistry
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
@@ -163,12 +163,14 @@ class RBAC[TUser: RBACUser, TResource: Enum, TAction: Enum]:
         """
         if not self.has_permission(user, permission):
             if self._audit_logger:
-                await self._audit_logger({
-                    "user": user,
-                    "permission": str(permission),
-                    "resource_id": resource_id,
-                    "granted": False,
-                })
+                await self._audit_logger(
+                    {
+                        "user": user,
+                        "permission": str(permission),
+                        "resource_id": resource_id,
+                        "granted": False,
+                    }
+                )
             raise PermissionDeniedError(
                 user=user,
                 permission=permission,
@@ -176,12 +178,14 @@ class RBAC[TUser: RBACUser, TResource: Enum, TAction: Enum]:
             )
 
         if self._audit_logger:
-            await self._audit_logger({
-                "user": user,
-                "permission": str(permission),
-                "resource_id": resource_id,
-                "granted": True,
-            })
+            await self._audit_logger(
+                {
+                    "user": user,
+                    "permission": str(permission),
+                    "resource_id": resource_id,
+                    "granted": True,
+                }
+            )
 
 
 # =============================================================================
@@ -202,9 +206,7 @@ class PermissionDeniedError[TUser, TResource: Enum, TAction: Enum](Exception):
         self.user = user
         self.permission = permission
         self.resource_id = resource_id
-        super().__init__(
-            message or f"Permission denied: {permission} for resource {resource_id}"
-        )
+        super().__init__(message or f"Permission denied: {permission} for resource {resource_id}")
 
 
 # =============================================================================
@@ -242,9 +244,7 @@ def _check_user_permission[TResource: Enum, TAction: Enum](
 
     if rbac is not None:
         if not rbac.has_permission(user, permission):
-            raise HTTPException(
-                status_code=403, detail=f"Permission denied: {permission}"
-            )
+            raise HTTPException(status_code=403, detail=f"Permission denied: {permission}")
         return
 
     # Fallback: check user roles directly

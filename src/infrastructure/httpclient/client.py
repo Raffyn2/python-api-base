@@ -11,10 +11,10 @@ Main client interface that composes error handling and resilience patterns.
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import TYPE_CHECKING, Any
 
 import httpx
+import structlog
 from pydantic import BaseModel, ValidationError as PydanticValidationError
 
 from infrastructure.httpclient.errors import (
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     )
     from infrastructure.httpclient.types import JsonObject
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class HttpClient[TRequest: BaseModel, TResponse: BaseModel]:
@@ -191,8 +191,11 @@ class HttpClient[TRequest: BaseModel, TResponse: BaseModel]:
                     if attempt < policy.max_retries:
                         delay = policy.get_delay(attempt)
                         logger.warning(
-                            f"Request failed with {e.response.status_code}, "
-                            f"retrying in {delay.total_seconds()}s (attempt {attempt + 1})"
+                            "Request failed, retrying",
+                            operation="HTTP_RETRY",
+                            status_code=e.response.status_code,
+                            delay_seconds=delay.total_seconds(),
+                            attempt=attempt + 1,
                         )
                         await asyncio.sleep(delay.total_seconds())
                         continue

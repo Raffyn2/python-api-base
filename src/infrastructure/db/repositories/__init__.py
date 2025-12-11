@@ -16,8 +16,8 @@ from infrastructure.db.repositories.user_repository import (
 )
 
 __all__ = [
-    # Generic repository
-    "SQLModelRepository",
     # Concrete implementations
     "SQLAlchemyUserRepository",
+    # Generic repository
+    "SQLModelRepository",
 ]

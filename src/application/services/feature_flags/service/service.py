@@ -6,10 +6,10 @@ Refactored with Strategy pattern for extensible flag evaluation.
 **Validates: Strategy pattern refactoring**
 """
 
-import logging
 from datetime import UTC, datetime
 from typing import Any
 
+import structlog
 from pydantic import BaseModel
 
 from application.services.feature_flags.config import FlagConfig
@@ -21,7 +21,7 @@ from application.services.feature_flags.strategies import (
     create_default_strategy_chain,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class FlagEvaluation(BaseModel):
@@ -67,9 +67,7 @@ class FeatureFlagService:
         """
         self._flags: dict[str, FlagConfig] = {}
         self._seed = seed or 0
-        self._strategy_chain = strategy_chain or create_default_strategy_chain(
-            self._seed
-        )
+        self._strategy_chain = strategy_chain or create_default_strategy_chain(self._seed)
 
     def register_flag(self, config: FlagConfig) -> None:
         """Register a feature flag.
@@ -131,10 +129,8 @@ class FeatureFlagService:
 
         logger.warning(
             "custom_rule_strategy_not_found",
-            extra={
-                "flag_key": flag_key,
-                "operation": "SET_CUSTOM_RULE_WARNING",
-            },
+            flag_key=flag_key,
+            operation="SET_CUSTOM_RULE_WARNING",
         )
 
     def is_enabled(
@@ -183,14 +179,10 @@ class FeatureFlagService:
         if not flag:
             logger.debug(
                 "flag_not_found",
-                extra={
-                    "flag_key": key,
-                    "operation": "FLAG_EVALUATION",
-                },
+                flag_key=key,
+                operation="FLAG_EVALUATION",
             )
-            return FlagEvaluation(
-                flag_key=key, value=False, reason="Flag not found", is_default=True
-            )
+            return FlagEvaluation(flag_key=key, value=False, reason="Flag not found", is_default=True)
 
         # Delegate evaluation to strategy chain
         value, reason = self._strategy_chain.evaluate(flag, context)

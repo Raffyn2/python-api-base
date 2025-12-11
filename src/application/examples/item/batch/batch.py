@@ -18,7 +18,7 @@ from application.examples.item.mappers import ItemExampleMapper
 from domain.examples.item.entity import ItemExample, Money
 
 
-@dataclass
+@dataclass(slots=True)
 class BatchCreateRequest:
     """Request for batch item creation."""
 
@@ -32,7 +32,7 @@ class BatchCreateRequest:
     tags: list[str] = field(default_factory=list)
 
 
-@dataclass
+@dataclass(slots=True)
 class BatchUpdateRequest:
     """Request for batch item update."""
 
@@ -167,7 +167,7 @@ class ItemExampleBatchService:
             try:
                 entity = await self._repo.get(update_data.item_id)
                 if not entity:
-                    failed.append((i, f"Item {update_data.item_id} not found"))
+                    failed.append((i, "Resource not found"))
                     continue
 
                 _apply_batch_update_fields(entity, update_data, updated_by)
@@ -215,7 +215,7 @@ class ItemExampleBatchService:
             try:
                 entity = await self._repo.get(item_id)
                 if not entity:
-                    failed.append((i, f"Item {item_id} not found"))
+                    failed.append((i, "Resource not found"))
                     continue
 
                 if hard_delete:

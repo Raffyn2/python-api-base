@@ -2,6 +2,7 @@
 
 **Feature: python-api-base-2025-state-of-art**
 **Validates: Requirements 2.1**
+**Refactored: 2025 - Added EventHandlerError, improved consistency**
 """
 
 
@@ -31,3 +32,26 @@ class MiddlewareError(CQRSError):
     def __init__(self, message: str) -> None:
         self.message = message
         super().__init__(message)
+
+
+class EventHandlerError(CQRSError):
+    """Raised when one or more event handlers fail.
+
+    Aggregates multiple handler failures into a single exception.
+    """
+
+    def __init__(
+        self,
+        event_type: str,
+        handler_errors: list[tuple[str, Exception]],
+    ) -> None:
+        """Initialize event handler error.
+
+        Args:
+            event_type: Name of the event type.
+            handler_errors: List of (handler_name, exception) tuples.
+        """
+        self.event_type = event_type
+        self.handler_errors = handler_errors
+        error_count = len(handler_errors)
+        super().__init__(f"{error_count} handler(s) failed for event {event_type}")

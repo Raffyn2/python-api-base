@@ -17,7 +17,7 @@ from infrastructure.rbac.permission import Permission
 # =============================================================================
 
 
-@dataclass
+@dataclass(slots=True)
 class Role[TPermission]:
     """Generic role containing typed permissions.
 

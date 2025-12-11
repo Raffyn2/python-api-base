@@ -24,22 +24,16 @@ class AutoscalingMetric(str, Enum):
 class KnativeManifestError(Exception):
     """Base error for Knative manifest issues."""
 
-    pass
-
 
 class InvalidTrafficConfigError(KnativeManifestError):
     """Traffic percentages don't sum to 100."""
-
-    pass
 
 
 class InvalidAutoscalingConfigError(KnativeManifestError):
     """Invalid autoscaling configuration."""
 
-    pass
 
-
-@dataclass
+@dataclass(slots=True)
 class TrafficTarget:
     """Traffic target for a Knative revision."""
 
@@ -51,9 +45,7 @@ class TrafficTarget:
     def __post_init__(self) -> None:
         """Validate traffic target."""
         if self.percent < 0 or self.percent > 100:
-            raise InvalidTrafficConfigError(
-                f"Traffic percent must be between 0 and 100, got {self.percent}"
-            )
+            raise InvalidTrafficConfigError(f"Traffic percent must be between 0 and 100, got {self.percent}")
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to Knative traffic spec format."""
@@ -70,7 +62,7 @@ class TrafficTarget:
         return result
 
 
-@dataclass
+@dataclass(slots=True)
 class TrafficConfig:
     """Traffic splitting configuration for Knative Service."""
 
@@ -91,9 +83,7 @@ class TrafficConfig:
         """
         total = sum(t.percent for t in self.targets)
         if total != 100:
-            raise InvalidTrafficConfigError(
-                f"Traffic percentages must sum to 100, got {total}"
-            )
+            raise InvalidTrafficConfigError(f"Traffic percentages must sum to 100, got {total}")
         return True
 
     def to_list(self) -> list[dict[str, Any]]:
@@ -101,7 +91,7 @@ class TrafficConfig:
         return [t.to_dict() for t in self.targets]
 
 
-@dataclass
+@dataclass(slots=True)
 class KnativeServiceConfig:
     """Configuration for Knative Service generation."""
 

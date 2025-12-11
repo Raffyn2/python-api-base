@@ -55,16 +55,12 @@ class TestFileHasherProperties:
         """Different content SHALL produce different hashes."""
         hasher = FileHasher()
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False, encoding="utf-8"
-        ) as f1:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f1:
             f1.write(content)
             f1.flush()
             path1 = Path(f1.name)
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False, encoding="utf-8"
-        ) as f2:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f2:
             f2.write(content + "_modified")
             f2.flush()
             path2 = Path(f2.name)

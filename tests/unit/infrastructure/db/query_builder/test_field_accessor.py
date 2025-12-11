@@ -1,7 +1,5 @@
 """Tests for query builder field accessor module."""
 
-import pytest
-
 from infrastructure.db.query_builder.conditions import (
     ComparisonOperator,
     SortDirection,

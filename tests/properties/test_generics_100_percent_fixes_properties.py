@@ -44,9 +44,7 @@ from infrastructure.i18n.generics import (
 locale_strategy = st.sampled_from([EN_US, PT_BR, ES_ES, FR_FR])
 
 safe_text_strategy = st.text(
-    alphabet=st.characters(
-        whitelist_categories=("L", "N", "P", "S"), blacklist_characters="{}"
-    ),
+    alphabet=st.characters(whitelist_categories=("L", "N", "P", "S"), blacklist_characters="{}"),
     min_size=1,
     max_size=100,
 )

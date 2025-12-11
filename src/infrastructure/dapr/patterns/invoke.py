@@ -5,7 +5,6 @@ This module handles service-to-service invocation with resiliency.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
 
 from core.shared.logging import get_logger
 from infrastructure.dapr.client import DaprClientWrapper
@@ -24,7 +23,7 @@ class HttpMethod(Enum):
     PATCH = "PATCH"
 
 
-@dataclass
+@dataclass(slots=True)
 class InvocationResponse:
     """Response from service invocation."""
 
@@ -105,12 +104,11 @@ class ServiceInvoker:
                 headers=dict(response.headers),
                 content_type=response.headers.get("content-type", "application/json"),
             )
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "service_invocation_failed",
                 app_id=app_id,
                 method=method_name,
-                error=str(e),
             )
             raise
 
@@ -141,9 +139,13 @@ class ServiceInvoker:
             )
             return response.data
         except Exception as e:
+            logger.exception(
+                "gRPC invocation failed",
+                app_id=app_id,
+                method=method_name,
+            )
             raise DaprConnectionError(
                 message=f"gRPC invocation failed: {app_id}/{method_name}",
-                details={"error": str(e)},
             ) from e
 
     def _get_trace_headers(self) -> dict[str, str]:
@@ -218,6 +220,4 @@ class ServiceInvoker:
                     )
                     await asyncio.sleep(retry_delay * (2**attempt))
 
-        raise last_error or DaprConnectionError(
-            message=f"Service invocation failed after {max_retries} retries"
-        )
+        raise last_error or DaprConnectionError(message=f"Service invocation failed after {max_retries} retries")

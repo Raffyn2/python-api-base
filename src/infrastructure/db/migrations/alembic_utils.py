@@ -92,8 +92,7 @@ def import_models(entities_package: str = "my_app.domain.entities") -> list[str]
         entities_pkg = importlib.import_module(entities_package)
     except ImportError as e:
         raise ImportError(
-            f"Cannot find entities package at {entities_package}. "
-            "Ensure the package exists and is properly installed."
+            f"Cannot find entities package at {entities_package}. Ensure the package exists and is properly installed."
         ) from e
 
     imported_modules: list[str] = []

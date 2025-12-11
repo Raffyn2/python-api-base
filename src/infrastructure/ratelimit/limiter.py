@@ -15,8 +15,12 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
+import structlog
+
 if TYPE_CHECKING:
     from infrastructure.ratelimit.config import RateLimit, RateLimitConfig
+
+logger = structlog.get_logger(__name__)
 
 # =============================================================================
 # Type Parameters (PEP 695)
@@ -178,7 +182,7 @@ class RateLimiter[TClient: Hashable](ABC):
 # =============================================================================
 
 
-@dataclass
+@dataclass(slots=True)
 class _WindowState:
     """Internal state for sliding window."""
 
@@ -222,9 +226,7 @@ class InMemoryRateLimiter[TClient: Hashable](RateLimiter[TClient]):
 
             # Calculate remaining
             remaining = limit.requests - state.count
-            reset_at = datetime.fromtimestamp(
-                state.window_start + window_seconds, tz=UTC
-            )
+            reset_at = datetime.fromtimestamp(state.window_start + window_seconds, tz=UTC)
 
             if remaining > 0:
                 state.count += 1
@@ -303,7 +305,14 @@ class SlidingWindowLimiter[TClient: Hashable](RateLimiter[TClient]):
         try:
             return await self._check_redis(client, limit, endpoint)
         except Exception:
-            # Fallback to in-memory on Redis errors
+            # Log and fallback to in-memory on Redis errors
+            logger.warning(
+                "Redis rate limit check failed, using fallback",
+                client=str(client),
+                endpoint=endpoint,
+                operation="RATELIMIT_REDIS_FALLBACK",
+                exc_info=True,
+            )
             return await self._fallback.check(client, limit, endpoint)
 
     async def _check_redis(

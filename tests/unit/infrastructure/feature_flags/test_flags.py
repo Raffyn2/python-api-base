@@ -298,12 +298,8 @@ class TestFlagAuditLogger:
         logger = FlagAuditLogger()
         ctx = EvaluationContext[dict](user_id="user-123")
 
-        logger.log_evaluation(
-            EvaluationResult(flag_key="f1", enabled=True, reason="OK"), ctx
-        )
-        logger.log_evaluation(
-            EvaluationResult(flag_key="f2", enabled=False, reason="OFF"), ctx
-        )
+        logger.log_evaluation(EvaluationResult(flag_key="f1", enabled=True, reason="OK"), ctx)
+        logger.log_evaluation(EvaluationResult(flag_key="f2", enabled=False, reason="OFF"), ctx)
 
         logs = logger.get_logs("f1")
 

@@ -8,7 +8,7 @@ security best practices and organizational standards.
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -30,8 +30,8 @@ class ValidationResult:
     message: str
     severity: Severity
     file_path: str
-    line_number: Optional[int] = None
-    suggestion: Optional[str] = None
+    line_number: int | None = None
+    suggestion: str | None = None
 
 
 @dataclass
@@ -41,7 +41,7 @@ class ManifestMetadata:
     api_version: str
     kind: str
     name: str
-    namespace: Optional[str] = None
+    namespace: str | None = None
     labels: dict[str, str] = field(default_factory=dict)
     annotations: dict[str, str] = field(default_factory=dict)
 
@@ -80,9 +80,7 @@ class K8sManifestValidator:
         "app.kubernetes.io/component",
     ]
 
-    def validate_security_context(
-        self, manifest: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_security_context(self, manifest: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Check seccompProfile, runAsNonRoot, capabilities."""
         results = []
         kind = manifest.get("kind", "")
@@ -103,11 +101,7 @@ class K8sManifestValidator:
         for container in containers:
             container_name = container.get("name", "unknown")
             container_security = container.get("securityContext", {})
-            results.extend(
-                self._validate_container_security_context(
-                    container_security, container_name, file_path
-                )
-            )
+            results.extend(self._validate_container_security_context(container_security, container_name, file_path))
 
         return results
 
@@ -218,9 +212,7 @@ class K8sManifestValidator:
 
         return results
 
-    def validate_network_policy(
-        self, manifest: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_network_policy(self, manifest: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Check deny-all default and explicit allow rules."""
         results = []
 
@@ -257,9 +249,7 @@ class K8sManifestValidator:
 
         return results
 
-    def validate_resources(
-        self, manifest: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_resources(self, manifest: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Check requests and limits are defined."""
         results = []
         kind = manifest.get("kind", "")
@@ -305,9 +295,7 @@ class K8sManifestValidator:
 
         return results
 
-    def validate_labels(
-        self, manifest: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_labels(self, manifest: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Check kubernetes.io label convention."""
         results = []
         metadata = manifest.get("metadata", {})
@@ -328,9 +316,7 @@ class K8sManifestValidator:
 
         return results
 
-    def validate_probes(
-        self, manifest: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_probes(self, manifest: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Check liveness and readiness probes are configured."""
         results = []
         kind = manifest.get("kind", "")
@@ -428,9 +414,7 @@ class HelmChartValidator:
 
         return results
 
-    def validate_chart(
-        self, chart: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_chart(self, chart: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Validate Chart.yaml contents."""
         results = []
 
@@ -455,9 +439,7 @@ class HelmChartValidator:
 class TerraformValidator:
     """Validates Terraform configurations."""
 
-    def validate_backend(
-        self, config: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_backend(self, config: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Check encrypted backend with state locking."""
         results = []
 
@@ -493,9 +475,7 @@ class TerraformValidator:
 
         return results
 
-    def validate_variables(
-        self, variables: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_variables(self, variables: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Check sensitive marking and validations."""
         results = []
 
@@ -520,9 +500,7 @@ class TerraformValidator:
 
         return results
 
-    def validate_provider_versions(
-        self, config: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_provider_versions(self, config: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Check provider version constraints."""
         results = []
 
@@ -616,9 +594,7 @@ class DockerComposeValidator:
 class IstioValidator:
     """Validates Istio configurations."""
 
-    def validate_peer_authentication(
-        self, manifest: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_peer_authentication(self, manifest: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Check mTLS configuration."""
         results = []
 
@@ -643,9 +619,7 @@ class IstioValidator:
 
         return results
 
-    def validate_authorization_policy(
-        self, manifest: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_authorization_policy(self, manifest: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Check authorization policy configuration."""
         results = []
 
@@ -660,9 +634,7 @@ class IstioValidator:
 
         return results
 
-    def validate_envoy_filter(
-        self, manifest: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_envoy_filter(self, manifest: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Check EnvoyFilter for rate limiting."""
         results = []
 
@@ -697,15 +669,11 @@ class IstioValidator:
 class KnativeValidator:
     """Validates Knative configurations."""
 
-    def validate_service(
-        self, manifest: dict[str, Any], file_path: str = ""
-    ) -> list[ValidationResult]:
+    def validate_service(self, manifest: dict[str, Any], file_path: str = "") -> list[ValidationResult]:
         """Validate Knative Service configuration."""
         results = []
 
-        if manifest.get("kind") != "Service" or "serving.knative.dev" not in manifest.get(
-            "apiVersion", ""
-        ):
+        if manifest.get("kind") != "Service" or "serving.knative.dev" not in manifest.get("apiVersion", ""):
             return results
 
         spec = manifest.get("spec", {})

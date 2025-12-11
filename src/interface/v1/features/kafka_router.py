@@ -8,13 +8,16 @@ Demonstrates Kafka producer usage for publishing messages.
 
 from __future__ import annotations
 
-import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+import structlog
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from fastapi import Request
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/kafka", tags=["Kafka"])
 
@@ -112,8 +115,8 @@ async def kafka_publish(
             timestamp=metadata.timestamp.isoformat() if metadata.timestamp else "",
         )
     except Exception as e:
-        logger.error("Kafka publish failed: %s", e)
-        raise HTTPException(status_code=500, detail=f"Kafka publish failed: {e}") from e
+        logger.exception("kafka_publish_failed")
+        raise HTTPException(status_code=500, detail="Failed to publish message to Kafka") from e
 
 
 @router.get(
@@ -134,7 +137,5 @@ async def kafka_status(request: Request) -> KafkaStatusResponse:
         enabled=settings.kafka_enabled,
         connected=producer is not None and producer._started,
         client_id=settings.kafka_client_id if settings.kafka_enabled else None,
-        bootstrap_servers=settings.kafka_bootstrap_servers
-        if settings.kafka_enabled
-        else None,
+        bootstrap_servers=settings.kafka_bootstrap_servers if settings.kafka_enabled else None,
     )

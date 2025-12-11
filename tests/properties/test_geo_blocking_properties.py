@@ -37,20 +37,22 @@ ip_strategy = st.from_regex(
     fullmatch=True,
 )
 
-country_code_strategy = st.sampled_from([
-    "US",
-    "BR",
-    "GB",
-    "DE",
-    "FR",
-    "CN",
-    "RU",
-    "JP",
-    "AU",
-    "CA",
-    "IN",
-    "MX",
-])
+country_code_strategy = st.sampled_from(
+    [
+        "US",
+        "BR",
+        "GB",
+        "DE",
+        "FR",
+        "CN",
+        "RU",
+        "JP",
+        "AU",
+        "CA",
+        "IN",
+        "MX",
+    ]
+)
 
 country_set_strategy = st.frozensets(country_code_strategy, min_size=1, max_size=5)
 
@@ -88,9 +90,7 @@ class TestGeoLocation:
         countries=country_set_strategy,
     )
     @settings(max_examples=50)
-    def test_is_in_country_consistency(
-        self, location: GeoLocation, countries: frozenset[str]
-    ) -> None:
+    def test_is_in_country_consistency(self, location: GeoLocation, countries: frozenset[str]) -> None:
         """Property: is_in_country matches country_code membership.
 
         *For any* location and country set, result matches membership.
@@ -213,9 +213,7 @@ class TestIPAllowlist:
         blocked_country=country_code_strategy,
     )
     @settings(max_examples=50)
-    def test_ip_allowlist_overrides_country_block(
-        self, ip: str, blocked_country: str
-    ) -> None:
+    def test_ip_allowlist_overrides_country_block(self, ip: str, blocked_country: str) -> None:
         """Property: IP allowlist takes priority over country block.
 
         *For any* IP in allowlist, it's allowed even if country is blocked.
@@ -356,9 +354,7 @@ class TestGeoBlockConfigBuilder:
         *For any* country set, builder configures them correctly.
         **Validates: Requirements 5.3**
         """
-        config = (
-            GeoBlockConfigBuilder().blocklist_mode().block_countries(*countries).build()
-        )
+        config = GeoBlockConfigBuilder().blocklist_mode().block_countries(*countries).build()
 
         assert config.mode == BlockMode.BLOCKLIST
         assert config.blocked_countries == {c.upper() for c in countries}
@@ -371,9 +367,7 @@ class TestGeoBlockConfigBuilder:
         *For any* country set, builder configures them correctly.
         **Validates: Requirements 5.3**
         """
-        config = (
-            GeoBlockConfigBuilder().allowlist_mode().allow_countries(*countries).build()
-        )
+        config = GeoBlockConfigBuilder().allowlist_mode().allow_countries(*countries).build()
 
         assert config.mode == BlockMode.ALLOWLIST
         assert config.allowed_countries == {c.upper() for c in countries}

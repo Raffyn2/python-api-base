@@ -84,7 +84,7 @@ class TestFuzzingDirectoryCreation:
             corpus_dir = Path(tmpdir) / "new_corpus"
             assert not corpus_dir.exists()
 
-            manager = CorpusManager(corpus_dir)
+            CorpusManager(corpus_dir)
 
             assert corpus_dir.exists()
 
@@ -94,7 +94,7 @@ class TestFuzzingDirectoryCreation:
             crashes_dir = Path(tmpdir) / "new_crashes"
             assert not crashes_dir.exists()
 
-            manager = CrashManager(crashes_dir)
+            CrashManager(crashes_dir)
 
             assert crashes_dir.exists()
 
@@ -113,9 +113,7 @@ class TestCrashSignatureUniqueness:
         msg1=st.text(min_size=1, max_size=100),
         msg2=st.text(min_size=1, max_size=100),
     )
-    def test_different_crashes_different_signatures(
-        self, data1: bytes, data2: bytes, msg1: str, msg2: str
-    ) -> None:
+    def test_different_crashes_different_signatures(self, data1: bytes, data2: bytes, msg1: str, msg2: str) -> None:
         """Different crashes should have different signatures."""
         if data1 == data2 and msg1 == msg2:
             return  # Skip if inputs are identical
@@ -123,12 +121,12 @@ class TestCrashSignatureUniqueness:
         input1 = FuzzInput(data=data1)
         input2 = FuzzInput(data=data2)
 
-        crash1 = CrashInfo(
+        CrashInfo(
             input_data=input1,
             crash_type=CrashType.EXCEPTION,
             message=msg1,
         )
-        crash2 = CrashInfo(
+        CrashInfo(
             input_data=input2,
             crash_type=CrashType.EXCEPTION,
             message=msg2,

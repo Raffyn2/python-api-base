@@ -237,9 +237,7 @@ class TestContainerMetrics:
         assert stats.scoped_registrations == 1
 
         # Resolutions
-        assert (
-            stats.total_resolutions == 7
-        )  # 2 + 3 + 1 + 1 (Database from UserRepository)
+        assert stats.total_resolutions == 7  # 2 + 3 + 1 + 1 (Database from UserRepository)
         assert stats.singleton_instances_created == 1
 
         # Per-type resolutions

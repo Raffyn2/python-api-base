@@ -211,7 +211,7 @@ class TestAuth0Config:
 class TestKeycloakProvider:
     """Tests for KeycloakProvider."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def config(self) -> KeycloakConfig:
         """Create test config."""
         return KeycloakConfig(
@@ -221,10 +221,8 @@ class TestKeycloakProvider:
             client_secret="secret",
         )
 
-    @pytest.fixture
-    def provider(
-        self, config: KeycloakConfig
-    ) -> KeycloakProvider[TestUser, TestClaims]:
+    @pytest.fixture()
+    def provider(self, config: KeycloakConfig) -> KeycloakProvider[TestUser, TestClaims]:
         """Create test provider."""
         return KeycloakProvider[TestUser, TestClaims](
             config=config,
@@ -274,7 +272,7 @@ class TestKeycloakProvider:
 class TestAuth0Provider:
     """Tests for Auth0Provider."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def config(self) -> Auth0Config:
         """Create test config."""
         return Auth0Config(
@@ -284,7 +282,7 @@ class TestAuth0Provider:
             audience="https://api.example.com",
         )
 
-    @pytest.fixture
+    @pytest.fixture()
     def provider(self, config: Auth0Config) -> Auth0Provider[TestUser, TestClaims]:
         """Create test provider."""
         return Auth0Provider[TestUser, TestClaims](

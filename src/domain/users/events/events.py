@@ -2,19 +2,14 @@
 
 **Feature: architecture-restructuring-2025**
 **Validates: Requirements 2.6**
+
+Note: Email addresses in events are intentionally included for audit purposes.
+Ensure event stores and logs have appropriate PII handling policies.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
 
 from core.base.events.domain_event import DomainEvent
-
-try:
-    from core.shared.utils.time import utc_now
-except ImportError:
-
-    def utc_now() -> datetime:
-        return datetime.now(UTC)
 
 
 @dataclass(frozen=True, slots=True)

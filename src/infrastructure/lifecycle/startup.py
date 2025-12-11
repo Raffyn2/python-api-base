@@ -10,14 +10,14 @@ from typing import TYPE_CHECKING, Any
 
 from core.config import get_settings
 from core.shared.logging import get_logger
-from infrastructure.db.repositories.examples import (
-    ItemExampleRepository,
-    PedidoExampleRepository,
-)
-from infrastructure.db.session import (
+from infrastructure.db.core.session import (
     close_database,
     get_database_session,
     init_database,
+)
+from infrastructure.db.repositories.examples import (
+    ItemExampleRepository,
+    PedidoExampleRepository,
 )
 from infrastructure.di import lifecycle
 from infrastructure.di.app_container import create_container
@@ -82,11 +82,7 @@ async def initialize_jwks() -> None:
 
     try:
         jwt_settings = getattr(settings, "jwt", None)
-        if (
-            jwt_settings
-            and hasattr(jwt_settings, "private_key")
-            and jwt_settings.private_key
-        ):
+        if jwt_settings and hasattr(jwt_settings, "private_key") and jwt_settings.private_key:
             initialize_jwks_service(
                 private_key_pem=jwt_settings.private_key,
                 algorithm=getattr(jwt_settings, "algorithm", "RS256"),
@@ -94,8 +90,11 @@ async def initialize_jwks() -> None:
             logger.info("JWKS service initialized with configured key")
         else:
             _initialize_ephemeral_jwks()
-    except Exception as e:
-        logger.error(f"JWKS initialization failed: {e}")
+    except Exception:
+        logger.exception(
+            "JWKS initialization failed",
+            operation="JWKS_INIT",
+        )
 
 
 def _initialize_ephemeral_jwks() -> None:
@@ -114,7 +113,7 @@ def _initialize_ephemeral_jwks() -> None:
     ).decode()
     initialize_jwks_service(private_key_pem=private_pem, algorithm="RS256")
     logger.warning(
-        "JWKS using ephemeral key - configure JWT_PRIVATE_KEY for production"
+        "JWKS using ephemeral key - configure JWT_PRIVATE_KEY for production",
     )
 
 
@@ -191,16 +190,17 @@ async def initialize_kafka(app: FastAPI) -> None:
         security_protocol=obs.kafka_security_protocol,
         sasl_mechanism=obs.kafka_sasl_mechanism,
         sasl_username=obs.kafka_sasl_username,
-        sasl_password=obs.kafka_sasl_password.get_secret_value()
-        if obs.kafka_sasl_password
-        else None,
+        sasl_password=obs.kafka_sasl_password.get_secret_value() if obs.kafka_sasl_password else None,
     )
     app.state.kafka_producer = KafkaProducer(kafka_config, topic="default-events")
     try:
         await app.state.kafka_producer.start()
         logger.info("Kafka producer started")
-    except Exception as e:
-        logger.error(f"Kafka connection failed: {e}")
+    except Exception:
+        logger.exception(
+            "Kafka connection failed",
+            operation="KAFKA_CONNECT",
+        )
         app.state.kafka_producer = None
 
 
@@ -221,9 +221,7 @@ async def initialize_scylladb(app: FastAPI) -> None:
         port=obs.scylladb_port,
         keyspace=obs.scylladb_keyspace,
         username=obs.scylladb_username,
-        password=obs.scylladb_password.get_secret_value()
-        if obs.scylladb_password
-        else None,
+        password=obs.scylladb_password.get_secret_value() if obs.scylladb_password else None,
         protocol_version=obs.scylladb_protocol_version,
         connect_timeout=obs.scylladb_connect_timeout,
         request_timeout=obs.scylladb_request_timeout,
@@ -232,8 +230,11 @@ async def initialize_scylladb(app: FastAPI) -> None:
     try:
         await app.state.scylladb.connect()
         logger.info("ScyllaDB client connected")
-    except Exception as e:
-        logger.error(f"ScyllaDB connection failed: {e}")
+    except Exception:
+        logger.exception(
+            "ScyllaDB connection failed",
+            operation="SCYLLA_CONNECT",
+        )
         app.state.scylladb = None
 
 
@@ -253,9 +254,7 @@ async def initialize_rabbitmq(app: FastAPI) -> None:
         host=obs.rabbitmq_host,
         port=obs.rabbitmq_port,
         username=obs.rabbitmq_username,
-        password=obs.rabbitmq_password.get_secret_value()
-        if obs.rabbitmq_password
-        else None,
+        password=obs.rabbitmq_password.get_secret_value() if obs.rabbitmq_password else None,
         virtual_host=obs.rabbitmq_virtual_host,
     )
     app.state.rabbitmq = rabbitmq_config

@@ -114,10 +114,7 @@ class InMemoryCacheProvider[T]:
         expires_at = now + timedelta(seconds=effective_ttl) if effective_ttl else None
 
         async with self._lock:
-            if (
-                full_key not in self._cache
-                and len(self._cache) >= self._config.max_size
-            ):
+            if full_key not in self._cache and len(self._cache) >= self._config.max_size:
                 self._cache.popitem(last=False)
                 self._evictions += 1
 
@@ -155,9 +152,7 @@ class InMemoryCacheProvider[T]:
         """Clear all keys matching pattern."""
         full_pattern = self._make_key(pattern)
         async with self._lock:
-            keys_to_delete = [
-                k for k in self._cache if fnmatch.fnmatch(k, full_pattern)
-            ]
+            keys_to_delete = [k for k in self._cache if fnmatch.fnmatch(k, full_pattern)]
             for key in keys_to_delete:
                 del self._cache[key]
             return len(keys_to_delete)

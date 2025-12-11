@@ -78,9 +78,7 @@ class TestCursorPagination:
         assert decoded["id"] == "123"
 
     def test_encode_cursor_multiple_fields(self) -> None:
-        pagination = CursorPagination[SampleEntity, dict](
-            cursor_fields=["id", "name"]
-        )
+        pagination = CursorPagination[SampleEntity, dict](cursor_fields=["id", "name"])
         entity = SampleEntity(id="123", name="Test", created_at=datetime.now(UTC))
         cursor = pagination.encode_cursor(entity)
         decoded = json.loads(base64.urlsafe_b64decode(cursor))
@@ -93,9 +91,7 @@ class TestCursorPagination:
             id: str
             optional: str | None = None
 
-        pagination = CursorPagination[EntityWithOptional, dict](
-            cursor_fields=["id", "optional"]
-        )
+        pagination = CursorPagination[EntityWithOptional, dict](cursor_fields=["id", "optional"])
         entity = EntityWithOptional(id="123", optional=None)
         cursor = pagination.encode_cursor(entity)
         decoded = json.loads(base64.urlsafe_b64decode(cursor))
@@ -124,9 +120,7 @@ class TestCursorPagination:
         assert result == {}
 
     def test_encode_decode_roundtrip(self) -> None:
-        pagination = CursorPagination[SampleEntity, dict](
-            cursor_fields=["id", "name"]
-        )
+        pagination = CursorPagination[SampleEntity, dict](cursor_fields=["id", "name"])
         entity = SampleEntity(id="abc-123", name="Test Entity", created_at=datetime.now(UTC))
         cursor = pagination.encode_cursor(entity)
         decoded = pagination.decode_cursor(cursor)

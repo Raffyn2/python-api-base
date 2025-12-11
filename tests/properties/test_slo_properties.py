@@ -37,9 +37,7 @@ class TestSLOTargetProperties:
         target_value=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
     )
     @settings(max_examples=100)
-    def test_warning_threshold_defaults_to_95_percent(
-        self, target_value: float
-    ) -> None:
+    def test_warning_threshold_defaults_to_95_percent(self, target_value: float) -> None:
         """Property: Warning threshold defaults to 95% of target."""
         target = SLOTarget(
             name="test",
@@ -54,9 +52,7 @@ class TestSLOTargetProperties:
         warning_threshold=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
     )
     @settings(max_examples=100)
-    def test_explicit_warning_threshold_preserved(
-        self, target_value: float, warning_threshold: float
-    ) -> None:
+    def test_explicit_warning_threshold_preserved(self, target_value: float, warning_threshold: float) -> None:
         """Property: Explicit warning threshold is preserved."""
         target = SLOTarget(
             name="test",
@@ -76,9 +72,7 @@ class TestSLOResultProperties:
     @settings(max_examples=100)
     def test_healthy_status_is_healthy(self, current_value: float) -> None:
         """Property: HEALTHY status means is_healthy is True."""
-        target = SLOTarget(
-            name="test", slo_type=SLOType.AVAILABILITY, target_value=0.99
-        )
+        target = SLOTarget(name="test", slo_type=SLOType.AVAILABILITY, target_value=0.99)
         result = SLOResult(
             target=target,
             current_value=current_value,
@@ -97,9 +91,7 @@ class TestSLOResultProperties:
     @settings(max_examples=100)
     def test_critical_status_is_violated(self, current_value: float) -> None:
         """Property: CRITICAL status means is_violated is True."""
-        target = SLOTarget(
-            name="test", slo_type=SLOType.AVAILABILITY, target_value=0.99
-        )
+        target = SLOTarget(name="test", slo_type=SLOType.AVAILABILITY, target_value=0.99)
         result = SLOResult(
             target=target,
             current_value=current_value,
@@ -216,10 +208,7 @@ class TestSLOMonitorProperties:
         if result.samples > 0:
             expected = sum(1 for a in availability if a) / len(availability)
             # Allow some tolerance due to timing
-            assert (
-                abs(result.current_value - expected) < 0.1
-                or result.status == SLOStatus.UNKNOWN
-            )
+            assert abs(result.current_value - expected) < 0.1 or result.status == SLOStatus.UNKNOWN
 
     @given(
         latencies=st.lists(
@@ -242,7 +231,7 @@ class TestSLOMonitorProperties:
         if result.samples > 0:
             sorted_latencies = sorted(latencies)
             expected_index = int(len(sorted_latencies) * 0.99)
-            expected = sorted_latencies[min(expected_index, len(sorted_latencies) - 1)]
+            sorted_latencies[min(expected_index, len(sorted_latencies) - 1)]
             # P99 should be close to expected
             assert result.current_value <= max(latencies) * 1.1
 
@@ -266,10 +255,7 @@ class TestSLOMonitorProperties:
 
         if result.samples > 0:
             expected = sum(1 for e in errors if e) / len(errors)
-            assert (
-                abs(result.current_value - expected) < 0.1
-                or result.status == SLOStatus.UNKNOWN
-            )
+            assert abs(result.current_value - expected) < 0.1 or result.status == SLOStatus.UNKNOWN
 
     @pytest.mark.anyio
     async def test_check_all_slos_returns_all_targets(self) -> None:

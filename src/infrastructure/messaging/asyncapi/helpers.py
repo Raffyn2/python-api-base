@@ -29,10 +29,7 @@ def create_event_schema(
         "email": {"type": "string", "format": "email"},
         "uri": {"type": "string", "format": "uri"},
     }
-    props = {
-        prop_name: type_mapping.get(prop_type, {"type": prop_type})
-        for prop_name, prop_type in properties.items()
-    }
+    props = {prop_name: type_mapping.get(prop_type, {"type": prop_type}) for prop_name, prop_type in properties.items()}
     return SchemaObject(
         schema_type="object",
         properties=props,

@@ -15,12 +15,12 @@ Demonstrates:
 **Refactored: Extracted reusable services**
 """
 
-import logging
 from typing import Any
 
+import structlog
+
 from application.common.mixins.event_publishing import EventPublishingMixin
-from application.common.services.cache import CacheService
-from application.common.services.events import KafkaEventService
+from application.common.services import CacheService, KafkaEventService
 from application.examples.item.dtos import (
     ItemExampleCreate,
     ItemExampleResponse,
@@ -35,7 +35,7 @@ from application.examples.shared.errors import (
 from core.base.patterns.result import Err, Ok, Result
 from domain.examples.item.entity import ItemExample, Money
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class ItemExampleUseCase(EventPublishingMixin):
@@ -91,16 +91,21 @@ class ItemExampleUseCase(EventPublishingMixin):
             await self._publish_item_created_event(saved, created_by)
             await self._cache_service.invalidate("list")
 
-            logger.info(f"ItemExample created: {saved.id}", extra={"item_id": saved.id})
+            logger.info(
+                "ItemExample created",
+                item_id=saved.id,
+                operation="ITEM_CREATE",
+            )
             return Ok(ItemExampleMapper.to_response(saved))
 
         except Exception as e:
-            logger.error(f"Failed to create ItemExample: {e}", exc_info=True)
+            logger.exception(
+                "Failed to create ItemExample",
+                operation="ITEM_CREATE_ERROR",
+            )
             return Err(UseCaseError(str(e)))
 
-    async def _publish_item_created_event(
-        self, item: ItemExample, created_by: str
-    ) -> None:
+    async def _publish_item_created_event(self, item: ItemExample, created_by: str) -> None:
         """Publish ItemCreated event to Kafka."""
         from infrastructure.kafka.event_publisher import ItemCreatedEvent
 
@@ -109,8 +114,7 @@ class ItemExampleUseCase(EventPublishingMixin):
             entity_type="ItemExample",
             entity_id=item.id,
             payload=ItemCreatedEvent(
-                id=item.id, name=item.name, sku=item.sku,
-                quantity=item.quantity, created_by=created_by
+                id=item.id, name=item.name, sku=item.sku, quantity=item.quantity, created_by=created_by
             ),
             topic="items-events",
         )
@@ -168,15 +172,17 @@ class ItemExampleUseCase(EventPublishingMixin):
             await self._publish_item_updated_event(saved, data, updated_by)
             await self._cache_service.invalidate(item_id)
 
-            logger.info(f"ItemExample updated: {saved.id}", extra={"item_id": saved.id})
+            logger.info(
+                "ItemExample updated",
+                item_id=saved.id,
+                operation="ITEM_UPDATE",
+            )
             return Ok(ItemExampleMapper.to_response(saved))
 
         except ValueError as e:
             return Err(ValidationError(str(e)))
 
-    async def _publish_item_updated_event(
-        self, item: ItemExample, data: ItemExampleUpdate, updated_by: str
-    ) -> None:
+    async def _publish_item_updated_event(self, item: ItemExample, data: ItemExampleUpdate, updated_by: str) -> None:
         """Publish ItemUpdated event to Kafka."""
         from infrastructure.kafka.event_publisher import ItemUpdatedEvent
 
@@ -209,7 +215,11 @@ class ItemExampleUseCase(EventPublishingMixin):
         await self._publish_item_deleted_event(item_id, deleted_by)
         await self._cache_service.invalidate(item_id)
 
-        logger.info(f"ItemExample deleted: {item_id}", extra={"item_id": item_id})
+        logger.info(
+            "ItemExample deleted",
+            item_id=item_id,
+            operation="ITEM_DELETE",
+        )
         return Ok(True)
 
     async def _publish_item_deleted_event(self, item_id: str, deleted_by: str) -> None:

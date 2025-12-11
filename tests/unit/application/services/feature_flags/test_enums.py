@@ -1,7 +1,5 @@
 """Tests for feature flags enums module."""
 
-import pytest
-
 from application.services.feature_flags.core.enums import FlagStatus, RolloutStrategy
 
 

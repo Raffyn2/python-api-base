@@ -3,14 +3,12 @@
 **Feature: test-coverage-95-percent**
 """
 
-import pytest
-
 from core.errors.shared.security_errors import (
-    SecurityModuleError,
-    EncryptionError,
-    DecryptionError,
     AuthenticationError,
+    DecryptionError,
+    EncryptionError,
     PatternValidationError,
+    SecurityModuleError,
 )
 
 

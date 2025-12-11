@@ -220,10 +220,7 @@ class TestEnsureUTC:
 
         # Both should have UTC timezone
         assert naive_result.tzinfo == UTC
-        assert (
-            explicit_result.tzinfo == UTC
-            or explicit_result.utcoffset().total_seconds() == 0
-        )
+        assert explicit_result.tzinfo == UTC or explicit_result.utcoffset().total_seconds() == 0
 
     def test_utc_now_returns_utc_aware_datetime(self) -> None:
         """

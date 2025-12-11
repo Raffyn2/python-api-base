@@ -88,7 +88,7 @@ class TestRetryQueueProperties:
         queue: RetryQueue[RetryPayload] = RetryQueue(backend, handler, config)
 
         payload = RetryPayload(id="test", data="data")
-        message = await queue.enqueue(payload)
+        await queue.enqueue(payload)
 
         # Process once
         await queue.process_one()
@@ -123,9 +123,7 @@ class TestRetryQueueProperties:
         st.floats(min_value=1.5, max_value=3.0),
     )
     @settings(max_examples=50)
-    def test_delay_calculation_exponential(
-        self, initial_delay: int, multiplier: float
-    ) -> None:
+    def test_delay_calculation_exponential(self, initial_delay: int, multiplier: float) -> None:
         """Delay increases exponentially."""
         backend: InMemoryQueueBackend[TestPayload] = InMemoryQueueBackend()
         handler = SuccessHandler()

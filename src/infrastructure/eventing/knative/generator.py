@@ -2,9 +2,12 @@
 
 from typing import Any
 
+import structlog
 import yaml
 
-from src.infrastructure.eventing.knative.models import KnativeServiceConfig
+from infrastructure.eventing.knative.models import KnativeServiceConfig
+
+logger = structlog.get_logger(__name__)
 
 
 class KnativeManifestGenerator:
@@ -44,11 +47,8 @@ class KnativeManifestGenerator:
         env = [{"name": k, "value": v} for k, v in config.env_vars.items()]
 
         # Build envFrom
-        env_from = []
-        for cm in config.config_map_refs:
-            env_from.append({"configMapRef": {"name": cm}})
-        for secret in config.secret_refs:
-            env_from.append({"secretRef": {"name": secret, "optional": True}})
+        env_from = [{"configMapRef": {"name": cm}} for cm in config.config_map_refs]
+        env_from.extend({"secretRef": {"name": secret, "optional": True}} for secret in config.secret_refs)
 
         # Build container spec
         container: dict[str, Any] = {
@@ -172,7 +172,7 @@ class KnativeManifestGenerator:
         Returns:
             KnativeServiceConfig instance
         """
-        from src.infrastructure.eventing.knative.models import (
+        from infrastructure.eventing.knative.models import (
             AutoscalingClass,
             AutoscalingMetric,
             TrafficConfig,
@@ -192,30 +192,25 @@ class KnativeManifestGenerator:
         limits = resources.get("limits", {})
 
         # Parse autoscaling class
-        autoscaling_class_str = annotations.get(
-            "autoscaling.knative.dev/class", "kpa.autoscaling.knative.dev"
-        )
+        autoscaling_class_str = annotations.get("autoscaling.knative.dev/class", "kpa.autoscaling.knative.dev")
         autoscaling_class = AutoscalingClass(autoscaling_class_str)
 
         # Parse autoscaling metric
-        autoscaling_metric_str = annotations.get(
-            "autoscaling.knative.dev/metric", "concurrency"
-        )
+        autoscaling_metric_str = annotations.get("autoscaling.knative.dev/metric", "concurrency")
         autoscaling_metric = AutoscalingMetric(autoscaling_metric_str)
 
         # Parse traffic config
         traffic = None
         if "traffic" in spec:
-            targets = []
-            for t in spec["traffic"]:
-                targets.append(
-                    TrafficTarget(
-                        revision_name=t.get("revisionName", ""),
-                        percent=t.get("percent", 0),
-                        tag=t.get("tag"),
-                        latest_revision=t.get("latestRevision", False),
-                    )
+            targets = [
+                TrafficTarget(
+                    revision_name=t.get("revisionName", ""),
+                    percent=t.get("percent", 0),
+                    tag=t.get("tag"),
+                    latest_revision=t.get("latestRevision", False),
                 )
+                for t in spec["traffic"]
+            ]
             traffic = TrafficConfig(targets=targets)
 
         # Get port from container
@@ -233,9 +228,7 @@ class KnativeManifestGenerator:
             min_scale=int(annotations.get("autoscaling.knative.dev/min-scale", "0")),
             max_scale=int(annotations.get("autoscaling.knative.dev/max-scale", "10")),
             scale_down_delay=annotations.get("autoscaling.knative.dev/scale-down-delay", "30s"),
-            scale_to_zero_retention=annotations.get(
-                "autoscaling.knative.dev/scale-to-zero-pod-retention-period", "1m"
-            ),
+            scale_to_zero_retention=annotations.get("autoscaling.knative.dev/scale-to-zero-pod-retention-period", "1m"),
             cpu_request=requests.get("cpu", "100m"),
             cpu_limit=limits.get("cpu", "1000m"),
             memory_request=requests.get("memory", "256Mi"),

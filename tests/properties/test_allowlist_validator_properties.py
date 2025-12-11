@@ -1,18 +1,18 @@
-﻿'''Property-based tests for Allowlist Validator.'''
+"""Property-based tests for Allowlist Validator."""
 
 from uuid import uuid4
-import pytest
-from hypothesis import given, settings, strategies as st, HealthCheck
+
+from hypothesis import HealthCheck, given, settings, strategies as st
+
 from core.shared.validation.allowlist_validator import (
     AllowlistValidator,
-    validate_email,
-    validate_uuid,
     validate_url,
+    validate_uuid,
 )
 
 
 class TestAllowlistValidatorEnforcement:
-    '''Property tests for allowlist validator enforcement.'''
+    """Property tests for allowlist validator enforcement."""
 
     @given(st.sets(st.text(min_size=1, max_size=10), min_size=1, max_size=5))
     @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
@@ -24,12 +24,12 @@ class TestAllowlistValidatorEnforcement:
 
     def test_empty_allowlist_rejects_all_values(self):
         validator = AllowlistValidator(set())
-        result = validator.validate('test')
+        result = validator.validate("test")
         assert result.is_err()
 
 
 class TestDomainValidators:
-    '''Property tests for domain validators.'''
+    """Property tests for domain validators."""
 
     def test_valid_uuid_format(self):
         valid_uuid = str(uuid4())
@@ -37,13 +37,13 @@ class TestDomainValidators:
         assert result.is_ok()
 
     def test_invalid_uuid_formats(self):
-        result = validate_uuid('not-a-uuid')
+        result = validate_uuid("not-a-uuid")
         assert result.is_err()
 
     def test_valid_url_formats(self):
-        result = validate_url('https://example.com')
+        result = validate_url("https://example.com")
         assert result.is_ok()
 
     def test_invalid_url_schemes(self):
-        result = validate_url('http://example.com')
+        result = validate_url("http://example.com")
         assert result.is_err()

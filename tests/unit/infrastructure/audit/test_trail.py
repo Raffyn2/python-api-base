@@ -54,8 +54,16 @@ class TestAuditAction:
     def test_all_actions_exist(self) -> None:
         """Test all expected actions exist."""
         expected = [
-            "CREATE", "READ", "UPDATE", "DELETE", "RESTORE",
-            "LOGIN", "LOGOUT", "ACCESS_DENIED", "EXPORT", "IMPORT"
+            "CREATE",
+            "READ",
+            "UPDATE",
+            "DELETE",
+            "RESTORE",
+            "LOGIN",
+            "LOGOUT",
+            "ACCESS_DENIED",
+            "EXPORT",
+            "IMPORT",
         ]
         actual = [a.value for a in AuditAction]
         assert set(expected) == set(actual)

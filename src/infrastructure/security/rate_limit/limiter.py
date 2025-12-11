@@ -5,8 +5,8 @@
 """
 
 import ipaddress
-import logging
 
+import structlog
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -17,11 +17,12 @@ from application.common.dto import ProblemDetail
 from core.config import get_settings
 from infrastructure.security.rate_limit.sliding_window import (
     RateLimitResult,
+    SlidingWindowConfig,
     SlidingWindowRateLimiter,
     parse_rate_limit,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Global sliding window limiter instance
 _sliding_limiter: SlidingWindowRateLimiter | None = None
@@ -51,7 +52,8 @@ def _is_valid_ip(ip: str) -> bool:
     if len(ip) > MAX_IP_LENGTH:
         logger.warning(
             "IP address exceeds maximum length",
-            extra={"ip_length": len(ip), "max_length": MAX_IP_LENGTH},
+            ip_length=len(ip),
+            max_length=MAX_IP_LENGTH,
         )
         return False
 
@@ -59,7 +61,7 @@ def _is_valid_ip(ip: str) -> bool:
         ipaddress.ip_address(ip.strip())
         return True
     except ValueError:
-        logger.debug("Invalid IP address format", extra={"ip": ip[:20]})
+        logger.debug("Invalid IP address format", ip=ip[:20])
         return False
 
 
@@ -83,7 +85,7 @@ def get_client_ip(request: Request) -> str:
             return ip
         logger.warning(
             "Invalid IP in X-Forwarded-For header",
-            extra={"invalid_ip": ip[:50]},  # Truncate for safety
+            invalid_ip=ip[:50],  # Truncate for safety
         )
     return get_remote_address(request)
 
@@ -131,13 +133,23 @@ async def check_sliding_rate_limit(request: Request) -> RateLimitResult:
         RateLimitResult with allowed status and metadata.
     """
     client_ip = get_client_ip(request)
-    limiter = get_sliding_limiter()
-    return await limiter.is_allowed(client_ip)
+    sliding_limiter = get_sliding_limiter()
+    result = await sliding_limiter.is_allowed(client_ip)
+
+    if not result.allowed:
+        logger.warning(
+            "Rate limit exceeded for client",
+            operation="RATE_LIMIT_CHECK",
+            client_ip=client_ip,
+            path=str(request.url.path),
+            remaining=result.remaining,
+            retry_after=result.retry_after,
+        )
+
+    return result
 
 
-async def rate_limit_exceeded_handler(
-    request: Request, exc: RateLimitExceeded
-) -> JSONResponse:
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
     """Handle rate limit exceeded errors.
 
     **Feature: api-base-score-100, Property 5: Rate Limit 429 Response**
@@ -156,17 +168,20 @@ async def rate_limit_exceeded_handler(
     retry_after = 60  # Default to 60 seconds
 
     try:
-        client_ip = get_client_ip(request)
-        limiter = get_sliding_limiter()
-        state = await limiter.get_state(client_ip)
-        if state:
-            import time
+        import time
 
+        client_ip = get_client_ip(request)
+        sliding_limiter = get_sliding_limiter()
+        state = await sliding_limiter.get_state(client_ip)
+        if state:
             config = parse_rate_limit(get_rate_limit())
             window_end = state.window_start + config.window_size_seconds
             retry_after = max(1, int(window_end - time.time()))
-    except Exception:  # noqa: S110 - Fall back to default retry_after
-        pass
+    except Exception:
+        logger.debug(
+            "Failed to calculate retry-after from sliding window",
+            operation="RATE_LIMIT_RETRY_CALC",
+        )
 
     problem = ProblemDetail(
         type="https://api.example.com/errors/RATE_LIMIT_EXCEEDED",
@@ -178,7 +193,7 @@ async def rate_limit_exceeded_handler(
 
     return JSONResponse(
         status_code=429,
-        content=problem.model_dump(),
+        content=problem.model_dump(mode="json"),
         headers={
             "Retry-After": str(retry_after),
             "X-RateLimit-Remaining": "0",
@@ -212,7 +227,7 @@ async def sliding_rate_limit_response(
 
     return JSONResponse(
         status_code=429,
-        content=problem.model_dump(),
+        content=problem.model_dump(mode="json"),
         headers={
             "Retry-After": str(result.retry_after),
             "X-RateLimit-Remaining": str(result.remaining),
@@ -221,7 +236,7 @@ async def sliding_rate_limit_response(
 
 
 class InMemoryRateLimiter:
-    """Simple in-memory rate limiter for testing.
+    """Simple in-memory rate limiter for testing using SlidingWindowRateLimiter.
 
     **Feature: python-api-architecture-2025**
     **Validates: Requirements 14.2**
@@ -234,9 +249,12 @@ class InMemoryRateLimiter:
             limit: Maximum requests per window.
             window_seconds: Window duration in seconds.
         """
+        config = SlidingWindowConfig(
+            requests_per_window=limit,
+            window_size_seconds=window_seconds,
+        )
+        self._limiter = SlidingWindowRateLimiter(config)
         self._limit = limit
-        self._window_seconds = window_seconds
-        self._requests: dict[str, list[float]] = {}
 
     async def is_allowed(self, client_id: str) -> bool:
         """Check if request is allowed.
@@ -247,26 +265,8 @@ class InMemoryRateLimiter:
         Returns:
             True if request is allowed, False if rate limited.
         """
-        import time
-
-        now = time.time()
-        window_start = now - self._window_seconds
-
-        # Get or create request list for client
-        if client_id not in self._requests:
-            self._requests[client_id] = []
-
-        # Remove expired requests
-        self._requests[client_id] = [
-            ts for ts in self._requests[client_id] if ts > window_start
-        ]
-
-        # Check if under limit
-        if len(self._requests[client_id]) < self._limit:
-            self._requests[client_id].append(now)
-            return True
-
-        return False
+        result = await self._limiter.is_allowed(client_id)
+        return result.allowed
 
     async def get_remaining(self, client_id: str) -> int:
         """Get remaining requests for client.
@@ -277,28 +277,41 @@ class InMemoryRateLimiter:
         Returns:
             Number of remaining requests in current window.
         """
-        import time
-
-        now = time.time()
-        window_start = now - self._window_seconds
-
-        if client_id not in self._requests:
+        state = await self._limiter.get_state(client_id)
+        if state is None:
             return self._limit
+        return max(0, self._limit - state.current_count)
 
-        # Count requests in current window
-        current_requests = len([
-            ts for ts in self._requests[client_id] if ts > window_start
-        ])
-
-        return max(0, self._limit - current_requests)
-
-    def reset(self, client_id: str | None = None) -> None:
-        """Reset rate limiter state.
+    async def reset_async(self, client_id: str | None = None) -> None:
+        """Reset rate limiter state asynchronously.
 
         Args:
             client_id: Client to reset, or None to reset all.
         """
         if client_id is None:
-            self._requests.clear()
-        elif client_id in self._requests:
-            del self._requests[client_id]
+            await self._limiter.clear_all()
+        else:
+            await self._limiter.reset(client_id)
+
+    def reset(self, client_id: str | None = None) -> None:
+        """Reset rate limiter state (fire-and-forget).
+
+        For async contexts, prefer reset_async().
+
+        Args:
+            client_id: Client to reset, or None to reset all.
+        """
+        import asyncio
+
+        try:
+            loop = asyncio.get_running_loop()
+            # Store task reference to prevent garbage collection
+            task = loop.create_task(self.reset_async(client_id))
+            # Add callback to handle any exceptions
+            task.add_done_callback(lambda t: t.exception() if t.done() else None)
+        except RuntimeError:
+            # No running loop - skip async reset
+            logger.debug(
+                "No event loop for async reset",
+                operation="RATE_LIMIT_RESET_SKIP",
+            )

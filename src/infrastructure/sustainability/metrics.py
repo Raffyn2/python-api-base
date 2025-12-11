@@ -1,5 +1,4 @@
-"""
-Prometheus metrics exporter for sustainability data.
+"""Prometheus metrics exporter for sustainability data.
 
 Provides custom metrics for carbon emissions, energy costs,
 and sustainability reporting with consistent labels.
@@ -84,8 +83,7 @@ def format_prometheus_metric(
     help_text: str = "",
     metric_type: str = "gauge",
 ) -> str:
-    """
-    Format a metric in Prometheus exposition format.
+    """Format a metric in Prometheus exposition format.
 
     Property 11: Prometheus Metrics Format
     Output conforms to Prometheus format with required labels.
@@ -125,7 +123,7 @@ def record_energy_metric(
         container=container,
     ).inc(float(energy_joules))
 
-    energy_kwh = energy_joules / Decimal("3600000")
+    energy_kwh = energy_joules / Decimal(3600000)
     ENERGY_CONSUMPTION_KWH.labels(
         namespace=namespace,
         pod=pod,
@@ -212,8 +210,7 @@ def record_report_generated(namespace: str) -> None:
 
 
 def validate_metric_labels(labels: dict[str, str]) -> bool:
-    """
-    Validate that metric labels contain required fields.
+    """Validate that metric labels contain required fields.
 
     Property 11: Prometheus Metrics Format
     All metrics include required labels (namespace, pod, container).
@@ -223,8 +220,7 @@ def validate_metric_labels(labels: dict[str, str]) -> bool:
 
 
 def generate_metrics_output(metrics: list[dict[str, Any]]) -> str:
-    """
-    Generate Prometheus metrics output from a list of metrics.
+    """Generate Prometheus metrics output from a list of metrics.
 
     Args:
         metrics: List of metric dictionaries with name, value, labels
@@ -232,17 +228,15 @@ def generate_metrics_output(metrics: list[dict[str, Any]]) -> str:
     Returns:
         Prometheus exposition format string
     """
-    output_lines = []
-
-    for metric in metrics:
-        output_lines.append(
-            format_prometheus_metric(
-                name=metric["name"],
-                value=metric["value"],
-                labels=metric.get("labels", {}),
-                help_text=metric.get("help", ""),
-                metric_type=metric.get("type", "gauge"),
-            )
+    output_lines = [
+        format_prometheus_metric(
+            name=metric["name"],
+            value=metric["value"],
+            labels=metric.get("labels", {}),
+            help_text=metric.get("help", ""),
+            metric_type=metric.get("type", "gauge"),
         )
+        for metric in metrics
+    ]
 
     return "\n\n".join(output_lines)

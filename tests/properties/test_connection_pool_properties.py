@@ -6,9 +6,7 @@
 
 import pytest
 
-pytest.skip(
-    "Module infrastructure.connection_pool not implemented", allow_module_level=True
-)
+pytest.skip("Module infrastructure.connection_pool not implemented", allow_module_level=True)
 
 from hypothesis import given, settings, strategies as st
 
@@ -55,9 +53,7 @@ class TestPoolCounterInvariant:
         in_use=st.integers(min_value=0, max_value=100),
         unhealthy=st.integers(min_value=0, max_value=100),
     )
-    def test_invariant_holds_for_valid_stats(
-        self, idle: int, in_use: int, unhealthy: int
-    ) -> None:
+    def test_invariant_holds_for_valid_stats(self, idle: int, in_use: int, unhealthy: int) -> None:
         """Invariant should hold when counters sum to total."""
         total = idle + in_use + unhealthy
         stats = PoolStats(
@@ -75,9 +71,7 @@ class TestPoolCounterInvariant:
         unhealthy=st.integers(min_value=0, max_value=100),
         offset=st.integers(min_value=1, max_value=10),
     )
-    def test_invariant_fails_for_invalid_stats(
-        self, idle: int, in_use: int, unhealthy: int, offset: int
-    ) -> None:
+    def test_invariant_fails_for_invalid_stats(self, idle: int, in_use: int, unhealthy: int, offset: int) -> None:
         """Invariant should fail when counters don't sum to total."""
         total = idle + in_use + unhealthy + offset  # Intentionally wrong
         stats = PoolStats(
@@ -111,7 +105,7 @@ class TestStateTransitionCounterConsistency:
         assert initial_stats.in_use_connections == 0
 
         # Acquire connection (IDLE -> IN_USE)
-        conn, conn_id = await pool.acquire()
+        _conn, conn_id = await pool.acquire()
 
         # Verify counters changed correctly
         after_acquire = pool.get_stats()
@@ -147,7 +141,7 @@ class TestConnectionLifetimeEnforcement:
         await pool.initialize()
 
         # Acquire and release - should trigger removal due to expired lifetime
-        conn, conn_id = await pool.acquire()
+        _conn, conn_id = await pool.acquire()
         await pool.release(conn_id)
 
         # Connection should have been removed

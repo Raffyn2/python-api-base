@@ -1,8 +1,14 @@
 """Domain events system for decoupled communication.
 
 Uses PEP 695 type parameter syntax (Python 3.12+) for cleaner generic definitions.
+
+Note:
+    For typed event handling with better type safety, use TypedEventBus
+    from application.common.cqrs. This EventBus is a simpler in-process
+    implementation for basic use cases.
 """
 
+import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -10,7 +16,11 @@ from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
-from core.shared.utils.datetime import utc_now
+import structlog
+
+from core.shared.utils.time import utc_now
+
+logger = structlog.get_logger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,10 +144,6 @@ class EventBus:
         Args:
             event: Domain event to publish.
         """
-        import asyncio
-        import logging
-
-        logger = logging.getLogger(__name__)
         handlers = self._global_handlers + self._handlers.get(event.event_type, [])
 
         for handler in handlers:
@@ -145,14 +151,12 @@ class EventBus:
                 result = handler(event)
                 if asyncio.iscoroutine(result):
                     await result
-            except Exception as e:
-                logger.error(
-                    f"Event handler failed: {handler.__name__}",
-                    extra={
-                        "event_type": event.event_type,
-                        "event_id": event.event_id,
-                        "error": str(e),
-                    },
+            except Exception:
+                logger.exception(
+                    "Event handler failed",
+                    handler=handler.__name__,
+                    event_type=event.event_type,
+                    event_id=event.event_id,
                 )
 
     def publish_sync(self, event: DomainEvent) -> None:
@@ -161,22 +165,17 @@ class EventBus:
         Args:
             event: Domain event to publish.
         """
-        import logging
-
-        logger = logging.getLogger(__name__)
         handlers = self._global_handlers + self._handlers.get(event.event_type, [])
 
         for handler in handlers:
             try:
                 handler(event)
-            except Exception as e:
-                logger.error(
-                    f"Event handler failed: {handler.__name__}",
-                    extra={
-                        "event_type": event.event_type,
-                        "event_id": event.event_id,
-                        "error": str(e),
-                    },
+            except Exception:
+                logger.exception(
+                    "Event handler failed",
+                    handler=handler.__name__,
+                    event_type=event.event_type,
+                    event_id=event.event_id,
                 )
 
 

@@ -7,8 +7,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 
-from application.common.mappers.errors.mapper_error import MapperError
-
 
 class IMapper[Source, Target](ABC):
     """Abstract base class for mappers.
@@ -73,5 +71,4 @@ class IMapper[Source, Target](ABC):
         return [self.to_entity(d) for d in dtos]
 
 
-# Re-export MapperError for convenience
-__all__ = ["IMapper", "MapperError"]
+__all__ = ["IMapper"]

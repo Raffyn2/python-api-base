@@ -23,7 +23,7 @@ class ApplicationError(Exception):
         >>> error = ApplicationError(
         ...     message="Operation failed",
         ...     code="OPERATION_FAILED",
-        ...     details={"operation": "create_user"}
+        ...     details={"operation": "create_user"},
         ... )
     """
 

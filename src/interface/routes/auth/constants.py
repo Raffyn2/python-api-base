@@ -4,10 +4,11 @@ WARNING: Demo users are for development/testing only.
 Do NOT use in production environments.
 """
 
-import logging
 import os
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 # Demo users for development/testing only
 DEMO_USERS = {

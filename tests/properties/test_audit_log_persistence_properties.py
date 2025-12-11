@@ -23,13 +23,9 @@ except ImportError:
 
 
 # Strategies
-user_id_strategy = st.text(
-    min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_"
-)
+user_id_strategy = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_")
 resource_type_strategy = st.sampled_from(["user", "order", "item", "config", "role"])
-resource_id_strategy = st.text(
-    min_size=1, max_size=30, alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ"
-)
+resource_id_strategy = st.text(min_size=1, max_size=30, alphabet="0123456789ABCDEFGHJKMNPQRSTVWXYZ")
 action_strategy = st.sampled_from(list(AuditAction))
 result_strategy = st.sampled_from(list(AuditResult))
 ip_strategy = st.from_regex(r"^(\d{1,3}\.){3}\d{1,3}$", fullmatch=True)

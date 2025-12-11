@@ -47,9 +47,7 @@ class TestInboxEntry:
         message_type=identifier_strategy,
     )
     @settings(max_examples=50)
-    def test_same_content_same_idempotency_key(
-        self, message_id: str, message_type: str
-    ):
+    def test_same_content_same_idempotency_key(self, message_id: str, message_type: str):
         """Same content should produce same idempotency key."""
         payload = {"key": "value"}
         entry1 = InboxEntry.create(message_id, message_type, payload)
@@ -153,7 +151,7 @@ class TestInboxService:
         handler = MockMessageHandler()
         service = InboxService(repo, handler)
         await service.receive("msg1", "type", {"key": "value"})
-        is_new, entry = await service.receive("msg1", "type", {"key": "value"})
+        is_new, _entry = await service.receive("msg1", "type", {"key": "value"})
         assert is_new is False
 
     @pytest.mark.asyncio
@@ -186,9 +184,7 @@ class TestInboxService:
         repo = InMemoryInboxRepository()
         handler = MockMessageHandler()
         service = InboxService(repo, handler)
-        is_new, success = await service.receive_and_process(
-            "msg1", "type", {"key": "value"}
-        )
+        is_new, success = await service.receive_and_process("msg1", "type", {"key": "value"})
         assert is_new is True
         assert success is True
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 
-@dataclass
+@dataclass(slots=True)
 class PrometheusConfig:
     """Configuration for Prometheus metrics.
 

@@ -114,9 +114,7 @@ class QueryBuilder[T: BaseModel](ABC):
         self._sort_clauses.extend(clauses)
         return self
 
-    def order_by_field(
-        self, field: str, direction: SortDirection = SortDirection.ASC
-    ) -> Self:
+    def order_by_field(self, field: str, direction: SortDirection = SortDirection.ASC) -> Self:
         """Add sort by field name."""
         self._sort_clauses.append(SortClause(field, direction))
         return self
@@ -167,7 +165,7 @@ class QueryBuilder[T: BaseModel](ABC):
         self._specification = None
         return self
 
-    def clone(self) -> "QueryBuilder[T]":
+    def clone(self) -> Self:
         """Create a copy of this query builder."""
         new_builder = self._create_sub_builder()
         new_builder._conditions = ConditionGroup(
@@ -182,14 +180,12 @@ class QueryBuilder[T: BaseModel](ABC):
             distinct=self._options.distinct,
             count_only=self._options.count_only,
         )
-        new_builder._select_fields = (
-            list(self._select_fields) if self._select_fields else None
-        )
+        new_builder._select_fields = list(self._select_fields) if self._select_fields else None
         new_builder._specification = self._specification
         return new_builder
 
     @abstractmethod
-    def _create_sub_builder(self) -> "QueryBuilder[T]":
+    def _create_sub_builder(self) -> Self:
         """Create a new instance for sub-queries."""
         ...
 

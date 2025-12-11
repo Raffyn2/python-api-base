@@ -5,7 +5,8 @@
 
 from typing import Any
 
-from fastapi import APIRouter
+import structlog
+from fastapi import APIRouter, HTTPException
 
 from interface.v1.enterprise.dependencies import get_task_queue
 from interface.v1.enterprise.models import (
@@ -13,6 +14,8 @@ from interface.v1.enterprise.models import (
     TaskEnqueueRequest,
     TaskEnqueueResponse,
 )
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(tags=["Task Queue"])
 
@@ -24,7 +27,14 @@ router = APIRouter(tags=["Task Queue"])
 )
 async def enqueue_task(request: TaskEnqueueRequest) -> TaskEnqueueResponse:
     """Enqueue email task."""
-    queue = await get_task_queue()
+    try:
+        queue = await get_task_queue()
+    except Exception as e:
+        logger.exception("task_queue_unavailable")
+        raise HTTPException(
+            status_code=503,
+            detail="Task queue service unavailable",
+        ) from e
 
     task = EmailTaskPayload(
         to=request.to,
@@ -33,6 +43,12 @@ async def enqueue_task(request: TaskEnqueueRequest) -> TaskEnqueueResponse:
     )
 
     handle = await queue.enqueue(task)
+
+    logger.info(
+        "task_enqueued",
+        task_id=handle.task_id,
+        task_type="email",
+    )
 
     return TaskEnqueueResponse(
         task_id=handle.task_id,
@@ -43,7 +59,15 @@ async def enqueue_task(request: TaskEnqueueRequest) -> TaskEnqueueResponse:
 @router.get("/tasks/{task_id}/status", summary="Get Task Status")
 async def get_task_status(task_id: str) -> dict[str, Any]:
     """Get task status."""
-    queue = await get_task_queue()
+    try:
+        queue = await get_task_queue()
+    except Exception as e:
+        logger.exception("task_queue_unavailable")
+        raise HTTPException(
+            status_code=503,
+            detail="Task queue service unavailable",
+        ) from e
+
     status = await queue.get_status(task_id)
 
     return {

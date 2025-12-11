@@ -19,16 +19,15 @@ This UseCase demonstrates:
 
 from __future__ import annotations
 
-import logging
-from dataclasses import dataclass
 from datetime import timedelta
 from decimal import Decimal
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 from uuid import uuid4
 
-from application.common.use_cases import BaseUseCase, UseCaseError, UseCaseResult
+import structlog
+
+from application.common.use_cases import BaseUseCase, UseCaseError
 from application.examples.order.dtos import (
-    OrderItemInput,
     OrderItemOutput,
     PlaceOrderInput,
     PlaceOrderOutput,
@@ -36,7 +35,13 @@ from application.examples.order.dtos import (
 from core.base.patterns.result import Err, Ok
 from core.shared.utils.datetime import utc_now
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from application.common.use_cases import UseCaseResult
+    from application.examples.order.dtos import (
+        OrderItemInput,
+    )
+
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
@@ -59,9 +64,7 @@ class IItemCatalog(Protocol):
 class IInventoryService(Protocol):
     """Protocol for inventory service."""
 
-    async def reserve_items(
-        self, items: list[tuple[str, int]]
-    ) -> bool:
+    async def reserve_items(self, items: list[tuple[str, int]]) -> bool:
         """Reserve items for an order. Returns True if successful."""
         ...
 
@@ -98,9 +101,7 @@ class IOrderRepository(Protocol):
 class INotificationService(Protocol):
     """Protocol for notification service."""
 
-    async def send_order_confirmation(
-        self, customer_id: str, order_id: str
-    ) -> None:
+    async def send_order_confirmation(self, customer_id: str, order_id: str) -> None:
         """Send order confirmation notification."""
         ...
 
@@ -131,11 +132,13 @@ class PlaceOrderUseCase(BaseUseCase[PlaceOrderInput, PlaceOrderOutput]):
         ...     order_repository=orders,
         ...     notification_service=notifications,
         ... )
-        >>> result = await use_case.execute(PlaceOrderInput(
-        ...     customer_id="cust-123",
-        ...     items=[OrderItemInput(item_id="item-1", quantity=2)],
-        ...     shipping_address="123 Main St",
-        ... ))
+        >>> result = await use_case.execute(
+        ...     PlaceOrderInput(
+        ...         customer_id="cust-123",
+        ...         items=[OrderItemInput(item_id="item-1", quantity=2)],
+        ...         shipping_address="123 Main St",
+        ...     )
+        ... )
         >>> if result.is_ok():
         ...     order = result.unwrap()
         ...     print(f"Order {order.order_id} placed successfully!")
@@ -173,9 +176,7 @@ class PlaceOrderUseCase(BaseUseCase[PlaceOrderInput, PlaceOrderOutput]):
         self._orders = order_repository
         self._notifications = notification_service
 
-    async def execute(
-        self, input: PlaceOrderInput
-    ) -> UseCaseResult[PlaceOrderOutput]:
+    async def execute(self, input: PlaceOrderInput) -> UseCaseResult[PlaceOrderOutput]:
         """Execute the place order use case.
 
         Steps:
@@ -220,9 +221,7 @@ class PlaceOrderUseCase(BaseUseCase[PlaceOrderInput, PlaceOrderOutput]):
             return Err(error)
 
         # Step 4: Process payment
-        payment_result = await self._process_payment(
-            input.customer_id, total, input.payment_method
-        )
+        payment_result = await self._process_payment(input.customer_id, total, input.payment_method)
         if payment_result.is_err():
             # Rollback: release inventory
             await self._rollback_inventory(input.items)
@@ -233,9 +232,7 @@ class PlaceOrderUseCase(BaseUseCase[PlaceOrderInput, PlaceOrderOutput]):
         payment_id = payment_result.unwrap()
 
         # Step 5: Create order
-        order_result = await self._create_order(
-            input, validated_items, subtotal, total, payment_id
-        )
+        order_result = await self._create_order(input, validated_items, subtotal, total, payment_id)
         if order_result.is_err():
             # Rollback: refund payment and release inventory
             await self._payment.refund_payment(payment_id)
@@ -256,9 +253,7 @@ class PlaceOrderUseCase(BaseUseCase[PlaceOrderInput, PlaceOrderOutput]):
     # Private Methods - Each step of the use case
     # =========================================================================
 
-    async def _validate_input(
-        self, input: PlaceOrderInput
-    ) -> UseCaseResult[None]:
+    async def _validate_input(self, input: PlaceOrderInput) -> UseCaseResult[None]:
         """Validate order input."""
         if not input.customer_id:
             return self._validation_error("Customer ID is required", "customer_id")
@@ -273,21 +268,15 @@ class PlaceOrderUseCase(BaseUseCase[PlaceOrderInput, PlaceOrderOutput]):
             )
 
         if not input.shipping_address:
-            return self._validation_error(
-                "Shipping address is required", "shipping_address"
-            )
+            return self._validation_error("Shipping address is required", "shipping_address")
 
         for i, item in enumerate(input.items):
             if item.quantity <= 0:
-                return self._validation_error(
-                    f"Item {i+1}: quantity must be positive", f"items[{i}].quantity"
-                )
+                return self._validation_error(f"Item {i + 1}: quantity must be positive", f"items[{i}].quantity")
 
         return Ok(None)
 
-    async def _fetch_and_validate_items(
-        self, items: list[OrderItemInput]
-    ) -> UseCaseResult[list[OrderItemOutput]]:
+    async def _fetch_and_validate_items(self, items: list[OrderItemInput]) -> UseCaseResult[list[OrderItemOutput]]:
         """Fetch item details and validate availability."""
         validated_items: list[OrderItemOutput] = []
 
@@ -298,9 +287,7 @@ class PlaceOrderUseCase(BaseUseCase[PlaceOrderInput, PlaceOrderOutput]):
                 return self._not_found("Item", item_input.item_id)
 
             # Check availability
-            is_available = await self._catalog.check_availability(
-                item_input.item_id, item_input.quantity
-            )
+            is_available = await self._catalog.check_availability(item_input.item_id, item_input.quantity)
             if not is_available:
                 return self._business_error(
                     f"Item '{item_data.get('name', item_input.item_id)}' is not available "
@@ -332,18 +319,14 @@ class PlaceOrderUseCase(BaseUseCase[PlaceOrderInput, PlaceOrderOutput]):
 
         return Ok(validated_items)
 
-    async def _reserve_inventory(
-        self, items: list[OrderItemInput]
-    ) -> UseCaseResult[None]:
+    async def _reserve_inventory(self, items: list[OrderItemInput]) -> UseCaseResult[None]:
         """Reserve inventory for order items."""
         items_to_reserve = [(item.item_id, item.quantity) for item in items]
 
         try:
             success = await self._inventory.reserve_items(items_to_reserve)
             if not success:
-                return self._business_error(
-                    "Failed to reserve inventory", rule="INVENTORY_RESERVATION"
-                )
+                return self._business_error("Failed to reserve inventory", rule="INVENTORY_RESERVATION")
             return Ok(None)
         except Exception as e:
             self._logger.exception("Inventory reservation failed")
@@ -363,18 +346,12 @@ class PlaceOrderUseCase(BaseUseCase[PlaceOrderInput, PlaceOrderOutput]):
         except Exception:
             self._logger.exception("Failed to release inventory (manual intervention needed)")
 
-    async def _process_payment(
-        self, customer_id: str, amount: Decimal, payment_method: str
-    ) -> UseCaseResult[str]:
+    async def _process_payment(self, customer_id: str, amount: Decimal, payment_method: str) -> UseCaseResult[str]:
         """Process payment for the order."""
         try:
-            payment_result = await self._payment.process_payment(
-                customer_id, amount, payment_method
-            )
+            payment_result = await self._payment.process_payment(customer_id, amount, payment_method)
             if payment_result is None:
-                return self._business_error(
-                    "Payment was declined", rule="PAYMENT_PROCESSING"
-                )
+                return self._business_error("Payment was declined", rule="PAYMENT_PROCESSING")
             return Ok(payment_result.get("payment_id", str(uuid4())))
         except Exception as e:
             self._logger.exception("Payment processing failed")

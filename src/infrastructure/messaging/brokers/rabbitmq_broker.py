@@ -13,12 +13,13 @@ Implementation guide:
     https://aio-pika.readthedocs.io/
 """
 
-import logging
 import warnings
 from dataclasses import dataclass
 from typing import Any, Never
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 # Warn on import
 warnings.warn(
@@ -29,7 +30,7 @@ warnings.warn(
 )
 
 
-@dataclass
+@dataclass(slots=True)
 class RabbitMQConfig:
     """RabbitMQ broker configuration."""
 
@@ -57,10 +58,7 @@ class RabbitMQBroker:
 
     def __init__(self, config: RabbitMQConfig | None = None) -> None:
         self._config = config or RabbitMQConfig()
-        logger.warning(
-            "RabbitMQBroker initialized but NOT IMPLEMENTED. "
-            "All operations will raise NotImplementedError."
-        )
+        logger.warning("RabbitMQBroker initialized but NOT IMPLEMENTED. All operations will raise NotImplementedError.")
 
     async def connect(self) -> Never:
         """Connect to RabbitMQ broker.
@@ -80,9 +78,7 @@ class RabbitMQBroker:
         """
         raise NotImplementedError("RabbitMQBroker.disconnect() not implemented.")
 
-    async def publish(
-        self, exchange: str, routing_key: str, message: dict[str, Any]
-    ) -> Never:
+    async def publish(self, exchange: str, routing_key: str, message: dict[str, Any]) -> Never:
         """Publish message to RabbitMQ exchange.
 
         Raises:
@@ -98,9 +94,7 @@ class RabbitMQBroker:
         Raises:
             NotImplementedError: Always. This method is not implemented.
         """
-        raise NotImplementedError(
-            f"RabbitMQBroker.declare_queue() not implemented. Cannot declare {queue_name}."
-        )
+        raise NotImplementedError(f"RabbitMQBroker.declare_queue() not implemented. Cannot declare {queue_name}.")
 
     async def consume(self, queue_name: str) -> Never:
         """Consume messages from queue.
@@ -108,6 +102,4 @@ class RabbitMQBroker:
         Raises:
             NotImplementedError: Always. This method is not implemented.
         """
-        raise NotImplementedError(
-            f"RabbitMQBroker.consume() not implemented. Cannot consume from {queue_name}."
-        )
+        raise NotImplementedError(f"RabbitMQBroker.consume() not implemented. Cannot consume from {queue_name}.")

@@ -224,10 +224,7 @@ class TestErrorMessages:
         assert ErrorMessages.FORBIDDEN == "Access denied"
 
     def test_insufficient_permissions(self):
-        assert (
-            ErrorMessages.INSUFFICIENT_PERMISSIONS
-            == "Insufficient permissions for this operation"
-        )
+        assert ErrorMessages.INSUFFICIENT_PERMISSIONS == "Insufficient permissions for this operation"
 
     def test_permission_denied(self):
         assert ErrorMessages.PERMISSION_DENIED == "Permission denied"
@@ -253,10 +250,7 @@ class TestErrorMessages:
         assert ErrorMessages.NOT_FOUND == "Resource not found"
 
     def test_entity_not_found_template(self):
-        assert (
-            ErrorMessages.ENTITY_NOT_FOUND
-            == "{entity_type} with id '{entity_id}' not found"
-        )
+        assert ErrorMessages.ENTITY_NOT_FOUND == "{entity_type} with id '{entity_id}' not found"
 
     def test_already_exists(self):
         assert ErrorMessages.ALREADY_EXISTS == "Resource already exists"
@@ -265,24 +259,15 @@ class TestErrorMessages:
         assert ErrorMessages.CONFLICT == "Resource conflict"
 
     def test_conflict_resource_template(self):
-        assert (
-            ErrorMessages.CONFLICT_RESOURCE
-            == "{resource_type} with id '{resource_id}' already exists"
-        )
+        assert ErrorMessages.CONFLICT_RESOURCE == "{resource_type} with id '{resource_id}' already exists"
 
     # Business rules
     def test_business_rule_violated_template(self):
-        assert (
-            ErrorMessages.BUSINESS_RULE_VIOLATED
-            == "Business rule '{rule}' violated: {message}"
-        )
+        assert ErrorMessages.BUSINESS_RULE_VIOLATED == "Business rule '{rule}' violated: {message}"
 
     # Rate limiting
     def test_rate_limit_exceeded_template(self):
-        assert (
-            ErrorMessages.RATE_LIMIT_EXCEEDED
-            == "Rate limit exceeded. Retry after {retry_after} seconds"
-        )
+        assert ErrorMessages.RATE_LIMIT_EXCEEDED == "Rate limit exceeded. Retry after {retry_after} seconds"
 
     # Server errors
     def test_internal_error(self):

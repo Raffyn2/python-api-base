@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 import yaml
-from hypothesis import given, settings, strategies as st, HealthCheck
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 # Base path for ArgoCD manifests
 ARGOCD_BASE_PATH = Path("deployments/argocd")
@@ -33,13 +33,13 @@ def load_all_yaml_documents(path: Path) -> list[dict[str, Any]]:
 class TestApplicationManifestCorrectness:
     """
     **Validates: Requirements 2.1, 2.2, 2.3**
-    
+
     For any Application manifest targeting a specific environment,
     the manifest SHALL contain the correct Helm values file path,
     and environment-appropriate sync settings.
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     def application_manifests(self) -> dict[str, dict[str, Any]]:
         """Load all Application manifests."""
         apps = {}
@@ -58,39 +58,33 @@ class TestApplicationManifestCorrectness:
         """Application manifest contains correct values file for environment."""
         if env not in application_manifests:
             pytest.skip(f"No manifest for {env}")
-        
+
         app = application_manifests[env]
         values_files = app["spec"]["source"]["helm"]["valueFiles"]
-        
-        assert f"values-{env}.yaml" in values_files, (
-            f"Expected values-{env}.yaml in valueFiles"
-        )
 
-    def test_dev_has_auto_sync_and_self_heal(
-        self, application_manifests: dict[str, dict[str, Any]]
-    ) -> None:
+        assert f"values-{env}.yaml" in values_files, f"Expected values-{env}.yaml in valueFiles"
+
+    def test_dev_has_auto_sync_and_self_heal(self, application_manifests: dict[str, dict[str, Any]]) -> None:
         """Dev environment SHALL have auto-sync with self-heal enabled."""
         if "dev" not in application_manifests:
             pytest.skip("No dev manifest")
-        
+
         app = application_manifests["dev"]
         sync_policy = app["spec"].get("syncPolicy", {})
         automated = sync_policy.get("automated", {})
-        
+
         assert automated.get("selfHeal") is True, "Dev should have selfHeal=true"
         assert automated.get("prune") is True, "Dev should have prune=true"
 
-    def test_prod_has_manual_sync(
-        self, application_manifests: dict[str, dict[str, Any]]
-    ) -> None:
+    def test_prod_has_manual_sync(self, application_manifests: dict[str, dict[str, Any]]) -> None:
         """Prod environment SHALL require manual sync (no automated sync)."""
         if "prod" not in application_manifests:
             pytest.skip("No prod manifest")
-        
+
         app = application_manifests["prod"]
         sync_policy = app["spec"].get("syncPolicy", {})
         automated = sync_policy.get("automated", {})
-        
+
         assert not automated, "Prod should not have automated sync"
 
 
@@ -98,13 +92,13 @@ class TestApplicationManifestCorrectness:
 class TestApplicationSetGeneration:
     """
     **Validates: Requirements 3.1**
-    
+
     For any ApplicationSet with a list generator containing N environment entries,
     the generator configuration SHALL produce exactly N distinct Application
     configurations with unique names and namespaces.
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     def applicationset_manifest(self) -> dict[str, Any] | None:
         """Load ApplicationSet manifest."""
         path = ARGOCD_BASE_PATH / "applicationsets" / "python-api-base-set.yaml"
@@ -127,34 +121,32 @@ class TestApplicationSetGeneration:
         """List generator produces one Application per environment entry."""
         if applicationset_manifest is None:
             pytest.skip("No ApplicationSet manifest")
-        
+
         generators = applicationset_manifest["spec"]["generators"]
         list_generator = None
-        
+
         for gen in generators:
             if "list" in gen:
                 list_generator = gen["list"]
                 break
-        
+
         assert list_generator is not None, "ApplicationSet should have list generator"
-        
+
         elements = list_generator["elements"]
         env_names = [e["env"] for e in elements]
         namespaces = [e["namespace"] for e in elements]
-        
+
         # All environments should be unique
         assert len(env_names) == len(set(env_names)), "Environment names must be unique"
         assert len(namespaces) == len(set(namespaces)), "Namespaces must be unique"
 
-    def test_applicationset_has_required_template_fields(
-        self, applicationset_manifest: dict[str, Any] | None
-    ) -> None:
+    def test_applicationset_has_required_template_fields(self, applicationset_manifest: dict[str, Any] | None) -> None:
         """ApplicationSet template has all required fields."""
         if applicationset_manifest is None:
             pytest.skip("No ApplicationSet manifest")
-        
+
         template = applicationset_manifest["spec"]["template"]
-        
+
         assert "metadata" in template
         assert "name" in template["metadata"]
         assert "spec" in template
@@ -167,7 +159,7 @@ class TestApplicationSetGeneration:
 class TestAppProjectSecurityConstraints:
     """
     **Validates: Requirements 4.1, 4.2**
-    
+
     For any AppProject manifest, it SHALL define non-empty sourceRepos and
     destinations lists, and SHALL NOT include dangerous cluster-scoped resources.
     """
@@ -179,7 +171,7 @@ class TestAppProjectSecurityConstraints:
         ("", "PersistentVolume"),
     ]
 
-    @pytest.fixture
+    @pytest.fixture()
     def project_manifests(self) -> list[dict[str, Any]]:
         """Load all AppProject manifests."""
         projects = []
@@ -192,31 +184,27 @@ class TestAppProjectSecurityConstraints:
 
     @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(project_idx=st.integers(min_value=0, max_value=10))
-    def test_project_has_source_repos(
-        self, project_idx: int, project_manifests: list[dict[str, Any]]
-    ) -> None:
+    def test_project_has_source_repos(self, project_idx: int, project_manifests: list[dict[str, Any]]) -> None:
         """AppProject SHALL define non-empty sourceRepos."""
         if not project_manifests:
             pytest.skip("No project manifests")
-        
+
         idx = project_idx % len(project_manifests)
         project = project_manifests[idx]
-        
+
         source_repos = project["spec"].get("sourceRepos", [])
         assert len(source_repos) > 0, "sourceRepos must not be empty"
 
     @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(project_idx=st.integers(min_value=0, max_value=10))
-    def test_project_has_destinations(
-        self, project_idx: int, project_manifests: list[dict[str, Any]]
-    ) -> None:
+    def test_project_has_destinations(self, project_idx: int, project_manifests: list[dict[str, Any]]) -> None:
         """AppProject SHALL define non-empty destinations."""
         if not project_manifests:
             pytest.skip("No project manifests")
-        
+
         idx = project_idx % len(project_manifests)
         project = project_manifests[idx]
-        
+
         destinations = project["spec"].get("destinations", [])
         assert len(destinations) > 0, "destinations must not be empty"
 
@@ -229,32 +217,30 @@ class TestAppProjectSecurityConstraints:
             if project["metadata"]["name"] == "python-api-base":
                 python_api_project = project
                 break
-        
+
         if python_api_project is None:
             pytest.skip("python-api-base project not found")
-        
+
         whitelist = python_api_project["spec"].get("clusterResourceWhitelist", [])
-        
+
         for group, kind in self.DANGEROUS_RESOURCES:
             for item in whitelist:
                 if item.get("group") == group and item.get("kind") == kind:
-                    pytest.fail(
-                        f"Dangerous resource {group}/{kind} in clusterResourceWhitelist"
-                    )
+                    pytest.fail(f"Dangerous resource {group}/{kind} in clusterResourceWhitelist")
 
 
 # **Feature: argocd-gitops-integration, Property 4: Image Updater annotation validity**
 class TestImageUpdaterAnnotations:
     """
     **Validates: Requirements 5.4**
-    
+
     For any Application with image updater annotations, the update-strategy
     annotation SHALL contain a valid strategy value.
     """
 
     VALID_STRATEGIES = {"semver", "latest", "digest", "name"}
 
-    @pytest.fixture
+    @pytest.fixture()
     def applications_with_image_updater(self) -> list[dict[str, Any]]:
         """Load Applications with image updater annotations."""
         apps = []
@@ -265,10 +251,7 @@ class TestImageUpdaterAnnotations:
                     for yaml_file in env_dir.glob("*.yaml"):
                         app = load_yaml_file(yaml_file)
                         annotations = app.get("metadata", {}).get("annotations", {})
-                        if any(
-                            k.startswith("argocd-image-updater")
-                            for k in annotations.keys()
-                        ):
+                        if any(k.startswith("argocd-image-updater") for k in annotations.keys()):
                             apps.append(app)
         return apps
 
@@ -280,11 +263,11 @@ class TestImageUpdaterAnnotations:
         """Image updater strategy annotation SHALL be valid."""
         if not applications_with_image_updater:
             pytest.skip("No applications with image updater")
-        
+
         idx = app_idx % len(applications_with_image_updater)
         app = applications_with_image_updater[idx]
         annotations = app["metadata"]["annotations"]
-        
+
         for key, value in annotations.items():
             if ".update-strategy" in key:
                 assert value in self.VALID_STRATEGIES, (
@@ -296,12 +279,12 @@ class TestImageUpdaterAnnotations:
 class TestNotificationConfiguration:
     """
     **Validates: Requirements 6.4, 6.5**
-    
+
     For any notification ConfigMap, it SHALL define at least one service
     configuration, and all referenced templates in triggers SHALL exist.
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     def notifications_cm(self) -> dict[str, Any] | None:
         """Load notifications ConfigMap."""
         path = ARGOCD_BASE_PATH / "notifications" / "argocd-notifications-cm.yaml"
@@ -309,34 +292,26 @@ class TestNotificationConfiguration:
             return load_yaml_file(path)
         return None
 
-    def test_has_at_least_one_service(
-        self, notifications_cm: dict[str, Any] | None
-    ) -> None:
+    def test_has_at_least_one_service(self, notifications_cm: dict[str, Any] | None) -> None:
         """Notification ConfigMap SHALL have at least one service."""
         if notifications_cm is None:
             pytest.skip("No notifications ConfigMap")
-        
+
         data = notifications_cm.get("data", {})
         services = [k for k in data.keys() if k.startswith("service.")]
-        
+
         assert len(services) > 0, "Must have at least one service configured"
 
-    def test_triggers_reference_existing_templates(
-        self, notifications_cm: dict[str, Any] | None
-    ) -> None:
+    def test_triggers_reference_existing_templates(self, notifications_cm: dict[str, Any] | None) -> None:
         """All templates referenced in triggers SHALL exist."""
         if notifications_cm is None:
             pytest.skip("No notifications ConfigMap")
-        
+
         data = notifications_cm.get("data", {})
-        
+
         # Extract template names
-        templates = {
-            k.replace("template.", "")
-            for k in data.keys()
-            if k.startswith("template.")
-        }
-        
+        templates = {k.replace("template.", "") for k in data.keys() if k.startswith("template.")}
+
         # Extract templates referenced in triggers
         for key, value in data.items():
             if key.startswith("trigger.") and value:
@@ -347,8 +322,7 @@ class TestNotificationConfiguration:
                         send_list = trigger.get("send", [])
                         for template_name in send_list:
                             assert template_name in templates, (
-                                f"Template '{template_name}' referenced in trigger "
-                                f"'{key}' does not exist"
+                                f"Template '{template_name}' referenced in trigger '{key}' does not exist"
                             )
 
 
@@ -356,12 +330,12 @@ class TestNotificationConfiguration:
 class TestHealthCheckLuaValidity:
     """
     **Validates: Requirements 7.1**
-    
+
     For any custom health check configuration, the Lua script SHALL be
     syntactically valid and return expected fields.
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     def argocd_cm(self) -> dict[str, Any] | None:
         """Load ArgoCD ConfigMap."""
         path = ARGOCD_BASE_PATH / "base" / "argocd-cm.yaml"
@@ -369,68 +343,56 @@ class TestHealthCheckLuaValidity:
             return load_yaml_file(path)
         return None
 
-    def test_health_checks_have_return_statement(
-        self, argocd_cm: dict[str, Any] | None
-    ) -> None:
+    def test_health_checks_have_return_statement(self, argocd_cm: dict[str, Any] | None) -> None:
         """Health check Lua scripts SHALL have return statement."""
         if argocd_cm is None:
             pytest.skip("No ArgoCD ConfigMap")
-        
+
         data = argocd_cm.get("data", {})
-        
+
         for key, value in data.items():
             if key.startswith("resource.customizations.health.") and value:
-                assert "return" in value, (
-                    f"Health check '{key}' must have return statement"
-                )
+                assert "return" in value, f"Health check '{key}' must have return statement"
 
-    def test_health_checks_initialize_hs_table(
-        self, argocd_cm: dict[str, Any] | None
-    ) -> None:
+    def test_health_checks_initialize_hs_table(self, argocd_cm: dict[str, Any] | None) -> None:
         """Health check Lua scripts SHALL initialize hs table."""
         if argocd_cm is None:
             pytest.skip("No ArgoCD ConfigMap")
-        
+
         data = argocd_cm.get("data", {})
-        
+
         for key, value in data.items():
             if key.startswith("resource.customizations.health.") and value:
-                assert "hs = {}" in value or "hs={}" in value, (
-                    f"Health check '{key}' must initialize hs table"
-                )
+                assert "hs = {}" in value or "hs={}" in value, f"Health check '{key}' must initialize hs table"
 
-    def test_health_checks_set_status_field(
-        self, argocd_cm: dict[str, Any] | None
-    ) -> None:
+    def test_health_checks_set_status_field(self, argocd_cm: dict[str, Any] | None) -> None:
         """Health check Lua scripts SHALL set hs.status field."""
         if argocd_cm is None:
             pytest.skip("No ArgoCD ConfigMap")
-        
+
         data = argocd_cm.get("data", {})
-        
+
         for key, value in data.items():
             if key.startswith("resource.customizations.health.") and value:
-                assert "hs.status" in value, (
-                    f"Health check '{key}' must set hs.status"
-                )
+                assert "hs.status" in value, f"Health check '{key}' must set hs.status"
 
 
 # **Feature: argocd-gitops-integration, Property 7: Sync wave annotation validity**
 class TestSyncWaveAnnotations:
     """
     **Validates: Requirements 8.1**
-    
+
     For any resource with sync wave annotation, the annotation value
     SHALL be a valid integer string.
     """
 
     SYNC_WAVE_PATTERN = re.compile(r"^-?\d+$")
 
-    @pytest.fixture
+    @pytest.fixture()
     def resources_with_sync_waves(self) -> list[tuple[str, dict[str, Any]]]:
         """Load all resources with sync wave annotations."""
         resources = []
-        
+
         # Check hooks
         hooks_path = ARGOCD_BASE_PATH / "hooks"
         if hooks_path.exists():
@@ -442,7 +404,7 @@ class TestSyncWaveAnnotations:
                             annotations = doc.get("metadata", {}).get("annotations", {})
                             if "argocd.argoproj.io/sync-wave" in annotations:
                                 resources.append((str(yaml_file), doc))
-        
+
         # Check sealed secrets
         sealed_path = ARGOCD_BASE_PATH / "sealed-secrets"
         if sealed_path.exists():
@@ -454,7 +416,7 @@ class TestSyncWaveAnnotations:
                             annotations = doc.get("metadata", {}).get("annotations", {})
                             if "argocd.argoproj.io/sync-wave" in annotations:
                                 resources.append((str(yaml_file), doc))
-        
+
         return resources
 
     @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
@@ -465,16 +427,16 @@ class TestSyncWaveAnnotations:
         """Sync wave annotation SHALL be a valid integer."""
         if not resources_with_sync_waves:
             pytest.skip("No resources with sync waves")
-        
+
         idx = resource_idx % len(resources_with_sync_waves)
         file_path, resource = resources_with_sync_waves[idx]
-        
+
         annotations = resource["metadata"]["annotations"]
         sync_wave = annotations["argocd.argoproj.io/sync-wave"]
-        
+
         # Handle quoted strings
         sync_wave_str = str(sync_wave).strip('"').strip("'")
-        
+
         assert self.SYNC_WAVE_PATTERN.match(sync_wave_str), (
             f"Invalid sync wave '{sync_wave}' in {file_path}, must be integer"
         )
@@ -484,11 +446,11 @@ class TestSyncWaveAnnotations:
 class TestRBACLeastPrivilege:
     """
     **Validates: Requirements 1.2**
-    
+
     RBAC policies SHALL follow least-privilege principle.
     """
 
-    @pytest.fixture
+    @pytest.fixture()
     def rbac_cm(self) -> dict[str, Any] | None:
         """Load RBAC ConfigMap."""
         path = ARGOCD_BASE_PATH / "base" / "argocd-rbac-cm.yaml"
@@ -496,42 +458,32 @@ class TestRBACLeastPrivilege:
             return load_yaml_file(path)
         return None
 
-    def test_default_policy_is_readonly(
-        self, rbac_cm: dict[str, Any] | None
-    ) -> None:
+    def test_default_policy_is_readonly(self, rbac_cm: dict[str, Any] | None) -> None:
         """Default policy SHALL be readonly."""
         if rbac_cm is None:
             pytest.skip("No RBAC ConfigMap")
-        
+
         data = rbac_cm.get("data", {})
         default_policy = data.get("policy.default", "")
-        
-        assert "readonly" in default_policy.lower(), (
-            "Default policy should be readonly for least-privilege"
-        )
 
-    def test_developer_role_has_limited_permissions(
-        self, rbac_cm: dict[str, Any] | None
-    ) -> None:
+        assert "readonly" in default_policy.lower(), "Default policy should be readonly for least-privilege"
+
+    def test_developer_role_has_limited_permissions(self, rbac_cm: dict[str, Any] | None) -> None:
         """Developer role SHALL NOT have delete or admin permissions."""
         if rbac_cm is None:
             pytest.skip("No RBAC ConfigMap")
-        
+
         data = rbac_cm.get("data", {})
         policy_csv = data.get("policy.csv", "")
-        
+
         # Check developer role lines
         for line in policy_csv.split("\n"):
             if "role:developer" in line and "allow" in line:
                 # Developer should not have delete or * (all) permissions
-                assert "delete" not in line.lower(), (
-                    "Developer role should not have delete permission"
-                )
+                assert "delete" not in line.lower(), "Developer role should not have delete permission"
                 # Check for wildcard on sensitive resources
                 if "clusters" in line or "accounts" in line:
                     parts = line.split(",")
                     if len(parts) >= 4:
                         action = parts[2].strip()
-                        assert action != "*", (
-                            f"Developer should not have wildcard on {line}"
-                        )
+                        assert action != "*", f"Developer should not have wildcard on {line}"

@@ -28,7 +28,7 @@ class SampleModel(BaseModel):
     is_deleted: bool = False
 
 
-@pytest.fixture
+@pytest.fixture()
 def sample_data() -> list[SampleModel]:
     """Create sample data for testing."""
     return [
@@ -88,9 +88,7 @@ class TestInMemoryQueryBuilder:
         assert len(result.items) == 5
 
     @pytest.mark.asyncio
-    async def test_execute_excludes_deleted_by_default(
-        self, sample_data: list[SampleModel]
-    ) -> None:
+    async def test_execute_excludes_deleted_by_default(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
         result = await builder.execute()
         assert result.total == 4
@@ -99,9 +97,7 @@ class TestInMemoryQueryBuilder:
     @pytest.mark.asyncio
     async def test_filter_eq(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("status", ComparisonOperator.EQ, "active")
-        )
+        builder._conditions.add(QueryCondition("status", ComparisonOperator.EQ, "active"))
         result = await builder.execute()
         assert result.total == 2
         assert all(item.status == "active" for item in result.items)
@@ -109,9 +105,7 @@ class TestInMemoryQueryBuilder:
     @pytest.mark.asyncio
     async def test_filter_ne(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("status", ComparisonOperator.NE, "active")
-        )
+        builder._conditions.add(QueryCondition("status", ComparisonOperator.NE, "active"))
         result = await builder.execute()
         assert all(item.status != "active" for item in result.items)
 
@@ -146,27 +140,21 @@ class TestInMemoryQueryBuilder:
     @pytest.mark.asyncio
     async def test_filter_in(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("status", ComparisonOperator.IN, ["active", "pending"])
-        )
+        builder._conditions.add(QueryCondition("status", ComparisonOperator.IN, ["active", "pending"]))
         result = await builder.execute()
         assert all(item.status in ["active", "pending"] for item in result.items)
 
     @pytest.mark.asyncio
     async def test_filter_not_in(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("status", ComparisonOperator.NOT_IN, ["inactive"])
-        )
+        builder._conditions.add(QueryCondition("status", ComparisonOperator.NOT_IN, ["inactive"]))
         result = await builder.execute()
         assert all(item.status != "inactive" for item in result.items)
 
     @pytest.mark.asyncio
     async def test_filter_is_null(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("score", ComparisonOperator.IS_NULL, None)
-        )
+        builder._conditions.add(QueryCondition("score", ComparisonOperator.IS_NULL, None))
         result = await builder.execute()
         assert result.total == 1
         assert result.items[0].name == "Diana"
@@ -174,36 +162,28 @@ class TestInMemoryQueryBuilder:
     @pytest.mark.asyncio
     async def test_filter_is_not_null(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("score", ComparisonOperator.IS_NOT_NULL, None)
-        )
+        builder._conditions.add(QueryCondition("score", ComparisonOperator.IS_NOT_NULL, None))
         result = await builder.execute()
         assert all(item.score is not None for item in result.items)
 
     @pytest.mark.asyncio
     async def test_filter_between(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("age", ComparisonOperator.BETWEEN, (26, 32))
-        )
+        builder._conditions.add(QueryCondition("age", ComparisonOperator.BETWEEN, (26, 32)))
         result = await builder.execute()
         assert all(26 <= item.age <= 32 for item in result.items)
 
     @pytest.mark.asyncio
     async def test_filter_contains(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("name", ComparisonOperator.CONTAINS, "li")
-        )
+        builder._conditions.add(QueryCondition("name", ComparisonOperator.CONTAINS, "li"))
         result = await builder.execute()
         assert all("li" in item.name for item in result.items)
 
     @pytest.mark.asyncio
     async def test_filter_starts_with(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("name", ComparisonOperator.STARTS_WITH, "A")
-        )
+        builder._conditions.add(QueryCondition("name", ComparisonOperator.STARTS_WITH, "A"))
         result = await builder.execute()
         assert result.total == 1
         assert result.items[0].name == "Alice"
@@ -211,9 +191,7 @@ class TestInMemoryQueryBuilder:
     @pytest.mark.asyncio
     async def test_filter_ends_with(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("name", ComparisonOperator.ENDS_WITH, "e")
-        )
+        builder._conditions.add(QueryCondition("name", ComparisonOperator.ENDS_WITH, "e"))
         result = await builder.execute()
         assert all(item.name.endswith("e") for item in result.items)
 
@@ -236,9 +214,7 @@ class TestInMemoryQueryBuilder:
     @pytest.mark.asyncio
     async def test_filter_negated(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("status", ComparisonOperator.EQ, "active", negate=True)
-        )
+        builder._conditions.add(QueryCondition("status", ComparisonOperator.EQ, "active", negate=True))
         result = await builder.execute()
         assert all(item.status != "active" for item in result.items)
 
@@ -304,14 +280,10 @@ class TestInMemoryQueryBuilder:
     @pytest.mark.asyncio
     async def test_condition_group_and(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
-        builder._conditions.add(
-            QueryCondition("status", ComparisonOperator.EQ, "active")
-        )
+        builder._conditions.add(QueryCondition("status", ComparisonOperator.EQ, "active"))
         builder._conditions.add(QueryCondition("age", ComparisonOperator.GE, 30))
         result = await builder.execute()
-        assert all(
-            item.status == "active" and item.age >= 30 for item in result.items
-        )
+        assert all(item.status == "active" and item.age >= 30 for item in result.items)
 
     @pytest.mark.asyncio
     async def test_condition_group_or(self, sample_data: list[SampleModel]) -> None:
@@ -321,14 +293,10 @@ class TestInMemoryQueryBuilder:
         group.add(QueryCondition("status", ComparisonOperator.EQ, "pending"))
         builder._conditions.add(group)
         result = await builder.execute()
-        assert all(
-            item.status in ["active", "pending"] for item in result.items
-        )
+        assert all(item.status in ["active", "pending"] for item in result.items)
 
     @pytest.mark.asyncio
-    async def test_nested_condition_groups(
-        self, sample_data: list[SampleModel]
-    ) -> None:
+    async def test_nested_condition_groups(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
         inner = ConditionGroup(operator=LogicalOperator.OR)
         inner.add(QueryCondition("age", ComparisonOperator.LT, 26))
@@ -365,9 +333,7 @@ class TestMatchPattern:
         builder = InMemoryQueryBuilder(sample_data)
         assert builder._match_pattern("Alice", "Alice") is True
 
-    def test_special_regex_chars_escaped(
-        self, sample_data: list[SampleModel]
-    ) -> None:
+    def test_special_regex_chars_escaped(self, sample_data: list[SampleModel]) -> None:
         builder = InMemoryQueryBuilder(sample_data)
         # Dot should be literal, not regex wildcard
         assert builder._match_pattern("test.txt", "test.txt") is True

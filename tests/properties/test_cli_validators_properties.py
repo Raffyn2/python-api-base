@@ -84,11 +84,7 @@ class TestRevisionFormatValidation:
     the pattern ^[a-zA-Z0-9_-]+$ OR equals "head" OR equals "base".
     """
 
-    @given(
-        revision=st.from_regex(r"^[a-zA-Z0-9_\-]+$", fullmatch=True).filter(
-            lambda x: len(x) > 0
-        )
-    )
+    @given(revision=st.from_regex(r"^[a-zA-Z0-9_\-]+$", fullmatch=True).filter(lambda x: len(x) > 0))
     @settings(max_examples=100)
     def test_valid_revisions_pass(self, revision: str) -> None:
         """Valid revision formats pass validation."""
@@ -101,11 +97,7 @@ class TestRevisionFormatValidation:
         result = validate_revision(revision)
         assert result == revision
 
-    @given(
-        revision=st.text(min_size=1, max_size=50).filter(
-            lambda x: not REVISION_PATTERN.match(x)
-        )
-    )
+    @given(revision=st.text(min_size=1, max_size=50).filter(lambda x: not REVISION_PATTERN.match(x)))
     @settings(max_examples=100)
     def test_invalid_revisions_rejected(self, revision: str) -> None:
         """Invalid revision formats are rejected."""
@@ -137,9 +129,7 @@ class TestEntityNameValidation:
     """
 
     @given(
-        name=st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(
-            lambda x: 0 < len(x) <= MAX_ENTITY_NAME_LENGTH
-        )
+        name=st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(lambda x: 0 < len(x) <= MAX_ENTITY_NAME_LENGTH)
     )
     @settings(max_examples=100)
     def test_valid_names_pass(self, name: str) -> None:
@@ -147,11 +137,7 @@ class TestEntityNameValidation:
         result = validate_entity_name(name)
         assert result == name
 
-    @given(
-        name=st.text(min_size=1, max_size=100).filter(
-            lambda x: not ENTITY_NAME_PATTERN.match(x)
-        )
-    )
+    @given(name=st.text(min_size=1, max_size=100).filter(lambda x: not ENTITY_NAME_PATTERN.match(x)))
     @settings(max_examples=100)
     def test_invalid_pattern_rejected(self, name: str) -> None:
         """Names not matching pattern are rejected."""
@@ -159,9 +145,7 @@ class TestEntityNameValidation:
             validate_entity_name(name)
 
     @given(
-        base=st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(
-            lambda x: len(x) >= 1
-        ),
+        base=st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(lambda x: len(x) >= 1),
         extra_length=st.integers(min_value=1, max_value=100),
     )
     @settings(max_examples=100)
@@ -195,11 +179,7 @@ class TestPathTraversalDetection:
     (or vice versa), the path validation SHALL reject it.
     """
 
-    @given(
-        path=st.text(min_size=1, max_size=100).filter(
-            lambda x: ".." not in x and x.strip()
-        )
-    )
+    @given(path=st.text(min_size=1, max_size=100).filter(lambda x: ".." not in x and x.strip()))
     @settings(max_examples=100)
     def test_safe_paths_pass(self, path: str) -> None:
         """Paths without traversal sequences pass validation."""
@@ -233,9 +213,7 @@ class TestPathTraversalDetection:
         separator=st.sampled_from(["/", "\\"]),
     )
     @settings(max_examples=100)
-    def test_injected_traversal_detected(
-        self, prefix: str, suffix: str, separator: str
-    ) -> None:
+    def test_injected_traversal_detected(self, prefix: str, suffix: str, separator: str) -> None:
         """Traversal sequences are detected regardless of position."""
         path = f"{prefix}..{separator}{suffix}"
         if path.strip():  # Non-empty after strip
@@ -251,9 +229,7 @@ class TestFieldDefinitionParsing:
     """
 
     @given(
-        name=st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(
-            lambda x: 0 < len(x) <= MAX_FIELD_NAME_LENGTH
-        ),
+        name=st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(lambda x: 0 < len(x) <= MAX_FIELD_NAME_LENGTH),
         ftype=st.sampled_from(list(ALLOWED_FIELD_TYPES)),
     )
     @settings(max_examples=100)
@@ -265,9 +241,7 @@ class TestFieldDefinitionParsing:
         assert serialized == field_str
 
     @given(
-        name=st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(
-            lambda x: 0 < len(x) <= MAX_FIELD_NAME_LENGTH
-        ),
+        name=st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True).filter(lambda x: 0 < len(x) <= MAX_FIELD_NAME_LENGTH),
         ftype=st.sampled_from(list(ALLOWED_FIELD_TYPES)),
     )
     @settings(max_examples=100)

@@ -145,9 +145,7 @@ class ErrorMessage:
         )
 
     @classmethod
-    def internal_error(
-        cls, context: str = "An unexpected error occurred"
-    ) -> ErrorMessage:
+    def internal_error(cls, context: str = "An unexpected error occurred") -> ErrorMessage:
         """Create an INTERNAL_ERROR message.
 
         Args:
@@ -213,9 +211,7 @@ class ErrorMessage:
         )
 
     @classmethod
-    def service_unavailable(
-        cls, service: str, retry_after_seconds: int | None = None
-    ) -> ErrorMessage:
+    def service_unavailable(cls, service: str, retry_after_seconds: int | None = None) -> ErrorMessage:
         """Create a SERVICE_UNAVAILABLE error message.
 
         Args:
@@ -298,9 +294,7 @@ class ErrorMessage:
             result["details"] = self.details
         return result
 
-    def to_problem_details(
-        self, type_uri: str = "about:blank", instance: str | None = None
-    ) -> dict[str, Any]:
+    def to_problem_details(self, type_uri: str = "about:blank", instance: str | None = None) -> dict[str, Any]:
         """Convert to RFC 7807 Problem Details format.
 
         Args:
@@ -321,6 +315,16 @@ class ErrorMessage:
             ErrorCode.RATE_LIMITED: 429,
             ErrorCode.BAD_REQUEST: 400,
             ErrorCode.SERVICE_UNAVAILABLE: 503,
+            ErrorCode.NETWORK_ERROR: 502,
+            ErrorCode.CONFIGURATION_ERROR: 500,
+            ErrorCode.AUTHENTICATION_FAILED: 401,
+            ErrorCode.PERMISSION_DENIED: 403,
+            ErrorCode.RESOURCE_EXHAUSTED: 429,
+            ErrorCode.PRECONDITION_FAILED: 412,
+            ErrorCode.UNSUPPORTED_OPERATION: 501,
+            ErrorCode.METHOD_NOT_FOUND: 404,
+            ErrorCode.INVALID_PARAMS: 400,
+            ErrorCode.PARSE_ERROR: 400,
         }
 
         result: dict[str, Any] = {

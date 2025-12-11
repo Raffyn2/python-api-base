@@ -4,7 +4,7 @@
 **Validates: Requirements 5.10**
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from infrastructure.messaging.asyncapi.document import AsyncAPIDocument
 from infrastructure.messaging.asyncapi.enums import ProtocolType
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class AsyncAPIBuilder:
     """Builder for creating AsyncAPI documents."""
 
-    def __init__(self, title: str, version: str):
+    def __init__(self, title: str, version: str) -> None:
         self._info = InfoObject(title=title, version=version)
         self._servers: dict[str, ServerObject] = {}
         self._channels: dict[str, ChannelObject] = {}
@@ -33,18 +33,18 @@ class AsyncAPIBuilder:
         self._messages: dict[str, MessageObject] = {}
         self._schemas: dict[str, SchemaObject] = {}
 
-    def with_description(self, description: str) -> "AsyncAPIBuilder":
+    def with_description(self, description: str) -> Self:
         """Set the API description."""
         self._info.description = description
         return self
 
-    def with_contact(self, name: str, email: str) -> "AsyncAPIBuilder":
+    def with_contact(self, name: str, email: str) -> Self:
         """Set contact information."""
         self._info.contact_name = name
         self._info.contact_email = email
         return self
 
-    def with_license(self, name: str, url: str | None = None) -> "AsyncAPIBuilder":
+    def with_license(self, name: str, url: str | None = None) -> Self:
         """Set license information."""
         self._info.license_name = name
         self._info.license_url = url
@@ -55,7 +55,7 @@ class AsyncAPIBuilder:
         name: str,
         host: str,
         description: str | None = None,
-    ) -> "AsyncAPIBuilder":
+    ) -> Self:
         """Add a Kafka server."""
         self._servers[name] = ServerObject(
             host=host,
@@ -69,7 +69,7 @@ class AsyncAPIBuilder:
         name: str,
         host: str,
         description: str | None = None,
-    ) -> "AsyncAPIBuilder":
+    ) -> Self:
         """Add an AMQP server."""
         self._servers[name] = ServerObject(
             host=host,
@@ -83,7 +83,7 @@ class AsyncAPIBuilder:
         name: str,
         host: str,
         description: str | None = None,
-    ) -> "AsyncAPIBuilder":
+    ) -> Self:
         """Add a Redis server."""
         self._servers[name] = ServerObject(
             host=host,
@@ -97,7 +97,7 @@ class AsyncAPIBuilder:
         name: str,
         address: str,
         description: str | None = None,
-    ) -> "AsyncAPIBuilder":
+    ) -> Self:
         """Add a channel."""
         self._channels[name] = ChannelObject(
             address=address,
@@ -111,7 +111,7 @@ class AsyncAPIBuilder:
         channel: str,
         message: MessageObject,
         summary: str | None = None,
-    ) -> "AsyncAPIBuilder":
+    ) -> Self:
         """Add a publish operation."""
         self._messages[message.name] = message
         self._operations[name] = OperationObject(
@@ -128,7 +128,7 @@ class AsyncAPIBuilder:
         channel: str,
         message: MessageObject,
         summary: str | None = None,
-    ) -> "AsyncAPIBuilder":
+    ) -> Self:
         """Add a subscribe operation."""
         self._messages[message.name] = message
         self._operations[name] = OperationObject(

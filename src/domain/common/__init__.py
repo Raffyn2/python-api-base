@@ -7,6 +7,7 @@ from domain.common.specification import (
     AndSpecification,
     AttributeSpecification,
     ComparisonOperator,
+    CompositeSpecification,
     NotSpecification,
     OrSpecification,
     PredicateSpecification,
@@ -28,10 +29,12 @@ from domain.common.value_objects import (
 )
 
 __all__ = [
-    # Specification
+    # Specification (core)
     "AndSpecification",
+    # Specification (domain extensions)
     "AttributeSpecification",
     "ComparisonOperator",
+    "CompositeSpecification",
     # Value Objects
     "CurrencyCode",
     "Money",

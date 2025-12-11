@@ -203,12 +203,8 @@ class TestRequestSignerProperties:
         """
         signer = RequestSigner(secret_key)
 
-        signed1 = signer.sign(
-            method=method, path=path, body=body, timestamp=timestamp, nonce=nonce
-        )
-        signed2 = signer.sign(
-            method=method, path=path, body=body, timestamp=timestamp, nonce=nonce
-        )
+        signed1 = signer.sign(method=method, path=path, body=body, timestamp=timestamp, nonce=nonce)
+        signed2 = signer.sign(method=method, path=path, body=body, timestamp=timestamp, nonce=nonce)
 
         assert signed1.signature == signed2.signature
 
@@ -597,9 +593,7 @@ class TestHashAlgorithmProperties:
         for algorithm in HashAlgorithm:
             config = SignatureConfig(algorithm=algorithm)
             signer = RequestSigner(secret_key, config)
-            signed = signer.sign(
-                method=method, path=path, timestamp=timestamp, nonce=nonce
-            )
+            signed = signer.sign(method=method, path=path, timestamp=timestamp, nonce=nonce)
             signatures[algorithm] = signed.signature
 
         # SHA256=64, SHA384=96, SHA512=128 hex chars

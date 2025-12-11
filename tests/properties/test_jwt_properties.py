@@ -48,9 +48,7 @@ class TestTokenPairGeneration:
 
     @settings(max_examples=100, deadline=None)
     @given(user_id=user_id_strategy, scopes=scope_strategy)
-    def test_token_pair_structure_is_valid(
-        self, user_id: str, scopes: list[str]
-    ) -> None:
+    def test_token_pair_structure_is_valid(self, user_id: str, scopes: list[str]) -> None:
         """
         **Feature: api-base-improvements, Property 1: Token pair generation returns valid structure**
         **Validates: Requirements 1.1**
@@ -60,9 +58,7 @@ class TestTokenPairGeneration:
         with valid JWT format.
         """
         service = JWTService(secret_key=TEST_SECRET_KEY)
-        pair, access_payload, refresh_payload = service.create_token_pair(
-            user_id, scopes
-        )
+        pair, access_payload, refresh_payload = service.create_token_pair(user_id, scopes)
 
         # Verify TokenPair structure
         assert isinstance(pair, TokenPair)
@@ -101,9 +97,7 @@ class TestTokenPairGeneration:
         service = JWTService(secret_key=TEST_SECRET_KEY)
         pair, _, _ = service.create_token_pair(user_id)
 
-        assert pair.access_token != pair.refresh_token, (
-            "Access and refresh tokens must be different"
-        )
+        assert pair.access_token != pair.refresh_token, "Access and refresh tokens must be different"
 
     @settings(max_examples=50, deadline=None)
     @given(user_id=user_id_strategy, scopes=scope_strategy)
@@ -119,9 +113,7 @@ class TestTokenPairGeneration:
 
         # Both tokens should be verifiable
         access_payload = service.verify_token(pair.access_token, expected_type="access")
-        refresh_payload = service.verify_token(
-            pair.refresh_token, expected_type="refresh"
-        )
+        refresh_payload = service.verify_token(pair.refresh_token, expected_type="refresh")
 
         assert access_payload.sub == user_id
         assert refresh_payload.sub == user_id
@@ -133,9 +125,7 @@ class TestTokenPayloadRoundTrip:
 
     @settings(max_examples=100, deadline=None)
     @given(user_id=user_id_strategy, scopes=scope_strategy)
-    def test_payload_serialization_round_trip(
-        self, user_id: str, scopes: list[str]
-    ) -> None:
+    def test_payload_serialization_round_trip(self, user_id: str, scopes: list[str]) -> None:
         """
         **Feature: api-base-improvements, Property 6: Token payload serialization round-trip**
         **Validates: Requirements 1.6**
@@ -167,9 +157,7 @@ class TestTokenPayloadRoundTrip:
 
     @settings(max_examples=50, deadline=None)
     @given(user_id=user_id_strategy, scopes=scope_strategy)
-    def test_jwt_encode_decode_round_trip(
-        self, user_id: str, scopes: list[str]
-    ) -> None:
+    def test_jwt_encode_decode_round_trip(self, user_id: str, scopes: list[str]) -> None:
         """
         **Feature: api-base-improvements, Property 6: Token payload serialization round-trip**
         **Validates: Requirements 1.6**
@@ -334,13 +322,11 @@ class TestRefreshTokenRoundTrip:
             assert stored.jti == refresh_payload.jti, "JTI should match"
 
             # Verify refresh token can be used to get new access token
-            verified_refresh = service.verify_token(
-                pair.refresh_token, expected_type="refresh"
-            )
+            verified_refresh = service.verify_token(pair.refresh_token, expected_type="refresh")
             assert verified_refresh.sub == user_id
 
             # Create new access token (simulating refresh flow)
-            new_access, new_payload = service.create_access_token(user_id)
+            new_access, _new_payload = service.create_access_token(user_id)
             verified_new = service.verify_token(new_access, expected_type="access")
             assert verified_new.sub == user_id
 
@@ -497,9 +483,7 @@ class TestValidTokenAuthentication:
 
     @settings(max_examples=100, deadline=None)
     @given(user_id=user_id_strategy, scopes=scope_strategy)
-    def test_valid_token_provides_user_context(
-        self, user_id: str, scopes: list[str]
-    ) -> None:
+    def test_valid_token_provides_user_context(self, user_id: str, scopes: list[str]) -> None:
         """
         **Feature: api-base-improvements, Property 2: Valid token authentication provides user context**
         **Validates: Requirements 1.2**
@@ -510,7 +494,7 @@ class TestValidTokenAuthentication:
         service = JWTService(secret_key=TEST_SECRET_KEY)
 
         # Create access token
-        token, payload = service.create_access_token(user_id, scopes)
+        token, _payload = service.create_access_token(user_id, scopes)
 
         # Verify token and get user context
         verified_payload = service.verify_token(token, expected_type="access")
@@ -544,9 +528,7 @@ class TestValidTokenAuthentication:
 
     @settings(max_examples=50, deadline=None)
     @given(user_id=user_id_strategy, scopes=scope_strategy)
-    def test_different_users_get_different_tokens(
-        self, user_id: str, scopes: list[str]
-    ) -> None:
+    def test_different_users_get_different_tokens(self, user_id: str, scopes: list[str]) -> None:
         """
         **Feature: api-base-improvements, Property 2: Valid token authentication provides user context**
         **Validates: Requirements 1.2**
@@ -594,10 +576,7 @@ class TestJWTAlgorithmRestrictionProperties:
         with pytest.raises(InvalidTokenError) as exc_info:
             JWTValidator(secret_or_key="test-secret-key-32-chars-long!!", algorithm=alg)
 
-        assert (
-            "none" in str(exc_info.value).lower()
-            or "not allowed" in str(exc_info.value).lower()
-        )
+        assert "none" in str(exc_info.value).lower() or "not allowed" in str(exc_info.value).lower()
 
     @given(st.sampled_from(["RS256", "ES256", "HS256"]))
     @settings(max_examples=10)
@@ -610,16 +589,10 @@ class TestJWTAlgorithmRestrictionProperties:
         from core.auth.jwt_validator import JWTValidator
 
         # Should not raise
-        validator = JWTValidator(
-            secret_or_key="test-secret-key-32-chars-long!!", algorithm=alg
-        )
+        validator = JWTValidator(secret_or_key="test-secret-key-32-chars-long!!", algorithm=alg)
         assert validator._algorithm == alg
 
-    @given(
-        st.text(min_size=1, max_size=20).filter(
-            lambda x: x not in ["RS256", "ES256", "HS256", "none", "None"]
-        )
-    )
+    @given(st.text(min_size=1, max_size=20).filter(lambda x: x not in ["RS256", "ES256", "HS256", "none", "None"]))
     @settings(max_examples=50)
     def test_unknown_algorithms_rejected(self, alg: str) -> None:
         """Property: Unknown algorithms are rejected.

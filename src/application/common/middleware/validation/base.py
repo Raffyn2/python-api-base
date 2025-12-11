@@ -1,7 +1,15 @@
-"""Base validator classes.
+"""Base validator classes for CQRS middleware.
 
 **Feature: application-layer-code-review-2025**
 **Refactored: Split from validation.py for one-class-per-file compliance**
+
+Note: This Validator is for CQRS CommandBus middleware integration.
+It uses a simple list[dict] return type for easy error aggregation.
+
+For Result-pattern validators, see: core.base.patterns.validation.Validator
+Architecture decision: Two validator APIs serve different purposes:
+- This one: Simple API for middleware, returns list of error dicts
+- Core one: Result pattern API, returns Result[T, ValidationError[T]]
 """
 
 from abc import ABC, abstractmethod
@@ -11,6 +19,11 @@ from typing import Any
 
 class Validator[TCommand](ABC):
     """Abstract base class for command validators.
+
+    This validator is designed for CQRS middleware integration where
+    multiple validators run and errors are aggregated.
+
+    For Result-pattern validators, use core.base.patterns.validation.Validator.
 
     Type Parameters:
         TCommand: The command type to validate.
@@ -24,7 +37,8 @@ class Validator[TCommand](ABC):
             command: Command to validate.
 
         Returns:
-            List of validation errors. Empty list if valid.
+            List of validation errors as dicts. Empty list if valid.
+            Each dict should have 'field', 'message', and optionally 'code'.
         """
         ...
 

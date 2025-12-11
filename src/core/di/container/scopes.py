@@ -6,8 +6,12 @@
 
 from typing import TYPE_CHECKING, Any
 
-from core.di.resolution import CircularDependencyError, ServiceNotRegisteredError
+import structlog
+
 from core.di.lifecycle import Lifetime
+from core.di.resolution import CircularDependencyError, ServiceNotRegisteredError
+
+logger = structlog.get_logger(__name__)
 
 if TYPE_CHECKING:
     from core.di.container.container import Container
@@ -85,10 +89,23 @@ class Scope:
         """Dispose of scoped instances.
 
         Calls dispose() or close() methods on scoped instances if available.
+        Continues disposing remaining instances even if one fails.
         """
-        for instance in self._scoped_instances.values():
-            if hasattr(instance, "dispose"):
-                instance.dispose()
-            elif hasattr(instance, "close"):
-                instance.close()
+        errors: list[Exception] = []
+        for service_type, instance in self._scoped_instances.items():
+            try:
+                if hasattr(instance, "dispose"):
+                    instance.dispose()
+                elif hasattr(instance, "close"):
+                    instance.close()
+            except Exception as e:
+                logger.warning(
+                    "Failed to dispose scoped instance",
+                    service_type=service_type.__name__,
+                    exc_info=True,
+                )
+                errors.append(e)
         self._scoped_instances.clear()
+
+        if errors:
+            raise errors[0]

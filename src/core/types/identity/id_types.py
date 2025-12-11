@@ -36,19 +36,19 @@ UUID = Annotated[
     StringConstraints(
         min_length=36,
         max_length=36,
-        pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
     ),
     Field(description="UUID identifier (36 characters with hyphens)"),
 ]
-"""UUID string with validation (36 chars with hyphens)."""
+"""UUID string with validation (36 chars with hyphens, case-insensitive)."""
 
 UUID7 = Annotated[
     str,
     StringConstraints(
         min_length=36,
         max_length=36,
-        pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+        pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
     ),
     Field(description="UUID v7 identifier (time-ordered, 36 characters)"),
 ]
-"""UUID v7 string with validation (time-ordered, RFC 9562)."""
+"""UUID v7 string with validation (time-ordered, RFC 9562, case-insensitive)."""

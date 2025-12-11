@@ -6,15 +6,13 @@
 
 from dataclasses import dataclass
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 from application.common.cqrs.commands.command_bus import Command, CommandBus
 from application.common.cqrs.events.event_bus import (
-    EventHandler,
     EventHandlerError,
     TypedEventBus,
 )
@@ -69,28 +67,24 @@ class FailingEventHandler:
 class TestTypedEventBus:
     """Tests for TypedEventBus class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def event_bus(self) -> TypedEventBus[TestEvent]:
         """Create event bus."""
         return TypedEventBus()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self) -> TestEventHandler:
         """Create test handler."""
         return TestEventHandler()
 
-    def test_subscribe_handler(
-        self, event_bus: TypedEventBus[TestEvent], handler: TestEventHandler
-    ) -> None:
+    def test_subscribe_handler(self, event_bus: TypedEventBus[TestEvent], handler: TestEventHandler) -> None:
         """Test subscribing a handler to event type."""
         event_bus.subscribe(TestEvent, handler)
 
         assert TestEvent in event_bus._handlers
         assert handler in event_bus._handlers[TestEvent]
 
-    def test_unsubscribe_handler(
-        self, event_bus: TypedEventBus[TestEvent], handler: TestEventHandler
-    ) -> None:
+    def test_unsubscribe_handler(self, event_bus: TypedEventBus[TestEvent], handler: TestEventHandler) -> None:
         """Test unsubscribing a handler from event type."""
         event_bus.subscribe(TestEvent, handler)
         event_bus.unsubscribe(TestEvent, handler)
@@ -118,9 +112,7 @@ class TestTypedEventBus:
         assert handler.handled_events[0] == event
 
     @pytest.mark.asyncio
-    async def test_publish_to_multiple_handlers(
-        self, event_bus: TypedEventBus[TestEvent]
-    ) -> None:
+    async def test_publish_to_multiple_handlers(self, event_bus: TypedEventBus[TestEvent]) -> None:
         """Test publishing event to multiple subscribers."""
         handler1 = TestEventHandler()
         handler2 = TestEventHandler()
@@ -134,9 +126,7 @@ class TestTypedEventBus:
         assert len(handler2.handled_events) == 1
 
     @pytest.mark.asyncio
-    async def test_publish_no_handlers(
-        self, event_bus: TypedEventBus[TestEvent]
-    ) -> None:
+    async def test_publish_no_handlers(self, event_bus: TypedEventBus[TestEvent]) -> None:
         """Test publishing event with no subscribers."""
         event = TestEvent(id="1", data="test")
 
@@ -146,9 +136,7 @@ class TestTypedEventBus:
         assert errors == []
 
     @pytest.mark.asyncio
-    async def test_publish_handler_error_raises(
-        self, event_bus: TypedEventBus[TestEvent]
-    ) -> None:
+    async def test_publish_handler_error_raises(self, event_bus: TypedEventBus[TestEvent]) -> None:
         """Test publishing raises EventHandlerError on handler failure."""
         failing_handler = FailingEventHandler()
         event_bus.subscribe(TestEvent, failing_handler)
@@ -161,9 +149,7 @@ class TestTypedEventBus:
         assert len(exc_info.value.handler_errors) == 1
 
     @pytest.mark.asyncio
-    async def test_publish_handler_error_returns_errors(
-        self, event_bus: TypedEventBus[TestEvent]
-    ) -> None:
+    async def test_publish_handler_error_returns_errors(self, event_bus: TypedEventBus[TestEvent]) -> None:
         """Test publishing returns errors when raise_on_error=False."""
         failing_handler = FailingEventHandler()
         event_bus.subscribe(TestEvent, failing_handler)
@@ -178,38 +164,32 @@ class TestTypedEventBus:
 class TestCommandBus:
     """Tests for CommandBus class."""
 
-    @pytest.fixture
+    @pytest.fixture()
     def command_bus(self) -> CommandBus:
         """Create command bus."""
         return CommandBus()
 
-    @pytest.fixture
+    @pytest.fixture()
     def handler(self) -> AsyncMock:
         """Create mock handler."""
         handler = AsyncMock()
         handler.return_value = Ok("success")
         return handler
 
-    def test_register_handler(
-        self, command_bus: CommandBus, handler: AsyncMock
-    ) -> None:
+    def test_register_handler(self, command_bus: CommandBus, handler: AsyncMock) -> None:
         """Test registering a command handler."""
         command_bus.register(TestCommand, handler)
 
         assert TestCommand in command_bus._handlers
 
-    def test_register_duplicate_handler_raises(
-        self, command_bus: CommandBus, handler: AsyncMock
-    ) -> None:
+    def test_register_duplicate_handler_raises(self, command_bus: CommandBus, handler: AsyncMock) -> None:
         """Test registering duplicate handler raises ValueError."""
         command_bus.register(TestCommand, handler)
 
         with pytest.raises(ValueError, match="Handler already registered"):
             command_bus.register(TestCommand, handler)
 
-    def test_unregister_handler(
-        self, command_bus: CommandBus, handler: AsyncMock
-    ) -> None:
+    def test_unregister_handler(self, command_bus: CommandBus, handler: AsyncMock) -> None:
         """Test unregistering a command handler."""
         command_bus.register(TestCommand, handler)
         command_bus.unregister(TestCommand)
@@ -222,9 +202,7 @@ class TestCommandBus:
         command_bus.unregister(TestCommand)
 
     @pytest.mark.asyncio
-    async def test_dispatch_command(
-        self, command_bus: CommandBus, handler: AsyncMock
-    ) -> None:
+    async def test_dispatch_command(self, command_bus: CommandBus, handler: AsyncMock) -> None:
         """Test dispatching a command to its handler."""
         command_bus.register(TestCommand, handler)
         command = TestCommand(name="test")
@@ -250,9 +228,7 @@ class TestCommandBus:
         assert middleware in command_bus._middleware
 
     @pytest.mark.asyncio
-    async def test_middleware_execution(
-        self, command_bus: CommandBus, handler: AsyncMock
-    ) -> None:
+    async def test_middleware_execution(self, command_bus: CommandBus, handler: AsyncMock) -> None:
         """Test middleware is executed in order."""
         execution_order: list[str] = []
 
@@ -303,9 +279,7 @@ class TestEventBusProperties:
     )
     @settings(max_examples=100, deadline=5000)
     @pytest.mark.asyncio
-    async def test_all_handlers_receive_event(
-        self, event_id: str, event_data: str, num_handlers: int
-    ) -> None:
+    async def test_all_handlers_receive_event(self, event_id: str, event_data: str, num_handlers: int) -> None:
         """Property: All subscribed handlers receive the published event.
 
         **Feature: test-coverage-80-percent-v3, Property 3: CQRS Event Bus Publishing**

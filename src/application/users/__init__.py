@@ -36,29 +36,29 @@ from application.users.read_model.projections import (
 )
 
 __all__ = [
+    # Write Model DTOs
     "ChangeEmailDTO",
     "ChangePasswordDTO",
     # Commands
     "CreateUserCommand",
     "CreateUserDTO",
     "CreateUserHandler",
+    # Queries
     "GetUserByEmailHandler",
     "GetUserByEmailQuery",
     "GetUserByIdHandler",
-    # Queries
     "GetUserByIdQuery",
     "UpdateUserDTO",
-    # Write Model DTOs
+    # Read Model DTOs
+    "UserActivityReadDTO",
     "UserDTO",
     "UserListDTO",
-    # Read Model DTOs
-    "UserReadDTO",
     "UserListReadDTO",
-    "UserSearchResultDTO",
-    "UserActivityReadDTO",
     # Mappers
     "UserMapper",
     # Projections
     "UserProjectionHandler",
+    "UserReadDTO",
     "UserReadModelProjector",
+    "UserSearchResultDTO",
 ]

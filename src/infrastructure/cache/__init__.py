@@ -5,19 +5,19 @@
 **Feature: test-coverage-80-percent-v2**
 """
 
-from infrastructure.cache.decorators import (
-    cached,
-    get_default_cache,
-    invalidate_cache,
-    invalidate_pattern,
-    set_default_cache,
-)
 from infrastructure.cache.core.models import CacheStats
 from infrastructure.cache.core.protocols import (
     CacheEntry,
     CacheKey,
     CacheProvider,
     JsonSerializer,
+)
+from infrastructure.cache.decorators import (
+    cached,
+    get_default_cache,
+    invalidate_cache,
+    invalidate_pattern,
+    set_default_cache,
 )
 from infrastructure.cache.providers.local import LRUCache
 from infrastructure.cache.providers.memory import InMemoryCacheProvider

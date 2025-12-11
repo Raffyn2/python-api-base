@@ -81,16 +81,17 @@ class TestResultProperties:
 
     @given(st.integers(), st.integers())
     @settings(max_examples=100)
-    def test_ok_map_preserves_function_application(
-        self, value: int, add_value: int
-    ) -> None:
+    def test_ok_map_preserves_function_application(self, value: int, add_value: int) -> None:
         """**Property 3: Result Map Preservation**
         **Validates: Requirements 2.4**
 
         For any Ok result and function f, result.map(f) produces Ok(f(value)).
         """
         result = Ok(value)
-        fn = lambda x: x + add_value
+
+        def fn(x):
+            return x + add_value
+
         mapped = result.map(fn)
 
         assert mapped.is_ok()
@@ -105,7 +106,10 @@ class TestResultProperties:
         For any Err result, map returns the same Err unchanged.
         """
         result = Err(error)
-        fn = lambda x: x + add_value
+
+        def fn(x):
+            return x + add_value
+
         mapped = result.map(fn)
 
         assert mapped.is_err()
@@ -181,9 +185,7 @@ class TestStatusProperties:
         snake_case_pattern = re.compile(r"^[a-z]+(_[a-z]+)*$")
 
         for status in OperationStatus:
-            assert snake_case_pattern.match(status.value), (
-                f"Status {status.value} is not snake_case"
-            )
+            assert snake_case_pattern.match(status.value), f"Status {status.value} is not snake_case"
 
     def test_health_status_snake_case(self) -> None:
         """**Property 5: Status Enum Snake Case**
@@ -192,9 +194,7 @@ class TestStatusProperties:
         snake_case_pattern = re.compile(r"^[a-z]+(_[a-z]+)*$")
 
         for status in HealthStatus:
-            assert snake_case_pattern.match(status.value), (
-                f"Health status {status.value} is not snake_case"
-            )
+            assert snake_case_pattern.match(status.value), f"Health status {status.value} is not snake_case"
 
     def test_delivery_status_snake_case(self) -> None:
         """**Property 5: Status Enum Snake Case**
@@ -203,9 +203,7 @@ class TestStatusProperties:
         snake_case_pattern = re.compile(r"^[a-z]+(_[a-z]+)*$")
 
         for status in DeliveryStatus:
-            assert snake_case_pattern.match(status.value), (
-                f"Delivery status {status.value} is not snake_case"
-            )
+            assert snake_case_pattern.match(status.value), f"Delivery status {status.value} is not snake_case"
 
     def test_poll_status_snake_case(self) -> None:
         """**Property 5: Status Enum Snake Case**
@@ -214,9 +212,7 @@ class TestStatusProperties:
         snake_case_pattern = re.compile(r"^[a-z]+(_[a-z]+)*$")
 
         for status in PollStatus:
-            assert snake_case_pattern.match(status.value), (
-                f"Poll status {status.value} is not snake_case"
-            )
+            assert snake_case_pattern.match(status.value), f"Poll status {status.value} is not snake_case"
 
     def test_composition_status_snake_case(self) -> None:
         """**Property 5: Status Enum Snake Case**
@@ -225,9 +221,7 @@ class TestStatusProperties:
         snake_case_pattern = re.compile(r"^[a-z]+(_[a-z]+)*$")
 
         for status in CompositionStatus:
-            assert snake_case_pattern.match(status.value), (
-                f"Composition status {status.value} is not snake_case"
-            )
+            assert snake_case_pattern.match(status.value), f"Composition status {status.value} is not snake_case"
 
     def test_operation_status_transitions_are_valid(self) -> None:
         """Test that operation status transitions follow business rules."""
@@ -281,9 +275,7 @@ class TestErrorMessageProperties:
 
     @given(st.text(min_size=1, max_size=50), st.text(min_size=1, max_size=100))
     @settings(max_examples=100)
-    def test_validation_error_factory_consistency(
-        self, field: str, reason: str
-    ) -> None:
+    def test_validation_error_factory_consistency(self, field: str, reason: str) -> None:
         """**Property 9: Error Message Factory Consistency**
         **Validates: Requirements 4.4**
         """
@@ -330,9 +322,7 @@ class TestErrorMessageProperties:
 
     @given(st.text(min_size=1, max_size=50), st.integers(min_value=1, max_value=10000))
     @settings(max_examples=100)
-    def test_timeout_factory_consistency(
-        self, operation: str, duration_ms: int
-    ) -> None:
+    def test_timeout_factory_consistency(self, operation: str, duration_ms: int) -> None:
         """**Property 9: Error Message Factory Consistency**
         **Validates: Requirements 4.4**
         """
@@ -352,9 +342,7 @@ class TestErrorMessageProperties:
         st.integers(min_value=1, max_value=3600),
     )
     @settings(max_examples=100)
-    def test_rate_limited_factory_consistency(
-        self, limit: int, window_seconds: int
-    ) -> None:
+    def test_rate_limited_factory_consistency(self, limit: int, window_seconds: int) -> None:
         """**Property 9: Error Message Factory Consistency**
         **Validates: Requirements 4.4**
         """
@@ -470,7 +458,10 @@ class TestTransformerProperties:
     @settings(max_examples=100)
     def test_map_transformer_applies_function(self, value: int) -> None:
         """Test that MapTransformer correctly applies the mapping function."""
-        fn = lambda x: x * 3 + 1
+
+        def fn(x):
+            return x * 3 + 1
+
         transformer = MapTransformer[int, int](fn)
         context = TransformationContext()
 
@@ -564,9 +555,7 @@ class TestBuilderProperties:
         st.text(
             min_size=1,
             max_size=50,
-            alphabet=st.characters(
-                whitelist_categories=("L", "N"), whitelist_characters="_-"
-            ),
+            alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_-"),
         ),
         st.integers(min_value=1),
     )
@@ -685,9 +674,7 @@ class TestPaginationProperties:
         st.integers(min_value=0, max_value=1000),
     )
     @settings(max_examples=100)
-    def test_pagination_result_consistency(
-        self, page: int, per_page: int, total: int
-    ) -> None:
+    def test_pagination_result_consistency(self, page: int, per_page: int, total: int) -> None:
         """**Property 10: Pagination Result Consistency**
         **Validates: Requirements 5.3**
 
@@ -715,13 +702,9 @@ class TestPaginationProperties:
 
         # Verify has_prev property
         expected_has_prev = page > 1
-        assert result.has_prev == expected_has_prev, (
-            f"has_prev should be {expected_has_prev} for page={page}"
-        )
+        assert result.has_prev == expected_has_prev, f"has_prev should be {expected_has_prev} for page={page}"
 
-    @given(
-        st.integers(min_value=1, max_value=10), st.integers(min_value=1, max_value=20)
-    )
+    @given(st.integers(min_value=1, max_value=10), st.integers(min_value=1, max_value=20))
     @settings(max_examples=100)
     def test_pagination_first_page_no_prev(self, per_page: int, total: int) -> None:
         """Test that first page never has previous."""
@@ -736,9 +719,7 @@ class TestPaginationProperties:
 
         assert result.has_prev is False
 
-    @given(
-        st.integers(min_value=1, max_value=10), st.integers(min_value=1, max_value=20)
-    )
+    @given(st.integers(min_value=1, max_value=10), st.integers(min_value=1, max_value=20))
     @settings(max_examples=100)
     def test_pagination_last_page_no_next(self, per_page: int, total: int) -> None:
         """Test that last page never has next."""
@@ -793,9 +774,7 @@ class TestLoggingProperties:
 
     @given(st.text(min_size=1, max_size=50), st.text(min_size=1, max_size=100))
     @settings(max_examples=100)
-    def test_structured_logging_extra_dict(
-        self, event_name: str, trace_id: str
-    ) -> None:
+    def test_structured_logging_extra_dict(self, event_name: str, trace_id: str) -> None:
         """**Property 17: Structured Logging Extra Dict**
         **Validates: Requirements 22.1**
 
@@ -862,9 +841,7 @@ class TestCursorProperties:
         st.text(
             min_size=1,
             max_size=50,
-            alphabet=st.characters(
-                whitelist_categories=("L", "N"), whitelist_characters="_-"
-            ),
+            alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="_-"),
         )
     )
     @settings(max_examples=100)
@@ -879,9 +856,7 @@ class TestCursorProperties:
 
     @given(
         st.integers(min_value=0, max_value=1000),
-        st.text(
-            min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))
-        ),
+        st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L",))),
     )
     @settings(max_examples=100)
     def test_cursor_round_trip_with_prefix(self, value: int, prefix: str) -> None:

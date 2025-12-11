@@ -3,6 +3,12 @@
 The Unit of Work pattern maintains a list of objects affected by a
 business transaction and coordinates the writing out of changes.
 
+Note:
+    This is the abstract base class implementation. For the Protocol
+    definition (structural typing), use core.protocols.data_access.UnitOfWork.
+    Both are compatible - this ABC is for inheritance, the Protocol is for
+    duck typing.
+
 **Feature: architecture-restructuring-2025**
 **Validates: Requirements 6.3**
 """

@@ -126,9 +126,7 @@ class TestSpecificationAssociativity:
         right_grouped = spec_a & (spec_b & spec_c)
 
         # Verify associativity
-        assert left_grouped.is_satisfied_by(person) == right_grouped.is_satisfied_by(
-            person
-        )
+        assert left_grouped.is_satisfied_by(person) == right_grouped.is_satisfied_by(person)
 
     @given(person_strategy())
     def test_or_associativity(self, person: Person) -> None:
@@ -142,9 +140,7 @@ class TestSpecificationAssociativity:
         right_grouped = spec_a | (spec_b | spec_c)
 
         # Verify associativity
-        assert left_grouped.is_satisfied_by(person) == right_grouped.is_satisfied_by(
-            person
-        )
+        assert left_grouped.is_satisfied_by(person) == right_grouped.is_satisfied_by(person)
 
 
 class TestSpecificationIdentity:
@@ -241,9 +237,7 @@ class TestSpecificationDeMorganLaws:
         not_a_or_not_b = (~spec_a) | (~spec_b)
 
         # Verify equivalence
-        assert not_a_and_b.is_satisfied_by(person) == not_a_or_not_b.is_satisfied_by(
-            person
-        )
+        assert not_a_and_b.is_satisfied_by(person) == not_a_or_not_b.is_satisfied_by(person)
 
     @given(person_strategy())
     def test_de_morgan_or(self, person: Person) -> None:
@@ -256,9 +250,7 @@ class TestSpecificationDeMorganLaws:
         not_a_and_not_b = (~spec_a) & (~spec_b)
 
         # Verify equivalence
-        assert not_a_or_b.is_satisfied_by(person) == not_a_and_not_b.is_satisfied_by(
-            person
-        )
+        assert not_a_or_b.is_satisfied_by(person) == not_a_and_not_b.is_satisfied_by(person)
 
 
 class TestSpecificationNegation:
@@ -377,9 +369,7 @@ class TestSpecificationComposition:
         complex_spec = adult_and_active | senior_and_high_score
 
         # Manual evaluation
-        expected = (person.age >= 18 and person.is_active) or (
-            person.age >= 65 and person.score >= 80
-        )
+        expected = (person.age >= 18 and person.is_active) or (person.age >= 65 and person.score >= 80)
 
         # Verify
         assert complex_spec.is_satisfied_by(person) == expected

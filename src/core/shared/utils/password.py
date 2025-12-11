@@ -1,5 +1,7 @@
 """Secure password hashing using Argon2."""
 
+import contextlib
+
 from passlib.context import CryptContext
 
 # Configure Argon2 as the password hashing algorithm
@@ -33,6 +35,8 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash.
 
+    Uses constant-time comparison to prevent timing attacks.
+
     Args:
         plain_password: Plain text password to verify.
         hashed_password: Previously hashed password.
@@ -40,7 +44,16 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         bool: True if password matches, False otherwise.
     """
-    if not plain_password or not hashed_password:
+    # Always perform verification to prevent timing attacks
+    # Even with invalid inputs, we do a dummy verification
+    if not hashed_password:
+        # Perform dummy hash to maintain constant time
+        _pwd_context.hash("dummy_password_for_timing")
+        return False
+    if not plain_password:
+        # Perform dummy verification to maintain constant time
+        with contextlib.suppress(Exception):  # Intentional: constant-time comparison security
+            _pwd_context.verify("dummy", hashed_password)
         return False
     try:
         return _pwd_context.verify(plain_password, hashed_password)

@@ -13,7 +13,6 @@ from enum import Enum
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
 
 from application.common.dto import (
     ApiResponse,
@@ -36,7 +35,7 @@ class RouteOperation(Enum):
     BULK_DELETE = "bulk_delete"
 
 
-@dataclass
+@dataclass(slots=True)
 class CRUDRouterConfig:
     """Configuration for CRUD router behavior.
 
@@ -45,9 +44,7 @@ class CRUDRouterConfig:
     """
 
     # Route enablement
-    enabled_operations: set[RouteOperation] = field(
-        default_factory=lambda: set(RouteOperation)
-    )
+    enabled_operations: set[RouteOperation] = field(default_factory=lambda: set(RouteOperation))
 
     # Pagination defaults
     default_page_size: int = 20
@@ -170,9 +167,7 @@ class GenericCRUDRouter[T, CreateDTO, UpdateDTO, ResponseDTO]:
             sort_order: str = Query("asc", pattern="^(asc|desc)$"),
             use_case: Any = Depends(use_case_dep),
         ) -> PaginatedResponse[response_model]:
-            return await use_case.list(
-                page=page, size=size, sort_by=sort_by, sort_order=sort_order
-            )
+            return await use_case.list(page=page, size=size, sort_by=sort_by, sort_order=sort_order)
 
     def _setup_get_route(self) -> None:
         """Setup GET /{id} endpoint for retrieving single item."""
@@ -185,9 +180,7 @@ class GenericCRUDRouter[T, CreateDTO, UpdateDTO, ResponseDTO]:
             summary="Get item by ID",
             deprecated=self._config.deprecated,
         )
-        async def get_item(
-            id: str, use_case: Any = Depends(use_case_dep)
-        ) -> ApiResponse[response_model]:
+        async def get_item(id: str, use_case: Any = Depends(use_case_dep)) -> ApiResponse[response_model]:
             try:
                 return ApiResponse(data=await use_case.get(id))
             except HTTPException:
@@ -210,9 +203,7 @@ class GenericCRUDRouter[T, CreateDTO, UpdateDTO, ResponseDTO]:
             summary="Create new item",
             deprecated=self._config.deprecated,
         )
-        async def create_item(
-            data: create_model, use_case: Any = Depends(use_case_dep)
-        ) -> ApiResponse[response_model]:
+        async def create_item(data: create_model, use_case: Any = Depends(use_case_dep)) -> ApiResponse[response_model]:
             return ApiResponse(data=await use_case.create(data), status_code=201)
 
     def _setup_update_route(self) -> None:
@@ -325,9 +316,7 @@ class GenericCRUDRouter[T, CreateDTO, UpdateDTO, ResponseDTO]:
                     deleted_count += 1
                 except Exception:
                     failed_ids.append(item_id)
-            return BulkDeleteResponse(
-                deleted_count=deleted_count, failed_ids=failed_ids
-            )
+            return BulkDeleteResponse(deleted_count=deleted_count, failed_ids=failed_ids)
 
 
 # Convenience factory function

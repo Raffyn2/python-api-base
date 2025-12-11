@@ -70,9 +70,7 @@ class TestDatabaseSettingsGetSafeUrl:
 
     def test_redacts_password(self) -> None:
         """Test password is redacted in safe URL."""
-        settings = DatabaseSettings(
-            url="postgresql+asyncpg://user:secretpass@host:5432/db"
-        )
+        settings = DatabaseSettings(url="postgresql+asyncpg://user:secretpass@host:5432/db")
         safe_url = settings.get_safe_url()
 
         assert "secretpass" not in safe_url
@@ -88,9 +86,7 @@ class TestDatabaseSettingsGetSafeUrl:
 
     def test_repr_uses_safe_url(self) -> None:
         """Test __repr__ uses safe URL."""
-        settings = DatabaseSettings(
-            url="postgresql+asyncpg://user:secretpass@host:5432/db"
-        )
+        settings = DatabaseSettings(url="postgresql+asyncpg://user:secretpass@host:5432/db")
         repr_str = repr(settings)
 
         assert "secretpass" not in repr_str

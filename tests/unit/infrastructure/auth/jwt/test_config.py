@@ -18,7 +18,7 @@ class TestJWTKeyConfig:
             algorithm="HS256",
             secret_key="my-secret-key-at-least-32-chars-long",
         )
-        
+
         assert config.algorithm == "HS256"
         assert config.secret_key == "my-secret-key-at-least-32-chars-long"
         assert config.private_key is None
@@ -32,12 +32,12 @@ class TestJWTKeyConfig:
     def test_rs256_with_private_key(self) -> None:
         """Test RS256 with private key only."""
         private_key = "-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----"
-        
+
         config = JWTKeyConfig(
             algorithm="RS256",
             private_key=private_key,
         )
-        
+
         assert config.algorithm == "RS256"
         assert config.private_key == private_key
         assert config.public_key is None
@@ -45,12 +45,12 @@ class TestJWTKeyConfig:
     def test_rs256_with_public_key(self) -> None:
         """Test RS256 with public key only."""
         public_key = "-----BEGIN PUBLIC KEY-----\ntest\n-----END PUBLIC KEY-----"
-        
+
         config = JWTKeyConfig(
             algorithm="RS256",
             public_key=public_key,
         )
-        
+
         assert config.algorithm == "RS256"
         assert config.public_key == public_key
         assert config.private_key is None
@@ -59,13 +59,13 @@ class TestJWTKeyConfig:
         """Test RS256 with both keys."""
         private_key = "-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----"
         public_key = "-----BEGIN PUBLIC KEY-----\ntest\n-----END PUBLIC KEY-----"
-        
+
         config = JWTKeyConfig(
             algorithm="RS256",
             private_key=private_key,
             public_key=public_key,
         )
-        
+
         assert config.private_key == private_key
         assert config.public_key == public_key
 
@@ -77,12 +77,12 @@ class TestJWTKeyConfig:
     def test_es256_with_private_key(self) -> None:
         """Test ES256 with private key."""
         private_key = "-----BEGIN EC PRIVATE KEY-----\ntest\n-----END EC PRIVATE KEY-----"
-        
+
         config = JWTKeyConfig(
             algorithm="ES256",
             private_key=private_key,
         )
-        
+
         assert config.algorithm == "ES256"
         assert config.private_key == private_key
 
@@ -102,6 +102,6 @@ class TestJWTKeyConfig:
             algorithm="HS256",
             secret_key="secret",
         )
-        
+
         with pytest.raises(AttributeError):
             config.algorithm = "RS256"  # type: ignore

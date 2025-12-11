@@ -32,10 +32,10 @@ class TestHS256Provider:
         """Test signing and verifying token."""
         provider = HS256Provider(secret_key="a" * 32)
         token = provider.sign({"sub": "user-123", "role": "admin"})
-        
+
         assert token is not None
         assert isinstance(token, str)
-        
+
         claims = provider.verify(token)
         assert claims["sub"] == "user-123"
         assert claims["role"] == "admin"
@@ -48,7 +48,7 @@ class TestHS256Provider:
         )
         token = provider.sign({"sub": "user-123"})
         claims = provider.verify(token)
-        
+
         assert claims["iss"] == "test-issuer"
 
     def test_sign_with_audience(self) -> None:
@@ -59,7 +59,7 @@ class TestHS256Provider:
         )
         token = provider.sign({"sub": "user-123"})
         claims = provider.verify(token)
-        
+
         assert claims["aud"] == "test-audience"
 
     def test_get_signing_key(self) -> None:
@@ -79,11 +79,9 @@ class TestHS256Provider:
         provider = HS256Provider(secret_key="a" * 32)
         assert provider._get_signing_key() == provider._get_verification_key()
 
-    def test_production_mode_warning(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_production_mode_warning(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test production mode logs warning."""
-        import logging
-        
-        with caplog.at_level(logging.WARNING):
-            HS256Provider(secret_key="a" * 32, production_mode=True)
-        
-        assert "SECURITY WARNING" in caplog.text or "HS256" in caplog.text
+        HS256Provider(secret_key="a" * 32, production_mode=True)
+
+        captured = capsys.readouterr()
+        assert "SECURITY WARNING" in captured.out or "HS256" in captured.out

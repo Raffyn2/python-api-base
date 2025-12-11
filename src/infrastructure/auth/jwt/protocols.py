@@ -4,11 +4,11 @@
 **Validates: Requirements 1.2, 1.3, 20.1, 20.4**
 """
 
-import logging
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol, runtime_checkable
 
+import structlog
 from jose import JWTError, jwt
 
 from infrastructure.auth.jwt.exceptions import (
@@ -16,7 +16,7 @@ from infrastructure.auth.jwt.exceptions import (
     InvalidKeyError,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class KidNotFoundError(Exception):
@@ -46,7 +46,9 @@ class JWTAlgorithmProvider(Protocol):
         ...
 
     def sign(
-        self, payload: dict[str, Any], expires_delta: timedelta | None = None
+        self,
+        payload: dict[str, Any],
+        expires_delta: timedelta | None = None,
     ) -> str:
         """Sign a payload and return JWT token.
 
@@ -157,7 +159,9 @@ class BaseJWTProvider(ABC):
         ...
 
     def sign(
-        self, payload: dict[str, Any], expires_delta: timedelta | None = None
+        self,
+        payload: dict[str, Any],
+        expires_delta: timedelta | None = None,
     ) -> str:
         """Sign a payload and return JWT token.
 
@@ -211,8 +215,8 @@ class BaseJWTProvider(ABC):
                 headers=headers if headers else None,
             )
         except Exception as e:
-            logger.error(f"JWT signing failed: {e}", exc_info=True)
-            raise InvalidKeyError(f"Failed to sign token: {e}") from e
+            logger.exception("JWT signing failed", operation="JWT_SIGN")
+            raise InvalidKeyError("Failed to sign token") from e
 
     def verify(self, token: str) -> dict[str, Any]:
         """Verify a JWT token and return claims.
@@ -242,7 +246,7 @@ class BaseJWTProvider(ABC):
         try:
             header = jwt.get_unverified_header(token)
         except JWTError as e:
-            raise InvalidKeyError(f"Cannot decode token header: {e}") from e
+            raise InvalidKeyError("Cannot decode token header") from e
 
         token_alg = header.get("alg", "")
 
@@ -276,5 +280,5 @@ class BaseJWTProvider(ABC):
             error_msg = str(e).lower()
             if "signature" in error_msg:
                 raise InvalidKeyError("Token signature verification failed") from e
-            logger.warning(f"JWT verification failed: {e}")
-            raise InvalidKeyError(f"Token verification failed: {e}") from e
+            logger.warning("JWT verification failed", operation="JWT_VERIFY", exc_info=True)
+            raise InvalidKeyError("Token verification failed") from e

@@ -177,9 +177,7 @@ class TestTimeoutConfigBuilderProperties:
         endpoint_seconds=st.integers(min_value=1, max_value=120),
     )
     @settings(max_examples=100)
-    def test_builder_creates_valid_config(
-        self, default_seconds: int, endpoint_seconds: int
-    ) -> None:
+    def test_builder_creates_valid_config(self, default_seconds: int, endpoint_seconds: int) -> None:
         """Property: Builder creates valid configuration."""
         config = (
             TimeoutConfigBuilder()

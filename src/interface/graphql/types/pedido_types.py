@@ -56,6 +56,10 @@ class PedidoCreateInput:
     """Input for creating a Pedido."""
 
     customer_id: str
+    customer_name: str
+    customer_email: str
+    shipping_address: str | None = None
+    notes: str | None = None
 
 
 @strawberry.input

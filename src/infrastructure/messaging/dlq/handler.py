@@ -4,16 +4,17 @@
 **Validates: Requirements 6.6**
 """
 
-import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class DLQEntry:
     """Dead letter queue entry."""
 
@@ -23,7 +24,7 @@ class DLQEntry:
     payload: dict[str, Any] = field(default_factory=dict)
     error_message: str = ""
     retry_count: int = 0
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -46,7 +47,12 @@ class DLQHandler:
     async def add(self, entry: DLQEntry) -> None:
         """Add entry to DLQ."""
         self._entries[entry.id] = entry
-        logger.warning(f"Added to DLQ: {entry.id} from {entry.original_queue}")
+        logger.warning(
+            "Added to DLQ",
+            entry_id=entry.id,
+            original_queue=entry.original_queue,
+            operation="DLQ_ADD",
+        )
 
     async def get_all(self, limit: int = 100) -> list[DLQEntry]:
         """Get all DLQ entries."""
@@ -57,14 +63,22 @@ class DLQHandler:
         """Get entry for retry and remove from DLQ."""
         entry = self._entries.pop(entry_id, None)
         if entry:
-            logger.info(f"Retrying DLQ entry: {entry_id}")
+            logger.info(
+                "Retrying DLQ entry",
+                entry_id=entry_id,
+                operation="DLQ_RETRY",
+            )
         return entry
 
     async def delete(self, entry_id: str) -> bool:
         """Delete entry from DLQ."""
         if entry_id in self._entries:
             del self._entries[entry_id]
-            logger.info(f"Deleted DLQ entry: {entry_id}")
+            logger.info(
+                "Deleted DLQ entry",
+                entry_id=entry_id,
+                operation="DLQ_DELETE",
+            )
             return True
         return False
 

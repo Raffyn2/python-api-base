@@ -7,18 +7,19 @@ and registers all example handlers.
 **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 """
 
-import logging
 import re
 from typing import Any
 
+import structlog
+
 from application.common.cqrs import CommandBus, QueryBus
 from application.common.cqrs.events.event_bus import TypedEventBus
-from application.common.middleware.circuit_breaker import (
+from application.common.middleware.observability import LoggingConfig, LoggingMiddleware
+from application.common.middleware.resilience.circuit_breaker import (
     CircuitBreakerConfig,
     CircuitBreakerMiddleware,
 )
-from application.common.middleware.observability import LoggingConfig, LoggingMiddleware
-from application.common.middleware.retry import RetryConfig, RetryMiddleware
+from application.common.middleware.resilience.retry import RetryConfig, RetryMiddleware
 from application.common.middleware.validation import ValidationMiddleware, Validator
 from application.examples.item.commands import (
     CreateItemCommand,
@@ -51,12 +52,18 @@ from application.examples.pedido.handlers import (
 )
 from application.examples.pedido.queries import GetPedidoQuery, ListPedidosQuery
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # =============================================================================
 # Validators
 # =============================================================================
+
+
+# Validation constants
+MAX_SKU_LENGTH = 50
+MAX_NAME_LENGTH = 255
+MAX_EMAIL_LENGTH = 254
 
 
 class CreateItemCommandValidator(Validator[CreateItemCommand]):
@@ -68,13 +75,15 @@ class CreateItemCommandValidator(Validator[CreateItemCommand]):
 
         if not command.name or not command.name.strip():
             errors.append("Name is required")
+        elif len(command.name) > MAX_NAME_LENGTH:
+            errors.append(f"Name must be at most {MAX_NAME_LENGTH} characters")
 
         if not command.sku or not command.sku.strip():
             errors.append("SKU is required")
+        elif len(command.sku) > MAX_SKU_LENGTH:
+            errors.append(f"SKU must be at most {MAX_SKU_LENGTH} characters")
         elif not re.match(r"^[A-Z0-9-]+$", command.sku):
-            errors.append(
-                "SKU must contain only uppercase letters, numbers, and hyphens"
-            )
+            errors.append("SKU must contain only uppercase letters, numbers, and hyphens")
 
         if command.price_amount < 0:
             errors.append("Price must be non-negative")
@@ -97,9 +106,13 @@ class CreatePedidoCommandValidator(Validator[CreatePedidoCommand]):
 
         if not command.customer_name or not command.customer_name.strip():
             errors.append("Customer name is required")
+        elif len(command.customer_name) > MAX_NAME_LENGTH:
+            errors.append(f"Customer name must be at most {MAX_NAME_LENGTH} characters")
 
         if not command.customer_email or not command.customer_email.strip():
             errors.append("Customer email is required")
+        elif len(command.customer_email) > MAX_EMAIL_LENGTH:
+            errors.append(f"Email must be at most {MAX_EMAIL_LENGTH} characters")
         elif not re.match(r"^[^@]+@[^@]+\.[^@]+$", command.customer_email):
             errors.append("Invalid email format")
 
@@ -249,6 +262,65 @@ def configure_example_query_bus(
     return bus
 
 
+def _register_example_handlers(
+    command_bus: CommandBus,
+    query_bus: QueryBus,
+    item_repository: IItemRepository,
+    pedido_repository: IPedidoRepository,
+    event_bus: TypedEventBus[Any] | None = None,
+) -> None:
+    """Register example handlers to buses (shared logic).
+
+    Args:
+        command_bus: CommandBus instance.
+        query_bus: QueryBus instance.
+        item_repository: Repository for ItemExample entities.
+        pedido_repository: Repository for PedidoExample entities.
+        event_bus: Optional event bus for domain events.
+    """
+    # Register Item command handlers
+    create_item = CreateItemCommandHandler(repository=item_repository, event_bus=event_bus)
+    update_item = UpdateItemCommandHandler(repository=item_repository, event_bus=event_bus)
+    delete_item = DeleteItemCommandHandler(repository=item_repository, event_bus=event_bus)
+
+    command_bus.register(CreateItemCommand, create_item.handle)
+    command_bus.register(UpdateItemCommand, update_item.handle)
+    command_bus.register(DeleteItemCommand, delete_item.handle)
+
+    # Register Pedido command handlers
+    create_pedido = CreatePedidoCommandHandler(
+        pedido_repository=pedido_repository,
+        item_repository=item_repository,
+        event_bus=event_bus,
+    )
+    add_item_to_pedido = AddItemToPedidoCommandHandler(
+        pedido_repository=pedido_repository,
+        item_repository=item_repository,
+        event_bus=event_bus,
+    )
+    confirm_pedido = ConfirmPedidoCommandHandler(repository=pedido_repository, event_bus=event_bus)
+    cancel_pedido = CancelPedidoCommandHandler(repository=pedido_repository, event_bus=event_bus)
+
+    command_bus.register(CreatePedidoCommand, create_pedido.handle)
+    command_bus.register(AddItemToPedidoCommand, add_item_to_pedido.handle)
+    command_bus.register(ConfirmPedidoCommand, confirm_pedido.handle)
+    command_bus.register(CancelPedidoCommand, cancel_pedido.handle)
+
+    # Register Item query handlers
+    get_item = GetItemQueryHandler(repository=item_repository)
+    list_items = ListItemsQueryHandler(repository=item_repository)
+
+    query_bus.register(GetItemQuery, get_item.handle)
+    query_bus.register(ListItemsQuery, list_items.handle)
+
+    # Register Pedido query handlers
+    get_pedido = GetPedidoQueryHandler(repository=pedido_repository)
+    list_pedidos = ListPedidosQueryHandler(repository=pedido_repository)
+
+    query_bus.register(GetPedidoQuery, get_pedido.handle)
+    query_bus.register(ListPedidosQuery, list_pedidos.handle)
+
+
 async def bootstrap_examples(
     command_bus: CommandBus,
     query_bus: QueryBus,
@@ -280,60 +352,15 @@ async def bootstrap_examples(
     command_bus.add_middleware(LoggingMiddleware(LoggingConfig(log_duration=True)))
     command_bus.add_middleware(ValidationMiddleware(validators))
     command_bus.add_middleware(RetryMiddleware(RetryConfig(max_retries=3)))
-    command_bus.add_middleware(
-        CircuitBreakerMiddleware(CircuitBreakerConfig(failure_threshold=5))
-    )
+    command_bus.add_middleware(CircuitBreakerMiddleware(CircuitBreakerConfig(failure_threshold=5)))
 
-    # Register Item command handlers
-    create_item = CreateItemCommandHandler(
-        repository=item_repository, event_bus=event_bus
-    )
-    update_item = UpdateItemCommandHandler(
-        repository=item_repository, event_bus=event_bus
-    )
-    delete_item = DeleteItemCommandHandler(
-        repository=item_repository, event_bus=event_bus
-    )
-
-    command_bus.register(CreateItemCommand, create_item.handle)
-    command_bus.register(UpdateItemCommand, update_item.handle)
-    command_bus.register(DeleteItemCommand, delete_item.handle)
-
-    # Register Pedido command handlers
-    create_pedido = CreatePedidoCommandHandler(
-        pedido_repository=pedido_repository,
+    # Register handlers using shared function
+    _register_example_handlers(
+        command_bus=command_bus,
+        query_bus=query_bus,
         item_repository=item_repository,
+        pedido_repository=pedido_repository,
         event_bus=event_bus,
     )
-    add_item_to_pedido = AddItemToPedidoCommandHandler(
-        pedido_repository=pedido_repository,
-        item_repository=item_repository,
-        event_bus=event_bus,
-    )
-    confirm_pedido = ConfirmPedidoCommandHandler(
-        repository=pedido_repository, event_bus=event_bus
-    )
-    cancel_pedido = CancelPedidoCommandHandler(
-        repository=pedido_repository, event_bus=event_bus
-    )
-
-    command_bus.register(CreatePedidoCommand, create_pedido.handle)
-    command_bus.register(AddItemToPedidoCommand, add_item_to_pedido.handle)
-    command_bus.register(ConfirmPedidoCommand, confirm_pedido.handle)
-    command_bus.register(CancelPedidoCommand, cancel_pedido.handle)
-
-    # Register Item query handlers
-    get_item = GetItemQueryHandler(repository=item_repository)
-    list_items = ListItemsQueryHandler(repository=item_repository)
-
-    query_bus.register(GetItemQuery, get_item.handle)
-    query_bus.register(ListItemsQuery, list_items.handle)
-
-    # Register Pedido query handlers
-    get_pedido = GetPedidoQueryHandler(repository=pedido_repository)
-    list_pedidos = ListPedidosQueryHandler(repository=pedido_repository)
-
-    query_bus.register(GetPedidoQuery, get_pedido.handle)
-    query_bus.register(ListPedidosQuery, list_pedidos.handle)
 
     logger.info("Example CQRS bootstrap complete")

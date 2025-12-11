@@ -6,9 +6,9 @@
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
 
+import structlog
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     REGISTRY,
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
         CollectorRegistry,
     )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Global registry instance
 _registry: MetricsRegistry | None = None

@@ -5,7 +5,7 @@
 """
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Self
 
 from infrastructure.messaging.asyncapi.models import (
     ChannelObject,
@@ -28,29 +28,27 @@ class AsyncAPIDocument:
     messages: dict[str, MessageObject] = field(default_factory=dict)
     schemas: dict[str, SchemaObject] = field(default_factory=dict)
 
-    def add_server(self, name: str, server: ServerObject) -> "AsyncAPIDocument":
+    def add_server(self, name: str, server: ServerObject) -> Self:
         """Add a server to the document."""
         self.servers[name] = server
         return self
 
-    def add_channel(self, name: str, channel: ChannelObject) -> "AsyncAPIDocument":
+    def add_channel(self, name: str, channel: ChannelObject) -> Self:
         """Add a channel to the document."""
         self.channels[name] = channel
         return self
 
-    def add_operation(
-        self, name: str, operation: OperationObject
-    ) -> "AsyncAPIDocument":
+    def add_operation(self, name: str, operation: OperationObject) -> Self:
         """Add an operation to the document."""
         self.operations[name] = operation
         return self
 
-    def add_message(self, message: MessageObject) -> "AsyncAPIDocument":
+    def add_message(self, message: MessageObject) -> Self:
         """Add a message to the document."""
         self.messages[message.name] = message
         return self
 
-    def add_schema(self, name: str, schema: SchemaObject) -> "AsyncAPIDocument":
+    def add_schema(self, name: str, schema: SchemaObject) -> Self:
         """Add a schema to the document."""
         self.schemas[name] = schema
         return self
@@ -62,27 +60,17 @@ class AsyncAPIDocument:
             "info": self.info.to_dict(),
         }
         if self.servers:
-            result["servers"] = {
-                name: server.to_dict() for name, server in self.servers.items()
-            }
+            result["servers"] = {name: server.to_dict() for name, server in self.servers.items()}
         if self.channels:
-            result["channels"] = {
-                name: channel.to_dict() for name, channel in self.channels.items()
-            }
+            result["channels"] = {name: channel.to_dict() for name, channel in self.channels.items()}
         if self.operations:
-            result["operations"] = {
-                name: op.to_dict() for name, op in self.operations.items()
-            }
+            result["operations"] = {name: op.to_dict() for name, op in self.operations.items()}
         if self.messages or self.schemas:
             result["components"] = {}
             if self.messages:
-                result["components"]["messages"] = {
-                    name: msg.to_dict() for name, msg in self.messages.items()
-                }
+                result["components"]["messages"] = {name: msg.to_dict() for name, msg in self.messages.items()}
             if self.schemas:
-                result["components"]["schemas"] = {
-                    name: schema.to_dict() for name, schema in self.schemas.items()
-                }
+                result["components"]["schemas"] = {name: schema.to_dict() for name, schema in self.schemas.items()}
         return result
 
     def to_yaml(self) -> str:
