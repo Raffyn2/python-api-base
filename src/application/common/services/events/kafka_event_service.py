@@ -3,15 +3,17 @@
 Provides centralized Kafka event publishing with consistent error handling.
 
 **Feature: application-layer-code-review-2025**
+**Feature: architecture-clean-layer-separation**
 **Extracted from: examples/item/use_case.py**
+
+Uses IEventPublisher Protocol for dependency inversion (Clean Architecture).
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import structlog
 
-if TYPE_CHECKING:
-    from infrastructure.kafka.event_publisher import EventPublisher
+from application.common.services.protocols import IEventPublisher
 
 logger = structlog.get_logger(__name__)
 
@@ -20,7 +22,7 @@ class KafkaEventService:
     """Service for publishing domain events to Kafka.
 
     Centralizes Kafka event publishing with consistent error handling
-    and logging.
+    and logging. Uses IEventPublisher Protocol for Clean Architecture compliance.
 
     Example:
         >>> kafka_service = KafkaEventService(kafka_publisher)
@@ -32,11 +34,12 @@ class KafkaEventService:
         ... )
     """
 
-    def __init__(self, publisher: "EventPublisher | None" = None) -> None:
+    def __init__(self, publisher: IEventPublisher | None = None) -> None:
         """Initialize Kafka event service.
 
         Args:
-            publisher: Optional Kafka event publisher.
+            publisher: Optional event publisher (Kafka, RabbitMQ, etc).
+                      Injected via DI for testability.
         """
         self._publisher = publisher
 
@@ -69,18 +72,17 @@ class KafkaEventService:
             return False
 
         try:
-            from infrastructure.kafka.event_publisher import DomainEvent
-
-            kafka_event = DomainEvent(
-                event_type=event_type,
-                entity_type=entity_type,
-                entity_id=entity_id,
-                payload=payload,
-            )
+            # Build event dict - Protocol accepts dict[str, Any]
+            kafka_event = {
+                "event_type": event_type,
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "payload": payload,
+            }
             await self._publisher.publish(kafka_event, topic)
 
             logger.debug(
-                "Kafka event published",
+                "Event published",
                 event_type=event_type,
                 entity_type=entity_type,
                 entity_id=entity_id,
@@ -90,7 +92,7 @@ class KafkaEventService:
 
         except Exception:
             logger.exception(
-                "Failed to publish Kafka event",
+                "Failed to publish event",
                 event_type=event_type,
                 entity_type=entity_type,
                 entity_id=entity_id,

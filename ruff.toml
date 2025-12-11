@@ -80,6 +80,11 @@ unfixable = []
 "alembic/**/*.py" = [
     "ALL",     # Migrations are auto-generated
 ]
+# gRPC servicers use PascalCase methods (Check, Watch, GetItem, etc) by protobuf convention
+"src/infrastructure/grpc/**/*.py" = ["N802"]
+"src/interface/grpc/**/*.py" = ["N802"]
+# SQLAlchemy @declared_attr requires cls (not self) as first argument
+"src/infrastructure/db/models/*.py" = ["N805"]
 
 [lint.isort]
 known-first-party = ["application", "domain", "infrastructure", "interface", "core"]
